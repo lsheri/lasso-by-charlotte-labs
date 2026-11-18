@@ -14,6 +14,7 @@ import { ContextComposer } from "@/components/canvas-lab/ContextComposer";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { commandEntityKind } from "@/hooks/use-canvas-lab";
 import type { WorkboardCommand } from "@/lib/canvas-lab-shared";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -70,7 +71,7 @@ describe("context composer", () => {
 
 describe("banner overlay", () => {
   it("floats over the board instead of pushing it down", async () => {
-    const css = await import("node:fs/promises").then((fs) => fs.readFile("src/styles.css", "utf8"));
+    const css = readStyles();
     const block = /\.canvas-lab-banner\s*\{[^}]*\}/.exec(css);
     expect(block).not.toBeNull();
     const style = document.createElement("style");

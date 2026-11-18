@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 // Phase 3 PR4b: the 10 names Charlotte drew first become shared GraphiteIcon names, each with a hand-drawn Lasso path.
-import { readFileSync } from "node:fs";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { GraphiteIcon, getIconSignature, type GraphiteIconName } from "@/components/notebook/icons";
 import { SkinContext } from "@/components/skin/use-skin";
 import { CHARLOTTE_EXTRA_GLYPHS, CHARLOTTE_EXTRA_NAMES } from "@/design/icons/charlotte-extra";
+import { readStyles } from "@/design/stylesheet";
 
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 
 function lassoPaths(name: GraphiteIconName) {
   const { container } = render(<GraphiteIcon name={name} />);

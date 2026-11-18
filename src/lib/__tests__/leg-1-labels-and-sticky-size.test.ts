@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const sticky = readFileSync("src/components/canvas-lab/LabSticky.tsx", "utf8");
 

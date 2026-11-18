@@ -10,10 +10,11 @@ type Props = { req: VerifyThreadRequest | null };
 import { RESOLVE_GRACE_MS } from "@/lib/verify-thread-shared";
 import { PAGE_FADE_MS } from "@/lib/turn-story-shared";
 import { cssDurationMs } from "./helpers/css-duration";
+import { readStyles } from "@/design/stylesheet";
 
 const READER = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
 const STORY = readFileSync("src/components/verify/TurnCardStory.tsx", "utf8");
-const CSS = readFileSync("src/styles.css", "utf8");
+const CSS = readStyles();
 
 function request(over: Partial<VerifyThreadRequest>): VerifyThreadRequest {
   return { runId: null, itemId: "item-a", itemTitle: "Thread A", ...over };

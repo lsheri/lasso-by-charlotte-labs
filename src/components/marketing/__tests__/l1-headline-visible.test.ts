@@ -5,9 +5,10 @@
 // the headline unreadable.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const particle = readFileSync("src/components/marketing/LandingParticlePhrase.tsx", "utf8");
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 
 function rulesFor(selectorFragment: string) {
   const out: string[] = [];

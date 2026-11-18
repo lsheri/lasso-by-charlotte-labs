@@ -14,6 +14,7 @@ import { LiftedImageBody } from "@/components/canvas-lab/LiftedImageBody";
 import { NO_PREVIEW_COPY } from "@/design/reference/NoPreview";
 import type { WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(() => {
   cleanup();
@@ -90,7 +91,7 @@ describe("LIFT-6 one frame for every kind", () => {
     expect(screen.getByTestId("lift-kind")).toBeTruthy();
   });
   it("slightly rounded corners, one stage behind the work, and the content fades in after the box", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(LIFT_RADIUS).toBe(12);
     expect(css).toContain("border-radius: var(--corner-float); background: var(--nb-paper);");
     expect(css).toContain("transform-origin: 0 0; transition-property: transform;");
@@ -206,7 +207,7 @@ describe("LIFT-6 QA fixes", () => {
     expect(screen.getByTestId("lift-image").querySelector("img")?.getAttribute("src")).toBe("https://signed.example/pic.png");
   });
   it("chat bubbles keep their own colour inside the view", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).not.toContain("--surface-sunk-2: var(--surface-sunk)");
   });
   it("no move or resize while it shrinks home", () => {

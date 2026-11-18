@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { WorkItemRow } from "@/lib/work-types";
+import { readStyles } from "@/design/stylesheet";
 
 const opened = vi.fn();
 const confirmRequests: unknown[] = [];
@@ -88,7 +89,7 @@ describe("pass 104 · brief panel in the Brief view", () => {
   it("drops the paired open state and the blue sticky plumbing", () => {
     expect(page).not.toContain("setNotesOpen");
     expect(page).not.toContain('tone="blue"');
-    expect(readFileSync("src/styles.css", "utf8")).not.toContain("--nb-sticky-blue");
+    expect(readStyles()).not.toContain("--nb-sticky-blue");
   });
 });
 
@@ -100,7 +101,7 @@ describe("pass 104 · graphite title rule", () => {
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
     expect(page).toContain("nb-title-strip");
     expect(page).toContain("<GraphiteRule />");
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(styles).toContain("padding-bottom: 12px");
     expect(styles).toContain(".nb-title-rule");
   });

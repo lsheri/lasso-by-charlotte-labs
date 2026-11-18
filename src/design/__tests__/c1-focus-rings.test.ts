@@ -1,8 +1,8 @@
 // C1 part 2 (17 Nov 2026): keyboard focus outlines inside the app read --focus-ring, with --nb-green kept as the fallback.
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 /** Each rule whose selector has :focus-visible and whose body draws an outline in --nb-green with no job token in front. */
 function bareGreenFocusRules(): string[] {

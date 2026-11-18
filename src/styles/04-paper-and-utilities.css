@@ -1,0 +1,608 @@
+/* Pencil titles and hand marks, landing utilities, paper notes and focus paper. Part of src/styles.css; order matters, see there. */
+@utility pencil-title {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--nb-graphite);
+}
+
+@layer nb {
+@media (min-width: 768px) {
+  .pencil-title {
+    font-size: 3rem;
+  }
+}
+
+/* Landing: bold handwritten diagonal marks labelling problem vs. solution. */
+
+}
+@utility hand-mark {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 1.875rem;
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(-7deg);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+@utility hand-mark-ember {
+  color: var(--nb-ink-ember);
+  text-decoration-color: var(--nb-ink-ember);
+}
+
+@utility hand-mark-blue {
+  color: var(--nb-blue);
+  text-decoration-color: var(--nb-blue);
+}
+
+@layer nb {
+/* Scroll focus: sections away from the viewport centre fade and soften. */
+
+}
+@utility focus-section {
+  transition:
+    opacity var(--nb-dur-enter) var(--nb-ease),
+    filter var(--nb-dur-enter) var(--nb-ease);
+}
+
+@utility focus-section-dim {
+  opacity: 0.35;
+  filter: blur(2.5px);
+}
+
+@layer nb {
+/* Landing gate: the story stays blurred until the visitor actually scrolls. */
+
+}
+@utility landing-locked {
+  opacity: 0.22;
+  filter: blur(6px);
+}
+
+@layer nb {
+@media (prefers-reduced-motion: reduce) {
+  .focus-section-dim,
+  .landing-locked {
+    opacity: 1;
+    filter: none;
+  }
+
+  .nb-gap-feed {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Landing "the gap": products drift in, the thinking behind them blurs out. */
+@keyframes nb-gap-drift {
+  0% {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  18% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+.nb-gap-feed {
+  animation: nb-gap-drift 12s linear infinite;
+}
+
+.nb-gap-blur {
+  filter: blur(3.4px);
+  opacity: 0.55;
+  user-select: none;
+}
+
+/* Hidden landing study: the middle sequence moves laterally with page scroll. */
+.landing-next {
+  --landing-small-loop-size: 72px;
+  --landing-small-loop-offset: 24px;
+  --landing-coach-art: 150px;
+  --landing-coach-spider-size: 88px;
+}
+
+.landing-next-loop-small {
+  width: var(--landing-small-loop-size);
+  height: var(--landing-small-loop-size);
+  right: var(--landing-small-loop-offset);
+  top: var(--landing-small-loop-offset);
+}
+
+.landing-next-coach-art {
+  width: var(--landing-coach-art);
+  height: var(--landing-coach-art);
+}
+
+.landing-next-coach-spider {
+  width: var(--landing-coach-spider-size);
+  height: var(--landing-coach-spider-size);
+  left: 21%;
+  top: 20%;
+  object-fit: contain;
+}
+
+.landing-next .nb-gap-feed {
+  animation: none;
+  opacity: 1;
+}
+
+.landing-next-carousel {
+  padding-inline: 1.5rem;
+}
+
+.landing-next-carousel-panel {
+  margin-inline: auto;
+  max-width: 48rem;
+  padding-block: 4rem;
+}
+
+.landing-next-carousel-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.landing-next-source-clips {
+  display: grid;
+  grid-template-columns: minmax(0, 1.48fr) minmax(7rem, 0.52fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-next-source-clips figure {
+  min-width: 0;
+}
+
+.landing-next-carousel-progress {
+  display: none;
+}
+
+.landing-next-carousel-dash {
+  width: 2rem;
+  height: 2px;
+  border-radius: var(--radius);
+  background: var(--rule);
+}
+
+@keyframes landing-next-loop-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes landing-next-carousel-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-300vw); }
+}
+
+.landing-next-pilot-form label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-next-pilot-form input,
+.landing-next-pilot-form select,
+.landing-next-pilot-form textarea {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.75rem 0.875rem;
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.landing-next-pilot-form input:focus,
+.landing-next-pilot-form select:focus,
+.landing-next-pilot-form textarea:focus {
+  border-color: var(--ring);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing-next-loop-small path:first-child {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: landing-next-loop-draw linear both;
+      animation-timeline: scroll(root);
+    }
+
+    @media (min-width: 768px) {
+      .landing-next-carousel {
+        height: 500vh;
+        padding-inline: 0;
+        view-timeline-name: --landing-next-carousel;
+        view-timeline-axis: block;
+      }
+
+      .landing-next-carousel-sticky {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .landing-next-carousel-track {
+        display: flex;
+        width: 400vw;
+        height: 100%;
+        animation: landing-next-carousel-slide linear both;
+        animation-timeline: --landing-next-carousel;
+        animation-range: contain 0% contain 100%;
+      }
+
+      .landing-next-carousel-panel {
+        display: flex;
+        width: 100vw;
+        max-width: none;
+        flex: 0 0 100vw;
+        align-items: center;
+        padding: 4rem max(2.5rem, calc((100vw - 72rem) / 2));
+      }
+
+      .landing-next-carousel-content {
+        width: 100%;
+        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+        align-items: center;
+        gap: clamp(3rem, 7vw, 7rem);
+      }
+
+      .landing-next-carousel-panel-sources .landing-next-carousel-content {
+        grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
+      }
+
+      .landing-next-source-clips {
+        gap: 1rem;
+      }
+
+      .landing-next-carousel-progress {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        display: flex;
+        transform: translateX(-50%);
+        gap: 0.65rem;
+      }
+    }
+  }
+}
+
+/* ============================================================
+   PAPER NOTES · the work card as a sticky note
+
+   The .nb-note namespace is owned by EngagementNote.tsx (engagement sticky notes).
+   This block uses .nb-paper* to avoid a specificity collision: equal-specificity
+   rules later in the file win, so .nb-note declared here overrode the orange notes.
+   Sandbox A · M5 "Paper physics" (2026:11) and M0 principles (2026:2).
+
+   M5 states the hover exactly: "hover lift (1.5px up, shadow grows, 160ms)".
+   M0 states the easing: springs for lift/land/settle, one ease for draws,
+   "because a pencil is not a spring".
+
+   Three rules hold this together:
+   1. Colour is the engagement, not decoration. The hue comes from
+      engagementHue(), which already hashes an id to one of eight. State moves
+      off the fill onto the edge and the corner, so colour never has to carry
+      two meanings at once.
+   2. Nothing that carries text moves more than 0.15deg at rest. Below that the
+      glyph raster never changes; above it, 11px mono shimmers and a wall of
+      cards reads as a screensaver.
+   3. Perspective arrives with the pointer and leaves with it. A 3D rendering
+      context makes WebKit draw the layer's text with greyscale antialiasing,
+      so a card that is 3D at rest pays for a hover effect on every frame it is
+      not hovered.
+   ============================================================ */
+
+@property --nb-sway {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* The four work types stand side by side. Written as explicit CSS rather than
+   a utility because the utility was generated, its media query matched, and
+   the element still computed to one track. Sticky notes are a fixed 196px, so
+   four columns need about 850px and the sidebar leaves more than that from a
+   laptop upward. Below that the columns stack and the notes keep their size. */
+.nb-type-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .nb-type-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Sticky notes are a fixed physical size, so a column holds as many across as
+   it has room for rather than stretching one to fit. This is why the layout
+   stops depending on the viewport width. */
+.nb-paper-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 196px));
+  gap: 14px;
+  align-items: start;
+  justify-content: start;
+}
+
+.nb-paper {
+  position: relative;
+  display: block;
+  width: clamp(150px, 100%, 196px);
+  height: auto;
+  overflow: hidden;
+  text-align: left;
+  border-radius: var(--corner-card);
+  border: 1px solid var(--nb-mid);
+  border-left-width: 3px;
+  background: var(--nb-white);
+  /* Contact, then ambient. Blur stays under twice the y-offset or the lift
+     reads as a CSS card floating rather than paper resting. Tinted with ink,
+     never black, which goes blue-grey against this paper. */
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
+  transform: none;
+  transition:
+    transform 160ms cubic-bezier(0.34, 1.36, 0.64, 1),
+    box-shadow 160ms var(--nb-ease),
+    opacity 160ms var(--nb-ease);
+}
+
+.nb-paper::before { content: none; }
+
+/* No board uses texture in the source spine, without assigning a source hue. */
+.nb-paper[data-paper-state="unmapped"],
+.work-state-card[data-paper-state="unmapped"] {
+  position: relative;
+  border: 1px solid var(--nb-pencil);
+  background: var(--nb-paper);
+  padding-left: 9px;
+}
+.nb-paper[data-paper-state="unmapped"] {
+  padding-left: 19px;
+}
+.nb-paper[data-paper-state="unmapped"]::before,
+.work-state-card[data-paper-state="unmapped"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 9px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--nb-line-hairline);
+  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--nb-pencil) 4px 5px);
+  pointer-events: none;
+}
+.work-no-board-label {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  min-height: 16px;
+  color: var(--nb-mid);
+  font-family: var(--font-mono);
+  font-size: var(--type-body);
+  line-height: 16px;
+}
+
+.nb-paper[data-paper-state="private"] { background: var(--nb-white); }
+
+/* M5, verbatim: 1.5px up, shadow grows, 160ms. */
+.nb-paper:hover,
+.nb-paper:focus-visible {
+  box-shadow:
+    1px 3px 4px color-mix(in oklab, var(--nb-ink) 20%, transparent),
+    0 16px 28px -14px color-mix(in oklab, var(--nb-ink) 34%, transparent);
+  transform: none;
+}
+
+.focus-paper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-backdrop);
+  display: flex;
+  padding: 16px;
+  background: var(--nb-scrim);
+}
+.focus-paper {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: min(1200px, 100%);
+  height: 100%;
+  margin: auto;
+  overflow: hidden;
+  flex-direction: column;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--nb-paper-fill, var(--nb-white));
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
+  transform-origin: center;
+  animation: focus-paper-lift 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.focus-paper::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  border-bottom-right-radius: var(--radius-card);
+  background: linear-gradient(135deg, transparent 0 48%, color-mix(in oklab, var(--nb-ink) 13%, var(--nb-paper-fill, var(--nb-white))) 48% 100%);
+  box-shadow: -3px -3px 6px -2px color-mix(in oklab, var(--nb-ink) 22%, transparent);
+}
+.focus-paper-reader,
+.chat-preview-window__body[data-preview-mode="expanded"] {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.focus-paper-aside { background: var(--nb-paper-fill, var(--nb-paper)); }
+@keyframes focus-paper-lift {
+  from { opacity: 0.72; transform: translate(var(--focus-from-x, 0), var(--focus-from-y, 0)) scale(var(--focus-from-scale, 0.72)); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@media (min-width: 768px) { .focus-paper-backdrop { padding: 32px; } }
+
+/* Ambient. Material, not event: paper on a desk moves a little. Amplitude is
+   set below the type's re-raster threshold on purpose, and the period and
+   phase are seeded per card so neighbours never beat together. Only cards the
+   IntersectionObserver has marked live animate, so an off-screen column costs
+   nothing. */
+/* The gust. Sandbox A M3's scatter-and-settle, fired on arrival: the notes
+   blow in and find their places. Deliberately decorative and deliberately
+   rare, so it is rationed by a 30% roll in WorkPage rather than played every
+   visit. It sits OUTSIDE the motion registry on purpose — it answers no event
+   and carries no information — and is listed with the other exceptions on
+   /design/icons. */
+.nb-gust .nb-paper {
+  animation: nb-paper-land 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--nb-gust-delay, 0ms);
+}
+@keyframes nb-paper-land {
+  from {
+    transform: translate3d(var(--nb-gust-x, 0px), -14px, 0)
+      rotate(calc(var(--nb-rot, 0deg) + var(--nb-gust-spin, -6deg)));
+    opacity: 0.6;
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(var(--nb-rot, 0deg));
+    opacity: 1;
+  }
+}
+
+.nb-paper-body {
+  padding: 7px 8px;
+}
+
+.ledger-work-note { container-type: inline-size; width: 100%; height: 118px; max-width: none; }
+.ledger-work-note[data-paper-state="unmapped"] { height: 138px; }
+.canvas-lab-card-paper > .ledger-work-note { height: 100%; }
+/* I1: the Inbox card alone gets room to preview; every other face keeps 118px. */
+.inbox-fixed-card { overflow: hidden; }
+.inbox-fixed-card .ledger-work-note { height: 200px; }
+.ledger-work-note .canvas-lab-document-page,
+.ledger-work-note .canvas-lab-file-preview,
+.ledger-work-note .canvas-lab-file-preview-canvas { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
+.ledger-work-note .canvas-lab-page-controls { display: none; }
+@container (max-width: 239px) { .ledger-work-note__thumbnail { width: 60px; } }
+
+/* The conversation board is a glance: one compact question, without changing other cards. */
+.conversation-card-compact > .nb-paper > .nb-paper-body {
+  padding: 8px 9px;
+}
+.conversation-card-compact:has(> .ledger-work-note) { height: 118px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-paper,
+  .nb-gust .nb-paper {
+    animation: none !important;
+    transition: none !important;
+  }
+  .nb-paper:hover,
+  .nb-paper:focus-visible {
+    transform: rotate(var(--nb-rot, 0deg)) !important;
+  }
+  .focus-paper { animation: none !important; }
+}
+
+}
+
+/* M9 · Arrows · what fed what. A card lands, then its arrow draws. Never both. */
+.nb-trail-card {
+  opacity: 0;
+}
+.nb-trail-card.is-on {
+  animation: nb-trail-land 260ms var(--nb-ease) both;
+}
+@keyframes nb-trail-land {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-trail-arrow path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.nb-trail-arrow.is-on path {
+  animation: nb-rule-draw 420ms var(--nb-ease) both;
+}
+.nb-trail-static .nb-trail-card,
+.nb-trail-static .nb-trail-card.is-on {
+  opacity: 1;
+  animation: none;
+}
+.nb-trail-static .nb-trail-arrow path {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-trail-card,
+  .nb-trail-card.is-on {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .nb-trail-arrow path,
+  .nb-trail-arrow.is-on path {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+}
+
+/* Pass 200: Find it. Notes light up briefly while the page looks through them. */
+@keyframes nb-chat-shimmer {
+  0%,
+  70%,
+  100% {
+    box-shadow: none;
+    background-color: var(--nb-white);
+  }
+  20%,
+  40% {
+    box-shadow: 0 0 0 1.4px var(--nb-mid);
+    background-color: var(--nb-paper);
+  }
+}
+.nb-chat-shimmer {
+  animation-name: nb-chat-shimmer;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-chat-shimmer {
+    animation: none !important;
+  }
+}

@@ -6,6 +6,7 @@ import { ANALYSIS_PRESETS, analysisPreset, presetsForScope } from "@/lib/analysi
 import { driveTypeFromSource, driveWorkType } from "@/lib/connector-toolkits";
 import { driveMarkKey } from "@/lib/work-mark";
 import { swappedPositions } from "@/lib/workstreams.server";
+import { readStyles } from "@/design/stylesheet";
 
 describe("pass 103 · drive type classification", () => {
   it("reads the original Google mime, not the exported bytes", () => {
@@ -105,7 +106,7 @@ describe("pass 103 · workstream ordering", () => {
 describe("pass 103 · sticky cards", () => {
   const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
   const note = readFileSync("src/components/engagements/EngagementNote.tsx", "utf8");
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
 
   it("keeps the note component available without duplicating sharing in the header", () => {
     expect(note).toContain("onToggle");

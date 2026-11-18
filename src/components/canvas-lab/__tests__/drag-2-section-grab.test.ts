@@ -1,5 +1,4 @@
 // DRAG-2: a section stays grabbable when a card rests on its title, and its edge band does not vanish when zoomed out.
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,8 +6,9 @@ import {
   labInverseZoom,
   LAB_FRONT_LIMIT,
 } from "@/components/canvas-lab/canvas-lab-model";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 describe("DRAG-2 the section title sits above cards", () => {
   it("title z-index beats every card's stack, and stays under Ask and its loops", () => {

@@ -3,8 +3,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { resolvedSkin } from "@/design/skin-tokens";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const charlotte = resolvedSkin("charlotte");
 const labCard = readFileSync("src/components/canvas-lab/LabCard.tsx", "utf8");
 

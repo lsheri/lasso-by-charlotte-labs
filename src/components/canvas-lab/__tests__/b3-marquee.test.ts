@@ -2,11 +2,24 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { applyMarqueeSelection, cardsInMarquee, isMarqueeClick, marqueeRect } from "../canvas-lab-marquee";
+import {
+  applyMarqueeSelection,
+  cardsInMarquee,
+  isMarqueeClick,
+  marqueeRect,
+} from "../canvas-lab-marquee";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync(resolve(process.cwd(), "src/pages/CanvasLabPage.tsx"), "utf8");
-const css = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
-const card = (id: string, x: number, y: number, kind = "work") => ({ id, kind, x, y, width: 100, height: 80 });
+const css = readStyles();
+const card = (id: string, x: number, y: number, kind = "work") => ({
+  id,
+  kind,
+  x,
+  y,
+  width: 100,
+  height: 80,
+});
 
 describe("B3 marquee", () => {
   it("builds the box from any drag direction", () => {

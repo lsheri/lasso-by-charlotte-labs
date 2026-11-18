@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
 
 import { readWorkboardCardPreviews } from "@/lib/workboard-card-preview.server";
 import { previewWheelConsumesScroll, readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
 import { slidesFromMap } from "@/lib/workboard-file-preview";
+import { readStyles } from "@/design/stylesheet";
 
 describe("workboard card previews", () => {
   it("keeps every mapped slide available to the shared renderer", () => {
@@ -52,7 +52,7 @@ describe("workboard card previews", () => {
   });
 
   it("keeps shared vendor colors intact and isolates Preview card colors", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain("--vendor-chatgpt: #0f6b5c;");
     expect(css).toContain("--canvas-vendor-chatgpt: var(--nb-graphite);");
     expect(css).toContain("var(--canvas-preview-vendor, var(--canvas-vendor-other))");

@@ -2,12 +2,17 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 const tokens = read("src/design/tokens.css");
-const styles = read("src/styles.css");
+const styles = readStyles();
 const foot = read("src/components/reflect/AskThinkingFoot.tsx");
-const rule = (needle: string) => styles.split("\n").filter((line) => line.includes(needle)).join("\n");
+const rule = (needle: string) =>
+  styles
+    .split("\n")
+    .filter((line) => line.includes(needle))
+    .join("\n");
 
 describe("COLOR-1 Ask lime, acid elsewhere", () => {
   it("defines Ask lime as the landing green", () => {

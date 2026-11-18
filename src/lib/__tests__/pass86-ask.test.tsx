@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { sessionRelatedToEngagement } from "@/lib/reflect-scope-shape";
 import { clampDockWidth, maxDockWidth } from "@/components/reflect/ask-dock-state";
+import { readStyles } from "@/design/stylesheet";
 
 const WHERE = { engagementId: "e1", mappedItemIds: ["i1", "i2"], taskIds: ["t1"] };
 
@@ -72,7 +73,7 @@ describe("ask lasso reads stay gated", () => {
 });
 
 describe("binder baseline law", () => {
-  const css = readFileSync("src/styles.css", "utf8");
+  const css = readStyles();
 
   it("uses a rem based pitch so the rhythm scales with the type ramp", () => {
     expect(css).toContain("--nb-baseline: 1.75rem");

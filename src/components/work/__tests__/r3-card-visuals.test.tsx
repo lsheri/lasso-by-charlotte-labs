@@ -6,7 +6,8 @@ import { render, screen } from "@testing-library/react";
 import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPreviewWindow";
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
+import { readStyles } from "@/design/stylesheet";
+const styles = readStyles();
 
 describe("R4 paper preview craft pass", () => {
   it("keeps the 2px graphite edge on flat cards and the 220px preview floor", () => {

@@ -11,6 +11,7 @@ import { AnswerKeepControl } from "@/components/reflect/AskSurface";
 import { AnswerRail, ContextAudit, ThinkingTrail, auditReadRows } from "@/components/reflect/ContextTrail";
 import { ANSWER_DRAG_MIME } from "@/lib/answer-card";
 import type { ContextManifest } from "@/lib/context-manifest";
+import { readStyles } from "@/design/stylesheet";
 
 const mocks = vi.hoisted(() => ({ emitClientEvent: vi.fn() }));
 
@@ -200,9 +201,13 @@ describe("Unit 6 rail and single disclosure", () => {
   });
 
   it("AnswerRail is lime while working and hairline when done", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toMatch(/\.nb-answer-rail \{\s*border-left: 2px solid var\(--live, var\(--nb-lasso-green\)\);\s*padding-left: 12px;/);
-    expect(css).toContain('.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--nb-line-hairline); }');
+    const css = readStyles();
+    expect(css).toMatch(
+      /\.nb-answer-rail \{\s*border-left: 2px solid var\(--live, var\(--nb-lasso-green\)\);\s*padding-left: 12px;/,
+    );
+    expect(css).toContain(
+      '.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--nb-line-hairline); }',
+    );
     const { rerender } = render(<AnswerRail state="working"><p>answer</p></AnswerRail>);
     expect(screen.getByTestId("answer-rail").getAttribute("data-rail-state")).toBe("working");
     rerender(<AnswerRail state="done"><p>answer</p></AnswerRail>);

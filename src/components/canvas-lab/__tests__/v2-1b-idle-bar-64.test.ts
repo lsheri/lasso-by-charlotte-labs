@@ -1,8 +1,9 @@
 // V2-1b: the idle bar is one 64 px row (grip, mark, a one-line composer, close), not a 236 px panel.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const surface = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
 const composer = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
 const idle = css.slice(css.indexOf("/* V2-1b:"), css.indexOf(".ask-draft-mark {"));

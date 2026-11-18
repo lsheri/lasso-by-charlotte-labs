@@ -6,7 +6,7 @@ import { LabSection, SECTION_MARKER_COPY, nextWeekSectionRect, shiftedSectionMar
 import { noteWorkboardSection, noteWorkboardSectionMarker } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { guardWorkboardEvent } from "@/lib/workboard-event-allowlist";
 import { logEvent } from "@/lib/telemetry";
-import { readFileSync } from "node:fs";
+import { readStyles } from "@/design/stylesheet";
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 // Wednesday 21 Oct 2026, local time.
@@ -35,8 +35,10 @@ describe("SECD-1b marker line", () => {
     expect(screen.getByTestId("section-marker-line").textContent).toBe("Week of 19 Oct");
   });
   it("gives both marker branches their own 13px type (--type-body) rather than the 34px badge type", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
-    const markerRule = styles.match(/\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/)?.[1];
+    const styles = readStyles();
+    const markerRule = styles.match(
+      /\.canvas-lab-section-title \[data-testid="section-marker-line"\] \{([^}]+)\}/,
+    )?.[1];
     expect(markerRule).toContain("font-size: var(--type-body);");
     expect(markerRule).toContain("font-family: var(--font-mono);");
     expect(markerRule).not.toContain("font-size: 34px;");

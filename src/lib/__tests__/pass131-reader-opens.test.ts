@@ -16,12 +16,13 @@ import {
   verifyPhaseLines,
 } from "@/lib/verify-thread-shared";
 import { decisionsPhaseLines } from "@/lib/decisions-thread-shared";
+import { readStyles } from "@/design/stylesheet";
 
 const READER = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
 const LAUNCHER = readFileSync("src/components/verify/ThreadAnalysisLauncher.tsx", "utf8");
 const WORK = readFileSync("src/pages/WorkPage.tsx", "utf8");
 const ENGAGEMENT = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-const STYLES = readFileSync("src/styles.css", "utf8");
+const STYLES = readStyles();
 
 describe("pass 131 launch path", () => {
   it("launches thread analyses without the lens", () => {

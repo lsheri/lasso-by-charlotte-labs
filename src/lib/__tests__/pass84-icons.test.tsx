@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { GraphiteIcon, ICON_NAMES } from "@/components/notebook/icons";
+import { readStyles } from "@/design/stylesheet";
 
 describe("GraphiteIcon", () => {
   it("renders a path per subpath, each with pathLength=1", () => {
@@ -31,7 +31,7 @@ describe("GraphiteIcon", () => {
 });
 
 describe("notebook icon css", () => {
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
 
   it("makes icons fully static under reduced motion", () => {
     const block = styles.slice(styles.indexOf("@media (prefers-reduced-motion: reduce)"));

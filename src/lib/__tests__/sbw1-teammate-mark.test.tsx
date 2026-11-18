@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +6,7 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { initialsOf } from "@/lib/initials";
 import { teammateMarkFor } from "@/lib/teammate-mark";
+import { readStyles } from "@/design/stylesheet";
 
 vi.mock("@/components/canvas-lab/LabCardMenu", () => ({ LabCardMenu: () => null }));
 vi.mock("@/components/canvas-lab/ChatLinkDialog", () => ({ CHAT_LINK_COPY: { add: "Add", change: "Change" }, ChatLinkDialog: () => null }));
@@ -98,7 +98,7 @@ describe("SB-W1 teammate marks", () => {
   });
 
   it("lets the tag receive pointer events so its tooltip can show", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     const start = styles.indexOf(".canvas-lab-teammate-tag {");
     expect(start).toBeGreaterThan(-1);
     const rule = styles.slice(start, styles.indexOf("}", start));

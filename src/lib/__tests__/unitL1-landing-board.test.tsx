@@ -9,6 +9,7 @@ import {
 } from "../event-dim-allowlist";
 import { parseLandingProof } from "../landing-proof-shared";
 import { publicSafeWork } from "../public-work-allowlist";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
 const route = readFileSync("src/routes/landing-board.tsx", "utf8");
@@ -54,14 +55,14 @@ describe("Unit L1 scroll-driven landing board", () => {
     ]);
   });
   it("has a reduced-motion jump path", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain("scroll-behavior: auto !important");
   });
   it("replaces loading copy with a timed, reduced-motion-safe logo rain", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain("function LandingLogoRain()")
-    expect(page).toContain("LANDING_INTRO_DURATION_MS = 4000")
+    const css = readStyles();
+    expect(page).toContain("function LandingLogoRain()");
+    expect(page).toContain("LANDING_INTRO_DURATION_MS = 4000");
     expect(page).toContain('data-testid="landing-logo-rain"')
     expect(page).toContain("[...marks, ...marks].map")
     for (const brand of [
@@ -203,7 +204,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(proof?.lines.map((line) => line.amount)).toEqual([0.6, 0.4, 0.7, 0.4]);
   });
   it("keeps the proof link, source connector, honest wording, and phone gutters", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toContain("search={{ item: proof.itemId, turn: 4, from: returnTo }}");
     expect(page).toContain("lb-proof-connector");
     expect(page).toContain("sourceRef");
@@ -254,7 +255,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     );
   });
   it("keeps the proof compact, proportional, capitalized, and connector-isolated", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toContain("(line.amount / model.savings) * 100");
     expect(page).toMatch(/step === 4\s*\? \(\s*<svg className="lb-circle-link"/);
     expect(page).toContain('thread.scrollTo({ top: proofCard.offsetTop, behavior: "auto" })');
@@ -271,7 +272,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     );
   });
   it("shows the proof connector on story steps 6 to 8, but not step 5", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toMatch(
       /step >= 5 && step <= 7\s*\? \(\s*<path\s*data-testid="landing-proof-connector"/,
     );
@@ -330,8 +331,8 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('onPilot={() => pilot("try_it")}');
   });
   it("renders inert recorded hero assemblies without emitting play telemetry", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(page).toContain('poster={headerVideoPoster.url}');
+    const css = readStyles();
+    expect(page).toContain("poster={headerVideoPoster.url}");
     expect(page).toContain('<source src={headerVideoMp4.url} type="video/mp4" />');
     expect(page).toContain('<source src={headerVideoWebm.url} type="video/webm" />');
     // S2 adds the self-contained workstreams clip: metadata-only and inline, never autoPlay.
@@ -349,12 +350,12 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).not.toContain("lb-hero-assemble-frame");
   });
   it("keeps the step-one hero on a clean background", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-layer { opacity: 0;');
     expect(css).toContain('.lb-stage-window[data-step="1"] .lb-board-card { opacity: 0; }');
   });
   it("uses a separate phone-first eleven-stop story", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toContain('className="lb-phone-story"');
     expect(page).toContain("data-phone-step={stop}");
     expect(page).toContain('id="lb-phone-usecases"');
@@ -373,7 +374,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toMatch(/surface: "landing-board",\s*input_mode:/);
   });
   it("holds scenes, settles events, and reuses Ask Lasso presentation pieces", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain("min-height: 160vh");
     expect(css).toContain("min-height: 130vh");
     expect(css).toContain("scroll-snap-type: y proximity");
@@ -394,7 +395,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain("Confirm approval by Oct 1.");
   });
   it("uses one settled spotlight on the deck, Ask panel, and decision turn", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toMatch(
       /step === 4\s*\? "deck"\s*: step === 5\s*\? "ask"\s*: step === 6\s*\? "turn"/,
     );
@@ -404,7 +405,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(css).toContain("lb-spotlight-in 300ms");
   });
   it("derives every deck figure and waterfall bar from proof, with a figure-free null state", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).not.toContain("[0.3, 1.4, 1.2]");
     expect(page).not.toContain('data-units="0.7"');
     expect(page).toContain("proof ? [proof.scenarioA, proof.scenarioB, proof.scenarioC] : null");
@@ -433,7 +434,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).not.toContain("YellowSigil Mobility");
   });
   it("measures the number after transforms and keeps Ask out of the page scroll path", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toContain("getBoundingClientRect()");
     expect(page).toContain('event.propertyName === "transform"');
     expect(page).toContain("boxesMatch(current, next)");
@@ -447,7 +448,7 @@ describe("Unit L1 scroll-driven landing board", () => {
     expect(page).toContain('data-story-scroll="locked"');
   });
   it("announces and animates only settled captions with a reduced-motion answer", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(page).toContain('aria-live={phase === "incoming" ? "polite" : undefined}');
     expect(page).toContain("setAttentionNonce");
     expect(page).toContain("data-phase={phase}");

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -16,7 +17,7 @@ describe("B1 workboard controls and brand identity", () => {
   it("keeps workstream and card option buttons visible and large enough", () => {
     const frameMenu = read("src/components/canvas-lab/LabFrameMenu.tsx");
     const cardMenu = read("src/components/canvas-lab/LabCardMenu.tsx");
-    const styles = read("src/styles.css");
+    const styles = readStyles();
     // The frame label depends on whether the frame is a context area or a
     // workstream. Both cases have to name something a person can act on; the
     // exact wording is free to change.

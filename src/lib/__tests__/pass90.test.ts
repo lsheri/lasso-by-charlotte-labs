@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { MAX_CHECK_DRAFTS, parseCheckRules, titleFromFileName } from "@/lib/check-rules";
 import { groupEngagementsByClient, type NavEngagement } from "@/lib/nav-groups";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -165,6 +166,6 @@ describe("90.5 sidebar grouping", () => {
 
   it("renders nested rows with an indented variant", () => {
     expect(read("src/components/layout/SidebarNav.tsx")).toContain("nb-nav-item-nested");
-    expect(read("src/styles.css")).toContain(".nb-nav-item-nested");
+    expect(readStyles()).toContain(".nb-nav-item-nested");
   });
 });

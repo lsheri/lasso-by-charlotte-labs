@@ -15,11 +15,12 @@ import { hatchStrokes, wavingSwatchD } from "@/lib/journey-path";
 import { WORK_ARTIFACT_INFO, ARTIFACT_SECTION_AREAS } from "@/lib/work-artifact-shared";
 
 import { cssDurationMs } from "./helpers/css-duration";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(() => cleanup());
 
 const read = (path: string) => readFileSync(path, "utf8");
-const css = read("src/styles.css");
+const css = readStyles();
 
 const journeyView = read("src/components/journey/JourneyView.tsx");
 const whatFed = read("src/components/engagements/WhatFedThisButton.tsx");

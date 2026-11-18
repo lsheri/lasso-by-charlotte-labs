@@ -13,6 +13,7 @@ import {
   waitingLine,
   type FirmDashboard,
 } from "@/lib/firm-dashboard-shared";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -129,9 +130,10 @@ describe("pile", () => {
   });
 
   it("goes static under reduced motion", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain(".nb-pile");
-    const block = css
+    const block =
+      css
       .split("@media (prefers-reduced-motion: reduce)")
       .find((chunk) => chunk.includes(".nb-pile-item")) ?? "";
     expect(block).toContain(".nb-pile-item");

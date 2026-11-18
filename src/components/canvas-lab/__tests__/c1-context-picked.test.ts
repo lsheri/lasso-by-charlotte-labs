@@ -1,10 +1,10 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { contextFlareSequence } from "../canvas-lab-marquee";
 import { resolveMotion } from "@/lib/motion-registry";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 describe("C1 board context visibility", () => {
   it("uses only the Ask lime token for the selected-card ring", () => {

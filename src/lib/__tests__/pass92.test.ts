@@ -9,6 +9,7 @@ import {
   groupEngagementsByClient,
   type NavEngagement,
 } from "@/lib/nav-groups";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -95,7 +96,7 @@ describe("92.1 server side single check", () => {
 });
 
 describe("92.2 shelf typography", () => {
-  const styles = read("src/styles.css");
+  const styles = readStyles();
   const nav = read("src/components/layout/SidebarNav.tsx");
 
   it("gives shelf headers the micro label voice in muted text", () => {
