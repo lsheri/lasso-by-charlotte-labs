@@ -1,5 +1,6 @@
 import { MoreHorizontal } from "lucide-react";
 import { RED_PEN_COPY } from "@/lib/red-pen-shared";
+import { SOW_TERMS_COPY } from "@/lib/sow-terms-shared";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,7 @@ export function LabCardMenu({
   clientShownLabel,
   onClientShown,
   onRedPen,
+  onSowTerms,
   cardFace,
   onCardFaceChange,
 }: {
@@ -74,6 +76,8 @@ export function LabCardMenu({
   onClientShown?: (() => void) | undefined;
   /** 17 Nov, firm brain: check this deliverable's claims against the board's sources. */
   onRedPen?: (() => void) | undefined;
+  /** 18 Nov, firm brain: set a SOW's fee terms. Admins and leads only, behind company-brain. */
+  onSowTerms?: (() => void) | undefined;
   /** FACE-3: both present on the board only. */
   cardFace?: CardFace | undefined;
   onCardFaceChange?: ((face: CardFace) => void) | undefined;
@@ -113,6 +117,7 @@ export function LabCardMenu({
         {onRename ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRename}>Rename for others</DropdownMenuItem> : null}
         {onClientShown && clientShownLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onClientShown}>{clientShownLabel}</DropdownMenuItem> : null}
         {onRedPen ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRedPen}>{RED_PEN_COPY.menu}</DropdownMenuItem> : null}
+        {onSowTerms ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onSowTerms}>{SOW_TERMS_COPY.menu}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator className="canvas-lab-menu-sep" />
         {local ? (
