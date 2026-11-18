@@ -15,6 +15,7 @@ import {
 } from "@/lib/lasso-geometry";
 import { resolveRendition } from "@/lib/rendition.server";
 import { snippetHash, spanIdempotencyKey } from "@/lib/span-provenance-shared";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(() => cleanup());
 
@@ -314,7 +315,7 @@ describe("pass 101.1: the status colour language", () => {
 
   it("defines one token per status rather than raw colour at point of use", async () => {
     const { readFileSync } = await import("node:fs");
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     ["--status-exact", "--status-paraphrase", "--status-unsourced"].forEach((token) => {
       expect(css).toContain(`${token}:`);
       expect(css).toContain(`${token}-wash:`);

@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const surface = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
 const hook = readFileSync("src/components/reflect/use-ask-lasso.ts", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 describe("ASK-FIX-2 the first turn is visible while Lasso works", () => {
   it("a question in flight is not an empty chat, so the thread is not folded away", () => {

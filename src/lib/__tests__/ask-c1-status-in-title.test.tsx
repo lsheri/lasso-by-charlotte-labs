@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AskReadingV2, AskTitleStatus } from "@/components/reflect/AskReadingV2";
+import { readStyles } from "@/design/stylesheet";
 
 const manifest = { version: 1, items: [] } as never;
 
@@ -34,9 +35,13 @@ describe("C1: the status sits in the title bar", () => {
     expect(src).toMatch(/statusInTitle=\{draft === "b"\}/);
   });
   it("the line sweeps while gathering, holds while reading, creeps but never finishes while writing", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toMatch(/\.ask-draft-prog\[data-phase="gathering"\] > i \{[^}]*animation: ask-prog-sweep/);
-    expect(css).toMatch(/@keyframes ask-prog-creep \{ from \{ width: 70%; \} to \{ width: 95%; \} \}/);
+    const css = readStyles();
+    expect(css).toMatch(
+      /\.ask-draft-prog\[data-phase="gathering"\] > i \{[^}]*animation: ask-prog-sweep/,
+    );
+    expect(css).toMatch(
+      /@keyframes ask-prog-creep \{ from \{ width: 70%; \} to \{ width: 95%; \} \}/,
+    );
     expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.ask-draft-status-word/);
   });
 });

@@ -1,12 +1,18 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { DOCK_MIN_WIDTH, STORE_KEY, clampDockWidth, maxDockWidth } from "@/components/reflect/ask-dock-state";
+import {
+  DOCK_MIN_WIDTH,
+  STORE_KEY,
+  clampDockWidth,
+  maxDockWidth,
+} from "@/components/reflect/ask-dock-state";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("95.1 plain white chat", () => {
-  const css = read("src/styles.css");
+  const css = readStyles();
   const dock = read("src/components/reflect/AskDock.tsx");
 
   it("drops the ruled background inside the dock only", () => {
@@ -38,7 +44,7 @@ describe("95.1 resizable dock", () => {
 });
 
 describe("95.1 backdrop", () => {
-  const css = read("src/styles.css");
+  const css = readStyles();
   const dock = read("src/components/reflect/AskDock.tsx");
 
   it("blurs the page behind the dock without covering it", () => {

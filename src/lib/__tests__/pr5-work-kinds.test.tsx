@@ -9,6 +9,7 @@ import { SkinContext } from "@/components/skin/use-skin";
 import { CHARLOTTE_KINDS } from "@/design/icons/charlotte-kinds";
 import { workIdentity } from "@/lib/work-identity";
 import type { WorkType } from "@/lib/work-types";
+import { readStyles } from "@/design/stylesheet";
 
 const TYPES: WorkType[] = [
   "ai_thread",
@@ -130,7 +131,7 @@ describe("PR5 work kinds by skin", () => {
     const { container } = render(<KindGlyph glyph="deck" />);
     const accent = [...container.querySelectorAll("path")].at(-1)!;
     expect(accent.getAttribute("stroke")).toBe("var(--kind-accent-deck, var(--nb-green))");
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(styles).not.toMatch(/--kind-accent-/);
     expect(readFileSync("src/design/tokens.css", "utf8")).not.toMatch(/--kind-accent-/);
   });

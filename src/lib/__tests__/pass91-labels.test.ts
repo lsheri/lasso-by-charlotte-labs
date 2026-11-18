@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 const read = (p: string) => readFileSync(p, "utf8");
 
 describe("pass91 label colour hierarchy", () => {

@@ -1,0 +1,1353 @@
+/* Graphite marks, journey, cards arriving, the rail and the grid. Layer nb, second half. Part of src/styles.css; order matters, see there. */
+@layer nb {
+/* ==========================================================================
+   Graphite marks (pass 88). Three strokes, drawn only on a human action.
+   Same idiom as the icons: pathLength 1, dash offset 1 to 0, under 300ms.
+   ========================================================================== */
+.nb-mark {
+  overflow: visible;
+}
+.nb-mark path {
+  fill: none;
+  stroke-dasharray: 1;
+  animation: nb-mark-draw 270ms var(--nb-ease) both;
+}
+
+.nb-evidence-circle path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: nb-evidence-circle-draw 420ms var(--nb-ease, ease-out) forwards;
+}
+
+.story-link {
+  position: relative;
+}
+
+.story-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  content: "";
+  opacity: 0;
+  border-top: var(--stroke-pencil) solid currentColor;
+  border-radius: 47% 54% 43% 57%;
+  transform: rotate(-0.4deg);
+  transition: opacity 150ms ease;
+}
+
+.story-link:hover::after,
+.story-link:focus-visible::after {
+  opacity: 1;
+}
+
+@keyframes nb-evidence-circle-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-evidence-circle path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes nb-mark-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Engagement notes: two orange sticky notes, shut until you want them ──
+   The engagement page carries exactly two of these. Closed is the resting
+   state; the whole head is the toggle, and the actions inside wear the one
+   highlighter yellow so the next move is never in doubt. */
+.nb-note {
+  background: #fdead0;
+  border: 1px solid #e8bf8a;
+  border-radius: var(--corner-control);
+  box-shadow: 0 1px 0 rgb(17 20 19 / 0.06);
+  color: var(--nb-ink);
+}
+.nb-note-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: left;
+  min-height: 48px;
+}
+.nb-note-body {
+  border-top: 1px solid #e8bf8a;
+  padding: 12px 14px 14px;
+}
+.nb-note[data-tone="green"] {
+  background: var(--nb-sticky-green);
+  border-color: var(--nb-sticky-green-edge);
+}
+.nb-note[data-tone="green"] .nb-note-body {
+  border-top-color: var(--nb-sticky-green-edge);
+}
+.nb-note-caret {
+  transition: transform var(--nb-dur-move) var(--nb-ease);
+}
+.nb-note[data-open="true"] .nb-note-caret {
+  transform: rotate(90deg);
+}
+
+/* The highlighter. Used only inside a note, only on things you can act on. */
+.nb-hi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--corner-pill);
+  border: 1px solid #e0c33a;
+  background: #fdf0a0;
+  color: var(--nb-ink);
+  padding: 6px 12px;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-size: var(--type-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background-color var(--nb-dur-quick) var(--nb-ease);
+}
+.nb-hi:hover {
+  background: #fbe775;
+}
+
+/* Pass 101: lasso ink. The ink settling onto the text it enclosed, the quiet
+   dash march while the record is read, and the thread across the gutter. */
+@keyframes nb-lasso-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes nb-dash-march {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+@keyframes nb-thread-in {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.nb-lasso-wrap {
+  animation: nb-lasso-settle 150ms ease-out;
+  transform-origin: center;
+}
+.nb-lasso-resolving {
+  stroke-dasharray: 6 6;
+  animation: nb-dash-march 900ms linear infinite;
+}
+.nb-lasso-resolving-static {
+  stroke-dasharray: 6 6;
+}
+.nb-thread-draw {
+  stroke-dasharray: 1200;
+  animation: nb-thread-in var(--nb-dur-base) ease-out forwards;
+}
+
+/* Pass 101.1: the provenance status language. A stitch, its span and its
+   thread all read the same colour, and unsourced is dashed rather than loud. */
+.nb-span {
+  --span-color: var(--status-unsourced);
+  --span-wash: var(--status-unsourced-wash);
+}
+.nb-span-exact {
+  --span-color: var(--status-exact);
+  --span-wash: var(--status-exact-wash);
+}
+.nb-span-paraphrase {
+  --span-color: var(--status-paraphrase);
+  --span-wash: var(--status-paraphrase-wash);
+}
+.nb-stitch-chip {
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: var(--span-color);
+  background-color: var(--span-wash);
+  transition:
+    box-shadow var(--nb-fast) var(--nb-ease),
+    transform var(--nb-fast) var(--nb-ease);
+}
+.nb-span-unsourced.nb-stitch-chip {
+  border-left-style: dashed;
+}
+.nb-stitch-status {
+  color: var(--span-color);
+}
+.nb-stitch-quote {
+  border-left-color: var(--span-color);
+}
+.nb-chip-lift {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -6px var(--span-color);
+}
+.nb-span-mark {
+  background-color: var(--span-wash);
+  box-shadow: inset 0 -2px 0 var(--span-color);
+}
+.nb-span-lit {
+  box-shadow:
+    inset 0 -2px 0 var(--span-color),
+    0 0 0 2px var(--span-wash);
+}
+@keyframes nb-pin-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes nb-span-pulse {
+  0% {
+    filter: none;
+  }
+  40% {
+    filter: brightness(0.94) saturate(1.4);
+  }
+  100% {
+    filter: none;
+  }
+}
+.nb-pin-in {
+  animation: nb-pin-in 150ms var(--nb-ease);
+}
+.nb-pin-static {
+  animation: none;
+}
+.nb-span-pulse {
+  animation: nb-span-pulse 600ms var(--nb-ease) 1;
+}
+.nb-span-pulse-static {
+  animation: none;
+}
+.nb-page-armed {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent-deep) 35%, transparent);
+  transition: box-shadow var(--nb-base) var(--nb-ease);
+}
+.nb-page-armed-static {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent-deep) 35%, transparent);
+  transition: none;
+}
+.nb-turn-lit {
+  background-color: var(--span-wash);
+  border-left-color: var(--span-color) !important;
+}
+.nb-thread-fade {
+  transition: opacity var(--nb-move) var(--nb-ease);
+  opacity: 0;
+}
+
+/* Pass 105: the ink is the mark. It settles where it was drawn, marches while
+   the record is read, and stays yellow when the answer lands: the status shows
+   as a wash beneath it, so the hand that drew the loop is never overwritten. */
+@keyframes nb-ink-settle-in {
+  from {
+    opacity: 0.5;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.nb-ink-settle {
+  animation: nb-ink-settle-in 150ms ease-out;
+  transform-origin: center;
+}
+.nb-ink-static {
+  animation: none;
+}
+.nb-ink-march {
+  stroke-dasharray: 6 6;
+  animation: nb-dash-march 900ms linear infinite;
+}
+.nb-ink-march-static {
+  stroke-dasharray: 6 6;
+}
+@keyframes nb-ink-lit-pulse {
+  0% {
+    stroke-opacity: 0.85;
+  }
+  50% {
+    stroke-opacity: 1;
+  }
+  100% {
+    stroke-opacity: 0.85;
+  }
+}
+.nb-ink-lit {
+  animation: nb-ink-lit-pulse 700ms var(--nb-ease) 2;
+}
+.nb-ink-lit-static {
+  stroke-opacity: 1;
+}
+@keyframes nb-underglow-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.nb-underglow {
+  animation: nb-underglow-in var(--nb-dur-move) var(--nb-ease);
+}
+.nb-underglow-static {
+  animation: none;
+}
+.nb-dots-static .nb-dot {
+  animation: none;
+}
+/* The chip arriving: it comes up past its place and settles back, so an answer
+   landing is impossible to miss. */
+@keyframes nb-chip-enter-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-chip-enter {
+  animation: nb-chip-enter-in 250ms var(--nb-ease);
+}
+.nb-chip-enter-static {
+  animation: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 115: the pencil button system. The two feature heroes share one shape
+   and one graphite outline, and behind each sits a seeded pencil hatching that
+   breathes slowly, the pair in counterphase. Reduced motion holds it still.
+--------------------------------------------------------------------------- */
+
+.nb-pencil-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--corner-pill);
+  border: 1.5px solid var(--nb-graphite);
+  background: var(--card);
+  color: var(--nb-graphite);
+  font-family: var(--font-mono);
+  font-size: var(--type-small);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: transform var(--nb-dur-move) var(--nb-ease);
+}
+.nb-pencil-cta--sm {
+  height: 36px;
+  padding: 0 14px;
+  font-size: var(--type-label);
+}
+.nb-pencil-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--nb-ink);
+  background: color-mix(in oklab, var(--nb-graphite) 8%, var(--card));
+}
+.nb-pencil-cta:active:not(:disabled) {
+  transform: translateY(0);
+  border-color: var(--nb-ink);
+  background: color-mix(in oklab, var(--nb-graphite) 16%, var(--card));
+}
+/* PASS 153: the graphite hatching shades in as the hand presses. Hover fills
+   the button two thirds of the way; the click completes the shading, then the
+   action runs. */
+.nb-pencil-cta .nb-hatch {
+  transition: opacity 180ms var(--nb-ease);
+}
+.nb-pencil-cta:hover:not(:disabled) .nb-hatch,
+.nb-pencil-cta:focus-visible:not(:disabled) .nb-hatch {
+  animation: none;
+  opacity: 0.66;
+}
+.nb-pencil-cta:active:not(:disabled) .nb-hatch {
+  animation: none;
+  opacity: 1;
+}
+.nb-pencil-cta:disabled {
+  color: var(--muted-foreground);
+  border-color: var(--border);
+  opacity: 0.6;
+}
+.nb-pencil-cta > *:not(.nb-hatch) {
+  position: relative;
+  z-index: 1;
+}
+.nb-hatch {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.35;
+  animation: nb-hatch-breathe 7s ease-in-out infinite;
+}
+.nb-hatch-counter {
+  animation-delay: -3.5s;
+}
+@keyframes nb-hatch-breathe {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+.nb-web-mark {
+  transition: transform var(--nb-dur-base) var(--nb-ease);
+}
+.nb-pencil-cta:hover:not(:disabled) .nb-web-mark {
+  transform: rotate(-12deg) scale(1.06);
+}
+.nb-cta-info {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--corner-pill);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  line-height: 1;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.nb-cta-info:hover {
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-pencil-cta,
+  .nb-web-mark {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .nb-hatch {
+    animation: none !important;
+    opacity: 0.6 !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 108: the engagement title strip stays with the page as it scrolls. It
+   floats above the canvas on a frosted layer, so whatever passes beneath it
+   is softened rather than crowded, with a feathered edge at the bottom.
+--------------------------------------------------------------------------- */
+
+.nb-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-inline: -1rem;
+  padding: 0.75rem 1rem 0.85rem;
+  border-radius: 0 0 var(--radius-md, 0.5rem) var(--radius-md, 0.5rem);
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  transition: box-shadow var(--nb-dur-move) var(--nb-ease);
+}
+.nb-sticky-head::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--background) 62%, transparent) 0%,
+    transparent 100%
+  );
+  backdrop-filter: blur(4px);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 114: the Work Artifact motion. The base state of everything here IS the
+   final state: fully drawn, fully visible, nothing pending. Animations run
+   backwards from keyframed start values, so killing them (a skip, or reduced
+   motion) lands on the finished drawing for free. The one exception is the
+   firework, which is transient: it rests invisible.
+--------------------------------------------------------------------------- */
+
+.nb-journey {
+  position: relative;
+  width: 100%;
+}
+.nb-journey-svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.nb-journey-nodes {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+}
+.nb-journey-item {
+  position: absolute;
+}
+.nb-journey-stitches {
+  position: absolute;
+  width: 220px;
+  max-width: 62vw;
+}
+
+.nb-journey-seg,
+.nb-journey-arrow,
+.nb-journey-tendril {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--nb-len, none);
+  stroke-dashoffset: 0;
+}
+.nb-journey-seg,
+.nb-journey-arrow {
+  stroke: var(--nb-graphite);
+  stroke-width: 1.75;
+}
+.nb-journey-tendril {
+  stroke: var(--nb-ink-yellow);
+  stroke-width: 1.5;
+}
+
+.nb-journey:not(.is-skipped) .nb-journey-seg {
+  animation: nb-journey-draw 600ms cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+.nb-journey:not(.is-skipped) .nb-journey-arrow {
+  animation: nb-journey-draw var(--nb-dur-move) ease-out backwards;
+}
+.nb-journey:not(.is-skipped) .nb-journey-tendril {
+  animation: nb-journey-draw var(--nb-dur-base) ease-out backwards;
+}
+@keyframes nb-journey-draw {
+  from {
+    stroke-dashoffset: var(--nb-len, 1);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.nb-journey-node {
+  opacity: 1;
+  transform: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 10px 12px;
+  box-shadow: 0 6px 18px -12px rgb(0 0 0 / 0.35);
+}
+.nb-journey:not(.is-skipped) .nb-journey-node {
+  animation: nb-journey-announce 600ms var(--nb-spring-lively) backwards;
+}
+/* The outgoing page of the turn-card walk fades out instead of cutting. */
+.nb-journey-node.nb-page-fade {
+  animation: nb-page-fade-out var(--nb-dur-enter) var(--nb-ease) forwards;
+  pointer-events: none;
+}
+@keyframes nb-page-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes nb-journey-announce {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+  47% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  75% {
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 6px 18px -12px rgb(0 0 0 / 0.35);
+  }
+}
+
+.nb-journey-logo {
+  display: inline-flex;
+}
+.nb-journey-logo .nb-firework {
+  position: absolute;
+  left: 14px;
+  top: -38px;
+  pointer-events: none;
+}
+
+.nb-journey-quote {
+  opacity: 1;
+}
+.nb-journey:not(.is-skipped) .nb-journey-quote {
+  animation: nb-journey-settle var(--nb-dur-enter) var(--nb-ease) backwards;
+}
+@keyframes nb-journey-settle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* The firework is transient: it rests at nothing and returns to nothing. */
+.nb-firework {
+  opacity: 0;
+}
+.nb-firework-stroke {
+  fill: none;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 0;
+}
+.nb-journey:not(.is-skipped) .nb-firework {
+  animation: nb-firework-life 730ms linear forwards;
+}
+.nb-journey:not(.is-skipped) .nb-firework-stroke {
+  animation: nb-firework-spark 180ms ease-out backwards;
+}
+@keyframes nb-firework-life {
+  0% {
+    opacity: 1;
+  }
+  59% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes nb-firework-spark {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Pass 114: the six sections read as a document, two columns with the takeaway
+   and the honest gaps closing it as a pair. DOM order stays the list order at
+   every width; the grid only ever moves things visually. */
+.nb-traced-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  opacity: 1;
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+  font-variant-caps: all-small-caps;
+}
+.nb-traced-legend.is-arriving {
+  animation: nb-legend-in var(--nb-dur-enter) ease-out backwards;
+}
+@keyframes nb-legend-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.nb-artifact-region {
+  padding-inline: 24px;
+}
+@media (min-width: 768px) {
+  .nb-artifact-region {
+    padding-inline: 32px;
+  }
+}
+
+.nb-artifact-grid {
+  display: grid;
+  gap: 24px 32px;
+  grid-template-columns: 1fr;
+}
+.nb-artifact-section :is(p, li, blockquote):not(.micro-label):not(.font-mono) {
+  max-width: 65ch;
+}
+@media (min-width: 784px) {
+  .nb-artifact-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    grid-template-areas:
+      "usage checks"
+      "prompts decisions"
+      "process gaps";
+  }
+  .nb-a-usage {
+    grid-area: usage;
+  }
+  .nb-a-prompts {
+    grid-area: prompts;
+  }
+  .nb-a-checks {
+    grid-area: checks;
+  }
+  .nb-a-decisions {
+    grid-area: decisions;
+  }
+  .nb-a-process {
+    grid-area: process;
+  }
+  .nb-a-gaps {
+    grid-area: gaps;
+  }
+}
+@media (min-width: 1024px) {
+  .nb-artifact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nb-artifact-section {
+  opacity: 1;
+}
+.nb-artifact-section:not(.nb-artifact-section-static) {
+  animation: nb-artifact-enter var(--nb-dur-enter) var(--nb-ease) backwards;
+}
+@keyframes nb-artifact-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-reading-pupil {
+    animation: none !important;
+    transform: none !important;
+  }
+  .nb-rule-draw,
+  .nb-rise {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+
+  .nb-artifact-section {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .nb-pile-item {
+    transition: none !important;
+  }
+  .nb-ship-settle {
+    animation: none !important;
+  }
+  .nb-pile[data-scatter="1"] .nb-pile-item {
+    transform: none !important;
+  }
+  .nb-paper {
+    transition: none !important;
+  }
+  .nb-scatter[data-scatter="1"] .nb-paper {
+    transform: none !important;
+  }
+  .nb-journey-seg,
+  .nb-journey-arrow,
+  .nb-journey-tendril,
+  .nb-journey-node,
+  .nb-journey-quote,
+  .nb-journey-stem path,
+  .nb-journey-loop path {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+  .nb-firework {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* The older stem and loop marks keep their own jobs elsewhere. */
+.nb-journey-stem path,
+.nb-journey-loop path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.nb-journey-stem:not(.nb-journey-stem-static) path,
+.nb-journey-loop:not(.nb-journey-loop-static) path {
+  animation: nb-journey-grow var(--nb-dur-enter) var(--nb-ease) both;
+  animation-delay: inherit;
+}
+@keyframes nb-journey-grow {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The firm archive as a pile: the same loose paper feel as the work scatter,
+   applied around a card we do not touch. Hover straightens the whole pile. */
+.nb-pile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 4px;
+}
+.nb-pile-item {
+  transition: transform var(--nb-dur-enter) var(--nb-ease);
+}
+.nb-pile[data-scatter="1"] .nb-pile-item {
+  transform: translate(var(--nb-dx, 0), var(--nb-dy, 0)) rotate(var(--nb-rot, 0deg));
+}
+.nb-pile[data-scatter="1"]:hover .nb-pile-item,
+.nb-pile[data-scatter="1"] .nb-pile-item:focus-within {
+  transform: translateY(-2px);
+}
+@media (max-width: 767px) {
+  .nb-pile[data-scatter="1"] .nb-pile-item {
+    transform: none;
+  }
+}
+/* Pass 116: the scribble-out. A finished thing is crossed off in graphite. */
+@keyframes nb-scribble-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes nb-scribble-dot {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.nb-scribble-host {
+  position: relative;
+}
+@keyframes nb-ship-settle {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.nb-ship-settle {
+  animation: nb-ship-settle 120ms ease-out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Pass 124: open vs locked work, and the learning archive.
+ * ------------------------------------------------------------------ */
+
+/* A section rule draws itself once, left to right. */
+@keyframes nb-rule-sweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.nb-rule-draw {
+  animation: nb-rule-sweep var(--nb-dur-enter) var(--nb-ease) both;
+}
+
+/* Cards arrive rather than appear. */
+@keyframes nb-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-rise {
+  animation: nb-rise-in 320ms var(--nb-ease) backwards;
+}
+
+.is-skipped .nb-rule-draw,
+.is-skipped .nb-rise {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+
+/* Locked work: quieter body, full title, a folded corner, and no green. */
+.nb-card--locked {
+  transition: transform var(--nb-dur-move) var(--nb-ease);
+}
+.nb-card--locked .nb-locked-body {
+  opacity: 0.72;
+}
+.nb-card--locked .nb-locked-title {
+  opacity: 1;
+  text-decoration: none;
+}
+.nb-card--locked:hover {
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+.nb-fold-corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--nb-graphite);
+  opacity: 0.12;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+/* The archive chat dock. White, quiet, hatched at the left edge. */
+.nb-archive-dock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--nb-graphite);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 0 8px 0 0;
+  overflow: hidden;
+}
+.nb-archive-hatch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+}
+.nb-archive-input {
+  flex: 1;
+  min-width: 0;
+  margin-left: 32px;
+  height: 48px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: var(--type-small);
+  letter-spacing: 0.06em;
+  color: var(--foreground);
+}
+.nb-archive-send {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 32px;
+  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--nb-graphite);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--accent-deep);
+}
+.nb-archive-send > *:not(.nb-hatch) {
+  position: relative;
+  z-index: 1;
+}
+.nb-pile-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--nb-dur-move) var(--nb-ease);
+}
+.nb-pile-shown {
+  opacity: 1;
+  transition: opacity var(--nb-dur-move) var(--nb-ease);
+}
+
+/* ---- Pass 128: the full screen fact check reader ---- */
+.nb-reader-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  min-height: 0;
+}
+.nb-reader-transcript {
+  min-width: 0;
+  overflow-y: auto;
+}
+.nb-reader-rail {
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  min-width: 0;
+}
+/* Pass 131: the rail widens, and remembers. */
+.nb-reader-grid[data-rail-wide="true"] {
+  grid-template-columns: minmax(0, 1fr) 520px;
+}
+.nb-reader-grid {
+  transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
+}
+.nb-bench-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
+}
+.nb-bench-page {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
+}
+/* While dragging, the grid must not lag the pointer. */
+.nb-bench-page[data-dragging="true"] { transition: none; }
+.nb-panel-grip { display: none; }
+.nb-bench-main { min-width: 0; }
+
+@media (min-width: 1100px) {
+  /* Closed: the card hangs in the top right corner and the work below it runs
+     the full width. The aside is out of flow, so only the title row makes room
+     for it, which is what the corner-card design asks for. */
+  .nb-bench-page[data-rail="closed"] > .nb-bench-aside {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 236px;
+    height: 100%;
+    z-index: 40;
+  }
+  /* Unit D1: the corner card hangs the full height of the column, so the whole
+     main column keeps the gutter clear. Reserving it only on the title row let
+     the card sit over the tab row, the Details buttons and "Add a wrap-up". */
+  .nb-bench-page[data-rail="closed"] > .nb-bench-main {
+    padding-right: 252px;
+  }
+
+  /* Open: the aside becomes a real column and the work squeezes to fit. The
+     width itself now lives on the element, set by the drag handle, so there is
+     no per-state width rule here any more. */
+
+  /* The inner edge of the panel, sitting in the gap so it steals no space. */
+  .nb-panel-grip {
+    display: block;
+    position: absolute;
+    left: -21px;
+    top: 0;
+    height: 100%;
+    width: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: col-resize;
+    z-index: 41;
+  }
+  .nb-panel-grip::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--nb-rule);
+    opacity: 0.4;
+  }
+  .nb-panel-grip:hover::after,
+  .nb-panel-grip:focus-visible::after,
+  .nb-bench-page[data-dragging="true"] .nb-panel-grip::after {
+    background: var(--active-mark, var(--nb-green));
+    opacity: 1;
+  }
+
+  /* The aside is full height so the sticky inner box has room to travel the
+     whole page. This is the fix for the card leaving the screen: sticky can
+     only move inside its parent's box, and the old parent was a 130px header. */
+  /* Above .nb-sticky-head, which is z-index 30 and translucent. The header's
+     negative inline margin makes it reach under this column, and at 10 it
+     frosted over the top of the notecard. */
+  .nb-bench-aside {
+    position: relative;
+    z-index: 40;
+    height: 100%;
+    min-width: 0;
+  }
+  .nb-bench-aside-inner {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+@media (max-width: 1099px) {
+  .nb-bench-aside-inner { position: static; max-height: none; display: block; }
+  .nb-bench-aside { margin-top: 1rem; }
+}
+.nb-bench-rail {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+@keyframes nb-nudge {
+  0%, 88%, 100% { transform: translateY(0); }
+  92% { transform: translateY(2px); }
+  96% { transform: translateY(0); }
+}
+.nb-ask-arrow {
+  display: inline-block;
+  animation: nb-nudge 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-ask-arrow { animation: none; }
+}
+.nb-chatview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .nb-chatview {
+    grid-template-columns: minmax(0, 1fr) 0px;
+    gap: 0;
+    transition: grid-template-columns 360ms var(--nb-ease), gap 360ms var(--nb-ease);
+  }
+  .nb-chatview[data-reader="open"] {
+    grid-template-columns: minmax(0, 1fr) 520px;
+    gap: 28px;
+  }
+}
+.nb-chatview-pane {
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-chatview { transition: none; }
+}
+.nb-chatview-list { min-width: 0; }
+.conversation-month-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.conversation-month-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230.5px), 230.5px));
+  gap: 10px;
+}
+.conversation-month-empty {
+  min-height: 40px;
+}
+.nb-card-lift {
+  transition:
+    transform var(--nb-dur-move) var(--nb-ease),
+    box-shadow var(--nb-dur-move) var(--nb-ease);
+}
+.nb-card-lift:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 10px -6px rgb(22 24 26 / 0.18);
+}
+@keyframes nb-chat-ribbon-turn {
+  to { transform: rotate(360deg); }
+}
+.nb-chat-ribbon {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nb-chat-ribbon-turn 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-card-lift { transition: none; }
+  .nb-card-lift:hover { transform: none; }
+  .nb-chat-ribbon { animation: none; }
+}
+@media (min-width: 1100px) {
+  .nb-chatview-list {
+    position: sticky;
+    top: 88px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+  }
+  .nb-chatview-pane {
+    position: sticky;
+    top: 88px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+    display: flex;
+    gap: 14px;
+  }
+}
+@media (max-width: 900px) {
+  .nb-reader-grid,
+  .nb-reader-grid[data-rail-wide="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nb-reader-rail {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+/* Bold ink: the stroke thickens and the span picks up its own underline. */
+.nb-ink-bold {
+  box-shadow: inset 0 -2px 0 var(--nb-verify-stroke);
+}
+/* The count of what is still to check. Ember wash, never red. */
+.nb-check-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--type-label);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: var(--corner-pill);
+  background: var(--nb-ink-ember-wash);
+  border: 1px solid var(--nb-ink-ember);
+  color: var(--foreground);
+}
+/* The reading trail: pencil texture down the transcript's left gutter. */
+.nb-reader-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  pointer-events: none;
+}
+.nb-reader-trail path {
+  stroke: var(--nb-graphite);
+  stroke-width: 1.2;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.35;
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 135: the reading eyes. Centred in the transcript's scroll viewport
+   while the model reads, with a soft paper halo so the text stays legible
+   underneath. The pupils track a line, snap back, and start the next one.
+--------------------------------------------------------------------------- */
+
+.nb-reading-eyes {
+  position: sticky;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 0;
+  height: 0;
+  margin: 0 auto;
+  transform: translateY(-50%);
+}
+.nb-reading-eyes > * {
+  grid-area: 1 / 1;
+}
+.nb-reading-eyes-halo {
+  width: 300px;
+  height: 210px;
+  border-radius: var(--corner-pill);
+  background: var(--background);
+  opacity: 0.85;
+  filter: blur(10px);
+}
+.nb-reading-eyes-svg {
+  filter: drop-shadow(0 1px 0 color-mix(in oklab, var(--nb-green) 22%, transparent));
+}
+@keyframes nb-reading-scan {
+  0% {
+    transform: translateX(-3.6px);
+  }
+  12% {
+    transform: translateX(-3.6px);
+  }
+  80% {
+    transform: translateX(3.6px);
+  }
+  90% {
+    transform: translateX(-3.6px);
+  }
+  100% {
+    transform: translateX(-3.6px);
+  }
+}
+.nb-reading-pupil {
+  animation: nb-reading-scan 1600ms var(--nb-ease) infinite;
+}
+.nb-reading-pupil-static {
+  animation: none;
+  transform: none;
+}
+
+/* Pass 141: handwritten pencil section titles on the public landing page. */
+
+}

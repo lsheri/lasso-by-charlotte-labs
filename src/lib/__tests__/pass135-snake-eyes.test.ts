@@ -8,6 +8,7 @@ import {
   layoutTurnWalk,
   type TurnCard,
 } from "@/lib/turn-story-shared";
+import { readStyles } from "@/design/stylesheet";
 
 function cards(n: number): TurnCard[] {
   return Array.from({ length: n }, (_, i) => ({
@@ -61,7 +62,7 @@ describe("pass 135 — the snake rule", () => {
 
 describe("pass 135 — the reading eyes", () => {
   const marks = readFileSync("src/components/notebook/marks.tsx", "utf8");
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
   const reader = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
 
   it("draws spectacles from journey-path, not an inline string", () => {

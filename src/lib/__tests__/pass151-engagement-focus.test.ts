@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
 const card = readFileSync("src/components/engagements/ContextCard.tsx", "utf8");
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 const events = readFileSync("src/lib/telemetry-shared.ts", "utf8");
 
 describe("pass 151 engagement focus", () => {

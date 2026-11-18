@@ -9,8 +9,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LabFrame } from "@/components/canvas-lab/LabFrame";
 import type { LabFrame as LabFrameModel } from "@/components/canvas-lab/canvas-lab-model";
 import { sectionDragSnapshot } from "@/lib/board-section";
+import { readStyles } from "@/design/stylesheet";
 
-const model: LabFrameModel = { id: "region:abc", name: "Pricing", x: 0, y: 0, width: 400, height: 300 };
+const model: LabFrameModel = {
+  id: "region:abc",
+  name: "Pricing",
+  x: 0,
+  y: 0,
+  width: 400,
+  height: 300,
+};
 
 function renderFrame(selected: boolean, onSelect = vi.fn(), onDragStart = vi.fn()) {
   const view = render(
@@ -65,8 +73,10 @@ describe("DRAG-1 frames move with their contents", () => {
   });
 
   it("a selected section takes presses inside it; unselected, its inside stays the board", () => {
-    const css = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
-    expect(css).toContain('.canvas-lab-section[data-selected="true"][data-movable="true"] { pointer-events: auto; cursor: grab; }');
+    const css = readStyles();
+    expect(css).toContain(
+      '.canvas-lab-section[data-selected="true"][data-movable="true"] { pointer-events: auto; cursor: grab; }',
+    );
     expect(css).toMatch(/\.canvas-lab-section \{ position: absolute; pointer-events: none;/);
   });
 });

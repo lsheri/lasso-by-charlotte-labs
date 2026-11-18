@@ -1,8 +1,9 @@
 // C1 part 3 (17 Nov 2026): --nb-green reads with a clear job read a job token first, keeping --nb-green as the fallback.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const tokens = readFileSync("src/design/tokens.css", "utf8");
 
 const reads = (job: string) =>

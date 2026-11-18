@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 describe("spider mascot beside Ask Lasso", () => {
   const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
 
-  it("is gone from the app, with its image and motion (Liam, 15 Nov: \"i dont want the spider anymore\")", () => {
+  it('is gone from the app, with its image and motion (Liam, 15 Nov: "i dont want the spider anymore")', () => {
     expect(existsSync("src/components/notebook/SpiderMark.tsx")).toBe(false);
     expect(existsSync("src/components/notebook/NotebookSpider.tsx")).toBe(false);
     expect(existsSync("src/assets/lasso-spider-static.png")).toBe(false);

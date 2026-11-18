@@ -5,14 +5,59 @@ import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("Canvas Lab card interaction correction", () => {
   it("renders native controls without shadcn sizing classes", () => {
     globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
-    const { container } = render(<LabCard node={{ id: "n", kind: "judgment", frame: "f", title: "Judgment", summary: "Reason", typeLabel: "judgment", ownership: "draft", local: true, x: 0, y: 0, width: 232, height: 112 }} selected focused connecting={false} connectSourceAnchor={null} canResize onSelect={() => undefined} onOpen={() => undefined} onBranch={() => undefined} onHide={() => undefined} onDelete={() => undefined} onEdit={() => undefined} onEditCommitted={() => undefined} onAnchorPointerDown={() => undefined} onAnchorActivate={() => undefined} onMenuOpened={() => undefined} onMenuOpenChange={() => undefined} onMeasure={() => undefined} onPointerDown={() => undefined} onFocus={() => undefined} onKeyDown={() => undefined} onResizeStart={() => undefined} onFit={() => undefined} onResizeKeyDown={() => undefined} onResizeKeyUp={() => undefined} frameChoices={[]} structured onMoveToFrame={() => undefined} />);
-    const styles = read("src/styles.css");
+    const { container } = render(
+      <LabCard
+        node={{
+          id: "n",
+          kind: "judgment",
+          frame: "f",
+          title: "Judgment",
+          summary: "Reason",
+          typeLabel: "judgment",
+          ownership: "draft",
+          local: true,
+          x: 0,
+          y: 0,
+          width: 232,
+          height: 112,
+        }}
+        selected
+        focused
+        connecting={false}
+        connectSourceAnchor={null}
+        canResize
+        onSelect={() => undefined}
+        onOpen={() => undefined}
+        onBranch={() => undefined}
+        onHide={() => undefined}
+        onDelete={() => undefined}
+        onEdit={() => undefined}
+        onEditCommitted={() => undefined}
+        onAnchorPointerDown={() => undefined}
+        onAnchorActivate={() => undefined}
+        onMenuOpened={() => undefined}
+        onMenuOpenChange={() => undefined}
+        onMeasure={() => undefined}
+        onPointerDown={() => undefined}
+        onFocus={() => undefined}
+        onKeyDown={() => undefined}
+        onResizeStart={() => undefined}
+        onFit={() => undefined}
+        onResizeKeyDown={() => undefined}
+        onResizeKeyUp={() => undefined}
+        frameChoices={[]}
+        structured
+        onMoveToFrame={() => undefined}
+      />,
+    );
+    const styles = readStyles();
     const controls = container.querySelectorAll(".canvas-lab-anchor, .canvas-lab-resize-handle");
     expect(controls).toHaveLength(8);
     for (const control of controls) {
@@ -49,7 +94,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain('event.shiftKey && event.key === "F10"');
     expect(card).toContain('event.key === "ContextMenu"');
     expect(menu).toContain('aria-label="Card options"');
-    expect(read("src/styles.css")).toContain("width: 44px;");
+    expect(readStyles()).toContain("width: 44px;");
     expect(menu).toContain("cardRef.current?.focus({ preventScroll: true })");
     expect(menu).toContain("Remove from board");
     expect(menu).toContain("Delete this work");

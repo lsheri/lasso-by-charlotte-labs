@@ -3,7 +3,15 @@ import { readFileSync } from "node:fs";
 import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DrawnCheck, DrawnEllipse, DrawnStrike, claimMark, resetMarkGate, useMark } from "@/components/notebook/marks";
+import {
+  DrawnCheck,
+  DrawnEllipse,
+  DrawnStrike,
+  claimMark,
+  resetMarkGate,
+  useMark,
+} from "@/components/notebook/marks";
+import { readStyles } from "@/design/stylesheet";
 
 describe("mark gate", () => {
   beforeEach(() => resetMarkGate());
@@ -36,7 +44,7 @@ describe("mark gate", () => {
 });
 
 describe("mark css", () => {
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
 
   it("draws under 300ms with the notebook easing", () => {
     expect(styles).toContain("@keyframes nb-mark-draw");
@@ -140,6 +148,6 @@ describe("shared Lasso loop color", () => {
       if (viaLockup.has(file)) expect(source).toMatch(/<BrandLockup\b/);
       else expect(source).toContain("text-lasso-green");
     }
-    expect(readFileSync("src/styles.css", "utf8")).toContain("--color-lasso-green: var(--nb-lasso-green)");
+    expect(readStyles()).toContain("--color-lasso-green: var(--nb-lasso-green)");
   });
 });

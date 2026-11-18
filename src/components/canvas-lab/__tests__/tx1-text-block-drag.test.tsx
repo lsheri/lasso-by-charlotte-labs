@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkboardTextBody } from "@/lib/canvas-lab-shared";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -113,7 +114,7 @@ describe("TX1 text block body drag", () => {
   });
 
   it("the shared board stylesheet still neutralises the strips", () => {
-    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+    const css = readStyles();
     expect(css).toMatch(/\.shared-board-stage \.canvas-lab-text-block-edge/);
   });
 });

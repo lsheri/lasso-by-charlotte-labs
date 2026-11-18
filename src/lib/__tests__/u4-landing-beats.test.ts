@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const hero = readFileSync("src/components/marketing/HeroMotion.tsx", "utf8");
@@ -75,7 +76,7 @@ describe("Unit 4 public page", () => {
   });
 
   it("keeps one question crisp and gives phone scenes room to breathe", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain(".lw-step { min-height: 88vh");
     expect(css).toContain("opacity: .18; filter: blur(5px)");
     expect(css).toContain('.lw-step[data-active="true"] { opacity: 1; filter: none; }');
@@ -159,7 +160,7 @@ describe("Unit 10 landing", () => {
   });
 
   it("closes the resolved phrase in neon orange with a matching glow", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(styles).toContain(".landing-close-line2 .landing-particle-word-text");
     expect(styles).toContain("var(--lb-neon-orange)");
     expect(styles).toContain("--lb-neon-orange: #ff5f1f");
@@ -168,7 +169,7 @@ describe("Unit 10 landing", () => {
 
   it("builds and disperses the underlined phrase on a continuous five-second cycle", () => {
     const particle = readFileSync("src/components/marketing/LandingParticlePhrase.tsx", "utf8");
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(particle).toContain("export const PARTICLE_CYCLE_MS = 5000");
     expect(particle).toContain("export const PARTICLE_GATHER_MS = 2200");
     expect(particle).toContain("const PARTICLE_HOLD_END_MS = 4000");
@@ -207,8 +208,10 @@ describe("Unit 10 landing", () => {
   });
 
   it("lets the swirl path animation own the visible opacity", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toContain(".lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }");
+    const css = readStyles();
+    expect(css).toContain(
+      ".lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }",
+    );
     expect(css).not.toMatch(/\.lw-word-swirl\s*\{[^}]*opacity/s);
   });
 });

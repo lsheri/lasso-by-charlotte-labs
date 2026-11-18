@@ -2,10 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { askScopeSummary } from "@/components/reflect/AskSurface";
+import { readStyles } from "@/design/stylesheet";
 
 const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
 const draft = readFileSync("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 const item = (id: string) => ({ id }) as never;
 const base = { draftPointed: [], boardPickedCount: 0, engagementBrief: null, selectedItems: [item("a"), item("b"), item("c")], mapped: [item("a"), item("b"), item("c")] } as never;

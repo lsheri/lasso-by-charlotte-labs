@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 
 /** styles.css minus the .dark blocks, which stay on the old palette for now. */
 function withoutDarkBlocks(css: string): string {

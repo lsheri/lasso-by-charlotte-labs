@@ -3,10 +3,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 const surface = read("src/components/canvas-lab/ask-draft/AskDraftSurface.tsx");
-const css = read("src/styles.css");
+const css = readStyles();
 const hook = read("src/components/reflect/use-ask-lasso.ts");
 
 describe("V2-1 idle bar", () => {

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({}) } }));
 
 import { TEXT_ON_ITS_WAY_MS, textOnItsWay } from "@/components/canvas-lab/LabCard";
+import { readStyles } from "@/design/stylesheet";
 
 const now = Date.parse("2026-11-09T10:00:00Z");
 const at = (msAgo: number) => new Date(now - msAgo).toISOString();
@@ -25,9 +26,11 @@ describe("FIX-SHIMMER: text on its way", () => {
 });
 
 describe("FIX-CURSOR: editing shows the document cursor", () => {
-  const css = readFileSync("src/styles.css", "utf8");
+  const css = readStyles();
   it("anything being edited on the board drops the hand; its text takes the I-beam", () => {
-    expect(css).toContain('[data-testid="canvas-lab-stage"] [data-editing="true"] { cursor: auto; }');
+    expect(css).toContain(
+      '[data-testid="canvas-lab-stage"] [data-editing="true"] { cursor: auto; }',
+    );
     expect(css).toContain('[data-testid="canvas-lab-stage"] [data-editing="true"] :is([contenteditable="true"], textarea, input[type="text"]) { cursor: text; }');
   });
   it("the pinned answer marks itself as editing", () => {

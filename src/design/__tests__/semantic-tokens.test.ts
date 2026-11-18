@@ -90,7 +90,9 @@ describe("job-named tokens", () => {
         "src/components/provenance/LassoLayer.tsx",
         "src/components/reflect/ContextTrail.tsx",
         "src/pages/AiRecordPage.tsx",
-        "src/styles.css",
+        "src/styles/02-icons-board-sidebar.css",
+        "src/styles/05-motion-and-public-pages.css",
+        "src/styles/06-lasso-shell.css",
       ].sort(),
     );
     // Every read names the token it replaced as its fallback (a space, or Tailwind's underscore, after the comma).

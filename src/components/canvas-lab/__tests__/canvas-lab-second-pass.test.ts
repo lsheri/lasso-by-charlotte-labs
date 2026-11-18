@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -75,6 +76,6 @@ describe("Canvas Lab second prototype pass", () => {
     expect(registry).toContain('"canvas.unfolded"');
     expect(registry).toContain('motion: "workboard-unfold"');
     expect(registry).toContain('reduced: "Workboard open"');
-    expect(read("src/styles.css")).toContain(".canvas-lab-unfold-panel { animation: none !important;");
+    expect(readStyles()).toContain(".canvas-lab-unfold-panel { animation: none !important;");
   });
 });

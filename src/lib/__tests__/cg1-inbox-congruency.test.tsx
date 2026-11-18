@@ -128,6 +128,7 @@ import {
   AiRecordPage,
   CONVERSATION_CARD_HEIGHT,
 } from "@/pages/AiRecordPage";
+import { readStyles } from "@/design/stylesheet";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
   return {
@@ -344,7 +345,7 @@ describe("CG1 inbox congruency", () => {
   });
 
   it("keeps Ask Lasso answers visually distinct from transient filter state", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     const answer = styles.match(/\.canvas-lab-answer-card\s*\{[^}]+\}/)?.[0] ?? "";
     const dimmed = readFileSync("src/components/common/DimmedDisabled.tsx", "utf8");
     expect(answer).toContain("--nb-lasso-green");
@@ -430,9 +431,13 @@ describe("CG1 inbox congruency", () => {
     expect(screen.queryByRole("button", { name: "More work in this column" })).toBeNull();
     expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(6);
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
-    const styles = readFileSync("src/styles.css", "utf8");
-    expect(styles.match(/\.work-columns\s*\{[^}]+\}/)?.[0]).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
-    expect(styles.match(/\.work-column-cards\s*\{[^}]+\}/)?.[0]).toContain("flex-direction: column");
+    const styles = readStyles();
+    expect(styles.match(/\.work-columns\s*\{[^}]+\}/)?.[0]).toContain(
+      "grid-template-columns: repeat(4, minmax(0, 1fr))",
+    );
+    expect(styles.match(/\.work-column-cards\s*\{[^}]+\}/)?.[0]).toContain(
+      "flex-direction: column",
+    );
   });
 
   it("uses the fixed Inbox shell and puts the source tally in the board's top row", () => {
@@ -592,9 +597,11 @@ describe("CG2 AI conversations congruency", () => {
   });
 
   it("keeps the four conversation vendor borders exact", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(styles).toContain("--nb-chat-border-claude: linear-gradient(135deg, #c65d26, #c65d26);");
-    expect(styles).toContain("--nb-chat-border-chatgpt: linear-gradient(135deg, #111315, #777b7e);");
+    expect(styles).toContain(
+      "--nb-chat-border-chatgpt: linear-gradient(135deg, #111315, #777b7e);",
+    );
     expect(styles).toContain("--nb-chat-border-gemini: linear-gradient(135deg, #2d6ecf, #b8c3cf);");
     expect(styles).toContain("--nb-chat-border-copilot: linear-gradient(135deg, #6d3bb8, #17151b);");
   });

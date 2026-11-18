@@ -1,0 +1,791 @@
+/* Phone work page, @theme, base layer and the shared @utility classes (micro-label, page-title, state-band...). Part of src/styles.css; order matters, see there. */
+@custom-variant dark (&:is(.dark *));
+
+/* All work phone presentation. No rules in this block apply at 768px or above. */
+@media (max-width: 767px) {
+  /* Keep the shell header in flow and give only the work list a scroll area. */
+  div:has(> main .work-page):has(> header) { height: 100dvh; overflow: hidden; }
+  main:has(.work-page) { min-height: 0; padding-bottom: 0; overflow: hidden; }
+  main:has(.work-page) > div { height: 100%; }
+  .work-page { height: 100%; }
+  .work-page-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: 10px; padding: 16px; }
+  .work-page-header > div:first-child { min-width: 0; }
+  .work-page-subtitle { overflow: visible; white-space: normal; font-size: var(--type-small); line-height: 1.5; }
+  .work-page-subtitle [data-work-subtitle="parts"] { column-gap: 16px; }
+  .work-page-filters { flex-wrap: nowrap; height: auto; gap: 10px; padding: 10px 16px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
+  .work-page-filters > button, .work-page-filters > label { flex-shrink: 0; }
+  .work-page-panels { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 10px; }
+  .work-page-panels > button { max-width: 100%; height: auto; white-space: normal; text-align: left; }
+  .work-page button, .work-page [role="button"], .work-page-filters > label { min-width: 44px; min-height: 44px; }
+  .work-page-filters > label { position: relative; padding-left: 44px; }
+  .work-page-filters > label > [role="checkbox"] { position: absolute; left: 0; min-width: 44px; min-height: 44px; }
+  .work-page-filters > button { font-size: var(--type-body); }
+  .work-page :is(button, [role="button"], [role="checkbox"]):focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: -2px; }
+  .work-page-content { overflow-y: auto; }
+  /* Paste bar bottom is 4.5rem + safe area; its phone target is 44px tall. */
+  .work-phone-list { padding: 10px 16px calc(4.5rem + 44px + 16px + env(safe-area-inset-bottom)); }
+  .work-phone-list li + li { margin-top: 10px; }
+  .work-phone-row { display: flex; width: 100%; min-height: 88px; height: auto; gap: 12px; border-radius: 0; border-bottom: 1px solid var(--nb-rule); padding: 12px 0; white-space: normal; }
+  .work-phone-row__title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-size: var(--type-lead); line-height: 1.4; }
+  .work-phone-row__stamp { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 6px; font-family: var(--font-mono); font-size: var(--type-small); font-weight: 400; line-height: 1.5; text-transform: uppercase; color: var(--nb-mid); }
+  .work-phone-more { width: 100%; height: 44px; margin-top: 10px; }
+}
+
+@layer nb {
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root block defines the actual color values. There is no dark theme:
+ * the three unused .dark blocks were removed on 17 Nov 2026 (audit gap G12).
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+}
+
+@theme inline {
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-hand: "Caveat", var(--font-sans);
+  --color-ember: var(--ember);
+  --color-ember-deep: var(--ember-deep);
+  --color-ember-foreground: var(--ember-foreground);
+  --color-ember-wash: var(--ember-wash);
+  --color-ember-deep-foreground: var(--ember-deep-foreground);
+  --color-electric: var(--electric);
+  --color-electric-deep: var(--electric-deep);
+  --color-electric-wash: var(--electric-wash);
+  --color-state-amber: var(--state-amber);
+  --color-state-teal: var(--state-teal);
+  --color-state-indigo: var(--state-indigo);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-deep: var(--accent-deep);
+  --color-navy: var(--navy);
+  --color-mint: var(--mint);
+  --color-suggest: var(--suggest);
+  --color-cream: var(--cream);
+  --color-pattern-bg: var(--pattern-bg);
+  --color-pattern-border: var(--pattern-border);
+  --color-pattern-fg: var(--pattern-fg);
+  /* Notebook-named tokens. Later passes consume these directly; the semantic
+     names above stay as the compatibility layer. */
+  --color-nb-white: var(--nb-white);
+  --color-paper: var(--nb-paper);
+  --color-grey-1: var(--nb-grey-1);
+  --color-grey-2: var(--nb-grey-2);
+  --color-rule: var(--nb-rule);
+  --color-pencil: var(--nb-pencil);
+  --color-ink: var(--nb-ink);
+  --color-graphite: var(--nb-graphite);
+  --color-mid: var(--nb-mid);
+  --color-soft: var(--nb-soft);
+  --color-green: var(--nb-green);
+  --color-lasso-green: var(--nb-lasso-green);
+  --color-blue: var(--nb-blue);
+  --shadow-card: none;
+  --radius-control: var(--corner-control);
+  --radius-card: var(--corner-card);
+  --radius-sm: var(--corner-card);
+  --radius-md: var(--corner-control);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--corner-float);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@media (pointer: coarse) {
+  .nb-put-on-board {
+    min-height: 44px;
+  }
+}
+
+@layer nb {
+:root {
+  --radius: var(--corner-panel);
+  --radius-control: var(--corner-control);
+  --radius-card: var(--corner-card);
+
+  /* Notebook palette, the single source of truth for this identity. */
+  --nb-white: #ffffff;
+  --nb-paper: #fafaf8;
+  --nb-grey-1: #f1f1ee;
+  --nb-grey-2: #e8e8e3;
+  --nb-rule: #dadad5;
+  /* line/pencil from the design system: a ring you can actually see. Sits
+     between --nb-rule (a divider) and --nb-soft (muted text) on purpose. */
+  --nb-pencil: #b9bbb6;
+  /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
+  --nb-ink-yellow: #e4d27a;
+  /* Pass 131.1: the verify verdict ink, founder-chosen rust. Distinct from
+     --destructive (#b3261e), which stays reserved for destructive actions. */
+  --nb-ink-ember: #a34234;
+  --nb-ink-ember-wash: #fbeeea;
+  /* Pass 107: the quiet blue the "What fed this" web breathes in. */
+  --nb-ink: #16181a;
+  --nb-graphite: #2a2d2b;
+  --nb-mid: #6b6e6c;
+  --nb-soft: #9a9c98;
+  --nb-green: #0f8a4b;
+  --nb-green-deep: #0b6b3a;
+  --nb-blue: #0a628f;
+  --nb-amber: #8a6d1f;
+  /* S5a · the ink for what someone handed you. Contrast checked against the
+     paper ground and the dark ground at 13px. Fixed values: never lightened,
+     never harmonised, and only ever on the section title and a person's name. */
+  --nb-shared: #b3410a;
+
+  /* W3 · drawn regions. A vivid choice drives the edge and the name; the fill
+     itself stays soft so the cards sitting on it stay readable. */
+  --nb-region-green-soft: #eaf6ef;
+  --nb-region-green-soft-edge: #cfe6da;
+  --nb-region-green-vivid: #0f8a4b;
+  --nb-region-blue-soft: #e9f1f7;
+  --nb-region-blue-soft-edge: #cddde9;
+  --nb-region-blue-vivid: #0a628f;
+  --nb-region-rose-soft: #f9edee;
+  --nb-region-rose-soft-edge: #e9d2d4;
+  --nb-region-rose-vivid: #a33a45;
+  --nb-region-yellow-soft: #f8f2e2;
+  --nb-region-yellow-soft-edge: #e7dcc0;
+  --nb-region-yellow-vivid: #8a6d1f;
+  --nb-region-lavender-soft: #f0eef8;
+  --nb-region-lavender-soft-edge: #d8d4ea;
+  --nb-region-lavender-vivid: #5a4a94;
+  --nb-region-slate-soft: #eef0f0;
+  --nb-region-slate-soft-edge: #d6dada;
+  --nb-region-slate-vivid: #41504f;
+  --nb-region-paper-white: #ffffff;
+  --nb-region-paper-warm: #faf6ee;
+  --nb-region-paper-cool: #f2f5f6;
+  --nb-region-paper-sand: #f3eee2;
+  --nb-line-hairline: #dadad5;
+  --nb-card-border-width: 2px;
+  --nb-card-min-height: 220px;
+  --nb-document-border-width: 1px;
+  --stroke-pencil: 1.4px;
+  --nb-chat-preview-height: 112px;
+  --nb-preview-inset: 10px;
+  --nb-paper-shadow-contact: 1px 2px 3px color-mix(in oklab, var(--nb-ink) 18%, transparent);
+  --nb-paper-shadow-ambient: 0 10px 24px -12px color-mix(in oklab, var(--nb-ink) 28%, transparent);
+
+  /* 03 · Library · Atoms port. Tokens the atoms board introduces that the
+     design-port token list did not name. Additive: nothing above changes. */
+  --nb-ink-90: #1c1e1d; /* the primary button fill, one step off --nb-ink */
+  --nb-paper-20: #e8e8e2; /* disabled fills and inert rails */
+  --nb-danger-text: #a34234; /* field error text, shares the verify rust */
+  --nb-claim-text: var(--nb-amber); /* "waiting on you" ink */
+  --radius-pill: var(--corner-pill);
+  --nb-space-10: 10px;
+  --nb-space-12: 12px;
+
+  /* Sticky note washes. Pale paper colours for notes, never button fills:
+     the action colour is graphite and must not back a card. */
+  --nb-sticky-green: #e6f2e5;
+  --nb-sticky-green-edge: #bcd9ba;
+  /* State washes, added so the state and status triads stop sharing one grey. */
+  --nb-yellow-wash: #fff6c8;
+  --nb-yellow-edge: #e4d27a;
+  --nb-yellow-ink: #8a6d1f;
+  --nb-green-wash: #e9f9f0;
+  /* Lasso green, sampled from the mascot logo. Saved chat highlights only;
+     the action colour stays graphite. The wash is the green at 40% on paper. */
+  --nb-lasso-green: #04f85b;
+  --nb-lasso-green-wash: #98f9b9;
+  --lb-neon-turquoise: #19f5e1;
+  --lb-neon-glow: rgba(25, 245, 225, .55);
+  --lb-neon-orange: #ff5f1f;
+  --lb-neon-orange-glow: rgba(255, 95, 31, .55);
+  /* Granola's own mark: dark spiral on its green square. */
+  --brand-granola: #7cb342;
+  --brand-granola-ink: #111111;
+  /* The scrim behind a modal. Ink, not black: the page behind stays legible
+     paper rather than blacking out. Matches .nb-ask-backdrop's language, which
+     already dims with ink rather than with black. */
+  --nb-scrim: color-mix(in oklab, var(--nb-ink) 28%, transparent);
+  /* The one lift in the system. Surfaces that sit ON the page are flat with a
+     hairline; a surface that floats ABOVE it gets this. Taken from the design
+     system's Modal component, which specifies a 0 12px 32px ink shadow at 10%. */
+  --shadow-modal: 0 12px 32px color-mix(in oklab, var(--nb-ink) 10%, transparent);
+  --nb-amber-wash: #f7e3bf;
+  --nb-amber-edge: #d9a24a;
+
+  /* Pass 101.1: one colour per provenance status, borders and washes only. */
+  --status-exact: var(--nb-green);
+  --status-exact-wash: var(--nb-green-wash);
+  --status-paraphrase: var(--nb-amber);
+  --status-paraphrase-wash: var(--nb-amber-wash);
+  --status-unsourced: var(--nb-soft);
+  --status-unsourced-wash: var(--nb-grey-1);
+
+  /* Motion. */
+  --nb-ease: cubic-bezier(0.2, 0, 0, 1);
+  --nb-fast: 120ms;
+  --nb-base: 160ms;
+  --nb-move: 200ms;
+  --nb-max: 500ms;
+
+  /*
+   * The motion table from the design system, named as the system names it.
+   * These are additive: the four tokens above predate the table and keep every
+   * call site they already have. They map across as --nb-fast = stagger-base,
+   * --nb-base = dur-quick, --nb-max is 50ms short of dur-settle, and --nb-move
+   * is now promoted into the table as dur-move rather than deleted. Migrate a
+   * call site only when you are already editing it for another reason.
+   */
+  --nb-dur-instant: 80ms;
+  --nb-dur-quick: 160ms;
+  --nb-dur-move: 200ms;
+  --nb-dur-base: 300ms;
+  --nb-dur-enter: 400ms;
+  --nb-dur-settle: 550ms;
+  --nb-dur-draw: 800ms;
+  --nb-dur-story: 2200ms;
+  --nb-stagger-tight: 60ms;
+  --nb-stagger-base: 120ms;
+  --nb-stagger-loose: 300ms;
+
+  /*
+   * C2: one pause before an icon redraws on hover or keyboard focus, so a
+   * passing cursor does not set the whole sidebar drawing. Mount motion, the
+   * play-on-mount case and reduced motion are untouched.
+   */
+  --nb-ico-delay: 200ms;
+
+  /*
+   * Spring curves. CSS has no spring primitive, so these are the overshoot
+   * beziers already in use here, promoted to tokens and matched to the design
+   * system's spring/bounce scale by feel rather than by formula. The system's
+   * third step, spring/bounce-soft at 0.15, has no curve in this file and no
+   * consumer, so it is deliberately not invented here.
+   */
+  --nb-spring-base: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --nb-spring-lively: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --background: var(--nb-paper);
+  --foreground: var(--nb-ink);
+  --card: var(--nb-white);
+  --card-foreground: var(--nb-ink);
+  --popover: var(--nb-white);
+  --popover-foreground: var(--nb-ink);
+  /* One graphite action per screen. Green now means on the record. */
+  --primary: var(--nb-graphite);
+  --primary-foreground: var(--nb-white);
+  --secondary: var(--nb-grey-1);
+  --secondary-foreground: var(--nb-ink);
+  --muted: var(--nb-grey-2);
+  --muted-foreground: var(--nb-mid);
+  --accent: var(--nb-rule);
+  --accent-foreground: var(--nb-ink);
+  --accent-soft: var(--nb-grey-1);
+  --accent-deep: var(--nb-blue);
+  --navy: var(--nb-ink);
+  --mint: var(--nb-white);
+  /* Lasso suggested it, a person decides. Interim neutral treatment. */
+  --suggest: var(--nb-blue);
+  --suggest-wash: var(--nb-grey-2);
+  --suggest-edge: var(--nb-blue);
+  --cream: var(--nb-grey-1);
+  --pattern-bg: var(--nb-grey-1);
+  --pattern-border: var(--nb-rule);
+  --pattern-fg: var(--nb-ink);
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: var(--nb-rule);
+  --input: var(--nb-rule);
+  --ring: var(--nb-blue);
+  --chart-1: var(--nb-green);
+  --chart-2: var(--nb-blue);
+  --chart-3: var(--nb-graphite);
+  --chart-4: var(--nb-mid);
+  --chart-5: var(--nb-soft);
+  /* The notebook sidebar is a LIGHT surface: paper ground, ink actives. */
+  --sidebar: var(--nb-paper);
+  --sidebar-foreground: var(--nb-ink);
+  --sidebar-primary: var(--nb-ink);
+  --sidebar-primary-foreground: var(--nb-white);
+  --sidebar-accent: var(--nb-grey-1);
+  --sidebar-accent-foreground: var(--nb-ink);
+  --sidebar-border: var(--nb-rule);
+  --sidebar-ring: var(--nb-blue);
+  /* Code colours live in the token layer too. */
+  --code-keyword: #5b3d8a;
+  --code-string: #12653d;
+  --code-number: #7a5a1f;
+  --code-title: #1d6fe0;
+  --code-meta: #b3261e;
+}
+
+/*
+ * Accent system. Ember is THE action colour — one ember-filled primary button
+ * per screen. The state triad is separated by LUMINANCE as well as hue, so it
+ * survives deuteranopia/protanopia, and colour is never the only signal: every
+ * state also carries an icon, a label and a border treatment.
+ */
+:root {
+  --ember: var(--nb-graphite); /* the one action colour */
+  --ember-deep: var(--nb-ink); /* hover */
+  --ember-foreground: var(--nb-white);
+  --ember-deep-foreground: var(--nb-white);
+  --ember-wash: var(--nb-grey-1);
+  --electric: var(--nb-blue);
+  --electric-deep: var(--nb-blue);
+  --electric-wash: var(--nb-grey-1);
+
+  --state-amber: var(--nb-amber); /* waiting on you */
+  --state-amber-wash: var(--nb-yellow-wash);
+  --state-amber-band: var(--nb-ink-yellow);
+
+  --state-teal: var(--nb-green); /* mapped, on the record */
+  --state-teal-wash: var(--nb-green-wash);
+  --state-teal-band: var(--nb-green-wash);
+
+  --state-indigo: var(--nb-mid); /* private */
+  --state-indigo-wash: var(--nb-grey-1);
+  --state-indigo-band: var(--nb-rule);
+
+  /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
+  --vendor-claude: #a8452a;
+  --vendor-chatgpt: #0f6b5c;
+  --vendor-gemini: #2d5bb9;
+  --vendor-copilot: #0b6a86;
+  --vendor-gdrive: #4d7a1f;
+  --vendor-granola: #b1601c;
+  --vendor-notion: #45403a;
+  --vendor-slack: #6b3f7a;
+  --vendor-microsoft: #1f5fa8;
+  --vendor-gmail: #b03a2e;
+  --nb-chat-border-claude: linear-gradient(135deg, #c65d26, #c65d26);
+  --nb-chat-border-chatgpt: linear-gradient(135deg, #111315, #777b7e);
+  --nb-chat-border-gemini: linear-gradient(135deg, #2d6ecf, #b8c3cf);
+  --nb-chat-border-copilot: linear-gradient(135deg, #6d3bb8, #17151b);
+}
+
+
+/*
+ * Type identity hues. Muted saturation so they sit inside Bone + Slate: used
+ * as a full-strength icon colour on a ~12% tint of themselves.
+ */
+:root {
+  --hue-slate-blue: #2f5f8c;
+  --hue-sand: #7d6423;
+  --hue-moss: #346b3f;
+  --hue-clay: #9a4a2c;
+  --hue-sage: #276b53;
+  --hue-plum: #6f3a6c;
+  --hue-amber: #7f5a0e;
+  --hue-indigo: #414a94;
+  --hue-neutral: #55625f;
+  --hue-cyan: #14657f;
+  /* Stable per-engagement accents, chosen by hashing the engagement id. */
+  --engagement-1: #2f5f8c;
+  --engagement-2: #346b3f;
+  --engagement-3: #9a4a2c;
+  --engagement-4: #6f3a6c;
+  --engagement-5: #7d6423;
+  --engagement-6: #414a94;
+  --engagement-7: #276b53;
+  --engagement-8: #85474a;
+  /* Paper twins of the eight ink accents. Authored pastels: a dilution of dark
+     ink resolves to a warm grey, so these are written at high lightness with
+     real chroma instead of being derived. */
+  --paper-1: #dbe8f5; /* blue   — pairs --engagement-1 */
+  --paper-2: #dcecd9; /* green  — pairs --engagement-2 */
+  --paper-3: #fadfd0; /* orange — pairs --engagement-3 */
+  --paper-4: #ecdcec; /* purple — pairs --engagement-4 */
+  --paper-5: #f7ecc9; /* yellow — pairs --engagement-5 */
+  --paper-6: #dfe1f7; /* indigo — pairs --engagement-6 */
+  --paper-7: #d6ece2; /* teal   — pairs --engagement-7 */
+  --paper-8: #f7dcdc; /* rose   — pairs --engagement-8 */
+}
+
+
+
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility micro-label {
+  font-family: var(--font-mono);
+  font-size: 0.894rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nb-mid);
+}
+
+@layer nb {
+/* Pass 91: three-level label hierarchy. Blue names a region of the page,
+   green names something Lasso produced, plain micro-label stays grey for
+   field labels nested inside a card. Text-level only, no filled surfaces. */
+
+}
+@utility micro-label-section {
+  color: var(--nb-soft);
+}
+
+@utility micro-label-ai {
+  color: var(--ai-voice, var(--nb-green));
+}
+
+@utility page-title {
+  font-family: var(--font-serif);
+  font-size: var(--type-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+@utility page-subtitle {
+  font-family: var(--font-mono);
+  font-size: var(--type-body);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-top: 0.375rem;
+}
+
+@utility section-title {
+  font-family: var(--font-hand);
+  font-size: var(--type-title);
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--nb-ink);
+}
+
+@utility body-secondary {
+  font-family: var(--font-sans);
+  font-size: var(--type-control);
+  line-height: 20px;
+  color: var(--nb-mid);
+}
+
+@utility label {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--nb-ink);
+}
+
+@utility sidebar-group {
+  font-family: var(--font-hand);
+  font-size: var(--type-lead);
+  font-weight: 700;
+  color: var(--nb-ink);
+}
+
+@utility sidebar-item {
+  font-family: var(--font-sans);
+  font-size: var(--type-control);
+  font-weight: 400;
+  color: var(--nb-mid);
+}
+
+@layer nb {
+/* Peek panel: Notion-like reading typography for rendered markdown/HTML. */
+.peek-prose {
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  max-width: 68ch;
+}
+.peek-prose > * + * {
+  margin-top: 0.9em;
+}
+.peek-prose h1,
+.peek-prose h2,
+.peek-prose h3,
+.peek-prose h4 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin-top: 1.6em;
+}
+.peek-prose h1 {
+  font-size: 1.5rem;
+}
+.peek-prose h2 {
+  font-size: 1.25rem;
+}
+.peek-prose h3 {
+  font-size: 1.0625rem;
+}
+.peek-prose h4 {
+  font-size: 0.9375rem;
+}
+.peek-prose a {
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.peek-prose ul,
+.peek-prose ol {
+  padding-left: 1.25rem;
+}
+.peek-prose ul {
+  list-style: disc;
+}
+.peek-prose ol {
+  list-style: decimal;
+}
+.peek-prose li + li {
+  margin-top: 0.3em;
+}
+.peek-prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.peek-prose hr {
+  border-color: var(--border);
+}
+.peek-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--secondary);
+  border-radius: var(--corner-control);
+  padding: 0.1em 0.35em;
+}
+.peek-prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+.peek-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.peek-prose img {
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+.peek-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.peek-prose th,
+.peek-prose td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+/* Restrained syntax colouring that sits inside Bone + Slate. */
+.hljs-comment,
+.hljs-quote {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag {
+  color: var(--code-keyword);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: var(--code-string);
+}
+.hljs-number,
+.hljs-built_in,
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--code-number);
+}
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-type {
+  color: var(--code-title);
+}
+.hljs-meta,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-deletion {
+  color: var(--code-meta);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+
+/* Interactive affordances: visible weight, never grey-on-grey. */
+
+}
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility state-band {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  padding: 0.375rem 0.625rem;
+}
+
+@utility count-pill {
+  display: inline-flex;
+  min-width: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--corner-pill);
+  padding: 0.0625rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  font-weight: 500;
+  background: var(--nb-grey-2);
+  color: var(--nb-ink);
+}
+
+@layer nb {
+/* Compact variant of the prose styles for AI chat bubbles. */
+.chat-prose {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  max-width: none;
+}
+.chat-prose > * + * {
+  margin-top: 0.6em;
+}
+.chat-prose h1,
+.chat-prose h2,
+.chat-prose h3,
+.chat-prose h4 {
+  margin-top: 1.1em;
+}
+.chat-prose h1 {
+  font-size: 1.125rem;
+}
+.chat-prose h2 {
+  font-size: 1.0625rem;
+}
+.chat-prose h3,
+.chat-prose h4 {
+  font-size: 0.9375rem;
+}
+.chat-prose li + li {
+  margin-top: 0.2em;
+}
+.chat-prose pre {
+  padding: 0.7rem 0.85rem;
+}
+
+/*
+ * Mobile (below Tailwind's md, 768px). One breakpoint, no forked pages:
+ * everything here only relaxes the desktop layout for an iPhone-sized screen.
+ */
+@media (max-width: 767px) {
+  /* Headings step down one size on a 390px screen. */
+  .page-title {
+    font-size: var(--type-title);
+  }
+
+  /* 16px in form fields stops iOS zooming the page on focus. */
+  input,
+  textarea,
+  select {
+    font-size: var(--type-lead);
+  }
+
+  /* Chips, pills and icon buttons keep a 44px tap area without growing
+     visually: the padding box stays, the hit box is padded out. */
+  button[class*="rounded-full"],
+  [role="menuitem"] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  button,
+  [role="button"],
+  a {
+    touch-action: manipulation;
+  }
+
+  /* Nothing may push the page sideways on a phone. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Safe areas for anything that touches a screen edge on a notched phone. */
+
+}
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

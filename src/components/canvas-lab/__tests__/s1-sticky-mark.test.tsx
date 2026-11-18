@@ -9,6 +9,7 @@ import {
   StickyMark,
 } from "@/components/canvas-lab/StickyMark";
 import { WORKBOARD_STICKY_FILLS } from "@/lib/canvas-lab-shared";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -61,7 +62,7 @@ describe("S1 the colours: blue becomes turquoise, green is mint, stored keys nev
     expect([...WORKBOARD_STICKY_FILLS]).toEqual(["yellow", "green", "blue", "pink", "grey"]);
   });
   it("the board's sticky tokens are mint and turquoise", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain("--sticky-green: #d6f5e4; --sticky-green-edge: #9fd9b9;");
     expect(css).toContain("--sticky-blue: #cdf1ee; --sticky-blue-edge: #86d0c8;");
   });

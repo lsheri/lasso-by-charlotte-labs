@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/AiRecordPage.tsx", "utf8");
 const telemetry = readFileSync("src/lib/telemetry-shared.ts", "utf8");
 const functions = readFileSync("src/lib/chat-library.functions.ts", "utf8");
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 const chatRow = readFileSync("src/components/work/ChatRow.tsx", "utf8");
 
 describe("pass 175 — preview and sticky", () => {

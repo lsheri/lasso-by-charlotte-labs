@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { openOneRoot, withOneRootOpen } from "@/lib/sidebar-tree-state";
+import { readStyles } from "@/design/stylesheet";
 
 // Liam, 15 Nov: only one top-level folder open at a time, rolling open and shut, and a simpler tree.
 const roots = [
@@ -28,7 +29,7 @@ describe("one top-level folder open at a time", () => {
 
   it("drops Expand all, rolls folders through RollDown, and honours reduced motion", () => {
     const nav = readFileSync("src/components/layout/SidebarNav.tsx", "utf8");
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(nav).not.toContain("Expand all");
     expect(nav).toContain("<RollDown open={!collapsed}>");
     expect(styles).toMatch(/\.nb-roll\s*{[^}]*grid-template-rows: 0fr/);

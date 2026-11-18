@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 describe("All AI Conversations month flow", () => {
   const page = readFileSync("src/pages/AiRecordPage.tsx", "utf8");
-  const styles = readFileSync("src/styles.css", "utf8");
+  const styles = readStyles();
 
   it("uses document flow instead of a scaled board", () => {
     expect(page).toContain('aria-label="AI conversations by month"');

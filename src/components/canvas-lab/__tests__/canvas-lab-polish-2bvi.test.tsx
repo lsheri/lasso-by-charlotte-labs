@@ -9,6 +9,7 @@ import { noteWorkboardDropPromptAnswered } from "@/components/canvas-lab/canvas-
 import { resizeLabRect } from "@/components/canvas-lab/canvas-lab-model";
 import { ZOOM_MIN, workboardPinchZoom } from "@/lib/canvas-zoom";
 import { logEvent } from "@/lib/telemetry";
+import { readStyles } from "@/design/stylesheet";
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
@@ -47,7 +48,7 @@ describe("polish 2b-vi", () => {
     const paper = container.querySelector<HTMLElement>(".canvas-lab-card-paper")!;
     expect(paper.className).toContain("h-full");
     expect(paper.className).toContain("w-full");
-    const styles = read("src/styles.css");
+    const styles = readStyles();
     const note = paper.querySelector<HTMLElement>(".canvas-lab-paper");
     expect(note).not.toBeNull();
     expect(note?.getAttribute("data-tier")).toBe("expanded");

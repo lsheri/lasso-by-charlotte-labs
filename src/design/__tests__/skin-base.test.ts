@@ -1,6 +1,7 @@
 // G2 part 3 (17 Nov 2026): a skin sets six type hues and its surfaces; skin-base.css derives the category colours.
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const base = readFileSync("src/design/skins/skin-base.css", "utf8");
 const skins = readdirSync("src/design/skins").filter(
@@ -19,7 +20,7 @@ describe("skin base", () => {
   });
 
   it("is loaded before the skins, so a skin can still override a derived colour", () => {
-    const styles = readFileSync("src/styles.css", "utf8");
+    const styles = readStyles();
     expect(styles.indexOf("skins/skin-base.css")).toBeGreaterThan(-1);
     expect(styles.indexOf("skins/skin-base.css")).toBeLessThan(
       styles.indexOf("skins/charlotte.css"),

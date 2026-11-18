@@ -8,13 +8,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import type { CardFace } from "@/design/reference/FaceToggle";
 
 import { TOOLBAR_GAP, planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const icons = readFileSync("src/components/notebook/icons.tsx", "utf8");
 const share = readFileSync("src/components/canvas-lab/ShareDialog.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx", "utf8");
-const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const boardToolbarItems"));
+const toolbar = page.slice(
+  page.indexOf("const toolbarItems"),
+  page.indexOf("const boardToolbarItems"),
+);
 
 describe("R5 board toolbar", () => {
   it("reaches both existing card-face states through the same row and menu handler", () => {
