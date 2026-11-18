@@ -24,6 +24,7 @@ const declared = new Set(
   [
     "src/design/tokens.css",
     "src/styles.css",
+    ...readdirSync("src/styles").map((f) => `src/styles/${f}`),
     "src/design/reference/TextFace.css",
     ...readdirSync("src/design/skins").map((f) => `src/design/skins/${f}`),
   ].flatMap((p) => [...read(p).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1] ?? "")),

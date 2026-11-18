@@ -16,6 +16,7 @@ import {
   noteWorkboardReviewOpened,
   noteWorkboardTrailSelected,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -75,7 +76,7 @@ describe("Canvas Lab Phase 2", () => {
   });
 
   it("uses green Lab emphasis and leaves production canvas untouched", () => {
-    const styles = read("src/styles.css");
+    const styles = readStyles();
     const page = read("src/pages/CanvasLabPage.tsx");
     const relationships = read("src/components/canvas-lab/LabRelationships.tsx");
     expect(styles).toContain("::highlight(canvas-lab-selection) { background: var(--nb-green-wash); }");

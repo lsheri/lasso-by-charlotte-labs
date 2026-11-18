@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourActSix } from "@/components/tour/TourActs";
 import { TOUR_BOARD_LAYOUT } from "@/lib/tour-content";
+import { readStyles } from "@/design/stylesheet";
 
 const TVJ_LAYOUT = [
   ["primary-0", 3, 19, 21, -0.8, 3],
@@ -60,7 +60,7 @@ describe("TVj act 8 zoom and preview harness", () => {
   });
 
   it("scales act 8 by a visual transform without touching layout values", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain('.tour-persistent-board[data-act="8"] .tour-board-item {');
     expect(css).toContain("scale: var(--tour-zoom);");
     expect(css).toContain('.tour-persistent-board[data-act="8"] .tour-deck-overlay { top: 6% !important; left: 46% !important; width: 51% !important; }');

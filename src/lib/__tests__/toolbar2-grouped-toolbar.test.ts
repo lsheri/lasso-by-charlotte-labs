@@ -1,9 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { TOOLBAR_GAP, TOOLBAR_DIVIDER_WIDTH, planToolbarOverflow, toolbarDividersBefore, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
+import {
+  TOOLBAR_GAP,
+  TOOLBAR_DIVIDER_WIDTH,
+  planToolbarOverflow,
+  toolbarDividersBefore,
+  type ToolbarControlSpec,
+} from "@/lib/toolbar-overflow";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const surface = readFileSync("src/components/canvas-lab/BoardToolbarSurface.tsx", "utf8");
 
 describe("TOOLBAR-2 grouped toolbar", () => {

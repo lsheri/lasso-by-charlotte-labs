@@ -20,6 +20,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 import { BOARD_LIVE_DOWN_GRACE_MS, BOARD_LIVE_FALLBACK_POLL_MS, offlineDurationBand, useBoardLive, type BoardConnection } from "@/components/canvas-lab/board-live";
 import { BOARD_OFFLINE_COPY, BoardOfflineBanner } from "@/components/canvas-lab/BoardOfflineBanner";
+import { readStyles } from "@/design/stylesheet";
 
 function setOnline(value: boolean) {
   Object.defineProperty(window.navigator, "onLine", { configurable: true, get: () => value });
@@ -101,8 +102,11 @@ describe("LIVE-2 the banner", () => {
     expect(pill.className).toBe("canvas-lab-offline-pill");
     expect(screen.getByTestId("board-offline-face")).toBeTruthy();
     expect(screen.getByTestId("board-offline-wifi")).toBeTruthy();
-    const css = readFileSync("src/styles.css", "utf8");
-    const block = css.slice(css.indexOf(".canvas-lab-offline-pill {"), css.indexOf("}", css.indexOf(".canvas-lab-offline-pill p")));
+    const css = readStyles();
+    const block = css.slice(
+      css.indexOf(".canvas-lab-offline-pill {"),
+      css.indexOf("}", css.indexOf(".canvas-lab-offline-pill p")),
+    );
     expect(block).toMatch(/border-radius: var\(--corner-float\);/);
     expect(block).toMatch(/background: var\(--action-primary/);
     expect(block).not.toMatch(/green|hand-live|acid/);

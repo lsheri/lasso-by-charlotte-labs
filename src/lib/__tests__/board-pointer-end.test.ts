@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { shouldEndOnMove } from "@/components/canvas-lab/canvas-lab-pointer";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 const overlay = readFileSync("src/components/canvas-lab/LabRelationshipOverlays.tsx", "utf8");
 
 describe("B1 stuck drag", () => {

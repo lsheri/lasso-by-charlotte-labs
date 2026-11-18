@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createElement } from "react";
-import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TourStage, type TourActRenderer } from "@/components/tour/TourStage";
 import { TOUR_CONTENT } from "@/lib/tour-content";
+import { readStyles } from "@/design/stylesheet";
 
 let width = 1280;
 
@@ -110,7 +110,7 @@ describe("T2 tour stage", () => {
   });
 
   it("derives the active glow from target attributes and keeps reduced motion static", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain('.tour-shell[data-act="1"] [data-tour-target="1"]');
     expect(css).toContain('.tour-shell[data-act="8"] [data-tour-target="8"]');
     expect(css).toContain("outline: 2px solid var(--nb-lasso-green)");

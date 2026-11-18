@@ -4,8 +4,11 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { referenceBodyPressDrags } from "@/components/canvas-lab/reference-press";
 import { cardPressStartsDrag } from "@/components/canvas-lab/canvas-lab-model";
+import { readStyles } from "@/design/stylesheet";
 
-afterEach(() => { document.body.innerHTML = ""; });
+afterEach(() => {
+  document.body.innerHTML = "";
+});
 
 function piece(): { card: HTMLElement; body: HTMLElement } {
   const card = document.createElement("div");
@@ -49,9 +52,11 @@ describe("LIFT-1 L1: a file piece's body drags like any card", () => {
 });
 
 describe("LIFT-1 L1: a live card's face never starts a text selection", () => {
-  const css = readFileSync("src/styles.css", "utf8");
+  const css = readStyles();
   it("live cards are unselectable before any drag begins; read-only surfaces are left alone", () => {
-    expect(css).toContain('[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] { user-select: none; -webkit-user-select: none; }');
+    expect(css).toContain(
+      '[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] { user-select: none; -webkit-user-select: none; }',
+    );
   });
   it("edit fields inside a card keep their selection", () => {
     expect(css).toContain('[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] :is(input, textarea, [contenteditable="true"]) { user-select: text; -webkit-user-select: text; }');

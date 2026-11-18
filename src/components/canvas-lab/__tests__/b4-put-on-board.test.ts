@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, KEEP_ANSWER_LABEL, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 import { ASK_LASSO_MAKING_RULES } from "@/lib/reflect-shared";
+import { readStyles } from "@/design/stylesheet";
 
 const logEvent = vi.fn();
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...args: unknown[]) => logEvent(...args) }));
@@ -59,7 +60,9 @@ describe("B4 put on board", () => {
     expect(surface).toContain('aria-label="Drag onto the board"');
     expect(surface).toContain("canDrag={canDragAnswer}");
     expect(surface).toContain("{canDrag ? (");
-    expect(read("src/styles.css")).toContain('body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }');
+    expect(readStyles()).toContain(
+      'body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }',
+    );
   });
 
   it("tells Lasso it never claims, and writes a requested document without a confirm step (FIX-1)", () => {

@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 describe("HAND-1: the hand tool", () => {
   it("is a toggle in the toolbar's view group, kept until clicked again, and in the overflow menu", () => {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -20,7 +21,7 @@ describe("pass 151 unit 2", () => {
   // Pass 156: the two fixed open widths became one dragged width, and the
   // WIDEN / NARROW control went away with them.
   it("keeps the closed card fixed and makes the open edge draggable", () => {
-    const styles = read("src/styles.css");
+    const styles = readStyles();
     const card = read("src/components/engagements/ContextCard.tsx");
     expect(styles).toContain('data-rail="closed"] > .nb-bench-aside');
     expect(styles).toContain("width: 236px");

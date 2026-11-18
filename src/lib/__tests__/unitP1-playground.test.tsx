@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const board = readFileSync("src/components/demo/DemoWorkboardSandbox.tsx", "utf8");
 const pages = readFileSync("src/pages/DemoPages.tsx", "utf8");
 const landing = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const story = readFileSync("src/components/marketing/LandingBoard.tsx", "utf8");
-const styles = readFileSync("src/styles.css", "utf8");
+const styles = readStyles();
 
 describe("Unit P1 playable finished board", () => {
   it("opens the finished proof state and keeps the classic demo", () => {

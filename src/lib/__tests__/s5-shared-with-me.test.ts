@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { sharedWithMe, type SharedMembershipRow } from "@/lib/shared-with-me";
+import { readStyles } from "@/design/stylesheet";
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -129,10 +130,14 @@ describe("s5 · shared with me", () => {
 
   it("keeps the two new inks in the stylesheet alone", () => {
     const inks = ["#b3410a"]; // #ff7a1a was the dark-theme ink, removed with G12 (17 Nov)
-    const sheet = readFileSync("src/styles.css", "utf8");
+    const sheet = readStyles();
     for (const ink of inks) expect(sheet).toContain(ink);
-    const offenders = [...files("src/components"), ...files("src/pages"), ...files("src/lib"), ...files("src/hooks")].filter(
-      (path) => {
+    const offenders = [
+      ...files("src/components"),
+      ...files("src/pages"),
+      ...files("src/lib"),
+      ...files("src/hooks"),
+    ].filter((path) => {
         const source = readFileSync(path, "utf8");
         return inks.some((ink) => source.includes(ink));
       },

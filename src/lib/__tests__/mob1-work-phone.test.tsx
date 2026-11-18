@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { WorkNote } from "@/components/work/WorkNote";
 import type { WorkItemRow } from "@/lib/work-types";
+import { readStyles } from "@/design/stylesheet";
 
 vi.mock("@/hooks/use-connector-accounts", () => ({ useConnectorAccounts: () => ({ data: {} }) }));
 afterEach(cleanup);
@@ -36,8 +37,11 @@ describe("MOB-1 phone work presentation", () => {
     const { container } = render(<WorkSubtitle pieces={77} unmapped={5} />);
     expect(container.textContent).toBe("77 pieces of work · 5 with no board · 0 tools connected");
     expect(container.querySelector('[data-work-subtitle="parts"]')).toBeNull();
-    const styles = readFileSync("src/styles.css", "utf8");
-    const phone = styles.slice(styles.indexOf("/* All work phone presentation."), styles.indexOf("@layer nb {"));
+    const styles = readStyles();
+    const phone = styles.slice(
+      styles.indexOf("/* All work phone presentation."),
+      styles.indexOf("@layer nb {"),
+    );
     expect(phone).toContain("@media (max-width: 767px)");
     expect(phone).not.toContain("outline: none");
     expect(phone).toContain("min-height: 88px");

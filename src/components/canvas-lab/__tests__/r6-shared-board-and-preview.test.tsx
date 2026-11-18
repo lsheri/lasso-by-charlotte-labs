@@ -10,11 +10,12 @@ import { SharedBoardView, buildSharedBoardModel } from "@/components/canvas-lab/
 import { CARD_HEIGHT, CARD_WIDTH, fitWorkboardViewport, sectionLabelInverseZoom } from "@/components/canvas-lab/canvas-lab-model";
 import type { SharedBoardDto } from "@/lib/board-share-shared";
 import { serializeWorkboardTextBody, type WorkboardNodeDto } from "@/lib/canvas-lab-shared";
+import { readStyles } from "@/design/stylesheet";
 
 const SHARED_VIEW = readFileSync("src/components/canvas-lab/SharedBoardView.tsx", "utf8");
 const SHARE_DIALOG = readFileSync("src/components/canvas-lab/ShareDialog.tsx", "utf8");
 const LINK_SECTION = readFileSync("src/components/canvas-lab/ShareBoardDialog.tsx", "utf8");
-const STYLES = readFileSync("src/styles.css", "utf8");
+const STYLES = readStyles();
 
 beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => 1000 });

@@ -8,6 +8,7 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
 import { LiftedWork, LIFT_COPY } from "@/components/canvas-lab/LiftedWork";
 import { LIFT_MORPH_MS } from "@/lib/lift-view";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(() => {
   cleanup();
@@ -19,14 +20,16 @@ const card = { left: 900, top: 500, width: 220, height: 170 };
 describe("ONE VIEW: it grows out of the card and always shrinks back into it", () => {
   it("a tad slower than before: 320ms", () => {
     expect(LIFT_MORPH_MS).toBe(320);
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     expect(css).toContain("animation: lift-fade 320ms ease-out both; }");
     expect(css).toContain("animation: lift-fade-out 320ms ease-in both; }");
   });
 
   it("the content fade reaches the work beside the Trail (it lives in lift-main now)", () => {
-    const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toContain('.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-main { opacity: 0; transition: none; }');
+    const css = readStyles();
+    expect(css).toContain(
+      '.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-main { opacity: 0; transition: none; }',
+    );
     expect(css).not.toContain(".lift-panel > .lift-body");
   });
 

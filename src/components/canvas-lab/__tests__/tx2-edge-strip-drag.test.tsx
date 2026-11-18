@@ -12,6 +12,7 @@ const logEvent = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/telemetry", () => ({ logEvent }));
 import { noteWorkboardNodeMoved } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { guardWorkboardEvent } from "@/lib/workboard-event-allowlist";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -101,7 +102,7 @@ describe("TX2 data-edge inventory on the three blocks", () => {
 
 describe("TX2 shared board", () => {
   it("the shared board stylesheet still hides the text and colour block strips", () => {
-    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+    const css = readStyles();
     expect(css).toMatch(/\.shared-board-stage \.canvas-lab-text-block-edge/);
     expect(css).toMatch(/\.shared-board-stage \.canvas-lab-colour-block-edge/);
   });

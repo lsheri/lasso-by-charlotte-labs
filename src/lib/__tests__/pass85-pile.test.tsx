@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
 import { cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 import type { WorkItemRow } from "@/lib/work-types";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(cleanup);
 
@@ -52,7 +52,7 @@ describe("pass 85 type matrix", () => {
 });
 
 describe("pass 85 css", () => {
-  const css = readFileSync("src/styles.css", "utf8");
+  const css = readStyles();
 
   // Pass 94 replaced the stacked pile with the scatter field; the quad surface
   // and the tab bar survive the swap.

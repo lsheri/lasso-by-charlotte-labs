@@ -55,6 +55,7 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 }));
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
+import { readStyles } from "@/design/stylesheet";
 
 afterEach(() => {
   cleanup();
@@ -107,7 +108,7 @@ describe("SB1 single middle-column scroller and standing separation", () => {
     ).toBeTruthy();
     // The standing separation is a hairline rule on the actions block. jsdom
     // does not load the stylesheet, so the rule is read from the sheet itself.
-    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+    const css = readStyles();
     const rule = css.match(/\.nb-nav-actions\s*\{[^}]*\}/);
     expect(rule).not.toBeNull();
     expect(rule![0]).toContain("border-top: 1px solid var(--nb-rule)");

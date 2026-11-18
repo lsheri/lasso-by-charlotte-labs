@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TourStage, type TourActRenderer } from "@/components/tour/TourStage";
 import { TourActPush, TOUR_TURN_DELAY_MS, useTourActRenderers } from "@/components/tour/TourActs";
 import { TOUR_CONTENT, actById, type TourActId } from "@/lib/tour-content";
+import { readStyles } from "@/design/stylesheet";
 
 let reduce = false;
 beforeEach(() => {
@@ -168,9 +169,11 @@ describe("TVL teach beat at the end of each act", () => {
   });
 
   it("styles a centred callout over a stronger blur, still on the act surface only, with no animation under reduced motion", () => {
-    const css = readFileSync("src/styles.css", "utf8");
+    const css = readStyles();
     const blurRule = css.match(/([^{}]+)\{ filter: blur\(4px\) saturate\(0\.75\); \}/);
-    expect(blurRule?.[1]?.trim()).toBe('.tour-stage[data-beat="teach"] .tour-act,\n.tour-stage[data-beat="teach"] .tour-stage-actions');
+    expect(blurRule?.[1]?.trim()).toBe(
+      '.tour-stage[data-beat="teach"] .tour-act,\n.tour-stage[data-beat="teach"] .tour-stage-actions',
+    );
     expect(css).toContain("background: color-mix(in srgb, var(--nb-paper) 58%, transparent)");
     expect(css).toMatch(/\.tour-teaching-callout\.is-teaching \{ top: 50%; right: auto; left: 50%;[^}]*transform: translate\(-50%, -50%\);/);
     expect(css).not.toMatch(/\.tour-(instruction-band|step-marker|stage-header|rail)[^{]*\{[^}]*filter: blur/);

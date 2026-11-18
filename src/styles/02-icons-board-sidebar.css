@@ -1,0 +1,2119 @@
+/* Notebook icons, the board (canvas lab), sidebar, mobile tab bar and Ask dock. Layer nb, first half. Part of src/styles.css; order matters, see there. */
+@layer nb {
+/* ==========================================================================
+   Notebook icons (pass 84). Ported verbatim from the Design Lab reference,
+   unscoped: production is the notebook. The draw-in and signature timings are
+   a deliberate authored exception to the 500ms product-motion ceiling; they
+   are decorative and only run on hover/focus/mount.
+   ========================================================================== */
+
+.nb-ico {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  overflow: visible;
+}
+.nb-ico path {
+  stroke-dasharray: 1;
+  animation: nb-ico-draw 1440ms var(--nb-ease) both;
+  transform-box: fill-box;
+}
+
+/* Hover/focus/tap: the glyph redraws from scratch after one shared pause
+   (--nb-ico-delay), then the signature move fires once the draw has landed.
+   One chained declaration, so a re-hover restarts the whole thing instead of
+   stacking. C2: a sidebar client shelf row is one trigger, so hovering the row
+   redraws every icon sitting on it. */
+a:hover .nb-ico[data-anim="1"] path,
+a:focus-visible .nb-ico[data-anim="1"] path,
+button:hover .nb-ico[data-anim="1"] path,
+button:focus-visible .nb-ico[data-anim="1"] path,
+[role="button"]:hover .nb-ico[data-anim="1"] path,
+[role="button"]:focus-visible .nb-ico[data-anim="1"] path,
+.nb-nav-shelf:hover .nb-ico[data-anim="1"] path,
+.nb-nav-shelf:focus-within .nb-ico[data-anim="1"] path,
+.nb-ico[data-anim="1"]:hover path,
+.nb-ico[data-anim="1"]:focus-visible path {
+  animation: nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) var(--nb-ico-delay) both;
+}
+a:hover .nb-ico[data-anim="1"] .nb-sig,
+a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+button:hover .nb-ico[data-anim="1"] .nb-sig,
+button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+[role="button"]:hover .nb-ico[data-anim="1"] .nb-sig,
+[role="button"]:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+.nb-nav-shelf:hover .nb-ico[data-anim="1"] .nb-sig,
+.nb-nav-shelf:focus-within .nb-ico[data-anim="1"] .nb-sig,
+.nb-ico[data-anim="1"]:hover .nb-sig,
+.nb-ico[data-anim="1"]:focus-visible .nb-sig {
+  animation:
+    nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) var(--nb-ico-delay) both,
+    var(--nb-sig) 600ms var(--nb-ease) calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms)) both;
+}
+.nb-ico[data-play="1"] .nb-sig {
+  animation: var(--nb-sig) 900ms var(--nb-ease) var(--nb-stagger-loose) both;
+}
+
+/* The toolbar is still pencilwork. Ask Lasso's canvas mark supplies its own motion. */
+.canvas-lab-toolbar .nb-ico path {
+  animation: none;
+  stroke-dasharray: none;
+}
+a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+.nb-nav-shelf:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+.nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + var(--nb-stagger-base));
+}
+a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+.nb-nav-shelf:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+.nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + 240ms);
+}
+a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+.nb-nav-shelf:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+.nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + 180ms);
+}
+
+@keyframes nb-ico-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes nb-sig-seat {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes nb-sig-lift {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  40% {
+    transform: translateY(-2.4px) rotate(-4deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+@keyframes nb-sig-flap {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(-14deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-rise {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes nb-sig-tilt {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(8deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes nb-sig-lean {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(-8deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-lean-in {
+  0% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(-2.4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes nb-sig-scuff {
+  0% {
+    transform: translate(0, 0);
+  }
+  45% {
+    transform: translate(1.6px, -1.6px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes nb-sig-nudge {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes nb-sig-slide {
+  0% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes nb-sig-flick {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(-20deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  55% {
+    transform: rotate(40deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-scan {
+  0% {
+    transform: translate(0, 0);
+  }
+  45% {
+    transform: translate(1.8px, 1.8px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes nb-sig-lens {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes nb-sig-fly {
+  0% {
+    transform: translate(0, 0);
+  }
+  45% {
+    transform: translate(2.8px, -2.8px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes nb-sig-pinch {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(0.9) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes nb-sig-turn {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-flick-2 {
+  0% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(12deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes nb-sig-forward {
+  0% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(3.2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes nb-sig-wave {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-2.2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes nb-sig-overshoot {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(1.1) rotate(-4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes nb-sig-leap {
+  0% {
+    transform: translate(0, 0);
+  }
+  45% {
+    transform: translate(2.4px, -2.4px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Reduced motion: icons are fully static. Disable, never decelerate. */
+@media (prefers-reduced-motion: reduce) {
+  .nb-ico path,
+  .nb-ico .nb-sig {
+    stroke-dasharray: none;
+    animation: none !important;
+    transform: none !important;
+  }
+  .nb-mark path {
+    stroke-dasharray: none;
+    animation: none !important;
+  }
+}
+
+/* P1: local-only finished-board playground. */
+.demo-play-page { min-height: 100dvh; overflow: hidden; background: var(--surface-page); color: var(--text-primary); }
+.demo-play-header { position: relative; z-index: 50; display: grid; min-height: 52px; grid-template-columns: 1fr auto 1fr; align-items: center; border-bottom: 1px solid var(--line-hairline); background: var(--surface-raised); padding: 7px 18px; font: 500 11.5px/1.2 Archivo, sans-serif; }
+.demo-play-header > a { display: flex; align-items: center; gap: 7px; }
+.demo-play-header svg { width: 28px; height: 28px; }
+.demo-play-header nav { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+.demo-play-header nav > a:first-child { font-family: Caveat, cursive; font-size: var(--type-lead); color: var(--text-hand); }
+.demo-play-header [data-testid="demo-book-pilot"] { min-height: 34px; padding: 6px 12px; font-size: 11.5px; }
+.demo-play-state { display: grid; min-height: calc(100dvh - 52px); place-content: center; text-align: center; }
+.demo-playground { position: relative; height: calc(100dvh - 52px); overflow: hidden; }
+.demo-play-hint { position: absolute; z-index: 45; top: 14px; left: 50%; transform: translateX(-50%); margin: 0; padding: 6px 10px; border: 1px solid var(--line-hairline); border-radius: var(--radius-md); background: var(--surface-raised); font: 13px/1.3 Archivo, sans-serif; animation: fade-in .3s ease-out; }
+.demo-play-toolbar { position: absolute; z-index: 44; top: 14px; left: 18px; display: flex; align-items: center; gap: 7px; }
+.demo-reset-countdown { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font: 11.5px/1.2 Archivo, sans-serif; }
+.demo-reset-countdown i { --demo-reset-progress: 1; width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(var(--text-hand) calc(var(--demo-reset-progress) * 1turn), var(--line-hairline) 0); mask: radial-gradient(circle, transparent 5px, #000 5.5px); }
+.demo-play-canvas { display: grid; height: 100%; grid-template-columns: minmax(0, 1fr) minmax(330px, 31vw); padding-top: 58px; }
+.demo-play-board { position: relative; min-width: 0; overflow: hidden; touch-action: none; background: var(--surface-page); }
+.demo-play-board .lb-dot-grid { position: absolute; inset: 0; }
+.demo-play-group { position: absolute; width: 276px; height: 472px; border: 1.4px solid var(--line-pencil); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-raised) 55%, transparent); transition: transform 600ms ease-out; }
+.demo-play-group h3 { min-height: 38px; margin: 0; border-bottom: 1px solid var(--line-hairline); padding: 9px 12px; cursor: grab; font: 16px/1 Caveat, cursive; color: var(--text-hand); touch-action: none; }
+.demo-play-group p { margin: 5px 12px; color: var(--text-muted); font: 9px/1.2 "JetBrains Mono", monospace; text-transform: uppercase; }
+.demo-play-card { z-index: 4; width: 230px; height: 92px; cursor: grab; transition: transform 600ms ease-out; touch-action: none; }
+.demo-play-board .demo-play-card { opacity: 1; }
+.demo-play-deck { z-index: 5; left: auto; right: 40px; top: 92px; cursor: grab; opacity: 1; transition: transform 600ms ease-out; touch-action: none; }
+.demo-play-lasso { position: absolute; z-index: 5; left: 181px; top: 46px; width: 58px; height: 30px; border: 2.4px solid var(--text-hand); border-radius: 46% 54% 50% 47%; transform: rotate(-5deg); pointer-events: none; }
+.demo-play-notes { display: block; z-index: 6; right: 42px; bottom: 32px; opacity: 1; transform: none; }
+.demo-play-notes p:first-child { left: auto; right: 8px; top: auto; bottom: 104px; }
+.demo-play-notes p:last-child { left: auto; right: 8px; top: auto; bottom: 0; }
+.demo-play-sticky { position: absolute; z-index: 12; width: 140px; min-height: 112px; padding: 12px; background: var(--sticky-yellow); box-shadow: var(--shadow-card); transform: rotate(-1deg); transition: transform 600ms ease-out, opacity 600ms ease-out; touch-action: none; }
+.demo-play-sticky input { width: 100%; border: 0; outline: 0; background: transparent; font: 16px/1.25 Caveat, cursive; }
+.demo-playground[data-resetting="true"] .demo-play-sticky { opacity: 0; }
+.demo-play-ask { z-index: 30; display: flex; min-width: 0; flex-direction: column; border-left: 1px solid var(--line-pencil); background: var(--surface-raised); }
+.demo-play-ask-toggle { display: flex; min-height: 58px; align-items: center; gap: 8px; border: 0; border-bottom: 1px solid var(--line-hairline); background: transparent; padding: 8px 12px; text-align: left; }
+.demo-play-ask-toggle span { display: grid; gap: 2px; }
+.demo-play-ask-toggle b { font: 600 13px/1 Archivo, sans-serif; }
+.demo-play-ask-toggle small { color: var(--text-secondary); font: 11.5px/1.2 Archivo, sans-serif; }
+.demo-play-ask-body { display: grid; min-height: 0; flex: 1; grid-template-rows: auto minmax(0, 1fr) auto; }
+.demo-play-presets { display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--line-hairline); padding: 10px; }
+.demo-play-presets button { max-width: 230px; flex: 0 0 auto; white-space: normal; text-align: left; }
+.demo-play-answer { min-height: 0; overflow-y: auto; padding: 12px; }
+.demo-play-answer .lb-proof-card { position: static; width: auto; max-width: none; transform: none; opacity: 1; }
+.demo-play-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; border-top: 1px solid var(--line-hairline); padding: 10px; }
+
+@media (max-width: 639px) {
+  .demo-play-header { grid-template-columns: auto 1fr; gap: 7px; padding-inline: 10px; }
+  .demo-play-header > p { grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: center; font-size: var(--type-label); }
+  .demo-play-header nav { gap: 8px; }
+  .demo-play-header nav > a:first-child { font-size: var(--type-control); }
+  .demo-play-header [data-testid="demo-book-pilot"] { min-height: 30px; font-size: var(--type-label); }
+  .demo-playground { height: calc(100dvh - 78px); }
+  .demo-play-hint { top: 52px; width: calc(100% - 24px); text-align: center; }
+  .demo-play-toolbar { top: 8px; left: 8px; right: 8px; gap: 5px; }
+  .demo-play-toolbar button { padding-inline: 8px; }
+  .demo-reset-countdown { margin-left: auto; width: 92px; font-size: var(--type-label); }
+  .demo-play-canvas { display: block; padding-top: 48px; }
+  .demo-play-board { height: calc(100% - 56px); overflow: hidden; }
+  .demo-play-board::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+  .demo-play-group, .demo-play-card, .demo-play-deck, .demo-play-notes, .demo-play-sticky { transform-origin: top left; }
+  .demo-play-board > :not(.lb-dot-grid) { scale: .53; }
+  .demo-play-group:nth-of-type(2) { left: 36px !important; top: 55px !important; }
+  .demo-play-group:nth-of-type(3) { left: 210px !important; top: 55px !important; }
+  .demo-play-card { width: 190px; }
+  .demo-play-deck { right: -66px; top: 328px; }
+  .demo-play-notes { right: 55px; bottom: -24px; }
+  .demo-play-ask { position: absolute; z-index: 40; right: 0; bottom: 0; left: 0; height: 56px; border-top: 1px solid var(--line-pencil); border-left: 0; transition: height .25s ease-out; }
+  .demo-play-ask[data-open="true"] { height: min(74dvh, 620px); }
+  .demo-play-ask-body { display: none; }
+  .demo-play-ask[data-open="true"] .demo-play-ask-body { display: grid; }
+  .demo-play-ask-toggle { min-height: 56px; }
+  .demo-play-answer .lb-proof-card { font-size: 11.5px; }
+  .demo-play-presets { gap: 5px; padding: 7px 9px; }
+  .demo-play-presets button { max-width: 180px; font-size: var(--type-label); line-height: 1.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-play-group, .demo-play-card, .demo-play-deck, .demo-play-sticky, .demo-play-ask { transition-duration: 0ms; }
+}
+
+/* Canvas Lab only: a brief three-panel opening. It never intercepts input. */
+@keyframes canvas-lab-unfold-left {
+  from { transform: perspective(900px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(900px) rotateY(-88deg); opacity: 0; }
+}
+@keyframes canvas-lab-unfold-centre {
+  from { transform: scaleX(1); opacity: 1; }
+  to { transform: scaleX(0); opacity: 0; }
+}
+@keyframes canvas-lab-unfold-right {
+  from { transform: perspective(900px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(900px) rotateY(88deg); opacity: 0; }
+}
+.canvas-lab-unfold-panel {
+  width: 33.333%;
+  background: var(--nb-paper);
+  border-right: 1px solid var(--nb-pencil);
+  transform-origin: left center;
+}
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(1) { animation: canvas-lab-unfold-left 500ms var(--nb-ease) both; }
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(2) { animation: canvas-lab-unfold-centre 500ms var(--nb-ease) both; transform-origin: center; }
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(3) { animation: canvas-lab-unfold-right 500ms var(--nb-ease) both; transform-origin: right center; }
+/* A banner floats over the board, so the canvas never shifts when it appears. */
+.canvas-lab-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  padding: 8px 16px;
+}
+
+/* LIVE-2b: offline is a floating ink pill. Ink, never green: green means Lasso is live. */
+.canvas-lab-offline-pill {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  width: max-content;
+  border-radius: var(--corner-float);
+  background: var(--action-primary, #0a0a0a);
+  color: var(--action-primary-fg, #fafaf7);
+  padding: 8px 14px 8px 10px;
+  box-shadow: 0 6px 20px -8px color-mix(in srgb, #0a0a0a 45%, transparent);
+  pointer-events: none;
+}
+.canvas-lab-offline-pill p {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.35;
+  color: inherit;
+}
+
+.lasso-paper,
+.canvas-lab-surface {
+  background-color: var(--nb-paper);
+  background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.canvas-lab-surface {
+  cursor: grab;
+}
+.work-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 36px;
+  padding-inline: 32px;
+}
+.work-source-tally {
+  height: 20px;
+  padding-inline: 32px;
+  line-height: 20px;
+}
+.work-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+.canvas-lab-surface:has(> [data-testid="canvas-lab-stage"]) { cursor: grab; }
+/* MOB-4: only the signed-in Workboard owns one-finger pan and two-finger pinch; Home and demo boards keep native scrolling. Scrollers inside cards keep native touch scrolling, because touch-action stops at the nearest scroll container. */
+[data-testid="canvas-lab-shell"] .canvas-lab-surface { touch-action: none; }
+[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface,
+[data-testid="canvas-lab-shell"][data-interaction="drag"] .canvas-lab-card {
+  cursor: grabbing;
+}
+[data-testid="canvas-lab-shell"][data-interaction="drag"] .canvas-lab-stage,
+[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-stage,
+[data-testid="canvas-lab-shell"][data-interaction="resize"] .canvas-lab-stage,
+[data-testid="canvas-lab-shell"][data-interaction="connect"] .canvas-lab-stage { user-select: none; }
+/* LIFT-1 (L1): a live card's face is static on the board. The rule above only applies once a drag has
+   started, a render after the press, which is when the browser begins a text selection; so the face never
+   selects at all. Copying text is for the reader. Edit fields keep their selection. */
+[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] { user-select: none; -webkit-user-select: none; }
+[data-testid="canvas-lab-shell"] .canvas-lab-stage [role="group"][data-node-id][data-read-only="false"] :is(input, textarea, [contenteditable="true"]) { user-select: text; -webkit-user-select: text; }
+.canvas-lab-card { cursor: grab; }
+/* HAND-1: with the hand on, every press on the board pans, so everything on it shows the hand. */
+.canvas-lab-surface[data-hand="true"], .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grab !important; }
+[data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"], [data-testid="canvas-lab-shell"][data-interaction="pan"] .canvas-lab-surface[data-hand="true"] [data-testid="canvas-lab-stage"] * { cursor: grabbing !important; }
+/* HAND-1: a sideways two-finger swipe on the board never turns into the browser's back or forward. */
+.canvas-lab-surface { overscroll-behavior-x: none; }
+html:has([data-testid="canvas-lab-shell"]), body:has([data-testid="canvas-lab-shell"]) { overscroll-behavior-x: none; }
+/* FIX-CURSOR: anything being edited on the board gets the document cursor, never the board's hand. */
+[data-testid="canvas-lab-stage"] [data-editing="true"] { cursor: auto; }
+[data-testid="canvas-lab-stage"] [data-editing="true"] :is([contenteditable="true"], textarea, input[type="text"]) { cursor: text; }
+/* FIX-SHIMMER: a card whose text is on its way shows lines that shimmer, not the no-preview sketch. */
+.lab-card-text-loading { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 18px 16px; }
+.lab-card-text-loading > span { display: block; height: 9px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--surface-sunk-2) 0 40%, color-mix(in srgb, var(--surface-sunk-2) 60%, var(--nb-white)) 50%, var(--surface-sunk-2) 60% 100%); background-size: 250% 100%; animation: lab-card-shimmer 1.8s linear infinite; }
+@keyframes lab-card-shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .lab-card-text-loading > span { animation: none; } }
+.canvas-lab-colour-block {
+  z-index: 0;
+  border-radius: var(--corner-float);
+  border: 1px solid color-mix(in srgb, var(--nb-pencil) 30%, transparent);
+}
+.canvas-lab-colour-block[data-selected="true"] {
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green));
+  outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
+  cursor: grab;
+}
+.canvas-lab-colour-block-edge { position: absolute; pointer-events: auto; background: transparent; }
+.canvas-lab-colour-block-edge[data-edge="top"], .canvas-lab-colour-block-edge[data-edge="bottom"] { left: 0; width: 100%; height: 12px; }
+.canvas-lab-colour-block-edge[data-edge="left"], .canvas-lab-colour-block-edge[data-edge="right"] { top: 0; height: 100%; width: 12px; }
+.canvas-lab-colour-block-edge[data-edge="top"] { top: 0; }
+.canvas-lab-colour-block-edge[data-edge="right"] { right: 0; }
+.canvas-lab-colour-block-edge[data-edge="bottom"] { bottom: 0; }
+.canvas-lab-colour-block-edge[data-edge="left"] { left: 0; }
+.canvas-lab-colour-block-remove { position: absolute; right: 10px; top: 10px; z-index: 2; border-radius: var(--corner-control); background: var(--nb-paper); padding: 4px 7px; font-size: var(--type-label); color: var(--nb-mid); }
+.canvas-lab-text-block { z-index: 1; min-width: 80px; min-height: 24px; }
+.canvas-lab-text-block[data-empty="true"] { outline: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed var(--nb-pencil); outline-offset: calc(3px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-text-block[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green)); outline-offset: calc(3px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-text-block textarea { width: 100%; height: 100%; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--nb-ink); font-family: var(--font-ui); line-height: 1.25; }
+.canvas-lab-text-block textarea:focus { outline: none; }
+.canvas-lab-text-block textarea::placeholder { color: var(--nb-faint); }
+.canvas-lab-text-block[data-size="small"] textarea { font-size: var(--type-small); }
+.canvas-lab-text-block[data-size="body"] textarea { font-size: var(--type-body); }
+.canvas-lab-text-block[data-size="label"] textarea { font-size: var(--type-lead); }
+.canvas-lab-text-block[data-size="heading"] textarea { font-family: var(--font-display); font-size: var(--type-display); }
+.canvas-lab-text-block[data-weight="regular"] textarea { font-weight: 400; }
+.canvas-lab-text-block[data-weight="medium"] textarea { font-weight: 500; }
+.canvas-lab-text-block[data-weight="bold"] textarea { font-weight: 700; }
+.canvas-lab-text-block[data-colour="graphite"] textarea { color: var(--nb-graphite); }
+.canvas-lab-text-block[data-colour="mid"] textarea { color: var(--nb-mid); }
+.canvas-lab-text-block[data-colour="green"] textarea { color: var(--nb-green); }
+.canvas-lab-text-block[data-colour="blue"] textarea { color: var(--nb-blue); }
+.canvas-lab-text-block-edge { position: absolute; z-index: 2; pointer-events: auto; background: transparent; }
+.canvas-lab-text-block-edge[data-edge="top"], .canvas-lab-text-block-edge[data-edge="bottom"] { left: 0; width: 100%; height: 12px; }
+.canvas-lab-text-block-edge[data-edge="left"], .canvas-lab-text-block-edge[data-edge="right"] { top: 0; height: 100%; width: 12px; }
+.canvas-lab-text-block-edge[data-edge="top"] { top: 0; }
+.canvas-lab-text-block-edge[data-edge="right"] { right: 0; }
+.canvas-lab-text-block-edge[data-edge="bottom"] { bottom: 0; }
+.canvas-lab-text-block-edge[data-edge="left"] { left: 0; }
+.canvas-lab-text-block-controls { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 3; display: flex; gap: 4px; align-items: center; padding: 4px; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); background: var(--nb-paper); box-shadow: var(--shadow-soft); }
+.canvas-lab-text-block-controls select { height: 28px; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); background: var(--nb-paper); padding: 0 6px; color: var(--nb-graphite); font-size: var(--type-small); }
+.canvas-lab-frame:focus-visible,
+.canvas-lab-stage path[role="button"]:focus-visible {
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--focus-ring, var(--nb-green));
+  outline-offset: calc(2px * var(--lab-inverse-zoom, 1));
+}
+.canvas-lab-card-paper {
+  position: relative;
+  border-radius: var(--radius-sm-new);
+}
+/* STRIP stays outside measured card paper, so opening cannot affect layout. */
+.deck-strip { position: absolute; top: 0; z-index: 20; background: var(--surface-sunk-2); border: var(--border-weight) solid var(--line-hairline); border-radius: var(--radius-sm-new); box-shadow: var(--shadow-float); color: var(--text-primary); }
+.deck-strip > header { display: flex; justify-content: flex-end; padding: 4px 8px; }
+.deck-strip-scroll { overflow-x: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; padding: 16px; }
+.deck-strip-pages { display: flex; align-items: stretch; gap: 16px; width: max-content; }
+.deck-strip-page { flex: 0 0 320px; width: 320px; min-height: 180px; padding: 24px; background: var(--surface-raised); border: 0; border-radius: 0; box-shadow: none; font-family: var(--font-sans); overflow-wrap: anywhere; }
+.deck-strip-page h3 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 600; }
+.deck-strip-page ul { margin: 16px 0 0; padding-left: 20px; list-style: disc; font-size: 16px; line-height: 1.5; }
+.deck-strip-page li + li { margin-top: 8px; }
+.deck-strip-boundary { position: absolute; inset: 40px 0 26px; background: var(--surface-raised); }
+.canvas-lab-card-paper[data-bundled-piece="true"] > article {
+  background: color-mix(in srgb, var(--bundle-vendor, var(--vendor-unknown)) 10%, var(--card)) !important;
+}
+.canvas-lab-card-paper[data-bundled-piece="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  border-left: 6px solid var(--bundle-vendor, var(--vendor-unknown));
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* The note fills the card rect exactly, so the box and the paper agree. */
+.canvas-lab-card-paper > .nb-paper,
+.canvas-lab-card-paper > [data-drawing="sticky"] > .nb-paper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.canvas-lab-card-paper > .nb-paper > .nb-paper-body,
+.canvas-lab-card-paper > [data-drawing="sticky"] > .nb-paper > .nb-paper-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.canvas-lab-paper {
+  --nb-paper-fill: var(--card);
+  --nb-paper-edge: var(--nb-pencil);
+  max-width: none;
+  aspect-ratio: auto;
+}
+.canvas-lab-paper-preview {
+  --canvas-vendor-claude: var(--vendor-claude);
+  --canvas-vendor-chatgpt: var(--nb-graphite);
+  --canvas-vendor-gemini: var(--vendor-gemini);
+  --canvas-vendor-other: var(--nb-mid);
+  border-top: 3px solid var(--canvas-preview-vendor, var(--canvas-vendor-other));
+}
+.canvas-lab-preview-frame { display: flex; width: 100%; height: 100%; flex-direction: column; overflow: hidden; border: 0; border-radius: var(--radius-sm-new); background: var(--nb-paper-fill, var(--nb-white)); }
+.nb-paper.canvas-lab-preview-frame { border-radius: var(--radius-sm-new); }
+.canvas-lab-preview-source { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--nb-rule); padding: 2px 4px 2px 8px; font-family: var(--font-mono); font-size: var(--type-label); line-height: 12px; color: var(--nb-mid); text-transform: uppercase; letter-spacing: .05em; }
+.canvas-lab-preview-source > span { display: flex; min-width: 0; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.canvas-lab-preview-source > span > i { flex: 0 0 11px; width: 11px; height: 11px; margin-right: 1px; border-radius: var(--radius-pill); }
+.canvas-lab-preview-source button, .canvas-lab-page-controls button { width: 24px; height: 24px; min-height: 24px; flex: 0 0 auto; }
+.canvas-lab-preview-source svg, .canvas-lab-page-controls svg { width: 12px; height: 12px; }
+.canvas-lab-preview-content { padding: 9px 10px; }
+.canvas-lab-document-page { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; }
+.canvas-lab-file-page { min-height: 0; flex: 1 1 auto; overflow: hidden; }
+.canvas-lab-page-controls { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px; border-top: 1px solid var(--nb-rule); font-family: var(--font-mono); font-size: var(--type-label); line-height: 12px; color: var(--nb-mid); }
+.chat-preview-window {
+  display: flex;
+  min-height: var(--nb-chat-preview-height);
+  flex: 1 1 auto;
+  padding: var(--nb-card-border-width);
+  border-radius: var(--radius-card);
+  background: var(--nb-graphite);
+}
+.chat-preview-window[data-preview-mode="expanded"] { display: flex; height: 100%; min-height: 0; margin-top: 0; }
+.chat-preview-window[data-chat-border="claude"] { background: var(--nb-chat-border-claude); }
+.chat-preview-window[data-chat-border="chatgpt"] { background: var(--nb-chat-border-chatgpt); }
+.chat-preview-window[data-chat-border="gemini"] { background: var(--nb-chat-border-gemini); }
+.chat-preview-window[data-chat-border="copilot"] { background: var(--nb-chat-border-copilot); }
+.chat-preview-window__body {
+  min-height: var(--nb-chat-preview-height);
+  flex: 1 1 auto;
+  border-radius: calc(var(--radius-card) - 1px);
+  background: var(--nb-paper-fill, var(--card));
+  padding: 8px 9px;
+}
+.chat-preview-window__body[data-preview-mode="excerpt"] {
+  overflow: hidden;
+}
+.chat-preview-window__body[data-preview-mode="expanded"] {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.nb-preview-content {
+  width: 100%;
+  min-height: 0;
+  padding: var(--nb-preview-inset);
+  overflow: hidden;
+}
+.nb-preview-content[data-preview-shape="portrait"],
+.canvas-lab-preview-frame[data-preview-shape="portrait"] { aspect-ratio: 3 / 4; }
+.nb-preview-content[data-preview-shape="slide"],
+.canvas-lab-preview-frame[data-preview-shape="slide"] { aspect-ratio: 16 / 9; }
+.nb-preview-content > :is(.chat-preview-window, .nb-document-preview-body) { height: 100%; }
+.nb-preview-content .chat-preview-window__body { height: 100%; }
+.canvas-lab-preview-turn { margin-bottom: 7px; }
+.canvas-lab-preview-turn > span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  line-height: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+.canvas-lab-preview-turn > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: var(--type-label);
+  line-height: 15px;
+  color: var(--foreground);
+}
+.canvas-lab-preview-footer { display: flex !important; }
+.canvas-lab-file-preview {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--radius-control);
+  background: var(--nb-white);
+  color: var(--nb-ink);
+  padding: 9px 10px 0;
+  -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+}
+.canvas-lab-html-preview { position: relative; height: 100%; min-height: 0; width: 100%; overflow: hidden; background: var(--nb-white); }
+.canvas-lab-html-preview iframe { display: block; height: 100%; width: 100%; border: 0; background: var(--nb-white); }
+.nb-document-preview-body {
+  border: var(--nb-document-border-width) solid var(--nb-graphite);
+  border-radius: var(--radius-card);
+}
+.nb-document-preview-body > .canvas-lab-file-preview { border: 0; }
+.nb-card-surface {
+  border: var(--nb-card-border-width) solid var(--nb-graphite);
+}
+.nb-preview-card { min-height: var(--nb-card-min-height); }
+.canvas-lab-file-preview p {
+  margin: 0 0 4px;
+  font-family: var(--font-sans);
+  font-size: var(--type-label);
+  line-height: 13px;
+}
+.canvas-lab-slide-preview strong {
+  display: block;
+  margin: 8px 4px 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 17px;
+}
+.canvas-lab-file-preview-canvas {
+  min-height: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--nb-white);
+  object-fit: cover;
+  object-position: top;
+}
+.canvas-lab-version-chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-grey-1);
+  padding: 1px 4px;
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  line-height: 11px;
+  color: var(--nb-mid);
+}
+.canvas-lab-paper-teammate {
+  --nb-paper-fill: var(--nb-grey-1);
+  --nb-paper-edge: var(--nb-rule);
+}
+.canvas-lab-paper-draft {
+  --nb-paper-fill: var(--nb-green-wash);
+  --nb-paper-edge: var(--nb-green);
+}
+.canvas-lab-paper-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  padding: 10px 12px;
+}
+.canvas-lab-paper-header,
+.canvas-lab-paper-source,
+.canvas-lab-paper-footer {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+.canvas-lab-paper-header { flex-shrink: 0; justify-content: space-between; }
+.canvas-lab-paper-source { overflow: hidden; }
+.canvas-lab-paper-source > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.canvas-lab-paper-source > span,
+.canvas-lab-paper-footer > span { font-size: var(--type-label); }
+.canvas-lab-paper-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  flex-shrink: 0;
+}
+.canvas-lab-paper-summary { min-height: 0; }
+.canvas-lab-paper-edit {
+  min-height: 0;
+  flex: 1 1 0;
+  overflow: auto;
+}
+.canvas-lab-paper-footer {
+  margin-top: auto;
+  justify-content: space-between;
+  border-top: 1px solid var(--nb-rule);
+  padding-top: 5px;
+}
+.canvas-lab-card:not([data-size="expanded"]) .canvas-lab-paper-footer { display: none; }
+.canvas-lab-card-paper[data-focused="true"],
+.canvas-lab-card-paper[data-connect-source="true"] {
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green));
+  outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
+}
+/* Cards in context are Ask's reading lime (#04F85B) in every skin, so you can see what is read (Liam, 15 Nov). */
+.canvas-lab-card-paper::before { content: ""; position: absolute; inset: calc(-1px * var(--lab-inverse-zoom, 1)); z-index: 10; border-radius: inherit; pointer-events: none; border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--ask-live); opacity: 0; transition: opacity 180ms ease-out; }
+.canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
+.canvas-lab-card-paper[data-selected="true"] { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--picked-glow-dim) * 100%), transparent); animation: picked-halo var(--halo-clock) ease-in-out infinite; }
+@keyframes picked-halo { 50% { box-shadow: 0 0 var(--halo-blur) var(--halo-spread) color-mix(in srgb, var(--ask-live) calc(var(--picked-glow-bright) * 100%), transparent); } }
+@media (prefers-reduced-motion: reduce) { .canvas-lab-card-paper[data-selected="true"] { animation: none; } }
+.canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
+.canvas-lab-card-teammate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform: translate(4px, 5px);
+  border-radius: var(--radius-card);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5.657' height='5.657'%3E%3Cline x1='0' y1='0' x2='5.657' y2='5.657' stroke='%232a2d2b' stroke-opacity='0.24' stroke-width='1'/%3E%3C/svg%3E") repeat;
+  pointer-events: none;
+}
+.canvas-lab-card-teammate > .canvas-lab-card-paper { position: relative; z-index: 1; }
+.canvas-lab-teammate-tag {
+  position: absolute;
+  left: -10px;
+  bottom: -12px;
+  z-index: 10;
+  display: inline-flex;
+  width: 30px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  font-family: var(--font-hand);
+  font-size: var(--type-lead);
+  line-height: 1;
+  pointer-events: auto;
+  cursor: default;
+}
+.canvas-lab-teammate-tag svg { position: absolute; inset: -1px -2px; width: 34px; height: 24px; overflow: visible; pointer-events: none; }
+.canvas-lab-teammate-tag path { fill: none; stroke: var(--nb-graphite); stroke-width: 1.2px; stroke-linecap: round; stroke-linejoin: round; }
+.canvas-lab-teammate-tag > span { position: relative; z-index: 1; pointer-events: none; }
+/* Firm brain phase 1: a quiet "Shown to client" line under a deliverable, signed-in board only. */
+.canvas-lab-client-shown {
+  position: absolute;
+  right: 0;
+  bottom: -24px;
+  z-index: 10;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nb-graphite);
+  pointer-events: auto;
+}
+.canvas-lab-context-coronas { z-index: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .canvas-lab-card-paper::before { transition: none; }
+}
+.canvas-lab-context-mark {
+  position: absolute;
+  left: calc(-9px * var(--lab-inverse-zoom, 1));
+  top: calc(-9px * var(--lab-inverse-zoom, 1));
+  z-index: 12;
+  box-shadow: 0 0 0 calc(2px * var(--lab-inverse-zoom, 1)) var(--nb-paper);
+  width: calc(18px * var(--lab-inverse-zoom, 1));
+  height: calc(18px * var(--lab-inverse-zoom, 1));
+  padding: calc(3px * var(--lab-inverse-zoom, 1));
+  border-radius: var(--corner-pill);
+  background: var(--ask-live);
+  color: var(--text-on-acid);
+  pointer-events: none;
+}
+.canvas-lab-context-title {
+  padding-right: calc(24px * var(--lab-inverse-zoom, 1));
+}
+.canvas-lab-context-header {
+  padding-right: calc(24px * var(--lab-inverse-zoom, 1));
+}
+.canvas-lab-card-paper[data-connect-source="true"] {
+  background: var(--nb-green-wash);
+}
+.canvas-lab-anchor {
+  position: absolute;
+  z-index: 12;
+  width: 8px;
+  height: 8px;
+  min-height: 0;
+  padding: 0;
+  border: 1.4px solid var(--handle, var(--nb-green));
+  border-radius: 50%;
+  background: var(--nb-paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nb-fast) var(--nb-ease), background var(--nb-fast) var(--nb-ease);
+  cursor: crosshair;
+  transform-origin: center;
+}
+.canvas-lab-anchor::before,
+.canvas-lab-resize-handle::before,
+.canvas-lab-frame-menu-trigger::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+}
+.canvas-lab-card:hover .canvas-lab-anchor,
+.canvas-lab-card:focus-within .canvas-lab-anchor,
+.canvas-lab-card[data-connecting="true"] .canvas-lab-anchor {
+  opacity: 1;
+  pointer-events: auto;
+}
+.canvas-lab-anchor[data-active="true"] {
+  background: var(--handle, var(--nb-green));
+  outline-color: var(--handle, var(--nb-green));
+}
+.canvas-lab-anchor:focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: 2px; }
+.canvas-lab-anchor[data-side="top"] { left: 50%; top: -15px; transform: translateX(-50%) scale(var(--lab-inverse-zoom, 1)); }
+.canvas-lab-anchor[data-side="right"] { right: -15px; top: 50%; transform: translateY(-50%) scale(var(--lab-inverse-zoom, 1)); }
+.canvas-lab-anchor[data-side="bottom"] { bottom: -15px; left: 50%; transform: translateX(-50%) scale(var(--lab-inverse-zoom, 1)); }
+.canvas-lab-anchor[data-side="left"] { left: -15px; top: 50%; transform: translateY(-50%) scale(var(--lab-inverse-zoom, 1)); }
+.canvas-lab-resize-handle {
+  position: absolute;
+  z-index: 13;
+  width: 8px;
+  height: 8px;
+  min-height: 0;
+  padding: 0;
+  border: 1.4px solid var(--handle, var(--nb-green));
+  border-radius: var(--corner-mark);
+  background: var(--nb-paper);
+  transform: scale(var(--lab-inverse-zoom, 1));
+  transform-origin: center;
+}
+.canvas-lab-resize-handle:focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: 2px; }
+.canvas-lab-resize-handle[data-corner="nw"] { left: -4px; top: -4px; cursor: nwse-resize; }
+.canvas-lab-resize-handle[data-corner="ne"] { right: -4px; top: -4px; cursor: nesw-resize; }
+.canvas-lab-resize-handle[data-corner="se"] { right: -4px; bottom: -4px; cursor: nwse-resize; }
+.canvas-lab-resize-handle[data-corner="sw"] { left: -4px; bottom: -4px; cursor: nesw-resize; }
+.canvas-lab-frame {
+  border: 1px dashed var(--nb-pencil);
+  border-radius: var(--radius-control);
+}
+.canvas-lab-frame[data-selected="true"] { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--select-ring, var(--nb-green)); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-section { position: absolute; pointer-events: none; border: 2.5px solid transparent; border-radius: var(--radius-control); background: none; outline: none; }
+.canvas-lab-section-outline { position: absolute; inset: 0; overflow: visible; pointer-events: none; stroke: color-mix(in srgb, var(--nb-mid) 60%, transparent); }
+.canvas-lab-section-outline rect { rx: var(--radius-control); }
+.canvas-lab-section-background { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; pointer-events: auto; }
+.canvas-lab-section-background .canvas-lab-region-swatches { flex-wrap: wrap; max-width: 100%; }
+.canvas-lab-section-background-popup { position: absolute; left: 12px; top: 56px; z-index: 30; width: min(280px, calc(100% - 24px)); pointer-events: auto; }
+.canvas-lab-region-palette:has(.canvas-lab-section-background) { max-width: calc(100vw - 32px); }
+.canvas-lab-section:focus-visible { outline: 1px solid var(--nb-mid); }
+.canvas-lab-section-edge { position: absolute; pointer-events: auto; cursor: grab; }
+/* DRAG-1: a selected section takes presses inside it, so it moves from anywhere inside; unselected, the inside stays the board. */
+.canvas-lab-section[data-selected="true"][data-movable="true"] { pointer-events: auto; cursor: grab; }
+.canvas-lab-frame[data-movable="true"] > [data-frame-name] { cursor: grab; }
+.canvas-lab-frame[data-movable="true"][data-selected="true"] { cursor: grab; }
+/* DRAG-2: the grab band keeps a steady size on screen as the board zooms out (8 board px was about 3 px at 40%). */
+.canvas-lab-section-edge[data-section-edge="top"] { inset: calc(-4px * var(--lab-inverse-zoom, 1)) 0 auto; height: calc(8px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-section-edge[data-section-edge="bottom"] { inset: auto 0 calc(-4px * var(--lab-inverse-zoom, 1)); height: calc(8px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-section-edge[data-section-edge="left"] { inset: 0 auto 0 calc(-4px * var(--lab-inverse-zoom, 1)); width: calc(8px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-section-edge[data-section-edge="right"] { inset: 0 calc(-4px * var(--lab-inverse-zoom, 1)) 0 auto; width: calc(8px * var(--lab-inverse-zoom, 1)); }
+/* DRAG-2: a card resting on a section's title must not hide it: the title sits above cards (cards stack at 1 to 14),
+   below Ask (30) and its reading loops (28). */
+.canvas-lab-section-title { z-index: 20; }
+.canvas-lab-section-title { position: absolute; top: -20px; left: 14px; max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 8px; pointer-events: auto; color: var(--nb-graphite); font-family: var(--font-serif); font-weight: 700; letter-spacing: -0.01em; font-size: 34px; line-height: 1; background: var(--lab-section-title-fill, var(--nb-paper)); border: 0; border-radius: var(--corner-control); padding: 2px 10px 3px; box-shadow: none; transition: background 120ms ease, box-shadow 120ms ease; transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
+.canvas-lab-section-title:hover { background: var(--nb-grey-1); box-shadow: 0 0 0 1px var(--nb-rule); }
+.canvas-lab-section[data-selected="true"] .canvas-lab-section-title { background: var(--nb-grey-1); box-shadow: 0 0 0 2px var(--select-ring, var(--nb-green)); }
+.canvas-lab-section-title h2 { font: inherit; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.canvas-lab-section-title .canvas-lab-frame-name-input { width: min(420px, 60vw); min-width: 0; font: inherit; color: inherit; }
+.canvas-lab-section-placeholder { display: var(--lab-section-placeholder-display, inline-flex); height: auto; min-height: 0; padding: 0; font-family: var(--font-sans); font-size: calc(13px / var(--lab-section-label-inverse-zoom, 1)); color: var(--nb-soft); white-space: normal; }
+.canvas-lab-section-menu { width: 28px; height: 28px; min-height: 0; flex-shrink: 0; font-size: var(--type-control); }
+.canvas-lab-section-menu svg { width: 16px; height: 16px; }
+.canvas-lab-section-title [data-testid="section-marker-line"] { display: var(--lab-section-marker-display, block); font-size: var(--type-body); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--nb-mid); }
+.canvas-lab-section-menu[data-visible="false"] { visibility: hidden; }
+.canvas-lab-section .canvas-lab-resize-handle { pointer-events: auto; width: 8px !important; height: 8px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; border: 1.4px solid var(--handle, var(--nb-green)) !important; border-radius: var(--corner-mark) !important; background: var(--nb-paper) !important; }
+.canvas-lab-frame-fit { position: absolute; right: 4px; bottom: 4px; z-index: 14; width: 26px; height: 26px; min-height: 0; }
+.canvas-lab-frame-menu-trigger {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  z-index: 14;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  color: var(--nb-graphite);
+  background: var(--nb-paper);
+  opacity: 1;
+  transform: scale(var(--lab-inverse-zoom, 1));
+  transform-origin: center;
+}
+.canvas-lab-frame-menu-trigger svg { width: 16px; height: 16px; }
+.canvas-lab-frame:hover .canvas-lab-frame-menu-trigger,
+.canvas-lab-frame:focus-within .canvas-lab-frame-menu-trigger,
+.canvas-lab-frame[data-selected="true"] .canvas-lab-frame-menu-trigger,
+.canvas-lab-frame-menu-trigger[data-state="open"] { opacity: 1; }
+.canvas-lab-frame-menu-trigger:focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: 2px; }
+.canvas-lab-frame-name-input {
+  width: min(240px, calc(100% - 40px));
+  border: 0;
+  border-bottom: 1.4px solid var(--nb-green);
+  background: var(--nb-paper);
+  outline: none;
+}
+.canvas-lab-frame-name-error { display: block; margin-top: 3px; color: var(--destructive); font-size: var(--type-body); line-height: 1; }
+/* LEG-1: workstream and grouping names read like section titles: 34 px bold, scaled up as the board zooms out,
+   sitting on the frame's top edge on a knock-out. The count stays inside the frame, top right. */
+/* LEG-1b: the frame name's own classes no longer set size or place (utilities outrank this layer), so these hold. */
+.canvas-lab-frame > [data-frame-name] { position: absolute; top: -20px; left: 14px; right: 12px; align-items: flex-start; pointer-events: none; }
+.canvas-lab-frame > [data-frame-name] > * { pointer-events: auto; }
+.canvas-lab-frame > [data-frame-name] h2,
+.canvas-lab-frame > [data-frame-name] .canvas-lab-frame-name-input { max-width: calc((100% - 24px) / var(--lab-section-label-inverse-zoom, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: var(--corner-control); padding: 2px 10px 3px; background: var(--lab-section-title-fill, var(--nb-paper)); font-family: var(--font-serif); font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; color: var(--nb-graphite); transform-origin: left top; transform: scale(var(--lab-section-label-inverse-zoom, 1)); }
+.canvas-lab-frame > [data-frame-name] > div { min-width: 0; }
+.canvas-lab-frame > [data-frame-name] > span:last-child { position: absolute; top: 30px; right: 0; }
+.canvas-lab-frame > [data-frame-name] .canvas-lab-region-name { font-size: var(--type-title); font-weight: 600; }
+.canvas-lab-relationships { pointer-events: none; }
+.canvas-lab-relationship-overlays { z-index: 20; pointer-events: none; }
+.canvas-lab-relationship-hit,
+.canvas-lab-relationship-line { pointer-events: stroke; }
+.canvas-lab-relationship-remove-wrap { overflow: visible; pointer-events: auto; }
+.canvas-lab-relationship-remove {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--nb-pencil);
+  border-radius: 50%;
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  font-family: var(--font-mono);
+  font-size: calc(11.5px * var(--lab-inverse-zoom, 1));
+  line-height: 1;
+  cursor: pointer;
+}
+.canvas-lab-relationship-label {
+  font-family: var(--font-hand);
+  pointer-events: none;
+}
+.canvas-lab-relationship-label rect { fill: var(--nb-paper); stroke: var(--nb-rule); }
+.canvas-lab-relationship-label text { fill: var(--nb-mid); }
+.canvas-lab-relationship-controls {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-lab-relationship-change {
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  color: var(--nb-mid);
+  font-family: var(--font-hand);
+  line-height: 1;
+  padding: calc(3px * var(--lab-inverse-zoom, 1)) calc(6px * var(--lab-inverse-zoom, 1));
+  white-space: nowrap;
+  cursor: pointer;
+}
+.canvas-lab-relationship-change:focus-visible { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--focus-ring, var(--nb-green)); outline-offset: calc(2px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-relation-picker {
+  position: absolute;
+  z-index: 22;
+  border: 1.4px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  padding: 5px 6px;
+  outline: none;
+}
+.canvas-lab-relation-picker ul { display: flex; flex-direction: column; gap: 1px; }
+.canvas-lab-relation-picker button {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-control);
+  padding: 2px 8px;
+  text-align: left;
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  font-size: var(--type-lead);
+  line-height: 1.2;
+  cursor: pointer;
+}
+.canvas-lab-relation-picker button[data-active="true"],
+.canvas-lab-relation-picker button:hover { background: var(--nb-green-wash); }
+.canvas-lab-relation-picker p { margin-top: 4px; color: var(--nb-mid); font-size: var(--type-small); }
+.canvas-lab-relationship-remove:focus-visible { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--focus-ring, var(--nb-green)); outline-offset: calc(2px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-link-rejection {
+  position: absolute;
+  z-index: 18;
+  border: 1px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  padding: 5px 7px;
+  color: var(--nb-mid);
+  font-family: var(--font-hand);
+  font-size: var(--type-lead);
+  line-height: 1;
+  pointer-events: none;
+}
+.canvas-lab-frame-guidance { position: absolute; left: 24px; right: 24px; top: 58px; line-height: 1.25; }
+.canvas-lab-add-workstream { display: inline-flex; align-items: center; min-height: 28px; padding: 0 8px; color: var(--nb-green); font-family: var(--font-hand); font-size: var(--type-lead); }
+/* Size comes from BOARD_INLINE_ADD_SIZE, set inline. */
+.canvas-lab-inline-add { position: absolute; z-index: 15; }
+.canvas-lab-inline-workstream { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.canvas-lab-inline-workstream input { width: 132px; border: 0; border-bottom: 1.4px solid var(--nb-green); background: var(--nb-paper); color: var(--nb-ink); font-family: var(--font-hand); font-size: var(--type-lead); outline: none; }
+.canvas-lab-inline-workstream button { color: var(--nb-ink); font-family: var(--font-mono); font-size: var(--type-label); text-transform: uppercase; }
+.canvas-lab-inline-workstream span { flex-basis: 100%; color: var(--destructive); font-family: var(--font-hand); font-size: var(--type-body); }
+/* A kept answer: white face, lime edge, so it reads apart from work cards. */
+.canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--live, var(--nb-lasso-green)); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
+.canvas-lab-answer-card[data-focused="true"] { border-color: transparent; outline: 2.4px solid var(--neutral-95); outline-offset: -1.4px; }
+.canvas-lab-answer-pin { position: absolute; left: 50%; top: calc(-12px * var(--lab-inverse-zoom, 1)); z-index: 3; display: grid; place-items: center; width: calc(24px * var(--lab-inverse-zoom, 1)); height: calc(24px * var(--lab-inverse-zoom, 1)); margin-left: calc(-12px * var(--lab-inverse-zoom, 1)); border: 2px solid var(--nb-white); border-radius: var(--radius-pill); background: var(--pin); color: var(--nb-white); box-shadow: 0 1px 3px color-mix(in oklab, var(--neutral-95) 25%, transparent); }
+.canvas-lab-answer-pin:hover { background: color-mix(in srgb, var(--pin) 85%, var(--neutral-95)); }
+.canvas-lab-answer-card { border-color: var(--nb-rule); }
+.canvas-lab-answer-card > header, .canvas-lab-answer-card > footer { flex-shrink: 0; }
+.canvas-lab-answer-body { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; margin-top: 8px; overflow-wrap: anywhere; font-size: var(--type-small); line-height: 1.5; }
+.canvas-lab-answer-card[data-expanded="true"] .canvas-lab-answer-body { flex: 0 0 auto; overflow: visible; }
+.canvas-lab-answer-body > :is(p, .peek-prose) { margin-top: 0; font-size: inherit; line-height: inherit; }
+.canvas-lab-answer-body .peek-prose > * + * { margin-top: 0.35em; }
+.canvas-lab-answer-body .peek-prose :is(h1, h2, h3, h4, h5, h6) { font-size: inherit; line-height: inherit; letter-spacing: 0; }
+.canvas-lab-answer-body .peek-prose :is(ul, ol) { padding-left: 1.25em; }
+.canvas-lab-answer-body .peek-prose li + li { margin-top: 0.1em; }
+.canvas-lab-answer-body .peek-prose pre { white-space: pre-wrap; font-size: inherit; }
+.canvas-lab-answer-fade { position: absolute; inset: auto 0 0; height: 3em; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--nb-white) 0%, transparent), var(--nb-white)); }
+.canvas-lab-answer-toggle { flex-shrink: 0; align-self: flex-start; height: auto; padding: 2px 0; font-size: var(--type-small); color: var(--nb-mid); }
+.canvas-lab-drop-prompt { position: absolute; z-index: 20; display: flex; align-items: center; gap: 9px; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-paper); padding: 7px 9px; box-shadow: var(--shadow-modal); }
+.canvas-lab-drop-prompt span { color: var(--nb-mid); font-family: var(--font-hand); font-size: var(--type-lead); }
+.canvas-lab-drop-prompt button { color: var(--nb-ink); font-family: var(--font-mono); font-size: var(--type-label); text-transform: uppercase; }
+.canvas-lab-draw-rect { position: absolute; z-index: 18; pointer-events: none; border: 1.4px dashed var(--drop-target, var(--nb-green)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--drop-target, var(--nb-green)) 8%, transparent); }
+.canvas-lab-draw-name { position: absolute; z-index: 21; }
+.canvas-lab-surface[data-drawing="true"] { cursor: crosshair; }
+.canvas-lab-region-palette { position: absolute; right: 16px; top: calc(100% + 8px); z-index: 30; }
+.canvas-lab-region-swatches { display: flex; align-items: center; gap: 4px; border: 1px solid var(--nb-line-hairline); border-radius: var(--radius-control); background: var(--nb-paper); padding: 5px; box-shadow: var(--shadow-modal); }
+.canvas-lab-region-swatch { width: 22px; height: 22px; min-width: 22px; border: 1.4px solid; border-radius: var(--radius-control); padding: 0; box-shadow: none; }
+.canvas-lab-region-swatch:hover { box-shadow: inset 0 0 0 1px var(--nb-graphite); }
+.canvas-lab-region-swatch[aria-pressed="true"] { outline: 2px solid var(--nb-graphite); outline-offset: 2px; }
+.canvas-lab-grouping-name-popup { position: absolute; z-index: 32; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-paper); padding: 8px 34px 8px 9px; box-shadow: var(--shadow-modal); }
+.canvas-lab-grouping-name-popup::after { position: absolute; left: 50%; width: 10px; height: 10px; border-right: 1px solid var(--nb-pencil); border-bottom: 1px solid var(--nb-pencil); background: var(--nb-paper); content: ""; }
+.canvas-lab-grouping-name-popup[data-side="above"]::after { bottom: -6px; transform: translateX(-50%) rotate(45deg); }
+.canvas-lab-grouping-name-popup[data-side="below"]::after { top: -6px; transform: translateX(-50%) rotate(225deg); }
+.canvas-lab-grouping-name-popup .canvas-lab-frame-name-input { width: 100%; }
+.canvas-lab-grouping-name-dismiss { position: absolute; right: 3px; top: 3px; width: 26px; height: 26px; min-height: 26px; }
+.canvas-lab-grouping-name-popup .canvas-lab-region-hint { margin-top: 5px; line-height: 1.15; }
+.canvas-lab-add-workstream:focus-visible,
+.canvas-lab-inline-workstream button:focus-visible,
+.canvas-lab-inline-workstream input:focus-visible,
+.canvas-lab-drop-prompt button:focus-visible { outline: 2px solid var(--focus-ring, var(--nb-green)); outline-offset: 2px; }
+.canvas-lab-structure-toggle { display: flex; align-items: center; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); padding: 2px; }
+.canvas-lab-workstream-switch { display: flex; min-height: 32px; align-items: center; gap: 7px; padding-inline: 6px; white-space: nowrap; }
+.canvas-lab-workstream-switch label { color: var(--nb-mid); font-size: var(--type-small); }
+.canvas-lab-card-bar {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.canvas-lab-card-bar .canvas-lab-card-menu-trigger,
+.canvas-lab-card-bar .canvas-lab-card-open {
+  position: static;
+  right: auto;
+  top: auto;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+}
+.canvas-lab-card-menu-trigger {
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  opacity: .55;
+  transition: opacity var(--nb-fast) var(--nb-ease);
+}
+.canvas-lab-card-open {
+  background: transparent;
+  color: var(--nb-graphite);
+  opacity: .55;
+  transition: opacity var(--nb-fast) var(--nb-ease);
+}
+.canvas-lab-card:hover .canvas-lab-card-open,
+.canvas-lab-card-open:focus-visible {
+  opacity: 1;
+}
+.canvas-lab-card-open:focus-visible {
+  outline: 2px solid var(--nb-graphite);
+  outline-offset: 2px;
+}
+.canvas-lab-card:hover .canvas-lab-card-menu-trigger,
+.canvas-lab-card:focus-within .canvas-lab-card-menu-trigger,
+.canvas-lab-card-menu-trigger[data-state="open"] {
+  opacity: 1;
+}
+.canvas-lab-card-menu {
+  min-width: 164px;
+  border-color: var(--nb-rule);
+  background: var(--nb-paper);
+}
+@media (hover: none), (max-width: 767px) {
+  .canvas-lab-card-bar .canvas-lab-card-menu-trigger,
+  .canvas-lab-card-bar .canvas-lab-card-open {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    opacity: 1;
+  }
+}
+::highlight(canvas-lab-selection) { background: var(--nb-green-wash); }
+
+.canvas-lab-work-rail {
+  width: min(340px, 100vw);
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--nb-rule);
+  background: var(--nb-white);
+}
+.canvas-lab-rail-collapsed {
+  width: 42px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--nb-rule);
+  background: var(--nb-white);
+}
+@media (max-width: 767px) {
+  .canvas-lab-work-rail { position: absolute; inset: 52px 0 0 52px; z-index: 35; width: auto; }
+  .canvas-lab-rail-collapsed { width: 42px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-lab-unfold-panel { animation: none !important; opacity: 0; }
+  .canvas-lab-card,
+  .canvas-lab-card-paper,
+  .canvas-lab-frame,
+  .canvas-lab-anchor,
+  .canvas-lab-resize-handle { transition: none !important; }
+}
+
+/* Sidebar grammar (pass 84). */
+/* Figma 12:2: a nav group header is handwritten, Caveat Bold 16px at
+   text/primary. It is a section title in the notebook voice, not a sans label. */
+.nb-group-header {
+  font-family: var(--font-hand);
+  font-size: var(--type-lead);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--nb-ink);
+}
+/* S5a · the "Shared with me" ink. Title and person names only: never a
+   control, never body text, never a border or a fill. */
+.nb-shared-ink {
+  color: var(--nb-shared);
+}
+/* S5b · the person label under the section title, at type/small like the rest
+   of the sidebar grammar. */
+.nb-shared-name {
+  font-family: var(--font-sans);
+  font-size: var(--type-small);
+}
+/* type/small, resolved through the sheet rather than an arbitrary Tailwind
+   value, so every 11.5px surface reads from one place. */
+.nb-type-small {
+  font-size: var(--type-small);
+}
+/* The tree is a natural-height list within the sidebar's middle scroller.
+   A standing hairline separates the tree from the actions. */
+.nb-nav-tree-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+/* NAV-2: the rail scrolls as a whole; Sources and Settings stay pinned at its foot. */
+.lasso-sidebar-nav { min-height: 100%; }
+.lasso-sidebar-footer { position: sticky; bottom: 0; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line-hairline); background: var(--sidebar); z-index: 1; }
+/* --sidebar resolves at :root to the old paper; under the shell the rail itself paints --surface-page. */
+[data-lasso="on"] .lasso-sidebar-footer { background: var(--surface-page); }
+.nb-nav-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--nb-rule);
+}
+.nb-nav-create-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--radius-card);
+  background: var(--nb-grey-1);
+  box-shadow: inset 0 1px 2px var(--nb-shadow-soft);
+}
+.nb-nav-create-tile svg {
+  color: var(--nb-region-green-vivid);
+}
+.nb-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  padding: 4px 7px;
+  font-family: var(--font-sans);
+  font-size: var(--type-small);
+  font-weight: 400;
+  color: var(--nb-mid);
+  transition:
+    background-color 120ms var(--nb-ease),
+    color 120ms var(--nb-ease);
+}
+.nb-nav-item:hover {
+  background: var(--nb-grey-1);
+  color: var(--nb-ink);
+}
+.nb-nav-item-disabled,
+.nb-nav-item-disabled:hover {
+  cursor: not-allowed;
+  color: var(--nb-soft);
+  background: transparent;
+  opacity: 0.62;
+}
+.nb-nav-item-active {
+  color: var(--nb-ink);
+  font-weight: 600;
+  background: var(--nb-white);
+  border-color: var(--nb-graphite);
+  border-width: 1.2px;
+}
+/* Pass 90: an engagement nested under a client shelf. Indent only. */
+.nb-nav-item-nested {
+  padding-left: 22px;
+}
+.nb-nav-item-nested-2 {
+  padding-left: 37px;
+}
+.nb-nav-item-nested-3 {
+  padding-left: 52px;
+}
+.nb-nav-indent {
+  color: var(--nb-pencil);
+}
+.nb-tree-branch {
+  position: relative;
+  margin-left: 15px;
+  border-left: 1px solid var(--nb-pencil);
+}
+.nb-tree-child {
+  position: relative;
+}
+.nb-tree-branch > .nb-tree-child > .nb-nav-item,
+.nb-tree-branch > .nb-tree-child > div > .nb-nav-item {
+  padding-left: 11px;
+}
+.nb-nav-item-active .nb-nav-indent {
+  color: var(--active-mark, var(--nb-green));
+}
+/* Pass 92: a client shelf header speaks in the micro-label voice at
+   text/muted, matching Figma 12:332, so a shelf never reads as one more
+   engagement row. pass92.test.ts pins the muted token. */
+.nb-nav-shelf {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--nb-soft);
+}
+/* Simpler tree (Liam, 15 Nov): folder names in plain case, one quiet guide line for depth (no elbows, no wash,
+   no indent mark inside the tree), and row menus that appear on hover where there is hover. */
+.nb-tree-branch .nb-nav-item[data-tree-depth] > .nb-nav-indent { display: none; }
+/* !important: these sit in the nb layer, under the trigger's own opacity utilities. */
+@media (hover: hover) {
+  .lasso-sidebar-nav [data-row-menu]:not([data-state="open"]) { opacity: 0 !important; }
+  .lasso-sidebar-nav :is([data-drag-row], .nb-nav-shelf):is(:hover, :focus-within) [data-row-menu] { opacity: 1 !important; }
+}
+/* A board its owner shares live with their firm: a quiet mark, still their board (Liam, 15 Nov). */
+.nb-shared-up { color: var(--nb-soft); }
+/* A folder rolls open and shut (Liam, 15 Nov). RollDown mounts and unmounts it; ROLL_MS matches the 200ms. */
+.nb-roll { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 200ms var(--nb-ease); }
+.nb-roll[data-open="true"] { grid-template-rows: 1fr; }
+.nb-roll-inner { min-height: 0; overflow: hidden; }
+.nb-roll-chevron { transition: transform 200ms var(--nb-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .nb-roll, .nb-roll-chevron { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 85: quad surface, the unmapped pile, the segmented toggle and the
+   mobile tab bar. Presentation only.
+--------------------------------------------------------------------------- */
+
+/* Quad surface for the unmapped pile. The 20px ruling was removed on
+   12 Sep 2026; the paper colour stays, and the cards/columns provide the
+   structure now. */
+.nb-quad {
+  background-color: var(--nb-paper);
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 94: the scatter field. Every unmapped item is its own sheet of paper,
+   deterministically offset, organising into the grid on hover.
+--------------------------------------------------------------------------- */
+.nb-scatter {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+  padding: 10px 4px;
+}
+.nb-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  text-align: left;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--nb-white);
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
+  transition:
+    transform var(--nb-dur-enter) var(--nb-ease),
+    box-shadow var(--nb-dur-enter) var(--nb-ease);
+}
+.nb-paper-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--type-small);
+  line-height: 1.35;
+  color: var(--nb-ink);
+}
+.nb-paper-mark {
+  display: inline-flex;
+  align-items: center;
+}
+.nb-paper-more .nb-paper-title {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--type-label);
+  color: var(--nb-mid);
+}
+/* Pass 175: the chat wall arrives as one wave, left to right, then rests. */
+@keyframes nb-sticky-wave {
+  0% {
+    transform: translateY(7px);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-1.5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.nb-sticky-wave {
+  animation: nb-sticky-wave 520ms var(--nb-ease) both;
+  animation-delay: var(--nb-wave-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-sticky-wave {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Segmented toggle: pile / matrix. Not an action, so no green. */
+.nb-seg {
+  display: inline-flex;
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--radius-control);
+  background: var(--nb-grey-1);
+  padding: 2px;
+}
+.nb-seg-item {
+  border-radius: calc(var(--radius-control) - 2px);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nb-mid);
+  transition:
+    background-color 120ms var(--nb-ease),
+    color 120ms var(--nb-ease);
+}
+.nb-seg-item[aria-pressed="true"] {
+  background: var(--nb-white);
+  color: var(--nb-ink);
+  font-weight: 600;
+}
+
+/* Matrix: type headers are sticky micro-labels. */
+.nb-matrix-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--nb-paper);
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nb-mid);
+  padding: 6px 2px;
+}
+
+/* Mobile tab bar. */
+.nb-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--layer-tabbar);
+  display: grid;
+  align-items: stretch;
+  height: calc(56px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--nb-rule);
+  background: var(--nb-white);
+}
+.nb-tab {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-sans);
+  font-size: var(--type-label);
+  font-weight: 400;
+  color: var(--nb-mid);
+}
+.nb-tab-active {
+  position: relative;
+  color: var(--nb-ink);
+  font-weight: 600;
+}
+/* Figma 12:600: the active phone tab carries a small green dot under the
+   label. Decoration only, so it is drawn in CSS and adds no control. */
+.nb-tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  width: 3px;
+  height: 3px;
+  border-radius: var(--corner-pill);
+  background: var(--active-mark, var(--nb-green));
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-tab-active::after {
+    transition: none;
+  }
+}
+/* Unlayered author CSS beats Tailwind's layered md:hidden, so the desktop
+   hide has to live here too. */
+@media (min-width: 768px) {
+  .nb-tabbar {
+    display: none;
+  }
+}
+@media print {
+  .nb-tabbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-paper {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  .nb-ask-backdrop {
+    animation: none !important;
+  }
+  .nb-canvas-card,
+  .nb-canvas-card[data-lifted="true"],
+  .nb-canvas-ghost,
+  .nb-canvas-dot {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ── Binder paper and the 28px baseline law ───────────────────────────────
+   Chat transcripts, and only chat transcripts, sit on ruled paper. The pitch
+   is rem based, so at 200% text the rules grow with the type ramp and the
+   baseline law still holds. */
+:root {
+  --nb-baseline: 1.75rem;
+}
+
+.nb-binder {
+  background: var(--nb-white);
+}
+
+.nb-binder-body {
+  /* Baseline ruling removed on 12 Sep 2026. --nb-baseline still sets the
+     rhythm; padding and line-height remain load-bearing for the surfaces
+     that use this class. */
+  padding-top: var(--nb-baseline);
+  padding-bottom: calc(var(--nb-baseline) * 2);
+  font-size: var(--type-control);
+  line-height: var(--nb-baseline);
+}
+
+.nb-binder-body p,
+.nb-binder-body li,
+.nb-binder-body h1,
+.nb-binder-body h2,
+.nb-binder-body h3,
+.nb-binder-body h4,
+.nb-binder-line {
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.nb-binder-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-label);
+  line-height: var(--nb-baseline);
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nb-blue);
+}
+/* The assistant speaks in spider green. Display copy only. */
+.nb-speaker-ai {
+  color: var(--ai-voice, var(--nb-green));
+}
+
+/* ── Baseline law, enforced inside the transcript ───────────────────────────
+   Anything with a line-height or vertical margin that is not a whole multiple
+   of the pitch drifts the whole page down. So: nothing is. */
+.nb-binder-body .chat-prose,
+.nb-binder-body .chat-binder {
+  font-size: var(--type-control);
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+}
+.nb-binder-body .chat-prose > * + * {
+  margin-top: 0;
+}
+.nb-binder-body :is(p, li, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) {
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.nb-binder-body :is(h1, h2, h3, h4, h5, h6) {
+  font-size: var(--type-control);
+}
+.nb-binder-body :is(ul, ol) {
+  padding-left: 1.25rem;
+}
+.nb-binder-body li + li {
+  margin-top: 0;
+}
+.nb-binder-body .chat-prose > * + :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: var(--nb-baseline);
+}
+/* Message to message: exactly one baseline. */
+.nb-binder-body > * + * {
+  margin-top: var(--nb-baseline);
+}
+
+/* Anything that cannot hold the grid rides on a plain white card. */
+.nb-binder-inset,
+.chat-binder pre,
+.chat-binder table,
+.chat-binder img {
+  display: block;
+  background: var(--nb-white);
+  box-shadow: 0 0 0 4px var(--nb-white);
+  border-radius: var(--corner-panel);
+  margin-top: var(--nb-baseline);
+  margin-bottom: var(--nb-baseline);
+}
+.nb-binder-inset {
+  /* Padding plus border must add up to a whole baseline, so an off-grid card
+     never pushes the lines after it off the rules. */
+  padding: var(--nb-baseline) 10px;
+}
+
+/* The audit trail is a sticky note: the one yellow surface in the product,
+   and it is data, never chrome. */
+.nb-sticky {
+  display: block;
+  background: #fdf6c9;
+  border: 0;
+  border-radius: var(--corner-control);
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
+  color: var(--nb-ink);
+  padding: calc(var(--nb-baseline) / 2 - 1px) 10px;
+  margin-top: var(--nb-baseline);
+  margin-bottom: var(--nb-baseline);
+}
+.nb-sticky :is(p, div) {
+  line-height: var(--nb-baseline);
+}
+.nb-sticky .nb-sticky-toggle {
+  color: var(--nb-ink);
+  min-height: calc(var(--nb-baseline) * 2);
+}
+
+/* A page title sitting clear above a hand-drawn pencil rule. */
+.nb-title-strip {
+  position: relative;
+  display: block;
+  padding-bottom: 12px;
+}
+.nb-title-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  width: 100%;
+  color: var(--nb-rule);
+}
+
+/* The rule drawn in by hand: the stroke lands once, then rests. */
+.nb-title-rule-animated {
+  position: static;
+}
+.nb-title-rule-animated path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: nb-rule-draw var(--nb-dur-draw) var(--nb-ease, ease-out) both;
+}
+.nb-title-rule-animated path + path {
+  animation-delay: 220ms;
+}
+@keyframes nb-rule-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The front-door rule: the loose pencil stroke drawn in once, then resting. */
+.nb-frontdoor-rule {
+  display: block;
+  color: var(--nb-graphite);
+}
+.nb-frontdoor-rule path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: nb-rule-draw 1100ms var(--nb-ease, ease-out) both;
+}
+
+/* The scroll cue: handwritten note and hand-drawn arrow, bobbing gently. */
+.nb-scroll-cue {
+  color: var(--nb-graphite);
+}
+.nb-scroll-cue-label {
+  font-family: var(--font-hand);
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+.nb-scroll-cue-arrow {
+  animation: nb-scroll-cue-bob var(--nb-dur-story) ease-in-out infinite;
+}
+@keyframes nb-scroll-cue-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-title-rule-animated path,
+  .nb-frontdoor-rule path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+  .nb-scroll-cue-arrow {
+    animation: none !important;
+  }
+}
+
+/* Thinking: three grey dots. No spinners, no shimmer, anywhere in the dock. */
+.nb-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nb-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--corner-pill);
+  background: var(--nb-soft);
+  animation: nb-dot-pulse 1200ms var(--nb-ease) infinite;
+}
+.nb-dot:nth-child(2) {
+  animation-delay: 160ms;
+}
+.nb-dot:nth-child(3) {
+  animation-delay: 320ms;
+}
+@keyframes nb-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Streaming answers arrive as a quiet fade, never a layout jump. */
+.nb-stream {
+  animation: nb-fade-in 220ms var(--nb-ease);
+}
+@keyframes nb-fade-in {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ask dock chrome. */
+.nb-dock-grip {
+  position: absolute;
+  inset-block: 0;
+  left: -3px;
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+}
+.nb-dock-grip:hover,
+.nb-dock-grip:focus-visible {
+  background: var(--nb-grey-2);
+  outline: none;
+}
+/* Ask Lasso's dock reads as plain white paper: the dock keeps its border and
+   header, the ruled binder texture stops at its edge. */
+.nb-ask-plain .nb-binder,
+.nb-ask-plain .nb-binder-body {
+  background-image: none;
+  background-color: var(--nb-white);
+}
+
+/* The page behind the open dock softens so focus lands on the chat. It sits
+   under the dock and under dialogs/toasts, so nothing above it is blocked. */
+.nb-ask-backdrop {
+  background: color-mix(in oklab, var(--nb-ink) 8%, transparent);
+  backdrop-filter: blur(3px);
+  animation: nb-ask-backdrop-in var(--nb-dur-quick) ease-out;
+}
+@keyframes nb-ask-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.nb-ask-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--nb-rule);
+}
+.nb-ask-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 8px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: var(--type-body);
+  color: var(--nb-blue);
+}
+.nb-ask-tab[aria-selected="true"] {
+  color: var(--nb-blue);
+  font-weight: 600;
+  border-bottom-color: var(--nb-blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-note-caret,
+  .nb-hi {
+    transition: none !important;
+  }
+  .nb-mark path {
+    stroke-dasharray: none;
+    animation: none !important;
+  }
+  .nb-dot,
+  .nb-stream {
+    animation: none !important;
+    opacity: 1;
+  }
+  .nb-paper {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  /* No scatter animation: the organised grid is the only state. */
+  .nb-scatter[data-scatter="1"] .nb-paper {
+    transform: none !important;
+  }
+  .nb-ask-backdrop {
+    animation: none !important;
+  }
+  .nb-canvas-card,
+  .nb-canvas-card[data-lifted="true"],
+  .nb-canvas-ghost,
+  .nb-canvas-dot {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 87: the engagement canvas. Workstreams as open columns, work as white
+   cards. The quad ruling was removed on 12 Sep 2026; the paper colour stays.
+   The only shadow on this surface is the lifted card.
+   --------------------------------------------------------------------------- */
+
+.nb-canvas {
+  background-color: var(--nb-paper);
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--corner-panel);
+  overflow: hidden;
+}
+
+/* Phones read one workstream per screen; the desktop lays them side by side. */
+.nb-canvas-scroll {
+  display: flex;
+  align-items: stretch;
+  /* The canvas reads as a real grid surface from the first visit: twice the
+     height a single row of cards would need, whatever work is on it. */
+  min-height: 26rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+.nb-col {
+  flex: 0 0 auto;
+  width: min(86vw, 24rem);
+  min-width: 16rem;
+  scroll-snap-align: center;
+  touch-action: pan-y;
+}
+.nb-col + .nb-col {
+  border-left: 1px solid var(--nb-rule);
+}
+.nb-col-drop {
+  background: rgb(17 20 19 / 0.03);
+}
+.nb-col-ghost {
+  opacity: 0.85;
+}
+@media (min-width: 768px) {
+  .nb-canvas-scroll {
+    min-height: 40rem;
+    scroll-snap-type: none;
+    /* Snap is off on desktop, but the container must still scroll when the
+       columns outgrow it, or the last workstreams are unreachable. */
+    overflow-x: auto;
+  }
+  .nb-col {
+    flex: 1 1 0;
+    width: auto;
+  }
+}
+
+.nb-canvas-card {
+  width: 100%;
+  text-align: left;
+  background: var(--nb-white);
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--corner-panel);
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    transform var(--nb-dur-move) var(--nb-ease),
+    border-color var(--nb-dur-move) var(--nb-ease);
+}
+.nb-canvas-card-title {
+  padding-bottom: 3px;
+}
+.nb-canvas-card:hover {
+  border-color: var(--nb-soft);
+}
+.nb-canvas-card[data-lifted="true"] {
+  border-color: var(--nb-graphite);
+  box-shadow: 0 8px 24px rgb(17 20 19 / 0.14);
+  transition: transform var(--nb-dur-enter) var(--nb-spring-base);
+}
+
+/* The only touch surface that may take the gesture away from the page. */
+.nb-canvas-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  min-height: 3rem;
+  border: 1px solid var(--nb-rule);
+  border-radius: var(--corner-panel);
+  background: var(--nb-grey-1);
+  color: var(--nb-mid);
+  touch-action: none;
+}
+
+/* Author CSS is unlayered and beats Tailwind's md:hidden utility, so the touch
+   drag handle has to be hidden here (same trap as .nb-tabbar in 86.2). This
+   must sit after the base rule, which has equal specificity. */
+@media (min-width: 768px) {
+  .nb-canvas-handle {
+    display: none;
+  }
+}
+
+/* The card in the hand: follows the pointer, tilted, above everything. */
+.nb-canvas-ghost {
+  position: fixed;
+  z-index: var(--layer-ledger);
+  pointer-events: none;
+  padding: 8px 12px;
+  background: var(--nb-white);
+  border: 1px solid var(--nb-graphite);
+  border-radius: var(--corner-panel);
+  box-shadow: 0 12px 28px rgb(17 20 19 / 0.18);
+  transform: translate(-50%, -50%) rotate(2deg);
+}
+
+.nb-canvas-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--corner-pill);
+  background: var(--nb-soft);
+  transition: background-color var(--nb-dur-move) var(--nb-ease);
+}
+.nb-canvas-dot-active {
+  background: var(--nb-ink);
+}
+
+}

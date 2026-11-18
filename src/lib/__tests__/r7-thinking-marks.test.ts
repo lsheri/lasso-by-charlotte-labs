@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readStyles } from "@/design/stylesheet";
 
 const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
 const mark = readFileSync("src/components/reflect/LassoThinkingMark.tsx", "utf8");
-const css = readFileSync("src/styles.css", "utf8");
+const css = readStyles();
 
 describe("R7 Ask Lasso thinking marks", () => {
   it("uses the signature mark in the toolbar and removes the old CSS drift", () => {
