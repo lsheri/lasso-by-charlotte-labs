@@ -524,6 +524,12 @@ export type TelemetryEvent =
   | "firm_ask.source_opened"
   /** 17 Nov, firm brain: an author or board owner kept an item out of firm answers. No dims. Portal registration required. */
   | "firm_ask.kept_out"
+  /** 17 Nov, firm brain: Start a proposal read a board's notes into a brief. Dims: input_kind (board_notes). Portal registration required. */
+  | "proposal_draft.started"
+  /** 17 Nov, firm brain: precedents were found for a proposal. Dims: close and loose (bucketed counts). Portal registration required. */
+  | "proposal_draft.precedents_shown"
+  /** 17 Nov, firm brain: the proposal owner swapped a precedent. No dims. Portal registration required. */
+  | "proposal_draft.precedent_swapped"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.

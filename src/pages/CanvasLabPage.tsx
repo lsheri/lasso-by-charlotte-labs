@@ -220,6 +220,10 @@ import { createSerialQueue } from "@/lib/serial-queue";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { canMarkShown } from "@/lib/client-showings-shared";
 import { useClientShowings } from "@/hooks/use-client-showings";
+import { useFeatureFlag } from "@/hooks/use-feature-flag";
+import { ProposalStartPanel } from "@/components/firm-brain/ProposalStartPanel";
+import { canAskTheFirm } from "@/lib/firm-ask-shared";
+import { PROPOSAL_COPY } from "@/lib/proposal-shared";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import { filedWorkCount, groupingDragSnapshot, isRegionFrameId, moveGroupingContents, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type GroupingDragMember, type RegionFill } from "@/lib/board-region";
 import { fitWorkboardImageSize, isWorkboardAskReadableKind, isWorkboardDecorationKind, serializeWorkboardStickyBody, serializeWorkboardTextBody, WORKBOARD_STICKY_DEFAULT_SIZE, WORKBOARD_MOVE_MANY_MAX, type WorkboardStickyFill, type WorkboardMoveEntry, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody, type WorkboardImageBody } from "@/lib/canvas-lab-shared";
@@ -375,6 +379,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
   const suggestCall = useServerFn(suggestStructuresFn);
   const suggestionMobile = useIsMobile();
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [proposalOpen, setProposalOpen] = useState(false);
   const [suggestState, setSuggestState] = useState<"idle" | "reading" | "choosing" | "error">("idle");
   const [suggestions, setSuggestions] = useState<SuggestedStructure[]>([]);
   const [suggestParts, setSuggestParts] = useState(1);
@@ -697,6 +702,8 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
   const grownByItem: Record<string, string[]> = boardPushes.data ?? {};
   /** Firm brain phase 1: Shown to client marks, one read per board, behind company-brain. */
   const clientShowings = useClientShowings({ engagementId, profile, canEdit: boardEditable });
+  // 17 Nov, firm brain: Start a proposal, for people who can edit this board, behind company-brain.
+  const proposalAllowed = canAskTheFirm(useFeatureFlag("company-brain"), profile) && boardEditable;
   /** U2: a pushed chat and the pieces it made, derived from every item on the board (BUNDLE-1). */
   const bundles = useMemo(() => chatBundles(shownNodes, boardItems), [shownNodes, boardItems]);
   /** VENDOR-COLOUR-1: chat NODE id -> source_vendor, so stems, pieces and stack edges take the chat's colour. */
@@ -4012,7 +4019,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-(length:--type-body) text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-(length:--type-body) text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
           </div>
-          <BoardToolbarSurface items={boardToolbarItems} moreRef={moreButtonRef} extraMenu={<>{exampleToolbarItem?.menu}{canLeave ? <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setConfirmLeave(true)}>{LEAVE_BOARD_COPY.menuItem}</DropdownMenuItem></> : null}</>} />
+          <BoardToolbarSurface items={boardToolbarItems} moreRef={moreButtonRef} extraMenu={<>{exampleToolbarItem?.menu}{proposalAllowed ? <DropdownMenuItem onSelect={() => setProposalOpen(true)}>{PROPOSAL_COPY.menuItem}</DropdownMenuItem> : null}{canLeave ? <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setConfirmLeave(true)}>{LEAVE_BOARD_COPY.menuItem}</DropdownMenuItem></> : null}</>} />
           <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
             <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
             <PopoverContent align="end" className="w-80" data-testid="board-details-popover">
@@ -4123,6 +4130,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
         {suggestApplied.length === 0 ? <SuggestStructurePanel state={suggestState} structures={suggestions} parts={suggestParts} shortfall={suggestShortfall} error={suggestError} onSubmit={(text, kind) => void submitSuggestions(text, kind)} onChoose={(id) => void chooseSuggestion(id)} onCancel={closeSuggestions} /> : <SuggestionApplyResult regions={suggestApplied} busy={suggestBusy} message={suggestRemoval} onRemove={() => void removeSuggestion()} onClose={closeSuggestions} />}
         {suggestApplied.length === 0 && suggestRemoval ? <p role="alert" className="text-base text-destructive">{suggestRemoval}</p> : null}
       </BoardSuggestionSurface> : null}
+      {proposalAllowed && proposalOpen ? <ProposalStartPanel engagementId={engagementId} profileId={profile?.id} orgId={orgId} onClose={() => setProposalOpen(false)} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
