@@ -17,7 +17,7 @@ export type HealthCounts = {
   rawRadius: number;
   /** #rrggbb or #rgb colour literals in TS and TSX. */
   hexInComponents: number;
-  /** var(--nb-*) reads outside the token files. */
+  /** var(--nb-*) uses outside the token files. Custom-property declarations (token plumbing) are not counted. */
   legacyNbReads: number;
   /** z-index: N in CSS and z-[N] in TSX. */
   literalZIndex: number;
@@ -65,7 +65,9 @@ export function measure(root = "src"): HealthCounts {
     );
     if (!css)
       c.hexInComponents += count(text, /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![0-9a-fA-F])/g);
-    c.legacyNbReads += count(text, /var\(--nb-[a-z0-9-]+/g);
+    // A custom-property declaration that points at an --nb-* name is token plumbing, not a use; only uses count.
+    const uses = css ? text.replace(/(^|[;{\s])--[a-z0-9-]+\s*:[^;{}]*;/g, "$1") : text;
+    c.legacyNbReads += count(uses, /var\(--nb-[a-z0-9-]+/g);
     c.literalZIndex += count(text, css ? /z-index:\s*-?\d+/g : /\bz-\[-?\d+\]/g);
     if (css) c.importantRules += count(text, /!important/g);
   }

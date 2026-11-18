@@ -66,7 +66,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Raw font sizes | 249 | 249 |
 | Raw radii | 437 | 15 (counting rule corrected in R2: `rounded-[var(--x)]` no longer counted) |
 | Hex in components | 76 | 76 |
-| `var(--nb-*)` reads | 1653 | 1653 |
+| `var(--nb-*)` uses | 1653 | 1559 (rule corrected in G2 part 2: token declarations no longer counted) |
 | Literal z-index | 183 | 183 |
 | `!important` | 215 | 215 |
 
