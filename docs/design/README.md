@@ -14,6 +14,7 @@ The repo is the design system. A design is real once it is in tokens, glyphs and
 | Stories | `storybook/stories/` | Every glyph, token and reference component, plus the screens canvas |
 | Baseline pictures | `tests/e2e/__baseline__/` | The "before" set every design change is compared against |
 | Debt | `docs/design/debt.md` | What stands between today's code and a second skin |
+| Component checklist | `docs/design/components.md` | How to build or change a component so a reskin stays cheap |
 
 ## The lifecycle
 

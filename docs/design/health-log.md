@@ -61,6 +61,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #199 | G7 | One tag (`tagVariants`) replaces 19 hand-written mono label pills | Import table tag letter spacing 0.06em to 0.08em |
 | #202 | G9 | styles.css split into an import index and six ordered parts in src/styles/ | No (compiled CSS byte-identical) |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
+| (this PR) | G7, G13 | Component checklist (`docs/design/components.md`); `NativeSelect` primitive; three new ratchet counts: raw `<select>` (18), hand-built mono pills (9), Lucide files (92) | No (the How it ended dialog's selects move to NativeSelect: same size, token focus border) |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
@@ -77,6 +78,9 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | `var(--nb-*)` uses | 1653 | 1559 (rule corrected in G2 part 2: token declarations no longer counted) |
 | Literal z-index | 183 | 170 |
 | `!important` | 215 | 215 |
+| Raw `<select>` outside ui (added 18 Nov) | 18 | 18 |
+| Hand-built mono pills outside ui (added 18 Nov) | 9 | 9 |
+| Files importing Lucide (added 18 Nov) | 92 | 92 |
 
 The audit's own 16 Nov figures used a different counting script: 810 raw font sizes, 1,828 `--nb-*` reads.
 

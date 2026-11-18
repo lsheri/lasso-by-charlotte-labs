@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -13,8 +14,6 @@ import {
   type OutcomeChoice,
 } from "@/lib/board-outcome-shared";
 import { saveOutcome } from "@/lib/save-guard";
-
-const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
 /**
  * 18 Nov, firm brain: set how a finished engagement ended (its own file, since nothing renders CanvasLabPage in
@@ -97,7 +96,7 @@ export function BoardOutcomeDialog({
         >
           <label className="block space-y-1 text-sm">
             <span>{BOARD_OUTCOME_COPY.planLabel}</span>
-            <select className={SELECT} disabled={locked} value={choice.plan} onChange={(event) => {
+            <NativeSelect disabled={locked} value={choice.plan} onChange={(event) => {
                 const plan = event.target.value as OutcomeChoice["plan"];
                 // Still running has no outcome: the extension and lesson go with it.
                 setChoice(plan === "running" ? { plan, extended: "unknown", lesson: "" } : { ...choice, plan });
@@ -105,12 +104,11 @@ export function BoardOutcomeDialog({
               <option value="running">{BOARD_OUTCOME_COPY.running}</option>
               <option value="ran">{BOARD_OUTCOME_COPY.ranToPlan}</option>
               <option value="overran">{BOARD_OUTCOME_COPY.overran}</option>
-            </select>
+            </NativeSelect>
           </label>
           <label className="block space-y-1 text-sm">
             <span>{BOARD_OUTCOME_COPY.extendedLabel}</span>
-            <select
-              className={SELECT}
+            <NativeSelect
               disabled={locked || running}
               value={choice.extended}
               onChange={(event) => setChoice({ ...choice, extended: event.target.value as OutcomeChoice["extended"] })}
@@ -118,7 +116,7 @@ export function BoardOutcomeDialog({
               <option value="unknown">{BOARD_OUTCOME_COPY.unknown}</option>
               <option value="yes">{BOARD_OUTCOME_COPY.extended}</option>
               <option value="no">{BOARD_OUTCOME_COPY.notExtended}</option>
-            </select>
+            </NativeSelect>
           </label>
           <label className="block space-y-1 text-sm">
             <span>{BOARD_OUTCOME_COPY.lessonLabel}</span>
