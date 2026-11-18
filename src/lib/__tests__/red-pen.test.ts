@@ -95,6 +95,21 @@ describe("the red pen", () => {
     expect(result.claims.map((claim) => claim.snippet)).toEqual(["Specialist referrals leak out of network at 38 percent."]);
   });
 
+  it("spends no call on a deliverable with no text", async () => {
+    const model = fake(claims, { results: [] });
+    const { result, usage } = await runRedPen(model.chat, { itemId: "deck", anchorTitle: "x", anchorText: "  \n ", upstream, meta: undefined });
+    expect(result.claims).toEqual([]);
+    expect(usage.calls).toBe(0);
+  });
+
+  it("checks at most 40 claims from a very long deck, in batches", async () => {
+    const lines = Array.from({ length: 120 }, (_, index) => `Claim number ${index} says revenue grew in region ${index}.`);
+    const model = fake({ claims: lines.map((text) => ({ text })) }, { results: [] });
+    const { result, usage } = await runRedPen(model.chat, { itemId: "deck", anchorTitle: "x", anchorText: lines.join("\n"), upstream, meta: undefined });
+    expect(result.claims).toHaveLength(40);
+    expect(usage.calls).toBe(1 + 5);
+  });
+
   it("reads the sources most likely to hold the claims", () => {
     expect(rankSources(["Specialist referrals leak out of network at 38 percent."], upstream, 1)[0]!.id).toBe("sizing");
   });

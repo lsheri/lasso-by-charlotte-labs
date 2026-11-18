@@ -77,8 +77,18 @@ export const FIRM_TYPE_LABELS: Record<string, string> = {
   outcome: "Close-out",
 };
 
-/** Any money figure, so the model never sees a fee: "$380k", "$380,000", "$45k/month", "$1.2M". */
-const MONEY = /\$\s?\d[\d,]*(?:\.\d+)?(?:\s*(?:k|m|bn|million|thousand)\b)?(?:\s*(?:\/|per|a)\s*month)?/gi;
+// Commas only as thousands separators, so "£340,000, €1.2M" stays two figures.
+const NUMBER = "\\d+(?:,\\d{3})*(?:\\.\\d+)?";
+const AMOUNT = `${NUMBER}(?:\\s*(?:k|m|bn|million|thousand)\\b)?`;
+const CODES = "USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD";
+/**
+ * A money figure in any form a firm writes one: a symbol ("$380k", "£340,000", "€1.2M"), a currency code
+ * before or after ("USD 90,000", "380k GBP") or a word after ("45,000 dollars"). Exported so the draft's figure check
+ * reads money the same way.
+ */
+export const MONEY_SOURCE = `(?:[$£€]\\s?${AMOUNT}|\\b(?:${CODES})\\s?${AMOUNT}|\\b${NUMBER}\\s?(?:k|m|bn|million|thousand)?\\s?(?:${CODES}|dollars|pounds|euros)\\b)`;
+/** Any money figure, so the model never sees a fee: "$380k", "$45k/month", "£340,000", "USD 90,000". */
+const MONEY = new RegExp(`${MONEY_SOURCE}(?:\\s*(?:\\/|per|a)\\s*month)?`, "gi");
 
 const HAS_MONEY = new RegExp(MONEY.source, "i");
 

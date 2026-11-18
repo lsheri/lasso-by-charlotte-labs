@@ -11,7 +11,7 @@
  * - Three to six closed questions for the lead, each with a default. Prepared for the owner to send; nothing is sent.
  */
 
-import { maskFees } from "./firm-ask-shared";
+import { maskFees, MONEY_SOURCE } from "./firm-ask-shared";
 import type { FirmCorpus } from "./firm-corpus-shared";
 import { containsVerbatim } from "./span-provenance-shared";
 
@@ -110,7 +110,7 @@ const NOT_NAMES = new Set([
 export function looksLikeName(term: string): boolean {
   const words = term.trim().split(/\s+/);
   if (words.length < 2) return false;
-  if (!words.every((word) => /^[A-Z][a-z'’.-]+$/.test(word))) return false;
+  if (!words.every((word) => /^\p{Lu}[\p{Ll}'’.-]+$/u.test(word))) return false;
   return !words.some((word) => NOT_NAMES.has(word.toLowerCase().replace(/[.']/g, "")));
 }
 
@@ -122,7 +122,7 @@ export function clientVariants(client: string): string[] {
   const out: string[] = [];
   for (let end = words.length; end >= 1; end -= 1) {
     const form = words.slice(0, end).join(" ");
-    if (form.replace(/[^A-Za-z]/g, "").length >= 4 && !/^(the|saint|north|south|east|west|new)$/i.test(form)) out.push(form);
+    if (form.replace(/[^\p{L}]/gu, "").length >= 4 && !/^(the|saint|north|south|east|west|new)$/i.test(form)) out.push(form);
   }
   return out;
 }
@@ -153,8 +153,13 @@ export function forbiddenNames(corpus: FirmCorpus, boardIds: readonly string[], 
     .sort((a, b) => b.term.length - a.term.length);
 }
 
+/**
+ * A name matched as a whole name: not inside a longer word, accented letters counted as letters, and a name that ends
+ * in a symbol ("A&B (UK)") still found.
+ */
 function termPattern(term: string): RegExp {
-  return new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}(?:'s)?\\b`, "gi");
+  const body = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`(?<![\\p{L}\\p{N}])${body}(?:['’]s)?(?![\\p{L}\\p{N}])`, "giu");
 }
 
 /** Text with every forbidden name replaced, longest first so "Willowmere Community Health" masks whole. */
@@ -167,7 +172,7 @@ export function findNames(text: string, terms: readonly NameTerm[]): string[] {
   return terms.filter(({ term }) => termPattern(term).test(text)).map(({ term }) => term);
 }
 
-const FIGURE = /\$\s?\d[\d,]*(?:\.\d+)?(?:\s*(?:k|m|bn|million|thousand)\b)?|\b\d+(?:\s*(?:to|-)\s*\d+)?\s*weeks?\b/gi;
+const FIGURE = new RegExp(`${MONEY_SOURCE}|\\b\\d+(?:\\s*(?:to|-)\\s*\\d+)?\\s*weeks?\\b`, "gi");
 
 function figureKey(figure: string): string {
   return figure.toLowerCase().replace(/\s+/g, " ").replace(/\s*-\s*/g, " to ").trim();
@@ -301,6 +306,11 @@ export function salvageDraft(text: string): Record<string, unknown> {
     }
   });
   return out;
+}
+
+/** A draft with no section the model wrote and no question: nothing came back worth saving. */
+export function isEmptyDraft(draft: Pick<ProposalDraft, "sections" | "questions">): boolean {
+  return draft.questions.length === 0 && draft.sections.every((section) => !MODEL_SECTIONS.includes(section.key) || section.status === "gap");
 }
 
 /** Sections whose text names another client, to redraft once. */

@@ -174,7 +174,10 @@ export const draftProposal = createServerFn({ method: "POST" })
       return (await getItemText(caller, row as never)).text ?? null;
     });
 
-    const { cleanBrief } = await import("./proposal-shared");
+    const { cleanBrief, PROPOSAL_BRIEF_FIELDS } = await import("./proposal-shared");
+    const brief = cleanBrief(data.brief);
+    // Nothing to draft from: no note on the board and an empty brief. Refused before any model call.
+    if (!pursuit.items.length && PROPOSAL_BRIEF_FIELDS.every((field) => !brief[field])) throw new Response("Add the intake notes or a brief first.", { status: 400 });
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(caller as never, { surface: "proposal_draft", orgId: profile.org_id, profileId: profile.id, userId: context.userId });
     const { runProposalDraft } = await import("./proposal-draft.server");
@@ -182,13 +185,15 @@ export const draftProposal = createServerFn({ method: "POST" })
       corpus,
       precedentIds,
       intake: pursuit.notes,
-      brief: cleanBrief(data.brief),
+      brief,
       ownItems: new Map(pursuit.items.map((item) => [item.id, { title: item.title, text: item.text }])),
       read: (itemId) => readFirmItemText(supabaseAdmin, corpus, itemId),
       meta,
     });
 
-    const { renderProposalMarkdown } = await import("./proposal-draft-shared");
+    const { renderProposalMarkdown, isEmptyDraft } = await import("./proposal-draft-shared");
+    // A reply with nothing usable is not saved as a card of gaps; the person tries again.
+    if (isEmptyDraft(draft)) throw new Response("The draft did not come back. Try again.", { status: 502 });
     const title = `Proposal draft: ${pursuit.title}`.slice(0, 200);
     const body = renderProposalMarkdown(title, draft);
     const slug = pursuit.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "proposal";
@@ -196,30 +201,39 @@ export const draftProposal = createServerFn({ method: "POST" })
     const hash = await sha256(body);
     const upload = await caller.storage.from("work-files").upload(path, new TextEncoder().encode(body), { contentType: "text/markdown", upsert: false });
     if (upload.error) throw new Error(upload.error.message);
-    const { data: item, error } = await caller
-      .from("work_items")
-      .insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type: "document",
-        source: "manual",
-        title,
-        visibility: "unmapped",
-        content_ref: path,
-        content_hash: hash,
-        content_fidelity: "verbatim",
-        ts_precision: "capture",
-        source_meta: { filename: `proposal-${slug}.md`, mime_type: "text/markdown" },
-        meta: { mime_type: "text/markdown", deliverable_kind: "proposal", proposal_draft: draft as never },
-      })
-      .select("id")
-      .single();
-    if (error || !item) throw new Error(error?.message ?? "Could not save the draft.");
-    const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: item.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "proposal_draft", origin: "model_artifact" });
-    if (version.error) throw new Error(version.error.message);
-    // Placed here, in the same request, so a draft never exists off its board if the page closes; the panel only
-    // draws the card.
-    await placeDraftOnBoard(caller, data.engagement_id, profile.id, item.id);
+    // A step that fails after the upload takes back what was written, so no orphan file or off-board draft is left.
+    let itemId: string | null = null;
+    try {
+      const { data: item, error } = await caller
+        .from("work_items")
+        .insert({
+          owner_id: profile.id,
+          org_id: profile.org_id,
+          type: "document",
+          source: "manual",
+          title,
+          visibility: "unmapped",
+          content_ref: path,
+          content_hash: hash,
+          content_fidelity: "verbatim",
+          ts_precision: "capture",
+          source_meta: { filename: `proposal-${slug}.md`, mime_type: "text/markdown" },
+          meta: { mime_type: "text/markdown", deliverable_kind: "proposal", proposal_draft: draft as never },
+        })
+        .select("id")
+        .single();
+      if (error || !item) throw new Error(error?.message ?? "Could not save the draft.");
+      itemId = item.id;
+      const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: item.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "proposal_draft", origin: "model_artifact" });
+      if (version.error) throw new Error(version.error.message);
+      // Placed here, in the same request, so a draft never exists off its board if the page closes; the panel only
+      // draws the card.
+      await placeDraftOnBoard(caller, data.engagement_id, profile.id, item.id);
+    } catch (failure) {
+      if (itemId) await caller.from("work_items").delete().eq("id", itemId).eq("owner_id", profile.id);
+      await caller.storage.from("work-files").remove([path]).catch(() => {});
+      throw failure;
+    }
 
     const { recordEvent } = await import("./telemetry.server");
     const { bucket } = await import("./telemetry-shared");
@@ -229,7 +243,7 @@ export const draftProposal = createServerFn({ method: "POST" })
       userId: context.userId,
       dims: { sections: bucket(draft.sections.length), gaps: bucket(draft.sections.filter((section) => section.status === "gap").length), questions: bucket(draft.questions.length) },
     });
-    return { itemId: item.id, title, draft };
+    return { itemId: itemId!, title, draft };
   });
 
 /** The person's own proposal draft item, with its stored draft. */
