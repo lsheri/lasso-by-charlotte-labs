@@ -2,6 +2,7 @@
 @import "tailwindcss" source(none);
 @import "./design/tokens.css";
 /* Charlotte skin: matches only under data-skin="charlotte" (set by the skin switch), so Lasso is unchanged. */
+@import "./design/skins/skin-base.css";
 @import "./design/skins/charlotte.css";
 @source "../src";
 @import "tw-animate-css";

@@ -33,6 +33,8 @@ describe("PR7: Charlotte restates the names Lasso components read directly", () 
   });
 
   it("moves every drawn-region family and all eight board hues onto Charlotte inks", () => {
+    // Since G2 part 3 (17 Nov) the families come from skin-base.css, built from Charlotte's six type hues.
+    const css = readFileSync("src/design/skins/charlotte.css", "utf8") + readFileSync("src/design/skins/skin-base.css", "utf8");
     for (const family of ["green", "blue", "rose", "yellow", "lavender", "slate"]) {
       for (const step of ["vivid", "soft", "soft-edge"]) expect(css).toContain(`--nb-region-${family}-${step}:`);
     }
@@ -41,6 +43,7 @@ describe("PR7: Charlotte restates the names Lasso components read directly", () 
       expect(css).toContain(`--board-hue-${i}-wash:`);
     }
     expect(css).not.toMatch(/--nb-region-[a-z]+-vivid:var\(--ch-lime\)/);
+    expect(css).not.toMatch(/--nb-region-[a-z]+-vivid:var\(--ask-live\)|--nb-region-[a-z]+-vivid:var\(--live\)/);
   });
 
   it("gives every sketch kind a family ink for its label and accent stroke", () => {

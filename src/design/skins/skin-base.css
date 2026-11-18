@@ -1,0 +1,60 @@
+/* Skin base (G2 part 3, 17 Nov 2026). Any skin (any data-skin on <html>; Lasso sets none) gets its category colours
+   from six type hues and its surfaces, so a skin sets --t-talk, --t-words, --t-numbers, --t-slides, --t-visual,
+   --t-code and the surface and text tokens, and every region, board hue and kind colour follows. Lasso keeps its
+   own hand-picked values in styles.css. A skin can still override any name here. */
+[data-skin] [data-lasso="on"],
+[data-skin] body:has([data-lasso="on"]) > [role="dialog"],
+[data-skin] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-skin] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --kind-accent-document:var(--t-words);
+  --kind-accent-deck:var(--t-slides);
+  --kind-accent-sheet:var(--t-numbers);
+  --kind-accent-envelope:var(--t-talk);
+  --kind-accent-code:var(--t-code);
+  --kind-accent-pen:var(--t-visual);
+  --nb-region-green-vivid:var(--t-numbers);
+  --nb-region-green-soft:color-mix(in oklab, var(--t-numbers) 7%, var(--surface-raised));
+  --nb-region-green-soft-edge:color-mix(in oklab, var(--t-numbers) 22%, var(--surface-raised));
+  --nb-region-blue-vivid:var(--t-talk);
+  --nb-region-blue-soft:color-mix(in oklab, var(--t-talk) 7%, var(--surface-raised));
+  --nb-region-blue-soft-edge:color-mix(in oklab, var(--t-talk) 22%, var(--surface-raised));
+  --nb-region-rose-vivid:var(--t-slides);
+  --nb-region-rose-soft:color-mix(in oklab, var(--t-slides) 7%, var(--surface-raised));
+  --nb-region-rose-soft-edge:color-mix(in oklab, var(--t-slides) 22%, var(--surface-raised));
+  --nb-region-yellow-vivid:var(--t-words);
+  --nb-region-yellow-soft:color-mix(in oklab, var(--t-words) 7%, var(--surface-raised));
+  --nb-region-yellow-soft-edge:color-mix(in oklab, var(--t-words) 22%, var(--surface-raised));
+  --nb-region-lavender-vivid:var(--t-visual);
+  --nb-region-lavender-soft:color-mix(in oklab, var(--t-visual) 7%, var(--surface-raised));
+  --nb-region-lavender-soft-edge:color-mix(in oklab, var(--t-visual) 22%, var(--surface-raised));
+  --nb-region-slate-vivid:var(--t-code);
+  --nb-region-slate-soft:color-mix(in oklab, var(--t-code) 7%, var(--surface-raised));
+  --nb-region-slate-soft-edge:color-mix(in oklab, var(--t-code) 22%, var(--surface-raised));
+  --nb-region-paper-white:var(--surface-raised);
+  --nb-region-paper-warm:var(--surface-page);
+  --nb-region-paper-cool:var(--surface-sunk);
+  --nb-region-paper-sand:var(--surface-sunk-2);
+  --board-hue-0-ink:var(--neutral-50);
+  --board-hue-0-wash:color-mix(in oklab, var(--neutral-50) 8%, var(--surface-raised));
+  --board-hue-1-ink:var(--t-talk);
+  --board-hue-1-wash:color-mix(in oklab, var(--t-talk) 8%, var(--surface-raised));
+  --board-hue-2-ink:var(--t-numbers);
+  --board-hue-2-wash:color-mix(in oklab, var(--t-numbers) 8%, var(--surface-raised));
+  --board-hue-3-ink:var(--t-visual);
+  --board-hue-3-wash:color-mix(in oklab, var(--t-visual) 8%, var(--surface-raised));
+  --board-hue-4-ink:var(--t-slides);
+  --board-hue-4-wash:color-mix(in oklab, var(--t-slides) 8%, var(--surface-raised));
+  --board-hue-5-ink:var(--t-code);
+  --board-hue-5-wash:color-mix(in oklab, var(--t-code) 8%, var(--surface-raised));
+  --board-hue-6-ink:var(--t-words);
+  --board-hue-6-wash:color-mix(in oklab, var(--t-words) 8%, var(--surface-raised));
+  --board-hue-7-ink:var(--text-primary);
+  --board-hue-7-wash:var(--selection);
+  --kind-chip-deck-bg:color-mix(in oklab, var(--t-slides) 8%, var(--surface-raised));
+  --kind-chip-deck-ink:var(--t-slides);
+  --kind-chip-proposal-bg:color-mix(in oklab, var(--t-words) 8%, var(--surface-raised));
+  --kind-chip-proposal-ink:var(--t-words);
+  --kind-chip-numbers-bg:color-mix(in oklab, var(--t-numbers) 8%, var(--surface-raised));
+  --kind-chip-numbers-ink:var(--t-numbers);
+}
