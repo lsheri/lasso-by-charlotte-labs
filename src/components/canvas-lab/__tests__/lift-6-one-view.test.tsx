@@ -92,7 +92,7 @@ describe("LIFT-6 one frame for every kind", () => {
   it("slightly rounded corners, one stage behind the work, and the content fades in after the box", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(LIFT_RADIUS).toBe(12);
-    expect(css).toContain("border-radius: 12px; background: var(--nb-paper);");
+    expect(css).toContain("border-radius: var(--corner-float); background: var(--nb-paper);");
     expect(css).toContain("transform-origin: 0 0; transition-property: transform;");
     expect(css).not.toContain("transition-property: left, top, width, height");
     expect(css).toContain('.lift-panel[data-phase="from"] > .lift-head, .lift-panel[data-phase="from"] > .lift-main { opacity: 0; transition: none; }');
