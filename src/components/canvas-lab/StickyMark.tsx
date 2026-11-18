@@ -20,16 +20,16 @@ export const STICKY_FILL_NAMES: Record<WorkboardStickyFill, string> = {
   grey: "Grey",
 };
 
-/** Paper colours for the mark: top of the sheet, bottom of the sheet, and the lifted corner. */
+/** Paper colours for the mark: top of the sheet, bottom of the sheet, and the lifted corner. Tokens in tokens.css (G11, 17 Nov). */
 export const STICKY_MARK_PAPER: Record<
   WorkboardStickyFill,
   { top: string; bottom: string; curl: string }
 > = {
-  yellow: { top: "#ffe98a", bottom: "#ffd94d", curl: "#e8c23a" },
-  green: { top: "#c9f5dc", bottom: "#9fe7bf", curl: "#79d4a3" },
-  blue: { top: "#8ee6e0", bottom: "#4fcfc6", curl: "#33b3aa" },
-  pink: { top: "#fbd3df", bottom: "#f5adc2", curl: "#e78ea8" },
-  grey: { top: "#efefec", bottom: "#d9d9d4", curl: "#bdbdb6" },
+  yellow: { top: "var(--sticky-mark-yellow-top)", bottom: "var(--sticky-mark-yellow-bottom)", curl: "var(--sticky-mark-yellow-curl)" },
+  green: { top: "var(--sticky-mark-green-top)", bottom: "var(--sticky-mark-green-bottom)", curl: "var(--sticky-mark-green-curl)" },
+  blue: { top: "var(--sticky-mark-blue-top)", bottom: "var(--sticky-mark-blue-bottom)", curl: "var(--sticky-mark-blue-curl)" },
+  pink: { top: "var(--sticky-mark-pink-top)", bottom: "var(--sticky-mark-pink-bottom)", curl: "var(--sticky-mark-pink-curl)" },
+  grey: { top: "var(--sticky-mark-grey-top)", bottom: "var(--sticky-mark-grey-bottom)", curl: "var(--sticky-mark-grey-curl)" },
 };
 
 type Props = {
@@ -75,11 +75,11 @@ function Sheet({
         d={`M${x + w} ${y + h - curl} ${x + w - curl} ${y + h}c.3-1.8.2-3.3 0-4.1 1 .2 2.3.2 4.1 0z`}
         fill={paper.curl}
       />
-      <path d={`M${x} ${y}h${w}v1.3H${x}z`} fill="#fff" opacity=".35" />
+      <path d={`M${x} ${y}h${w}v1.3H${x}z`} fill="white" opacity=".35" />
       {lines ? (
         <path
           d={`M${x + 2.5} ${y + 4.5}h7M${x + 2.5} ${y + 7}h5`}
-          stroke="#000"
+          stroke="black"
           strokeOpacity=".22"
           strokeWidth="1"
           strokeLinecap="round"
@@ -112,7 +112,7 @@ export function StickyMark({
     >
       <defs>
         <filter id={`${id}-soft`} x="-30%" y="-30%" width="160%" height="170%">
-          <feDropShadow dx="0" dy="1.1" stdDeviation="1" floodColor="#000" floodOpacity=".22" />
+          <feDropShadow dx="0" dy="1.1" stdDeviation="1" floodColor="black" floodOpacity=".22" />
         </filter>
       </defs>
       {variant === "stack" ? (
