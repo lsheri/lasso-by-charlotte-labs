@@ -124,8 +124,8 @@ describe("Charlotte skin", () => {
       "--ch-lime",
       "--hand-live",
       "--live",
-      "--nb-lasso-green",
     ]);
+    // --nb-lasso-green reaches Charlotte through the shared app-shell block in styles.css (G2, 17 Nov).
   });
 
   it("reaches the app only through src/styles.css, behind the skin switch", () => {
