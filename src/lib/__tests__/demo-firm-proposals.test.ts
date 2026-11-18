@@ -70,6 +70,27 @@ describe("the incoming opportunity", () => {
   });
 });
 
+describe("the incoming opportunities for briefs 2 and 3", () => {
+  it("are unshared pursuits owned by the proposal owner", () => {
+    for (const key of ["b32", "b33"]) {
+      expect(board(key)).toMatchObject({ pursuit: true, status: "active", sharedWithFirm: false });
+      expect(board(key).team[0]).toBe("quinn");
+    }
+  });
+
+  it("have the precedents the pass bar expects, readable by the firm", () => {
+    for (const key of ["b9", "b27", "b26"]) expect(board(key).sharedWithFirm).toBe(true);
+  });
+
+  it("brief 3 mirrors the unshared clinical staffing diligence, which must never be named in its notes", () => {
+    const trap = board("b28");
+    expect(trap.sharedWithFirm).toBe(false);
+    const notes = board("b33").items.map((item) => `${item.title} ${item.body ?? ""} ${item.summary} ${item.entities ?? ""}`).join(" ");
+    expect(notes).not.toContain(trap.client.name);
+    expect(notes).not.toContain(trap.client.name.split(" ")[0]!);
+  });
+});
+
 describe("planted candid notes", () => {
   const b06 = board("b6");
   const call = b06.items.find((item) => item.key === "cfo-checkin")!;
