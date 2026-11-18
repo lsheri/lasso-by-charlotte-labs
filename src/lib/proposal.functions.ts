@@ -112,6 +112,30 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+/** The draft's placement on its board and a card in free space to the right of the board's cards, as the person. */
+async function placeDraftOnBoard(caller: Parameters<typeof import("./firm-corpus.server").requireFirmMember>[0], engagementId: string, profileId: string, itemId: string) {
+  const home = await caller.rpc("ensure_board_default_task", { p_engagement: engagementId });
+  if (home.error) throw new Error(home.error.message);
+  const placed = await caller.from("work_item_tasks").insert({ work_item_id: itemId, task_id: home.data as unknown as string });
+  if (placed.error) throw new Error(placed.error.message);
+  const { data: board } = await caller.from("workboards").select("id").eq("engagement_id", engagementId).maybeSingle();
+  if (!board) return;
+  const { data: nodes } = await caller.from("workboard_nodes").select("x, y, w, h, kind").eq("workboard_id", board.id).is("deleted_at", null);
+  const { WORKBOARD_CARD_DEFAULT_SIZE } = await import("./canvas-lab-shared");
+  const { nearestFreeSlot, placementRectsForNodes } = await import("./workboard-placement");
+  const rects = (nodes ?? []).map((node) => ({
+    x: Number(node.x ?? 0),
+    y: Number(node.y ?? 0),
+    width: Number(node.w ?? WORKBOARD_CARD_DEFAULT_SIZE.width),
+    height: Number(node.h ?? WORKBOARD_CARD_DEFAULT_SIZE.height),
+    kind: node.kind ?? undefined,
+  }));
+  const right = rects.length ? Math.max(...rects.map((rect) => rect.x + rect.width)) : 0;
+  const top = rects.length ? Math.min(...rects.map((rect) => rect.y)) : 0;
+  const { ensureWorkItemNode } = await import("./canvas-lab.server");
+  await ensureWorkItemNode(caller, board.id, profileId, itemId, nearestFreeSlot({ x: right + 80, y: top }, placementRectsForNodes(rects)));
+}
+
 /** Firm members who can edit this board; never coaches or guests. */
 async function draftGate(context: { supabase: Parameters<typeof import("./firm-corpus.server").requireFirmMember>[0]; userId: string }, engagementId: string, profileId: string | null | undefined) {
   const { requireFirmMember } = await import("./firm-corpus.server");
@@ -193,6 +217,9 @@ export const draftProposal = createServerFn({ method: "POST" })
     if (error || !item) throw new Error(error?.message ?? "Could not save the draft.");
     const version = await supabaseAdmin.from("document_versions").insert({ work_item_id: item.id, version_no: 1, content_ref: path, content_hash: hash, parent_version_id: null, source_event: "proposal_draft", origin: "model_artifact" });
     if (version.error) throw new Error(version.error.message);
+    // Placed here, in the same request, so a draft never exists off its board if the page closes; the panel only
+    // draws the card.
+    await placeDraftOnBoard(caller, data.engagement_id, profile.id, item.id);
 
     const { recordEvent } = await import("./telemetry.server");
     const { bucket } = await import("./telemetry-shared");
@@ -261,15 +288,15 @@ export const latestProposalDraft = createServerFn({ method: "POST" })
     const { profile, supabaseAdmin } = await draftGate(context, data.engagement_id, data.profile_id);
     const { data: placed } = await caller
       .from("work_item_tasks")
-      .select("work_item_id, tasks!inner(engagement_id), work_items!inner(id, title, owner_id, meta, created_at)")
+      .select("work_item_id, tasks!inner(engagement_id), work_items!inner(id, title, owner_id, meta, captured_at)")
       .eq("tasks.engagement_id", data.engagement_id)
       .eq("work_items.owner_id", profile.id)
       .eq("work_items.meta->>deliverable_kind", "proposal");
     const { storedDraft, recheckSources } = await import("./proposal-draft-shared");
-    const rows = ((placed ?? []) as unknown as { work_items: { id: string; title: string; meta: unknown; created_at: string } }[])
+    const rows = ((placed ?? []) as unknown as { work_items: { id: string; title: string; meta: unknown; captured_at: string } }[])
       .map((row) => row.work_items)
       .filter((row) => storedDraft(row.meta))
-      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+      .sort((a, b) => b.captured_at.localeCompare(a.captured_at));
     const latest = rows[0];
     if (!latest) return null;
     const { readFirmCorpus } = await import("./firm-corpus.server");

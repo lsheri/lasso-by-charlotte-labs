@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
  * Start a proposal end to end on a deployed build (it needs the server's AI key): signs in as Harper Quinn on Kestrel
  * Bay, opens the unshared Marrowfield opportunity board, reads its notes into a brief, finds precedents, drafts, and
  * checks the draft never names another client or shows a fee. Screens in both skins land in test-results; the draft
- * itself in test-results/proposal-draft-live.json. Each run adds one draft card to the board. Run it alone.
+ * itself in test-results/proposal-draft-live-<run>.json (use --repeat-each=3 for the pass bar). Each run adds one draft card to the board. Run it alone.
  *
  *   runpane secrets exec --project lasso-by-charlotte-labs --only DEMO_FIRM_PASSWORD -- \
  *     env LASSO_E2E_BASE_URL=https://lasso.charlotte-labs.com DRAFT_BOARD=<board id> bunx playwright test proposal-draft-live
@@ -50,8 +50,11 @@ test("a proposal draft on an opportunity board", async ({ browser }) => {
   const questions = await draft.locator("[data-draft-questions] li").allTextContents();
   const checks = await draft.locator("[data-draft-checks] li").allTextContents();
   const all = await draft.textContent();
-  writeFileSync("test-results/proposal-draft-live.json", JSON.stringify({ precedents, checks, questions, sections }, null, 2));
-  await draft.screenshot({ path: "test-results/proposal-draft-live-charlotte.png" });
+  const run = test.info().repeatEachIndex;
+  writeFileSync(`test-results/proposal-draft-live-${run}.json`, JSON.stringify({ precedents, checks, questions, sections }, null, 2));
+  // Viewport shots: an element shot of the scrolling panel leaves blank bands.
+  await draft.locator("[data-draft-status-strip]").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `test-results/proposal-draft-live-${run}-charlotte.png` });
 
   expect(sections).toHaveLength(9);
   expect(sections.every((section) => section.status !== "confirmed")).toBe(true);
@@ -67,7 +70,7 @@ test("a proposal draft on an opportunity board", async ({ browser }) => {
   await toolbar.locator('[data-toolbar-control="more"]').click();
   await page.getByRole("menuitem", { name: "Start a proposal" }).click();
   await page.getByTestId("proposal-draft").waitFor({ timeout: 30_000 });
-  await page.getByTestId("proposal-draft").screenshot({ path: "test-results/proposal-draft-live-lasso.png" });
-  await page.screenshot({ path: "test-results/proposal-draft-live-board.png" });
+  await page.getByTestId("proposal-draft").locator("[data-draft-status-strip]").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `test-results/proposal-draft-live-${run}-lasso.png` });
   await context.close();
 });
