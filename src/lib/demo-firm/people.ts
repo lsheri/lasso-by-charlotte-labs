@@ -45,7 +45,7 @@ export const DEMO_PEOPLE: DemoPerson[] = [
   { key: "yilmaz", name: "Elif Yilmaz", role: "em", title: "Analyst", practice: "Health" },
   { key: "doyle", name: "Rosa Doyle", role: "em", title: "Analyst", practice: "Social impact" },
   // Operations
-  { key: "quinn", name: "Harper Quinn", role: "em", title: "Operations", practice: "Firm" },
+  { key: "quinn", name: "Harper Quinn", role: "em", title: "Head of Client Success", practice: "Firm" },
 ];
 
 export function demoEmail(key: string): string {

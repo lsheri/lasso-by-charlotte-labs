@@ -373,6 +373,60 @@ Source: expert call, customer interview.
       decisions: "IC approved the deal at a reduced price on the base case\nTechnician retention pool added to the 100-day plan",
       entities: "investment committee, Coldfront Mechanical, market growth, paid renewal, technician turnover, Nashville",
     },
+    {
+      key: "proposal",
+      title: "Proposal: Coldfront commercial due diligence",
+      type: "document",
+      kind: "proposal",
+      vendor: "google_docs",
+      author: "okafor",
+      section: "Day 0-2",
+      date: "2025-08-25",
+      body: `# Proposal: commercial due diligence on Coldfront Mechanical
+
+**Prepared for:** Ironwillow Partners, deal lead  **From:** Kestrel Bay Advisory  **Date:** 25 August 2025
+
+## Context
+Ironwillow is in exclusivity on Coldfront Mechanical, an HVAC services platform in the Southeast. The investment committee needs an independent view of the market, customer loyalty and the add-on pipeline in three weeks.
+
+## Objectives
+1. Test the growth case for residential replacement, service and repair, and light commercial work.
+2. Test service agreement retention.
+3. Flag anything that should stop or reprice the deal.
+
+## Our approach
+### Days 0 to 2
+Hypotheses and data room request.
+### Week 1
+Market model for Georgia, the Carolinas and Tennessee, 2024 to 2029. Expert calls begin. Red-flag gate at the end of the week.
+### Weeks 2 and 3
+14 customer interviews, a 300-response homeowner survey, retention analysis from data room cohorts and a competitor and add-on target map. Deck freeze three days before IC.
+
+## Workstreams
+Market model. Customer work. Expert calls. Retention. Competitors and targets.
+
+## Deliverables
+Red-flag memo. Market model. Survey and interview findings. Investment committee report.
+
+## Timeline
+3 weeks from 8 September 2025.
+
+## Team
+A partner 1.5 days a week, a full-time manager, consultant and analyst.
+
+## Fees
+$120,000 fixed, expenses billed at cost, survey panel costs passed through.
+
+## Assumptions and exclusions
+Quality of earnings, legal, insurance, IT and HR diligence are out of scope.
+
+## Why Kestrel Bay
+We give investment committees a clear answer on time, and we say early when something is wrong.`,
+      summary:
+        "Proposal to Ironwillow Partners for three weeks of commercial due diligence on Coldfront Mechanical, an HVAC services roll-up. Fixed fee of $120k. Covers a footprint market model, customer interviews, a survey, expert calls, retention analysis and an IC report.",
+      entities: "Ironwillow Partners, Coldfront Mechanical, HVAC services, commercial due diligence, investment committee",
+      shown: [{ on: "2025-08-26", occasion: "Proposal sent to the deal lead" }],
+    },
   ],
   stickies: [
     { section: "Week 3 and IC", text: "Partner: lead with what changes the price, then what holds up. Our numbers, never management's.", fill: "yellow" },

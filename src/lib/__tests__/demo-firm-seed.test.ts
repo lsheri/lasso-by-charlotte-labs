@@ -136,6 +136,10 @@ describe("the writer", () => {
     expect(items.every((row) => row["org_id"] === "org-demo")).toBe(true);
     expect(items.every((row) => (row["source_meta"] as Record<string, unknown>)["demo_board"] === "b5")).toBe(true);
     expect(items.find((row) => row["title"] === "My notes: stakeholder dynamics")!["visibility"]).toBe("private");
+    // SOW terms and the proposal kind travel as item meta, so code can read them without a model.
+    const metaOf = (title: string) => items.find((row) => row["title"] === title)!["meta"] as Record<string, unknown>;
+    expect(metaOf(b05.items.find((item) => item.key === "sow")!.title)["sow_facts"]).toMatchObject({ fee_amount: 380000, fee_basis: "fixed", weeks: 16 });
+    expect(metaOf(b05.items.find((item) => item.kind === "proposal")!.title)["deliverable_kind"]).toBe("proposal");
     const loose = items.find((row) => row["title"] === "Unplaced note")!;
     expect(of("work_item_tasks").some((row) => row["work_item_id"] === loose["id"])).toBe(false);
 
