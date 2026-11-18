@@ -60,11 +60,11 @@
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * The :root block defines the actual color values. There is no dark theme:
+ * the three unused .dark blocks were removed on 17 Nov 2026 (audit gap G12).
  *
  * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 1. Add the variable to :root
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
@@ -422,35 +422,6 @@
   --nb-chat-border-copilot: linear-gradient(135deg, #6d3bb8, #17151b);
 }
 
-.dark {
-  --nb-shared: #ff7a1a;
-  --ember: #2bd97b;
-  --ember-deep: #5ce89b;
-  --ember-foreground: #0d211d;
-  --ember-deep-foreground: #0d211d;
-  /* Lasso green wash mixed over dark paper; the ink stays the logo green. */
-  --nb-lasso-green-wash: #0e803e;
-  --electric: #35aef2;
-  --electric-deep: #7fcdf8;
-  --state-amber: #e0b06b;
-  --state-teal: #5cc3b4;
-  --state-teal-band: var(--nb-green);
-  --state-indigo: #a3b0e8;
-  --vendor-claude: #e39c84;
-  --vendor-chatgpt: #6fc4b2;
-  --vendor-gemini: #8fb1ea;
-  --vendor-copilot: #74c0d6;
-  --vendor-gdrive: #a8cf75;
-  --vendor-granola: #e5aa72;
-  --vendor-notion: #c9c3ba;
-  --vendor-slack: #c39ad0;
-  --vendor-microsoft: #8ab6e8;
-  --vendor-gmail: #e79184;
-  --nb-chat-border-claude: linear-gradient(135deg, #e39c84, #e39c84);
-  --nb-chat-border-chatgpt: linear-gradient(135deg, #050607, #9ca1a4);
-  --nb-chat-border-gemini: linear-gradient(135deg, #8fb1ea, #d2d8df);
-  --nb-chat-border-copilot: linear-gradient(135deg, #a77ce3, #08070a);
-}
 
 /*
  * Type identity hues. Muted saturation so they sit inside Bone + Slate: used
@@ -489,85 +460,7 @@
   --paper-8: #f7dcdc; /* rose   — pairs --engagement-8 */
 }
 
-.dark {
-  --hue-slate-blue: #93b0d4;
-  --hue-sand: #d6bd8a;
-  --hue-moss: #9cc48f;
-  --hue-clay: #e0a086;
-  --hue-sage: #a5c4b1;
-  --hue-plum: #c69ac1;
-  --hue-amber: #e0be76;
-  --hue-indigo: #a3a3e0;
-  --hue-neutral: #bdb8a8;
-  --hue-cyan: #84c2d8;
-  --engagement-1: #93b0d4;
-  --engagement-2: #9cc48f;
-  --engagement-3: #e0a086;
-  --engagement-4: #c69ac1;
-  --engagement-5: #d6bd8a;
-  --engagement-6: #a3a3e0;
-  --engagement-7: #a5c4b1;
-  --engagement-8: #d0a8a8;
-  /* In the dark, a note is dark paper with a colour cast — never a light
-     rectangle burning a hole in the page. */
-  --paper-1: #22303d;
-  --paper-2: #24332a;
-  --paper-3: #3a2a22;
-  --paper-4: #322435;
-  --paper-5: #34301f;
-  --paper-6: #262a44;
-  --paper-7: #1f3330;
-  --paper-8: #3a2728;
-}
 
-.dark {
-  --background: #0d211d;
-  --foreground: #eaf2ee;
-  --card: #14302a;
-  --card-foreground: #eaf2ee;
-  --popover: #14302a;
-  --popover-foreground: #eaf2ee;
-  --primary: #2bd97b;
-  --primary-foreground: #0d211d;
-  --secondary: #1b3b34;
-  --secondary-foreground: #eaf2ee;
-  --muted: #1b3b34;
-  --muted-foreground: #9fb3ad;
-  --accent: #1b3b34;
-  --accent-foreground: #eaf2ee;
-  --accent-soft: #17352f;
-  --accent-deep: #7fcdf8;
-  --destructive: #d4796a;
-  --destructive-foreground: #0d211d;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #35aef2;
-  --chart-1: #2bd97b;
-  --chart-2: #35aef2;
-  --chart-3: #a5c4b1;
-  --chart-4: #e0b06b;
-  --chart-5: #c69ac1;
-  --sidebar: #14302a;
-  --sidebar-foreground: #eaf2ee;
-  --sidebar-primary: #2bd97b;
-  --sidebar-primary-foreground: #0d211d;
-  --sidebar-accent: #1b3b34;
-  --sidebar-accent-foreground: #eaf2ee;
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #35aef2;
-  --navy: #14403a;
-  --mint: #2bd97b;
-  --suggest: #e8f24c;
-  --cream: #1b3b34;
-  --pattern-bg: #17352f;
-  --pattern-border: #35aef2;
-  --pattern-fg: #cfe6f5;
-  --code-keyword: #c69ac1;
-  --code-string: #9cc48f;
-  --code-number: #e0be76;
-  --code-title: #93b0d4;
-  --code-meta: #e0a086;
-}
 
 }
 

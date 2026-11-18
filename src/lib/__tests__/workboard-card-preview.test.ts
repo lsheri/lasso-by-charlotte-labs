@@ -54,7 +54,6 @@ describe("workboard card previews", () => {
   it("keeps shared vendor colors intact and isolates Preview card colors", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toContain("--vendor-chatgpt: #0f6b5c;");
-    expect(css).toContain("--vendor-chatgpt: #6fc4b2;");
     expect(css).toContain("--canvas-vendor-chatgpt: var(--nb-graphite);");
     expect(css).toContain("var(--canvas-preview-vendor, var(--canvas-vendor-other))");
   });
