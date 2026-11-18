@@ -25,7 +25,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G6 | Now | Lime and acid rings below 3:1 | Charlotte passes (paperclip is the second cue); guarded by a test | #186 |
 | G7 | Look | App Button drifts from reference | Component done; the 15 hand-written mono chips and 19 mono tags share two named styles. Plain buttons already get the shared focus outline; the rest of the sweep is looks only | #163, #198, #199 |
 | G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, #189 |
-| G9 | Upkeep | styles.css size, literal z-index, `!important` | Global layers named; board-internal and paused-page z-index stay local; styles.css split into six ordered parts (compiled CSS identical); `!important` open | #195, #200 |
+| G9 | Upkeep | styles.css size, literal z-index, `!important` | Global layers named; board-internal and paused-page z-index stay local; styles.css split into six ordered parts (compiled CSS identical); `!important` open | #195, #202 |
 | G10 | Upkeep | Reference components copied, not checked | Done: every reference token stays declared, and the app keeps reading the 189 it shares | #194 |
 | G11 | Look | Hex colours in components | Done: what is left is vendor and file-format marks, the standalone error page, the theme-color meta and a chart-library selector | #193 |
 | G12 | Upkeep | Dead dark theme | Removed | #186 |
@@ -59,7 +59,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #197 | G2 | Skin contract: Charlotte sets 18 brand values (`--skin-*`, six type hues, two ramp steps, two overlay fonts); skin-base.css maps them onto roles, job tokens, the neutral ramp and vendors | No (hairline and pencil greys may move by one colour step from rounding) |
 | #198 | G7 | One chip button (`chipVariants`) replaces 15 hand-written mono pills | Chosen toggles keep a 1px accent border (no 2px shift); disabled chips dim |
 | #199 | G7 | One tag (`tagVariants`) replaces 19 hand-written mono label pills | Import table tag letter spacing 0.06em to 0.08em |
-| #200 | G9 | styles.css split into an import index and six ordered parts in src/styles/ | No (compiled CSS byte-identical) |
+| #202 | G9 | styles.css split into an import index and six ordered parts in src/styles/ | No (compiled CSS byte-identical) |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
