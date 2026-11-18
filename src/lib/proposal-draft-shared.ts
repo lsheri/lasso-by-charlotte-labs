@@ -96,13 +96,22 @@ export type ProposalDraft = {
 };
 
 /** Words in an index card that are proper nouns but never a client's or person's name. */
-const NOT_NAMES = new Set(["vp", "svp", "evp", "chief", "head", "director", "manager", "lead", "officer", "board", "president", "partner", "cfo", "ceo", "cmo", "coo", "cio", "cto", "cno", "medicaid", "medicare"]);
+const NOT_NAMES = new Set([
+  "vp", "svp", "evp", "chief", "head", "director", "manager", "lead", "officer", "board", "president", "partner", "chair",
+  "cfo", "ceo", "cmo", "coo", "cio", "cto", "cno", "medicaid", "medicare", "option", "phase", "wave", "plan", "model",
+  "program", "programme", "service", "line", "care", "health", "steering", "committee", "council", "team", "office",
+]);
 
-function looksLikeName(term: string): boolean {
-  if (term.length < 3 || !/^[A-Z]/.test(term)) return false;
-  // Acronyms and codes (CFO, GLP-1, FY2025) are topics, not names.
-  if (/^[A-Z0-9-]+$/.test(term) || /\d/.test(term)) return false;
-  return !term.split(/\s+/).some((word) => NOT_NAMES.has(word.toLowerCase()));
+/**
+ * An index-card term that reads as a person's or organisation's own name: two or more capitalised words with no role
+ * or business words ("Dana Whitfield"). Topics, roles, codes and single words ("SteerCo", "Option B", "P&L", "Chair of
+ * Psychiatry") are not names. Client names are covered separately, from each board's client.
+ */
+export function looksLikeName(term: string): boolean {
+  const words = term.trim().split(/\s+/);
+  if (words.length < 2) return false;
+  if (!words.every((word) => /^[A-Z][a-z'’.-]+$/.test(word))) return false;
+  return !words.some((word) => NOT_NAMES.has(word.toLowerCase().replace(/[.']/g, "")));
 }
 
 export type NameTerm = { term: string; replacement: string };
@@ -224,7 +233,9 @@ export function parseDraft(raw: Record<string, unknown>, ctx: DraftContext): { s
     if (key === "fee") return { key, heading, body: FEE_LINE, status: "draft", sources: [], flags: [] };
     if (key === "team") return { key, heading, body: teamSlots(raw["team_roles"], ctx.terms), status: "draft", sources: [], flags: [] };
     const entry = given[key] && typeof given[key] === "object" ? (given[key] as Record<string, unknown>) : {};
-    const body = maskFees(str(entry["body"], SECTION_CHARS));
+    // A model sometimes returns a body as a list of lines; it is the same text.
+    const rawBody = Array.isArray(entry["body"]) ? entry["body"].filter((line): line is string => typeof line === "string").join("\n") : entry["body"];
+    const body = maskFees(str(rawBody, SECTION_CHARS));
     if (!body || entry["gap"] === true) return { key, heading, body: GAP_LINE, status: "gap", sources: [], flags: [] };
     const figures = checkFigures(body, allowed);
     figuresRemoved += figures.removed;

@@ -125,7 +125,7 @@ export function ProposalStartPanel({
   profileId: string | null | undefined;
   orgId: string | null | undefined;
   onClose: () => void;
-  onDraftSaved?: (itemId: string) => void;
+  onDraftSaved?: ((itemId: string) => void) | undefined;
 }) {
   const readBrief = useServerFn(draftProposalBrief);
   const find = useServerFn(findProposalPrecedents);

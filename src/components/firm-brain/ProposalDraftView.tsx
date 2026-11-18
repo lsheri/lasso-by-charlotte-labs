@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 import { DRAFT_COPY, draftStatus, questionsText, type DraftSection, type DraftSource, type ProposalDraft } from "@/lib/proposal-draft-shared";
 import { confirmProposalSection } from "@/lib/proposal.functions";
 
@@ -36,8 +37,8 @@ function SectionCard({ section, busy, onConfirm, onOpen }: { section: DraftSecti
   return (
     <li data-draft-section={section.key} data-draft-status={section.status} className="rounded-[var(--radius)] border border-border bg-background p-3">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-(length:--type-body) font-medium text-foreground">{section.heading}</p>
-        <span className={tagVariants({ tone: section.status === "confirmed" ? "accent" : section.status === "gap" ? "muted" : "neutral" })}>{label}</span>
+        <p className="min-w-0 text-(length:--type-body) font-medium text-foreground">{section.heading}</p>
+        <span className={cn(tagVariants({ tone: section.status === "confirmed" ? "accent" : section.status === "gap" ? "muted" : "neutral" }), "shrink-0 whitespace-nowrap")}>{label}</span>
       </div>
       <p className="mt-1 whitespace-pre-line text-(length:--type-small) text-foreground">{section.body}</p>
       {section.flags.map((flag) => (

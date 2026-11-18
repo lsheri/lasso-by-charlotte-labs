@@ -12,6 +12,7 @@ import {
   FEE_LINE,
   forbiddenNames,
   GAP_LINE,
+  looksLikeName,
   maskNames,
   parseDraft,
   questionsText,
@@ -93,6 +94,11 @@ describe("other clients' names", () => {
     expect(terms).not.toContain("VP Strategy");
   });
 
+  it("are never business terms, roles or codes from the index cards", () => {
+    for (const term of ["SteerCo", "Option B", "P&L", "Chair of Psychiatry", "Medicare Advantage", "VP Strategy and Planning", "Chief Operating Officer"]) expect(looksLikeName(term), term).toBe(false);
+    expect(looksLikeName("Dana Whitfield")).toBe(true);
+  });
+
   it("are masked whole, client first", () => {
     const terms = forbiddenNames(corpus, ["b5", "b6"], intake);
     expect(maskNames("St. Brigid Health and Cedarmere's team met Dana Whitfield.", terms)).toBe("[CLIENT A] and [CLIENT B] team met [NAME].");
@@ -132,6 +138,11 @@ describe("parsing the draft", () => {
     expect(sections.find((section) => section.key === "deliverables")).toMatchObject({ status: "gap", body: GAP_LINE });
     expect(sections.find((section) => section.key === "approach")!.sources.map((source) => source.kind)).toEqual(["structure", "fact"]);
     expect(questions).toHaveLength(3);
+  });
+
+  it("reads a body given as a list of lines", () => {
+    const { sections } = parseDraft({ sections: { context: { body: ["The client wants a service line.", "Employers renew in July."] } } }, ctx);
+    expect(sections[0]).toMatchObject({ status: "draft", body: "The client wants a service line.\nEmployers renew in July." });
   });
 
   it("drops a quote that is not really in its item, and a source board that is not a precedent", () => {
@@ -214,7 +225,7 @@ describe("a reply cut off at its token limit", () => {
       seen: [] as ChatOptions[],
       chat: async (_messages: ChatMessage[], options: ChatOptions) => {
         model.seen.push(options);
-        return options.meta?.surface === "proposal_new_facts" ? reply(JSON.stringify({ sentences: [] })) : { ...reply(cut), finishReason: "length" };
+        return options.meta?.surface === "proposal_new_facts" ? reply(JSON.stringify({ sentences: [] })) : { ...reply(cut), finishReason: "length" as const };
       },
     };
     const { draft } = await runProposalDraft(model.chat, { corpus, precedentIds: ["b5", "b6"], intake, brief: emptyBrief(), ownItems: new Map([["own1", { title: "Intake call", text: intake }]]), read, meta });
