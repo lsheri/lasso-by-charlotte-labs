@@ -62,7 +62,6 @@
   --selection:var(--ch-navy-wash);
   --select-ring:var(--ch-navy);
   --live:var(--ch-lime);
-  --icon-ink:currentColor;
   --icon-ink-active:var(--ch-navy);
   --state-held:var(--ch-navy);
   --state-held-ink:var(--ch-page);
@@ -300,51 +299,6 @@
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [role="alertdialog"],
 [data-skin="charlotte"] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
 [data-skin="charlotte"] body:has([data-lasso="on"]) [data-sonner-toaster] {
-  --shadow-modal:0 12px 32px color-mix(in oklab, var(--nb-ink) 10%, transparent);
-  --status-exact:var(--nb-green);
-  --status-exact-wash:var(--nb-green-wash);
-  --status-paraphrase:var(--nb-amber);
-  --status-paraphrase-wash:var(--nb-amber-wash);
-  --status-unsourced:var(--nb-soft);
-  --status-unsourced-wash:var(--nb-grey-1);
-  --card-foreground:var(--nb-ink);
-  --popover:var(--nb-white);
-  --popover-foreground:var(--nb-ink);
-  --secondary:var(--nb-grey-1);
-  --secondary-foreground:var(--nb-ink);
-  --muted:var(--nb-grey-2);
-  --accent:var(--nb-rule);
-  --accent-foreground:var(--nb-ink);
-  --accent-soft:var(--nb-grey-1);
-  --navy:var(--nb-ink);
-  --mint:var(--nb-white);
-  --suggest:var(--nb-blue);
-  --suggest-wash:var(--nb-grey-2);
-  --suggest-edge:var(--nb-blue);
-  --cream:var(--nb-grey-1);
-  --pattern-bg:var(--nb-grey-1);
-  --pattern-border:var(--nb-rule);
-  --pattern-fg:var(--nb-ink);
-  --input:var(--nb-rule);
-  --sidebar:var(--nb-paper);
-  --sidebar-foreground:var(--nb-ink);
-  --sidebar-primary:var(--nb-ink);
-  --sidebar-primary-foreground:var(--nb-white);
-  --sidebar-accent:var(--nb-grey-1);
-  --sidebar-accent-foreground:var(--nb-ink);
-  --sidebar-border:var(--nb-rule);
-  --sidebar-ring:var(--nb-blue);
-  --ember-deep:var(--nb-ink);
-  --ember-deep-foreground:var(--nb-white);
-  --ember-wash:var(--nb-grey-1);
-  --electric-deep:var(--nb-blue);
-  --electric-wash:var(--nb-grey-1);
-  --state-amber-wash:var(--nb-yellow-wash);
-  --state-amber-band:var(--nb-ink-yellow);
-  --state-teal-wash:var(--nb-green-wash);
-  --state-teal-band:var(--nb-green-wash);
-  --state-indigo-wash:var(--nb-grey-1);
-  --state-indigo-band:var(--nb-rule);
 }
 
 /* PR7: the Charlotte mark fills the fixed block that hosts it. Buttons size their icons to 16px ([&_svg]:size-4),
