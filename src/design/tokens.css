@@ -91,6 +91,14 @@
   --label-weight:500;
   --label-tracking:0.08em;
   --sticky-paper:#fff7ae;
+  /* G11, 17 Nov: colours that lived in components. The sticky mark is the drawn icon (brighter than board stickies);
+     the kind chips are Lasso's defaults, which skin-base.css derives for skins. */
+  --sticky-mark-yellow-top:#ffe98a; --sticky-mark-yellow-bottom:#ffd94d; --sticky-mark-yellow-curl:#e8c23a;
+  --sticky-mark-green-top:#c9f5dc; --sticky-mark-green-bottom:#9fe7bf; --sticky-mark-green-curl:#79d4a3;
+  --sticky-mark-blue-top:#8ee6e0; --sticky-mark-blue-bottom:#4fcfc6; --sticky-mark-blue-curl:#33b3aa;
+  --sticky-mark-pink-top:#fbd3df; --sticky-mark-pink-bottom:#f5adc2; --sticky-mark-pink-curl:#e78ea8;
+  --sticky-mark-grey-top:#efefec; --sticky-mark-grey-bottom:#d9d9d4; --sticky-mark-grey-curl:#bdbdb6;
+  --kind-chip-deck-bg:#faf1e2; --kind-chip-proposal-bg:#e7efe9; --kind-chip-numbers-bg:#e8f0fb;
   --shadow-sticky:2px 3px 8px -3px color-mix(in oklab,var(--neutral-95) 30%,transparent);
   --shadow-dialog:0 24px 60px -24px color-mix(in oklab,var(--neutral-95) 50%,transparent);
 }
