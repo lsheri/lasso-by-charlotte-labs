@@ -32,8 +32,8 @@ const IMAGE_META = new Set(["og:image", "twitter:image"]);
  * image. Lasso gets the very same array back.
  */
 export function brandHeadTags(tags: RouterManagedTag[], skin: Skin): RouterManagedTag[] {
-  if (skin === "lasso") return tags;
   const brand = brandFor(skin);
+  if (brand.look.legacyDefault) return tags;
   return tags.map((tag) => {
     if (tag.tag === "title") return { ...tag, children: brandTitle(brand, tag.children) };
     const attrs = tag.attrs;

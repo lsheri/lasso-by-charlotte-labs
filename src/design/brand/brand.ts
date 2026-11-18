@@ -10,11 +10,37 @@ export type Brand = {
   wordmark: string;
   /** The label on the Ask control. Under Charlotte the name alone is the invitation. */
   askLabel: string;
+  /**
+   * Which drawn assets the brand uses (18 Nov 2026, brand layer). Code asks the brand for its assets instead of
+   * checking a skin's name, so a new brand picks from these sets, or adds its own beside them, in this one file.
+   */
+  look: BrandLook;
+};
+
+export type BrandLook = {
+  /** The still and live mark: Lasso's loop, or Charlotte's C with its live hub. */
+  mark: "loop" | "charlotte";
+  /** GraphiteIcon's glyphs: the hand-drawn animated set, or the Exhibit set (stroke 1.5, still). */
+  glyphs: "graphite" | "exhibit";
+  /** Work-kind icons: Lucide, or the Exhibit kind glyphs. */
+  kindIcons: "lucide" | "exhibit";
+  /** The original default: no data-skin attribute on <html> and route heads left exactly as written. */
+  legacyDefault: boolean;
 };
 
 export const BRANDS: Record<Skin, Brand> = {
-  lasso: { name: "Lasso", wordmark: "LASSO", askLabel: "Ask Lasso" },
-  charlotte: { name: "Charlotte", wordmark: "CHARLOTTE", askLabel: "Charlotte" },
+  lasso: {
+    name: "Lasso",
+    wordmark: "LASSO",
+    askLabel: "Ask Lasso",
+    look: { mark: "loop", glyphs: "graphite", kindIcons: "lucide", legacyDefault: true },
+  },
+  charlotte: {
+    name: "Charlotte",
+    wordmark: "CHARLOTTE",
+    askLabel: "Charlotte",
+    look: { mark: "charlotte", glyphs: "exhibit", kindIcons: "exhibit", legacyDefault: false },
+  },
 };
 
 export function brandFor(skin: Skin): Brand {

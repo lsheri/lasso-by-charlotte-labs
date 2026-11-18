@@ -24,7 +24,7 @@ import { registerProfileQueryClient } from "@/hooks/use-profile";
 import { readSkinCookie } from "@/lib/skin";
 import { BrandHeadContent } from "@/components/skin/BrandHeadContent";
 import { SkinProvider } from "@/components/skin/SkinProvider";
-import { brandCopy, launchBrand } from "@/design/brand/brand";
+import { brandCopy, brandFor, launchBrand } from "@/design/brand/brand";
 
 /** One source for the page title and the link preview card. Mirrors the Front Door. */
 // The default head names the product: Lasso until the flip (BRAND_FLIPPED), Charlotte after.
@@ -180,7 +180,7 @@ function RootShell({ children }: { children: ReactNode }) {
   const { skin } = Route.useRouteContext();
   return (
     // No attribute at all for Lasso, so the default page is unchanged. SkinProvider may update it after load.
-    <html lang="en" data-skin={skin === "lasso" ? undefined : skin}>
+    <html lang="en" data-skin={brandFor(skin).look.legacyDefault ? undefined : skin}>
       <head>
         <BrandHeadContent skin={skin} />
       </head>

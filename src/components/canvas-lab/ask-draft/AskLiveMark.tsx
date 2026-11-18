@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { useSkin } from "@/components/skin/use-skin";
+import { useBrand } from "@/components/skin/use-skin";
 import { CharlotteMark, type MarkState } from "@/design/brand/CharlotteMark";
 import { anchoredDelayMs, askMarkState, READING_CYCLE_MS, type AskMarkState } from "@/lib/ask-reading-clock";
 
@@ -45,11 +45,11 @@ const CHARLOTTE_STATE: Record<AskMarkState, MarkState> = { live: "reading", idle
 export function AskLiveMark({ pending, error, turnKey }: { pending: boolean; error: boolean; turnKey: string }) {
   const online = useOnline();
   const state = askMarkState({ pending, error, online });
-  const skin = useSkin();
+  const { look } = useBrand();
   // Worked out once per mount and turn: a delay that changed on every render would make the light jump.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const delay = useMemo(() => (state === "live" ? anchoredDelayMs(turnKey, performance.now()) : 0), [turnKey, state]);
-  if (skin === "charlotte") {
+  if (look.mark === "charlotte") {
     return (
       <span className="ask-l2-mark inline-flex" data-state={state} data-testid="ask-live-mark" aria-hidden="true">
         <CharlotteMark state={CHARLOTTE_STATE[state]} size={24} />

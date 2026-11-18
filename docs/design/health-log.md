@@ -82,7 +82,7 @@ Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2
 | Raw `<select>` outside ui (added 18 Nov) | 18 | 18 |
 | Hand-built mono pills outside ui (added 18 Nov) | 9 | 9 |
 | Files importing Lucide (added 18 Nov) | 92 | 92 |
-| Skin-name branches (added 18 Nov) | 8 | 8 |
+| Skin-name branches (added 18 Nov) | 8 | 0 (#216) |
 | CSS colour literals (added 18 Nov) | 42 | 42 |
 | Reskin audit leaks, 11 screens (added 18 Nov) | 44 | 0 |
 

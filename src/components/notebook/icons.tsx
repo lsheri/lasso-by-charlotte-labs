@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { useSkin } from "@/components/skin/use-skin";
+import { useBrand } from "@/components/skin/use-skin";
 import { CHARLOTTE_GLYPHS, EXHIBIT_DASH, EXHIBIT_STROKE } from "@/design/icons/charlotte";
 export type GraphiteIconName = "connectors" | "work" | "engagement" | "folder" | "workboard" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "expand" | "minus" | "more" | "workstream" | "section" | "draw-workstream" | "suggest-workstreams" | "sign-out" | "pin" | "lock" | "trash" | "edit" | "link" | "download" | "info" | "bell" | "submit";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
@@ -68,7 +68,7 @@ export function getIconSignature(name: GraphiteIconName) { return ICONS[name].si
 export function GraphiteIcon({ name, size = 16, className, title, animate = true, playOnMount = false }: { name: GraphiteIconName; size?: number; className?: string; title?: string; animate?: boolean; playOnMount?: boolean }) {
   const def = ICONS[name];
   // Charlotte draws its Exhibit set: same names, stroke 1.5, no motion. Dashed paths skip pathLength, which would rescale the dash to solid.
-  if (useSkin() === "charlotte") return (
+  if (useBrand().look.glyphs === "exhibit") return (
     <svg className={cn("nb-ico", className)} data-icon={name} width={size} height={size} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={EXHIBIT_STROKE} strokeLinecap="round" strokeLinejoin="round" role={title ? "img" : undefined} aria-hidden={title ? undefined : true} aria-label={title}>
       {title ? <title>{title}</title> : null}
       {CHARLOTTE_GLYPHS[name].map((p, i) => typeof p === "string" ? <path key={i} d={p} pathLength={1} /> : <path key={i} d={p.d} strokeDasharray={EXHIBIT_DASH} />)}
