@@ -3,7 +3,7 @@ import { NoAnswerSaved } from "@/components/reflect/NoAnswerSaved";
 import { unansweredQuestionIds } from "@/lib/ask-question-persist";
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp } from "@/design/brand/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { noteWorkboardContextChanged } from "@/components/canvas-lab/canvas-lab-telemetry";

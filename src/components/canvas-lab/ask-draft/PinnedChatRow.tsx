@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/design/brand/icons";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 import { supabase } from "@/integrations/supabase/client";

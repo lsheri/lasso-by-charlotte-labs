@@ -100,7 +100,8 @@ describe("CharlotteMark", () => {
     const readers = sourceFiles("src")
       .filter((path) => /\.(css|tsx?)$/.test(path) && !path.startsWith("src/design/"))
       .filter((path) => !path.includes("__tests__"))
-      .filter((path) => /design\/brand\/(?!brand["'])/.test(readFileSync(path, "utf8")));
+      // The icon swap layer (icons.tsx, 18 Nov) is imported everywhere and holds no mark, so it is not a reader.
+      .filter((path) => /design\/brand\/(?!brand["']|icons["'])/.test(readFileSync(path, "utf8")));
     expect(readers.sort()).toEqual([
       "src/components/canvas-lab/ask-draft/AskLiveMark.tsx",
       "src/components/layout/BrandLockup.tsx",

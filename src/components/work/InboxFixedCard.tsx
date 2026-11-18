@@ -1,4 +1,4 @@
-import { Pin } from "lucide-react";
+import { Pin } from "@/design/brand/icons";
 
 export function InboxFixedCard({ children }: { children: React.ReactNode }) {
   return (

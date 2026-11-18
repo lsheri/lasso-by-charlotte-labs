@@ -1,4 +1,4 @@
-import { Maximize2 } from "lucide-react";
+import { Maximize2 } from "@/design/brand/icons";
 
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { brandHex } from "@/components/connectors/BrandLogo";

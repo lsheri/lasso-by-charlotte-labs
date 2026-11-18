@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink } from "@/design/brand/icons";
 import { useEffect, useState } from "react";
 
 import { ReextractAction } from "@/components/peek/ReextractAction";

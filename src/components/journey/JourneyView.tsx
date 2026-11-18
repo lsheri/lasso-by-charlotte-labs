@@ -1,6 +1,6 @@
 import { displayName } from "@/lib/work-item-name";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { X } from "@/design/brand/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 

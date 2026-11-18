@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/design/brand/icons";
 import { useState } from "react";
 
 import { SourceMark } from "@/components/work/SourceMark";

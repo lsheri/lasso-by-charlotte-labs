@@ -3,7 +3,7 @@ import { CardCornerSticky } from "@/components/canvas-lab/CardCornerSticky";
 import { displayName } from "@/lib/work-item-name";
 import { stableMemo } from "@/components/canvas-lab/stable-memo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ExternalLink, Paperclip } from "lucide-react";
+import { ExternalLink, Paperclip } from "@/design/brand/icons";
 
 import { Catch } from "@/components/canvas-lab/Catch";
 import { DeckStrip } from "@/components/canvas-lab/DeckStrip";

@@ -9,7 +9,7 @@ import {
   Phone,
   Presentation,
   Table2,
-} from "lucide-react";
+} from "@/design/brand/icons";
 
 import { skinnedKindIcon, type KindIconComponent } from "@/components/work/SkinnedKindIcon";
 

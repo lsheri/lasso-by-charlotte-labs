@@ -1,4 +1,4 @@
-import { ChevronRight, Paperclip, Plus, X } from "lucide-react";
+import { ChevronRight, Paperclip, Plus, X } from "@/design/brand/icons";
 
 import { ContextComposer } from "@/components/canvas-lab/ContextComposer";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
