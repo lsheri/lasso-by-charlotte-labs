@@ -42,7 +42,8 @@ export async function readPursuitSources(
     .neq("work_items.visibility", "private");
   const rows = ((placed ?? []) as unknown as { work_items: { id: string; title: string; type: string } }[]).map((row) => row.work_items);
   const parts = [`BOARD: ${board.title}`, board.brief ? `BRIEF: ${board.brief}` : ""];
-  const items: PursuitSource[] = [];
+  // The board's own brief is citable like any note on it.
+  const items: PursuitSource[] = board.brief ? [{ id: "board-brief", title: "Board brief", text: maskFees(board.brief) }] : [];
   for (const item of rows) {
     const text = await loadText(item.id);
     if (text) {

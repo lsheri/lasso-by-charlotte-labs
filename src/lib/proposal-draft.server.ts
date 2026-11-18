@@ -112,7 +112,7 @@ Return STRICT JSON and nothing else:
 RULES:
 - Facts about the new client come ONLY from the NEW CLIENT block. A precedent's facts are never facts about the new client.
 - Borrow structure from precedents and the exemplar: phases, workstreams, deliverables, timeline shape. Cite borrowed structure as { "board_id": "<the precedent's board_id>" }.
-- A stated fact cites the item it came from as { "item_id", "quote" }, with the quote copied character for character from that item.
+- A stated fact cites the item it came from as { "item_id", "quote" }, with the quote copied character for character from that item. Facts about the new client cite the ITEM ids in the NEW CLIENT block; the brief's item_id is "brief".
 - Keep each section body under about 120 words. The lead fills in detail later.
 - approach is a structured outline, not prose: one line per phase, then its activities and deliverables as short dashes. The lead fills it in.
 - Put each precedent's lesson into assumptions and exclusions where it applies, citing that precedent's board_id.
@@ -122,12 +122,29 @@ RULES:
 - questions: ${QUESTIONS_MIN} to ${QUESTIONS_MAX} closed questions for the engagement lead. Each names a scope item, a number or a role, and carries a default taken from a precedent, for example "Interview count?" with default "20 to 25, as on a past engagement". Where a precedent went badly, the question carries its lesson.
 - Plain words. No em dashes.`;
 
-export function buildDraftMessages(input: { exemplar: string | null; packs: Pack[]; intake: string; brief: ProposalBrief }): ChatMessage[] {
-  const brief = PROPOSAL_BRIEF_FIELDS.map((field) => `${field}: ${input.brief[field]}`).join("\n");
+/** The brief as a citable item, so facts the owner corrected can be sourced. */
+export const BRIEF_ITEM_ID = "brief";
+
+export function briefText(brief: ProposalBrief): string {
+  return PROPOSAL_BRIEF_FIELDS.map((field) => `${field}: ${brief[field]}`).join("\n");
+}
+
+/**
+ * The new client's notes with each item's id, so a fact about the client can be cited; the draft rejects a fact
+ * without a source, and without ids the model honestly leaves Context and Objectives as gaps. Falls back to the plain
+ * notes when no item text was read.
+ */
+export function newClientNotes(intake: string, ownItems: ReadonlyMap<string, { title: string; text: string }>): string {
+  const items = [...ownItems.entries()].filter(([id]) => id !== BRIEF_ITEM_ID);
+  if (!items.length) return intake.slice(0, INTAKE_CHARS);
+  return items.map(([id, item]) => `ITEM ${id}: ${item.title}\n${item.text}`).join("\n\n").slice(0, INTAKE_CHARS);
+}
+
+export function buildDraftMessages(input: { exemplar: string | null; packs: Pack[]; notes: string; brief: ProposalBrief }): ChatMessage[] {
   const user = [
     input.exemplar ? `EXEMPLAR\n${input.exemplar}` : "EXEMPLAR\n(none: this firm has no client-shown proposal shared with the firm yet)",
     input.packs.length ? input.packs.map((pack) => pack.text).join("\n\n") : "PRECEDENTS\n(none chosen)",
-    `=== NEW CLIENT (the only source of facts about this client) ===\nBRIEF\n${brief}\n\nNOTES\n${input.intake.slice(0, INTAKE_CHARS)}\n=== END NEW CLIENT ===`,
+    `=== NEW CLIENT (the only source of facts about this client) ===\nBRIEF (item_id ${BRIEF_ITEM_ID})\n${briefText(input.brief)}\n\nNOTES\n${input.notes}\n=== END NEW CLIENT ===`,
     "Write the sections, cite them, and end with the questions for the lead.",
   ].join("\n\n");
   return [
@@ -157,6 +174,7 @@ export async function runProposalDraft(
 
   const packs: Pack[] = [];
   const quotable = new Map(input.ownItems);
+  quotable.set(BRIEF_ITEM_ID, { title: "Proposal brief", text: briefText(input.brief) });
   for (const [index, boardId] of input.precedentIds.entries()) {
     const built = await buildPack(input.corpus, boardId, String.fromCharCode(65 + index), terms, input.read);
     if (!built) continue;
@@ -166,7 +184,7 @@ export async function runProposalDraft(
   const exemplar = await buildExemplar(input.corpus, input.precedentIds, terms, input.read);
   const ctx: DraftContext = { precedents: packs.map((pack) => ({ boardId: pack.boardId, title: pack.title })), quotable, intake, terms };
 
-  const first = await chat(buildDraftMessages({ exemplar, packs, intake, brief: input.brief }), {
+  const first = await chat(buildDraftMessages({ exemplar, packs, notes: maskFees(newClientNotes(intake, input.ownItems)), brief: input.brief }), {
     tier: "smart",
     maxTokens: DRAFT_MAX_TOKENS,
     responseFormat: { type: "json_object" },
