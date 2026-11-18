@@ -103,7 +103,7 @@ describe("LIVE-2 the banner", () => {
     expect(screen.getByTestId("board-offline-wifi")).toBeTruthy();
     const css = readFileSync("src/styles.css", "utf8");
     const block = css.slice(css.indexOf(".canvas-lab-offline-pill {"), css.indexOf("}", css.indexOf(".canvas-lab-offline-pill p")));
-    expect(block).toMatch(/border-radius: 15px;/);
+    expect(block).toMatch(/border-radius: var\(--corner-float\);/);
     expect(block).toMatch(/background: var\(--action-primary/);
     expect(block).not.toMatch(/green|hand-live|acid/);
     expect(block).toMatch(/pointer-events: none;/);
