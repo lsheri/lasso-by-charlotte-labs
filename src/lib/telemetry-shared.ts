@@ -530,6 +530,10 @@ export type TelemetryEvent =
   | "proposal_draft.precedents_shown"
   /** 17 Nov, firm brain: the proposal owner swapped a precedent. No dims. Portal registration required. */
   | "proposal_draft.precedent_swapped"
+  /** 17 Nov, firm brain: the red pen checked a deliverable. Dims: claims, unsupported, weak (bucketed counts). Portal registration required. */
+  | "red_pen.ran"
+  /** 17 Nov, firm brain: a red pen claim's source was opened. Dims: grade (sourced | weak | unsupported). Portal registration required. */
+  | "red_pen.claim_opened"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.

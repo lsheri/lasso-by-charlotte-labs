@@ -47,6 +47,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "proposal_draft.precedent_swapped": [],
   "proposal_draft.precedents_shown": ["close", "loose"],
   "proposal_draft.started": ["input_kind"],
+  "red_pen.claim_opened": ["grade"],
+  "red_pen.ran": ["claims", "unsupported", "weak"],
   "nav.opened": ["item", "surface"],
   "notification.acted": ["action", "kind"],
   "notification.opened": ["needs_you"],
