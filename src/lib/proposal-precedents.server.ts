@@ -59,14 +59,14 @@ export async function draftBrief(chat: Chat, notes: string, meta: ChatOptions["m
       { role: "system", content: BRIEF_SYSTEM },
       { role: "user", content: notes },
     ],
-    { tier: "fast", maxTokens: 500, responseFormat: { type: "json_object" }, ...(meta ? { meta: { ...meta, surface: "proposal_brief" } } : {}) },
+    { tier: "fast", maxTokens: 1_200, responseFormat: { type: "json_object" }, ...(meta ? { meta: { ...meta, surface: "proposal_brief" } } : {}) },
   );
   return cleanBrief(parseJsonObject(result.text));
 }
 
 const PICK_SYSTEM = [
   "You find the past engagements of a consulting firm that are the best precedents for a new proposal.",
-  `Return JSON only: {"precedents": [{"board_id": "<id>", "closeness": "close" | "loose", "why": "<one short line>"}]}.`,
+  `Return JSON only: {"precedents": [{"board_id": "<id>", "closeness": "close" | "loose", "why": "<at most twelve words>"}]}.`,
   `At most ${PRECEDENTS_MAX}. "close" means the same kind of work for a similar client; "loose" means related work that still teaches something.`,
   "Fewer is better than padding: an empty list is a valid answer. Never call a weak match close.",
 ].join("\n");
@@ -84,6 +84,12 @@ function boardCard(corpus: FirmCorpus, boardId: string): string {
     .join(" | ");
 }
 
+/** Picks from a reply cut off at its token limit: each complete board_id and closeness pair, in order. */
+export function salvagePicks(text: string): { board_id: string; closeness: string; why: string }[] {
+  const pattern = /"board_id"\s*:\s*"([^"]+)"\s*,\s*"closeness"\s*:\s*"(close|loose)"(?:\s*,\s*"why"\s*:\s*"([^"]*)")?/g;
+  return [...text.matchAll(pattern)].map((match) => ({ board_id: match[1]!, closeness: match[2]!, why: match[3] ?? "" }));
+}
+
 export function buildPickMessages(corpus: FirmCorpus, brief: ProposalBrief): ChatMessage[] {
   const lines = PROPOSAL_BRIEF_FIELDS.map((field) => `${field}: ${brief[field]}`).join("\n");
   return [
@@ -96,9 +102,10 @@ export async function pickPrecedents(chat: Chat, corpus: FirmCorpus, brief: Prop
   if (!corpus.boards.length) return [];
   const result = await chat(buildPickMessages(corpus, brief), {
     tier: "fast",
-    maxTokens: 500,
+    maxTokens: 1_200,
     responseFormat: { type: "json_object" },
     ...(meta ? { meta: { ...meta, surface: "proposal_precedents" } } : {}),
   });
-  return checkPicks(parseJsonObject(result.text)["precedents"], corpus);
+  const parsed = parseJsonObject(result.text)["precedents"];
+  return checkPicks(Array.isArray(parsed) ? parsed : salvagePicks(result.text), corpus);
 }

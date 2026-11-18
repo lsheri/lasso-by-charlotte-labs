@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ChatMessage, ChatOptions, ChatResult } from "@/lib/ai.server";
 import { checkClaims, holdsOpinion, maskFees } from "@/lib/firm-ask-shared";
-import { runFirmAsk } from "@/lib/firm-ask.server";
+import { pickedIds, runFirmAsk } from "@/lib/firm-ask.server";
 import type { FirmCorpus } from "@/lib/firm-corpus-shared";
 
 const corpus: FirmCorpus = {
@@ -167,5 +167,21 @@ describe("the claim checks", () => {
     expect(holdsOpinion("The CFO is difficult")).toBe(true);
     expect(holdsOpinion("She oversells to the board")).toBe(true);
     expect(holdsOpinion("Installation was straightforward")).toBe(false);
+  });
+});
+
+describe("a reply cut off at its token limit", () => {
+  // The first live run (18 Nov) lost every answer this way: call A ran out of tokens mid-JSON.
+  const ids = (text: string) => pickedIds(text, { ...corpus, items: corpus.items.map((item, index) => ({ ...item, id: `0000000${index}-0000-4000-8000-000000000000` })) });
+
+  it("still yields the ids it named, in order, known to the corpus only", () => {
+    expect(ids('{"items": ["00000001-0000-4000-8000-000000000000", "00000000-0000-4000-8000-000000000000", "99999999-0000-4000-8000-0000000')).toEqual([
+      "00000001-0000-4000-8000-000000000000",
+      "00000000-0000-4000-8000-000000000000",
+    ]);
+  });
+
+  it("reads a whole reply as before, objects or strings", () => {
+    expect(ids('{"items": [{"id": "00000002-0000-4000-8000-000000000000", "why": "x"}]}')).toEqual(["00000002-0000-4000-8000-000000000000"]);
   });
 });

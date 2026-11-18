@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ChatMessage, ChatOptions, ChatResult } from "@/lib/ai.server";
 import type { FirmCorpus } from "@/lib/firm-corpus-shared";
-import { buildPickMessages, draftBrief, pickPrecedents } from "@/lib/proposal-precedents.server";
+import { buildPickMessages, draftBrief, pickPrecedents, salvagePicks } from "@/lib/proposal-precedents.server";
 import { checkPicks, cleanBrief, goodProposals, parseOutcome, pastFees, precedentView } from "@/lib/proposal-shared";
 
 const corpus: FirmCorpus = {
@@ -109,5 +109,14 @@ describe("the model calls", () => {
     const prompt = buildPickMessages(corpus, brief).map((message) => message.content).join("\n");
     expect(prompt).not.toMatch(/\$\s?\d/);
     expect(seen[0]!.map((message) => message.content).join("\n")).not.toMatch(/\$\s?\d/);
+  });
+});
+
+describe("a precedent reply cut off at its token limit", () => {
+  it("keeps each complete pick", () => {
+    expect(salvagePicks('{"precedents": [{"board_id": "b5", "closeness": "close", "why": "Same work"}, {"board_id": "b6", "closeness": "loose", "wh')).toEqual([
+      { board_id: "b5", closeness: "close", why: "Same work" },
+      { board_id: "b6", closeness: "loose", why: "" },
+    ]);
   });
 });
