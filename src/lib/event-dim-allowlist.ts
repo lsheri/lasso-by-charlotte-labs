@@ -41,6 +41,7 @@ export const BI2A_CONTEXT_ACTIONS = ["card"] as const;
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "ai.usage": ["surface", "model", "cost_usd", "tokens_in", "tokens_out", "cached_in", "duration_ms", "finish_reason", "context_mode"],
   // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.
+  "firm_ask.asked": ["boards_read", "result", "sources", "starter"],
   "nav.opened": ["item", "surface"],
   "notification.acted": ["action", "kind"],
   "notification.opened": ["needs_you"],

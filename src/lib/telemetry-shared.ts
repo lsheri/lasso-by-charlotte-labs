@@ -518,6 +518,8 @@ export type TelemetryEvent =
   | "client_showing.marked"
   /** 16 Nov, firm brain phase 1: a Shown to client mark was removed. No dims. Portal registration required. */
   | "client_showing.unmarked"
+  /** 17 Nov, firm brain: one Ask the firm question. Dims: result (answered | not_found | about_people), boards_read and sources (bucketed counts), starter (similar | went_wrong | charged | none). Never the question. Portal registration required. */
+  | "firm_ask.asked"
   /**
    * T1: a traced question was saved to span_links. Dims: via (short fixed
    * code-path name) only. No ids, text, names or counts.

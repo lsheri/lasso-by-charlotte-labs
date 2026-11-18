@@ -21,6 +21,7 @@ async function signIn(page: Page, key: string): Promise<void> {
 async function photographBoard(page: Page, id: string, shot: string): Promise<void> {
   await page.goto(`/engagements/${id}/canvas-lab`, { waitUntil: "domcontentloaded" });
   await page.getByRole("toolbar", { name: "Board controls" }).waitFor({ timeout: 60_000 });
+  await page.getByText("reading the workboard").waitFor({ state: "hidden", timeout: 60_000 }).catch(() => undefined);
   await page.waitForTimeout(3_000);
   await page.getByRole("button", { name: "Fit" }).click();
   await page.waitForTimeout(2_000);
@@ -46,4 +47,19 @@ test("the Ashbury Peak Fund II board", async ({ page }) => {
   test.setTimeout(4 * 60_000);
   await signIn(page, "brennan");
   await photographBoard(page, ASHBURY!, "demo-firm-ashbury");
+});
+
+// 17 Nov top-up: the proposal owner's incoming opportunity, and Cedarmere with its proposal and planted notes.
+// DEMO_TOPUP=<Marrowfield board id>,<Cedarmere board id>
+const [PURSUIT, CEDARMERE] = (process.env["DEMO_TOPUP"] ?? "").split(",");
+
+test("the top-up: Marrowfield as Harper, Cedarmere as Mei", async ({ page }) => {
+  test.skip(!PURSUIT || !CEDARMERE, "needs DEMO_TOPUP");
+  test.setTimeout(4 * 60_000);
+  await signIn(page, "quinn");
+  await photographBoard(page, PURSUIT!, "demo-firm-marrowfield");
+  await page.context().clearCookies();
+  await page.evaluate(() => window.localStorage.clear());
+  await signIn(page, "tanaka");
+  await photographBoard(page, CEDARMERE!, "demo-firm-cedarmere");
 });
