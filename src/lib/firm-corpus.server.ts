@@ -15,6 +15,7 @@ import { getItemText, ITEM_TEXT_COLUMNS, type TextItem } from "@/lib/item-text.s
 import { resolveProfile, type ResolvedProfile } from "@/lib/profile-resolve";
 import { hasFirmView } from "@/lib/workspace-capabilities";
 
+import { methodsOf, roleOf, situationOf, stageOf } from "./engagement-tags";
 import { firmGrade, firmMemoryOf, type FirmBoard, type FirmCorpus, type FirmItem } from "./firm-corpus-shared";
 
 type Db = SupabaseClient<Database>;
@@ -128,6 +129,10 @@ export function assembleFirmCorpus(orgId: string, rows: FirmRows): FirmCorpus {
       shown,
       sowFacts: meta["sow_facts"] && typeof meta["sow_facts"] === "object" ? (meta["sow_facts"] as Record<string, unknown>) : null,
       kind: typeof meta["deliverable_kind"] === "string" ? meta["deliverable_kind"] : null,
+      situation: situationOf(meta),
+      methods: methodsOf(meta),
+      role: roleOf(meta),
+      stage: stageOf(meta),
     });
   }
 

@@ -4,6 +4,8 @@
  * playbooks and the patterns in public case studies; every firm, client, person and number is invented.
  */
 
+import type { Method, Role, Situation } from "@/lib/engagement-tags";
+
 export type DemoRole = "admin" | "lead" | "em";
 
 export type DemoPerson = {
@@ -38,6 +40,10 @@ export type DemoItem = {
   key: string;
   title: string;
   type: DemoItemType;
+  /** How the team did the work (meta.method). Omitted on scope and admin items: SOWs, proposals, notes. */
+  method?: Method[];
+  /** Calls only: who it was with, as a job title (meta.call_role). Omitted on internal calls. */
+  role?: Role;
   vendor: DemoVendor;
   /** A person key from the roster; must be on the board's team. */
   author: string;
@@ -87,6 +93,8 @@ export type DemoBoard = {
   fee: string;
   status: "active" | "closed";
   sharedWithFirm: boolean;
+  /** The kind of problem the client had (meta.situation on the SOW item, see situationCarrier). */
+  situation: Situation;
   brief: string;
   /** Person keys; the first is the board's owner (the engagement manager). */
   team: string[];
