@@ -12,7 +12,13 @@ import { workToSketch } from '@/lib/work-sketch';
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
-import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import type {
+  WorkboardCardPreview,
+  WorkboardDisplayMode,
+  WorkboardFilePreview,
+} from "@/lib/workboard-card-preview.shared";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 export function WorkRow({
   item,
@@ -173,15 +179,13 @@ export function WorkRow({
           <div className="flex flex-wrap items-center gap-1.5">
             <TypeBadge item={item} className="mt-1" size={nested ? "sm" : "md"} />
             {state === "private" ? (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
+              <span className={cn(tagVariants(), "mt-1 inline-flex items-center gap-1")}>
                 <Lock className="h-2.5 w-2.5" aria-hidden />
                 Private
               </span>
             ) : null}
             {item.content_fidelity === "summary" ? (
-              <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
-                Summary
-              </span>
+              <span className={cn(tagVariants(), "mt-1 inline-block")}>Summary</span>
             ) : null}
             {chips}
           </div>

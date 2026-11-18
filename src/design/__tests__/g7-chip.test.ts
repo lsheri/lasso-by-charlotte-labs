@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { chipVariants } from "@/components/ui/chip";
+import { tagVariants } from "@/components/ui/tag";
 
 function tsx(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -31,6 +32,25 @@ describe("chip button", () => {
   it("is not written out by hand again", () => {
     const copies = tsx("src").filter((path) =>
       /rounded-full[^"`]*px-3 py-1 font-mono text-\(length:--type-label\) uppercase tracking-\[0\.08em\]/.test(
+        readFileSync(path, "utf8"),
+      ),
+    );
+    expect(copies).toEqual([]);
+  });
+
+  it("keeps the tag (the label pill, not a control) in one place too", () => {
+    for (const tone of ["neutral", "accent", "muted", "outline"] as const)
+      for (const part of [
+        "rounded-full",
+        "px-2",
+        "py-0.5",
+        "font-mono",
+        "text-(length:--type-label)",
+        "uppercase",
+      ])
+        expect(tagVariants({ tone }), tone).toContain(part);
+    const copies = tsx("src").filter((path) =>
+      /rounded-full[^"`]*px-2 py-0\.5 font-mono text-\(length:--type-label\) uppercase tracking-\[0\.0[68]em\][^"`]*(bg-secondary|bg-accent-soft|bg-muted)/.test(
         readFileSync(path, "utf8"),
       ),
     );

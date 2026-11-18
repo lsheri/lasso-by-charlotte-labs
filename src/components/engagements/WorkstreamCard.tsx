@@ -23,6 +23,8 @@ import {
   STATUS_MENU,
   WORKSTREAM_STATUS_LABELS,
 } from "@/lib/workstream-status";
+import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
 const TASK_LINE_PLACEHOLDER = "What is this piece of work meant to do?";
 
@@ -114,7 +116,10 @@ export function WorkstreamCard({
                 aria-label="Change status"
                 disabled={pending || !isOwner}
                 onClick={openStatusMenu}
-                className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+                className={cn(
+                  tagVariants(),
+                  "flex items-center gap-1 transition-colors hover:text-foreground disabled:opacity-60",
+                )}
               >
                 {WORKSTREAM_STATUS_LABELS[episode.status] ?? episode.status}
                 {isOwner ? <ChevronDown className="h-3 w-3" /> : null}

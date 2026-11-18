@@ -14,7 +14,7 @@ import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { persistOrder, resetOrder } from "@/lib/workflow-order";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
-
+import { tagVariants } from "@/components/ui/tag";
 
 export type WorkflowElement = {
   step_no: number | null;
@@ -111,11 +111,7 @@ export function TaskWorkflow({
             : "Ordered by work date, drag to set the real sequence."}
         </p>
         <div className="flex items-center gap-3">
-          {confirmed ? (
-            <span className="rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-(length:--type-label) uppercase tracking-[0.08em] text-muted-foreground">
-              Confirmed sequence
-            </span>
-          ) : null}
+          {confirmed ? <span className={tagVariants()}>Confirmed sequence</span> : null}
           {confirmed && canEdit ? (
             <button
               type="button"
