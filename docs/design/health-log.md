@@ -18,7 +18,7 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | Gap | Tag | What | Status | PRs |
 |---|---|---|---|---|
 | G1 | Look | Job-name colour tokens read by nothing | In-app CSS done; TS reads open | #162, #164, #176, #177 |
-| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Older names and job tokens reach overlays from one block; Charlotte overrides 230 to 206 | #162, #177, G2 PR |
+| G2 | Look | Three colour systems (`--nb-*`, new tokens, shadcn) | Shared blocks carry the mapping and derived tokens to shell and overlays; Charlotte overrides 230 to 160 | #162, #177, #190, G2.2 PR |
 | G3 | Look | No type scale (48 sizes) | Done for app surfaces | #166, #172, #173, #174, #175 |
 | G4 | Now | Text below 10px | Done: nothing in the app below 11px | #167 |
 | G5 | Now | Muted text fails AA | Done | #161 |
@@ -50,12 +50,16 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #186 | G12, G6 | Dead `.dark` theme removed; Charlotte state cues pass 1.4.11, paperclip guarded | No (pixel-identical) |
 | #187 | All | Design health ratchet and this log | No |
 | #188 | G8 | Corner roles `--corner-*`; every older radius name points at them; 89 exact values read a role | No (values identical) |
-| G2 PR | G2 | The app shell's older-name and job-token blocks cover overlays; Charlotte drops 24 duplicates | No (Charlotte unchanged; Lasso overlays now match the Lasso app) |
+| #190 | G2 | The app shell's older-name and job-token blocks cover overlays; Charlotte drops 24 duplicates | No (Charlotte unchanged; Lasso overlays now match the Lasso app) |
+| G2.2 PR | G2 | 45 derived tokens re-resolve on shell and overlays; Charlotte drops 46 restated lines | No (Charlotte unchanged) |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
 ## Health counts
+
+Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2. The audit's target for a skin is about 20.
+
 
 | Count | 17 Nov baseline (7e13e65d) | Now |
 |---|---|---|
