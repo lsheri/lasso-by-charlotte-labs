@@ -26,8 +26,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | G7 | Look | App Button drifts from reference | Component done; raw `<button>` sweep open | #163 |
 | G8 | Look | Radius: 3 tokens, about 18 values | Done for app surfaces | #188, #189 |
 | G9 | Upkeep | styles.css size, literal z-index, `!important` | Open | |
-| G10 | Upkeep | Reference components copied, not checked | Open | |
-| G11 | Look | Hex colours in components | Done: what is left is vendor and file-format marks, the standalone error page, the theme-color meta and a chart-library selector | G11 PR |
+| G10 | Upkeep | Reference components copied, not checked | Done: every reference token stays declared, and the app keeps reading the 189 it shares | G10 PR |
+| G11 | Look | Hex colours in components | Done: what is left is vendor and file-format marks, the standalone error page, the theme-color meta and a chart-library selector | #193 |
 | G12 | Upkeep | Dead dark theme | Removed | #186 |
 | G13 | Upkeep | Raw spacing and inline styles | Open | |
 
@@ -53,7 +53,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 | #190 | G2 | The app shell's older-name and job-token blocks cover overlays; Charlotte drops 24 duplicates | No (Charlotte unchanged; Lasso overlays now match the Lasso app) |
 | #191 | G2 | 45 derived tokens re-resolve on shell and overlays; Charlotte drops 46 restated lines | No (Charlotte unchanged) |
 | #192 | G2 | Skin base: region, board-hue and kind colours derive from six type hues for any skin | No (Charlotte unchanged) |
-| G11 PR | G11 | Sticky-mark and kind-chip colours move into tokens | No |
+| #193 | G11 | Sticky-mark and kind-chip colours move into tokens | No |
+| G10 PR | G10 | Reference parity test | No |
 | #189 | G8 | Controls join the button at 5px; new float role 15px; long tail snaps; raw-radius count fixed to literal lengths only | Controls 1px less round; floating panels and menus settle on 15px |
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
