@@ -36,6 +36,16 @@ describe("PostHog copy", () => {
     expect(bodyOf(fetchMock.mock.calls[0]!).uuid).toBe(context.uuid);
   });
 
+  it("never copies a question's topic to PostHog, and still copies the other dims", async () => {
+    const fetchMock = stub(new Response("ok"));
+    await mirrorToPostHog("firm_ask.asked", "actor", "tenant", { result: "answered", starter: "none", topic: "pricing" } as never, context);
+    const properties = bodyOf(fetchMock.mock.calls[0]!).properties;
+    expect(properties.topic).toBeUndefined();
+    expect(JSON.stringify(properties)).not.toContain("pricing");
+    expect(properties.result).toBe("answered");
+    expect(properties.starter).toBe("none");
+  });
+
   it("retries once, with the same body, after a timeout", async () => {
     const fetchMock = stub(new DOMException("The operation timed out.", "TimeoutError"), new Response("ok"));
     await mirrorToPostHog("ai.usage", "actor", "tenant", { surface: "firm_ask_answer" }, context);

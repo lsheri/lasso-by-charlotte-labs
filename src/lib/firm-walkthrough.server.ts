@@ -55,7 +55,7 @@ const SYSTEM = [
   "RULES:",
   `- Write 3 to ${WALK_HABITS_MAX} habits: things the firm does again and again when it does this work. Prefer habits that show up in more than one engagement.`,
   "- Each habit is one short sentence in plain words that a new analyst could act on. Start with a verb. No jargon.",
-  "- Each habit needs one or two quotes copied character for character from the documents, a sentence or a clause long, with the id of the document each came from. A habit you cannot quote is not a habit: leave it out.",
+  "- Each habit needs one quote copied character for character from the documents, with the id of the document it came from. Keep each quote to one sentence or clause, 30 words at most. Add a second quote only when it comes from a different engagement. A habit you cannot quote is not a habit: leave it out.",
   "- Never name a person, a client or an organisation in a habit, by name or by title (Dr, Ms, Mr). Never judge a person.",
   "- Use a number in a habit only when the same number is in its quote.",
   "- Never state a fee, price, budget or any amount of money. Money in the documents appears as [fee]; never repeat it or quote around it.",
@@ -159,7 +159,8 @@ export async function runFirmWalkthrough(
   for (const retry of [false, true]) {
     const reply = await deps.chat(buildWalkMessages(tag, read, corpus, retry), {
       tier: "smart",
-      maxTokens: 1_800,
+      // Live replies ran to about 1,700 tokens and a third were cut off at 1,800 (19 Nov), losing their last habits.
+      maxTokens: 3_000,
       responseFormat: { type: "json_object" },
       ...(input.meta ? { meta: { ...input.meta, surface: "firm_walkthrough" } } : {}),
     });

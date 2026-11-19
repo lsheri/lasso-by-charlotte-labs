@@ -17,8 +17,12 @@ import {
 import { DRAFT_COPY } from "@/lib/proposal-draft-shared";
 import { draftProposal, draftProposalBrief, findProposalPrecedents, latestProposalDraft, type PrecedentsResult, type ProposalDraftResult } from "@/lib/proposal.functions";
 
+import type { LedgerSourceLink } from "@/lib/proposal-ledger-shared";
+
+import { ExemplarBadge } from "./ExemplarBadge";
 import { FirmSourcePreview } from "./FirmSourcePreview";
 import { ProposalDraftView } from "./ProposalDraftView";
+import { ProposalValueLine } from "./ProposalValueLine";
 
 function outcomeParts(view: { active?: boolean; ranToPlan: boolean | null; extended: boolean | null }): string[] {
   if (view.active) return [PROPOSAL_COPY.active];
@@ -112,7 +116,8 @@ function FeeList({ label, rows, onOpen }: { label: string; rows: PastFee[]; onOp
  * CanvasLabPage in tests). The owner reads the notes into a brief, corrects it, and sees precedents with their
  * lessons, the firm's client-shown proposals and, for admins and leads, past fees. The Draft button comes after the
  * precedents, so the owner sees real past work before generated text. The saved draft is handed to the board through
- * onDraftSaved, which places its card like any other added work.
+ * onDraftSaved, which places its card like any other added work. 19 Nov: the proposal's "Value so far" line sits
+ * under the heading; it reads again whenever a draft is saved or the questions are marked as sent.
  */
 export function ProposalStartPanel({
   engagementId,
@@ -120,12 +125,15 @@ export function ProposalStartPanel({
   orgId,
   onClose,
   onDraftSaved,
+  onOpenRedPen,
 }: {
   engagementId: string;
   profileId: string | null | undefined;
   orgId: string | null | undefined;
   onClose: () => void;
   onDraftSaved?: ((itemId: string) => void) | undefined;
+  /** Opens Red pen on a deliverable, for a Red pen row in the ledger trace. */
+  onOpenRedPen?: ((item: { id: string; title: string }) => void) | undefined;
 }) {
   const readBrief = useServerFn(draftProposalBrief);
   const find = useServerFn(findProposalPrecedents);
@@ -141,6 +149,13 @@ export function ProposalStartPanel({
   const [drafting, setDrafting] = useState(false);
   const [saved, setSaved] = useState<ProposalDraftResult | null>(null);
   const [reopened, setReopened] = useState(false);
+  const [ledgerVersion, setLedgerVersion] = useState(0);
+
+  function openLedgerSource(link: LedgerSourceLink) {
+    if (link.as === "red_pen") return onOpenRedPen?.({ id: link.itemId, title: link.title });
+    // The draft on screen is the one the row points at: bring it into view. An older draft is a card on the board.
+    if (saved?.itemId === link.itemId) document.querySelector('[data-testid="proposal-draft"]')?.scrollIntoView?.({ block: "start" });
+  }
 
   useEffect(() => {
     let live = true;
@@ -164,6 +179,7 @@ export function ProposalStartPanel({
       const next = await writeDraft({ data: { engagement_id: engagementId, profile_id: profileId ?? null, brief, precedent_ids: chosen.map((view) => view.boardId) } });
       setSaved(next);
       setReopened(false);
+      setLedgerVersion((count) => count + 1);
       onDraftSaved?.(next.itemId);
     } catch {
       setFailed(true);
@@ -191,6 +207,8 @@ export function ProposalStartPanel({
       const next = await find({ data: { engagement_id: engagementId, profile_id: profileId ?? null, brief } });
       setResult(next);
       setChosen(next.precedents);
+      // Sending the brief on records its date, once.
+      setLedgerVersion((count) => count + 1);
     } catch {
       setFailed(true);
     } finally {
@@ -224,6 +242,8 @@ export function ProposalStartPanel({
           {PROPOSAL_COPY.closePanel}
         </Button>
       </div>
+
+      <ProposalValueLine engagementId={engagementId} profileId={profileId} refreshKey={ledgerVersion} onOpenSource={openLedgerSource} />
 
       <section aria-label={PROPOSAL_COPY.briefTitle} className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
@@ -274,11 +294,12 @@ export function ProposalStartPanel({
               <p className="text-(length:--type-small) text-muted-foreground">{PROPOSAL_COPY.goodHint}</p>
               <ul className="mt-1 flex flex-col gap-1">
                 {result.good.map((proposal) => (
-                  <li key={proposal.itemId}>
+                  <li key={proposal.itemId} data-good-exemplar={proposal.exemplar ? "true" : undefined}>
                     <button type="button" data-good-proposal onClick={() => setOpenItem(proposal.itemId)} className="text-left text-(length:--type-small) text-foreground underline">
                       {proposal.title}
                     </button>
-                    <span className="text-(length:--type-small) text-muted-foreground">{` · shown ${firmDate(proposal.shownOn)}`}</span>
+                    {proposal.shownOn ? <span className="text-(length:--type-small) text-muted-foreground">{` · shown ${firmDate(proposal.shownOn)}`}</span> : null}
+                    {proposal.exemplar ? <ExemplarBadge className="ml-2 align-middle" /> : null}
                   </li>
                 ))}
               </ul>
@@ -306,7 +327,7 @@ export function ProposalStartPanel({
       {saved && !drafting ? (
         <>
           {reopened ? <p className="font-mono text-(length:--type-label) uppercase tracking-[0.06em] text-muted-foreground">{DRAFT_COPY.reopen}</p> : null}
-          <ProposalDraftView key={`${saved.itemId}-${saved.draft.createdAt}`} itemId={saved.itemId} draft={saved.draft} profileId={profileId} orgId={orgId} onOpen={setOpenItem} />
+          <ProposalDraftView key={`${saved.itemId}-${saved.draft.createdAt}`} itemId={saved.itemId} draft={saved.draft} profileId={profileId} orgId={orgId} onOpen={setOpenItem} engagementId={engagementId} onLedgerChanged={() => setLedgerVersion((count) => count + 1)} />
         </>
       ) : null}
 

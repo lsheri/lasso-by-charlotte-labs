@@ -14,6 +14,8 @@ import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { CHAT_LINK_COPY, ChatLinkDialog } from "@/components/canvas-lab/ChatLinkDialog";
 import { ClientShownDialog } from "@/components/canvas-lab/ClientShownDialog";
 import { ClientShownLine } from "@/components/canvas-lab/ClientShownLine";
+import { ExemplarBadge } from "@/components/firm-brain/ExemplarBadge";
+import { EXEMPLAR_COPY } from "@/lib/manager-tools-shared";
 import { brandLabel } from "@/components/connectors/BrandLogo";
 import { sourceBrandKey } from "@/components/work/SourceMark";
 import { chatLinkAction, pastedChatUrl } from "@/lib/chat-url";
@@ -139,7 +141,13 @@ function LabCardInner({
   onTags,
   onMarkClientShown,
   onUnmarkClientShown,
+  exemplar,
+  onToggleExemplar,
 }: {
+  /** 19 Nov, firm brain step 8: only the live signed-in board passes the mark, behind company-brain. */
+  exemplar?: boolean | undefined;
+  /** Present only for admins and leads of a company workspace. */
+  onToggleExemplar?: (() => void) | undefined;
   /** Firm brain phase 1: only the live signed-in board passes marks, behind company-brain. */
   clientShownMarks?: ClientShowing[] | undefined;
   /** 17 Nov, firm brain: opens the red pen for this deliverable. */
@@ -483,7 +491,7 @@ function LabCardInner({
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
           {deckEventOrgId && boardWork?.content?.kind === 'deck' && boardWork.content.slides.length > 0 ? <DeckStrip content={boardWork.content} cardRef={cardRef} expanded={deckExpanded} onExpandedChange={setDeckExpanded} orgId={deckEventOrgId} /> : null}
-          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} clientShownLabel={canMarkClientShown ? ((clientShownMarks?.length ?? 0) > 0 ? CLIENT_SHOWN_COPY.menuAgain : CLIENT_SHOWN_COPY.menu) : undefined} onClientShown={canMarkClientShown ? () => setClientShownOpen(true) : undefined} onRedPen={onRedPen} onSowTerms={readOnly ? undefined : onSowTerms} onTags={readOnly ? undefined : onTags} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
+          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} clientShownLabel={canMarkClientShown ? ((clientShownMarks?.length ?? 0) > 0 ? CLIENT_SHOWN_COPY.menuAgain : CLIENT_SHOWN_COPY.menu) : undefined} onClientShown={canMarkClientShown ? () => setClientShownOpen(true) : undefined} onRedPen={onRedPen} onSowTerms={readOnly ? undefined : onSowTerms} onTags={readOnly ? undefined : onTags} exemplarLabel={onToggleExemplar && !readOnly ? (exemplar ? EXEMPLAR_COPY.unmark : EXEMPLAR_COPY.mark) : undefined} onExemplar={readOnly ? undefined : onToggleExemplar} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
           {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button
             type="button"
@@ -513,6 +521,7 @@ function LabCardInner({
           <span>{teammateMark.initials}</span>
         </span>
       ) : null}
+      {exemplar && !readOnly ? <span className="absolute -bottom-7 left-0"><ExemplarBadge /></span> : null}
       {clientShownMarks && clientShownMarks.length > 0 && !readOnly ? <ClientShownLine marks={clientShownMarks} /> : null}
       {canMarkClientShown && onMarkClientShown && onUnmarkClientShown ? <ClientShownDialog open={clientShownOpen} onOpenChange={setClientShownOpen} marks={clientShownMarks ?? []} onMark={onMarkClientShown} onUnmark={onUnmarkClientShown} /> : null}
       {canSetChatLink && onSaveChatLink ? <ChatLinkDialog open={chatLinkOpen} onOpenChange={setChatLinkOpen} current={pastedLink} onSave={onSaveChatLink} /> : null}

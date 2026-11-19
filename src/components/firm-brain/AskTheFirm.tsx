@@ -130,7 +130,7 @@ export function AskTheFirm({
         </p>
       ) : null}
       {failed ? <p className="mt-4 text-(length:--type-small) text-destructive">{FIRM_ASK_COPY.error}</p> : null}
-      {result && !pending ? <FirmAnswer result={result} onOpenSource={setOpenItem} /> : null}
+      {result && !pending ? <FirmAnswer result={result} onOpenSource={setOpenItem} profileId={profile?.id} /> : null}
       <FirmSourcePreview itemId={openItem} profileId={profile?.id} onClose={() => setOpenItem(null)} />
     </section>
   );

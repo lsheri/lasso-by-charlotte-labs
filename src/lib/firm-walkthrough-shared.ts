@@ -282,11 +282,11 @@ export function namesStaff(text: string, people: readonly string[]): boolean {
 }
 
 /** A person addressed by title ("Dr. Okafor", "Ms Lee"): a client's people are not in the firm's list. */
-const TITLED_PERSON = /\b(?:Dr|Mr|Mrs|Ms|Mx|Prof|Professor)\.?\s+\p{Lu}/u;
+export const TITLED_PERSON = /\b(?:Dr|Mr|Mrs|Ms|Mx|Prof|Professor)\.?\s+\p{Lu}/u;
 
 const numbersIn = (text: string) => text.match(/\d+(?:[.,]\d+)*/g) ?? [];
 
-function namesClient(text: string, clients: readonly string[]): boolean {
+export function namesClient(text: string, clients: readonly string[]): boolean {
   return clients.some((client) => {
     const name = collapse(client);
     return name.length >= 3 && asWord(escapeRegExp(name).replace(/ /g, "\\s+"), "i").test(text);

@@ -32,6 +32,11 @@ describe("firm memory", () => {
     expect(firmGrade("summary", true)).toBe("full");
     expect(firmGrade("in", false)).toBe("full");
     expect(firmGrade("out", true)).toBeNull();
+    // A call marked In stays summary only for people off its board, and opens in full for people on it.
+    expect(firmGrade("in", false, "call")).toBe("summary");
+    expect(firmGrade("in", true, "call")).toBe("full");
+    expect(firmGrade("in", false, "document")).toBe("full");
+    expect(firmGrade("out", true, "call")).toBeNull();
   });
 });
 

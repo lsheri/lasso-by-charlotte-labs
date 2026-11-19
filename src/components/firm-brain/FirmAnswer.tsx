@@ -1,14 +1,25 @@
 import { FIRM_ASK_COPY, type FirmAskResult } from "@/lib/firm-ask-shared";
 
+import { CiteThis } from "./CiteThis";
 import { FirmSourceCard } from "./FirmSourceCard";
 
 /**
  * A firm answer: the summary (only when every claim held), each claim with its source, a facts strip per engagement
  * built by code, the coverage line, and what was read. "Not found" never stretches; "about people" shows engagements.
  */
-export function FirmAnswer({ result, onOpenSource }: { result: FirmAskResult; onOpenSource: (itemId: string) => void }) {
+export function FirmAnswer({
+  result,
+  onOpenSource,
+  profileId,
+}: {
+  result: FirmAskResult;
+  onOpenSource: (itemId: string) => void;
+  /** With a profile, each citation of an item offers "Cite this". A close-out lesson is not an item, so it does not. */
+  profileId?: string | null | undefined;
+}) {
+  // Work the firm marked as an exemplar is listed first; nothing else about the order changes.
   const readList = (ids: string[]) =>
-    ids.map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
+    [...ids.filter((id) => result.sources[id]?.exemplar), ...ids.filter((id) => !result.sources[id]?.exemplar)].map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
   const full = readList(result.read.full);
   const summary = readList(result.read.summary);
 
@@ -36,6 +47,7 @@ export function FirmAnswer({ result, onOpenSource }: { result: FirmAskResult; on
                   <blockquote className="border-l-2 border-border pl-3 text-(length:--type-small) text-muted-foreground">{claim.quote}</blockquote>
                 ) : null}
                 {source ? <FirmSourceCard source={source} grade={claim.grade} onOpen={() => onOpenSource(claim.itemId)} /> : null}
+                {source && source.type !== "outcome" ? <CiteThis quote={claim.quote} sourceItemId={claim.itemId} profileId={profileId} /> : null}
               </li>
             );
           })}

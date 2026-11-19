@@ -4,12 +4,14 @@ import { Link } from "@tanstack/react-router";
 import { ChecksLibrary } from "@/components/firm/ChecksLibrary";
 import { FirmArchive } from "@/components/firm/FirmArchive";
 import { FirmLiveBoards } from "@/components/firm/FirmLiveBoards";
+import { FirmProposalsCard } from "@/components/firm/FirmProposalsCard";
 import { FirmMetricGrid } from "@/components/firm/FirmMetricGrid";
 import { FirmProduced } from "@/components/firm/FirmProduced";
 import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { TrustSummary } from "@/components/firm/TrustSummary";
 import { WhatLeavesTheFirm } from "@/components/firm/WhatLeavesTheFirm";
 import { ToneCard } from "@/components/notebook/ToneCard";
+import { CommonQuestionsCard } from "@/components/firm-brain/CommonQuestionsCard";
 import { FirmBrainMap } from "@/components/firm-brain/FirmBrainMap";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
@@ -65,6 +67,7 @@ export function FirmDashboardPage() {
 
       <div className="space-y-8">
         <FirmBrainMap profile={profile} />
+        <CommonQuestionsCard profile={profile} />
         <ToneCard tone="record" label="WHAT THIS PAGE MEASURES">
           <TrustSummary />
         </ToneCard>
@@ -86,6 +89,9 @@ export function FirmDashboardPage() {
             </section>
 
             <FirmLiveBoards profileId={profile?.id} />
+
+            {/* 19 Nov, proposal ledger: value so far across shared proposals; hidden unless company-brain is on. */}
+            <FirmProposalsCard profileId={canSee ? profile?.id : undefined} />
 
             {/*
               The frame pairs the archive with the check library at roughly 2:1,

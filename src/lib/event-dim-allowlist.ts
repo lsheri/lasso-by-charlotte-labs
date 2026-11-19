@@ -19,6 +19,21 @@
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 import { WORKBOARD_EVENT_DIMS } from "./workboard-event-allowlist";
 
+/**
+ * Dimensions that stay in our own events table and are never copied to PostHog, where an event can be joined to a
+ * person. A question's topic next to a person would show who asks about what (Liam, 18 Nov 2026).
+ */
+export const LEDGER_ONLY_DIMS: Partial<Record<TelemetryEvent, readonly string[]>> = {
+  "firm_ask.asked": ["topic"],
+};
+
+/** The dims a PostHog copy of this event may carry. */
+export function mirrorDims(eventType: TelemetryEvent, dims: TelemetryDims): TelemetryDims {
+  const held = LEDGER_ONLY_DIMS[eventType];
+  if (!held?.length) return dims;
+  return Object.fromEntries(Object.entries(dims).filter(([key]) => !held.includes(key))) as TelemetryDims;
+}
+
 /** Closed landing.see_it_work_clicked.location vocabulary. */
 export const LANDING_SEE_IT_WORK_LOCATIONS = ["hero", "hero_workboard"] as const;
 
@@ -41,10 +56,12 @@ export const BI2A_CONTEXT_ACTIONS = ["card"] as const;
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "ai.usage": ["surface", "model", "cost_usd", "tokens_in", "tokens_out", "cached_in", "duration_ms", "finish_reason", "context_mode"],
   // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.
-  "firm_ask.asked": ["boards_read", "result", "sources", "starter"],
+  // topic is one of a closed set from classifyQuestionTopic (manager-tools-shared.ts): a situation or method id, or "none". Never the question.
+  "firm_ask.asked": ["boards_read", "result", "sources", "starter", "topic"],
   "firm_ask.kept_out": [],
   "firm_ask.source_opened": ["grade", "shown"],
   "firm_walkthrough.opened": ["kind", "result"],
+  "prepare.opened": ["result", "role_present"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],
   "proposal_draft.questions_copied": [],
