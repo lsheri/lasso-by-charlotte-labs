@@ -66,6 +66,19 @@ export function canAskTheFirm(profile: { role?: string | null; has_firm_view?: b
   return typeof profile.has_firm_view === "boolean" ? profile.has_firm_view : profile.org_type === "company";
 }
 
+/**
+ * Firm brain controls on a board (Start a proposal, Red pen, How it ended, fee terms, the reading list) are for boards
+ * in the person's own workspace. A person who is a guest on another firm's board keeps their own workspace profile
+ * there, so the workspace rule alone would show them. "own": the board is in their workspace. "other": it belongs to
+ * another workspace, or the person may not ask the firm; nothing shows. "unknown": the person cannot read the board's
+ * row (not on it, or still loading); only what never needed board membership shows. The server checks every call.
+ */
+export function firmBrainBoardScope(profile: ({ org_id?: string | null } & Parameters<typeof canAskTheFirm>[0]) | null | undefined, boardOrgId: string | null | undefined): "own" | "other" | "unknown" {
+  if (!canAskTheFirm(profile)) return "other";
+  if (!boardOrgId) return "unknown";
+  return boardOrgId === profile?.org_id ? "own" : "other";
+}
+
 export const FIRM_TYPE_LABELS: Record<string, string> = {
   document: "Document",
   deck: "Deck",

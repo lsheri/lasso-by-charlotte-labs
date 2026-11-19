@@ -62,8 +62,6 @@ describe("who sees the box", () => {
   it("stays hidden outside company workspaces, and for coaches", () => {
     const { rerender } = wrap(<AskTheFirm profile={{ ...member, has_firm_view: false, org_type: "personal" }} />);
     expect(screen.queryByTestId("ask-the-firm")).toBeNull();
-    rerender(<QueryClientProvider client={new QueryClient()}><AskTheFirm profile={{ ...member, has_firm_view: false, org_type: "personal" }} /></QueryClientProvider>);
-    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
     rerender(<QueryClientProvider client={new QueryClient()}><AskTheFirm profile={{ ...member, role: "coach" }} /></QueryClientProvider>);
     expect(screen.queryByTestId("ask-the-firm")).toBeNull();
   });

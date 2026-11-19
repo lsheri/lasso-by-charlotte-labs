@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Liam, 16 Nov: firm brain phase 1, Shown to client. Owner or editor marks a deliverable as put in front of the
-// client; board members read the marks; company workspaces only; hidden behind company-brain; signed-in board only.
+// client; board members read the marks; company workspaces only; signed-in board only.
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
