@@ -7,6 +7,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  * company-brain on. She opens a walk-through from Home, runs Prepare me for a role the firm has spoken to and for one
  * it has not, cites a line into one of her own items, and checks the line and its link in the item reader. The cited
  * line, and any offer she dismissed on the way, are removed again in a finally, so the demo firm ends as it began.
+ * Not exercised here: when a source stops being shared, its cited words are deleted on the owner's next read (unit
+ * tests cover it); this check never turns sharing off.
  * Each step records pass or fail with what it saw in test-results/junior-tools.json.
  *
  *   runpane secrets exec --project lasso-by-charlotte-labs --only DEMO_FIRM_PASSWORD -- \

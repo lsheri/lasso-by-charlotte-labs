@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { canAskTheFirm, FIRM_TYPE_LABELS, firmDate } from "@/lib/firm-ask-shared";
-import { citationsOf, CITE_COPY } from "@/lib/firm-cite-shared";
+import { citationEntriesOf, CITE_COPY } from "@/lib/firm-cite-shared";
 import { getFirmCitations, removeFirmCitation } from "@/lib/firm-cite.functions";
 
 import { FirmSourcePreview } from "./FirmSourcePreview";
@@ -41,7 +41,7 @@ export function ItemCitations({
   const busy = useRef(false);
 
   const owner = Boolean(profile?.id) && item.owner_id === profile?.id;
-  const stored = citationsOf(item.meta).length;
+  const stored = citationEntriesOf(item.meta).length;
   const show = owner && canAskTheFirm(flagOn, profile) && stored > 0;
   const query = useQuery({
     queryKey: ["firm-citations", item.id, profile?.id ?? null, stored],

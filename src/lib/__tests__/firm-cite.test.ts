@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DEMO_BOARDS } from "@/lib/demo-firm";
 import {
   citable,
+  citationEntriesOf,
   citationsOf,
   CITE_MAX_PER_ITEM,
   resolveCitations,
@@ -18,6 +19,7 @@ import {
   validateCiteRemoveInput,
   validateWalkOfferInput,
   withCitation,
+  withCitationsDeleted,
   withoutCitation,
   type StoredCitation,
 } from "@/lib/firm-cite-shared";
@@ -67,15 +69,32 @@ const DOC_LINE = (BODIES.get(DOC.id) ?? "")
   .find((part) => part.length >= 30 && part.length <= 200 && citable(part) && !/[#*|]/.test(part))!;
 
 /** The caller's items as their own client would serve them: only rows they own are found or changed. */
-function ownItems(owned: Record<string, unknown>, options: { refuseWrites?: boolean } = {}) {
+function ownItems(
+  owned: Record<string, unknown>,
+  options: {
+    refuseWrites?: boolean;
+    /** The database is down for writes: the write throws. */
+    failWrites?: boolean;
+    /** Runs after each read has been answered, as another writer landing in between would. */
+    afterRead?: (store: Map<string, unknown>, reads: number) => void;
+  } = {},
+) {
   const store = new Map(Object.entries(owned));
   const writes: { id: string; meta: Record<string, unknown> }[] = [];
+  let reads = 0;
   return {
     store,
     writes,
+    options,
     deps: {
-      readOwn: async (id: string) => (store.has(id) ? { meta: store.get(id) } : null),
+      readOwn: async (id: string) => {
+        const row = store.has(id) ? { meta: store.get(id) } : null;
+        reads += 1;
+        options.afterRead?.(store, reads);
+        return row;
+      },
       writeOwn: async (id: string, meta: Record<string, unknown>) => {
+        if (options.failWrites) throw new Error("database is down");
         if (options.refuseWrites || !store.has(id)) return 0;
         writes.push({ id, meta });
         store.set(id, meta);
@@ -242,13 +261,121 @@ describe("Cite this", () => {
     expect(lines).toEqual([{ id: "cite-1", state: "gone" }]);
     expect(JSON.stringify(lines)).not.toContain("obesity");
     expect(JSON.stringify(lines)).not.toContain(CALL);
-    // Sharing turned back on brings the line back: nothing was cached either way.
-    expect((await readCitedLines({ ...own.deps, corpus: analyst }, "mine"))[0]!.state).toBe("live");
   });
 
-  it("also dies when the source is made private, unplaced, marked Out or its author becomes a guest", async () => {
+  it("deletes the words on the owner's next read once the board is unshared: the stored row keeps only a tombstone", async () => {
+    const own = ownItems({ mine: { chat_url: "https://x.test" } });
+    await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+    // First read, still shared: the words are there and nothing is written.
+    const before = own.writes.length;
+    expect((await readCitedLines({ ...own.deps, corpus: analyst }, "mine"))[0]!.state).toBe("live");
+    expect(own.writes.length).toBe(before);
+    // Sharing goes off between the two reads.
+    const off = corpusOf(rowsFor("yilmaz", withoutBoard("b5")));
+    expect(await readCitedLines({ ...own.deps, corpus: off }, "mine")).toEqual([{ id: "cite-1", state: "gone" }]);
+    // The row itself, not the view: no words, no source ids, nothing but the tombstone and the other keys.
+    expect(own.store.get("mine")).toEqual({
+      chat_url: "https://x.test",
+      citations: [{ id: "cite-1", cited_at: "2026-11-18T10:00:00.000Z", gone: true }],
+    });
+    const row = JSON.stringify(own.store.get("mine"));
+    for (const word of ["obesity", "break down", QUESTION, CALL, "source_item_id", "source_board_id", "quote"])
+      expect(row, word).not.toContain(word);
+  });
+
+  it("does not bring the words back when sharing is turned on again", async () => {
     const own = ownItems({ mine: {} });
     await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+    await readCitedLines({ ...own.deps, corpus: corpusOf(rowsFor("yilmaz", withoutBoard("b5"))) }, "mine");
+    expect(await readCitedLines({ ...own.deps, corpus: analyst }, "mine")).toEqual([{ id: "cite-1", state: "gone" }]);
+    expect(JSON.stringify(own.store.get("mine"))).not.toContain("obesity");
+  });
+
+  it("writes once: a second read of an already deleted line writes nothing", async () => {
+    const own = ownItems({ mine: {} });
+    await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+    const off = corpusOf(rowsFor("yilmaz", withoutBoard("b5")));
+    await readCitedLines({ ...own.deps, corpus: off }, "mine");
+    const after = own.writes.length;
+    const stored = JSON.stringify(own.store.get("mine"));
+    expect(await readCitedLines({ ...own.deps, corpus: off }, "mine")).toEqual([{ id: "cite-1", state: "gone" }]);
+    expect(await readCitedLines({ ...own.deps, corpus: analyst }, "mine")).toEqual([{ id: "cite-1", state: "gone" }]);
+    expect(own.writes.length).toBe(after);
+    expect(JSON.stringify(own.store.get("mine"))).toBe(stored);
+  });
+
+  it("still hides the words when the delete is refused or fails, and deletes them on the next read that can write", async () => {
+    const off = corpusOf(rowsFor("yilmaz", withoutBoard("b5")));
+    for (const fault of ["refuseWrites", "failWrites"] as const) {
+      const own = ownItems({ mine: {} });
+      await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+      own.options[fault] = true;
+      const lines = await readCitedLines({ ...own.deps, corpus: off }, "mine");
+      expect(lines, fault).toEqual([{ id: "cite-1", state: "gone" }]);
+      expect(JSON.stringify(lines), fault).not.toContain("obesity");
+      // The write did not land, so the row still holds the words; the next read tries again.
+      expect(JSON.stringify(own.store.get("mine")), fault).toContain("obesity");
+      own.options[fault] = false;
+      await readCitedLines({ ...own.deps, corpus: off }, "mine");
+      expect(JSON.stringify(own.store.get("mine")), fault).not.toContain("obesity");
+    }
+  });
+
+  it("re-reads the item just before deleting, so a key changed in between is not written over", async () => {
+    // Another writer lands tags_lead and the offer mark, and a second cited line, after the first read.
+    const later: StoredCitation = { id: "later", quote: DOC_LINE, source_item_id: DOC.id, source_board_id: DOC.boardId, cited_at: "t2" };
+    const own = ownItems(
+      { mine: {} },
+      {
+        afterRead: (store, reads) => {
+          if (reads !== 2) return;
+          const meta = store.get("mine") as Record<string, unknown>;
+          store.set("mine", {
+            ...meta,
+            tags_lead: "someone",
+            walk_offer: "dismissed",
+            citations: [...(meta["citations"] as unknown[]), later],
+          });
+        },
+      },
+    );
+    // Read 1 is citeLine's own read of the target.
+    await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+    const off = corpusOf(rowsFor("yilmaz", withoutBoard("b5")));
+    // Read 2 is the view; the other writer lands; read 3 is the re-read the delete is built from.
+    await readCitedLines({ ...own.deps, corpus: off }, "mine");
+    expect(own.store.get("mine")).toEqual({
+      tags_lead: "someone",
+      walk_offer: "dismissed",
+      citations: [{ id: "cite-1", cited_at: "2026-11-18T10:00:00.000Z", gone: true }, later],
+    });
+  });
+
+  it("changes only the citations key when it deletes", () => {
+    const line: StoredCitation = { id: "c1", quote: "A line of text here.", source_item_id: "s", source_board_id: "b", cited_at: "t" };
+    const keep: StoredCitation = { ...line, id: "c2" };
+    const meta = { tags_lead: "x", walk_offer: "opened", nested: { a: [1, 2] }, citations: [line, keep] };
+    const next = withCitationsDeleted(meta, new Set(["c1"]));
+    expect(next).toEqual({ ...meta, citations: [{ id: "c1", cited_at: "t", gone: true }, keep] });
+    expect(next["nested"]).toBe(meta.nested);
+    // A tombstone is read as one whatever else was written beside it, and never as a line.
+    const planted = { citations: [{ id: "c3", gone: true, quote: "Words that should not be here.", source_item_id: "s", source_board_id: "b", cited_at: "t" }] };
+    expect(citationsOf(planted)).toEqual([]);
+    expect(citationEntriesOf(planted)).toEqual([{ id: "c3", cited_at: "t", gone: true }]);
+    expect(resolveCitations(analyst, citationEntriesOf(planted))).toEqual([{ id: "c3", state: "gone" }]);
+  });
+
+  it("keeps tombstones when a line is added, counts them in the cap, and lets the owner remove one", async () => {
+    const own = ownItems({ mine: { citations: [{ id: "old", cited_at: "t", gone: true }] } });
+    await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
+    expect(citationEntriesOf(own.store.get("mine")).map((entry) => entry.id)).toEqual(["old", "cite-1"]);
+    expect(await removeCitedLine(own.deps, "mine", "old")).toEqual({ removed: true });
+    expect(citationEntriesOf(own.store.get("mine")).map((entry) => entry.id)).toEqual(["cite-1"]);
+    const fullOfGone = ownItems({ mine: { citations: Array.from({ length: CITE_MAX_PER_ITEM }, (_, index) => ({ id: `g${index}`, cited_at: "t", gone: true })) } });
+    expect(await status(citeLine(citeDeps(analyst, fullOfGone), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION }))).toBe(409);
+  });
+
+  it("also dies, and is deleted, when the source is made private, unplaced, marked Out, deleted or its author becomes a guest", async () => {
     const base = rowsFor("yilmaz");
     const author = base.items.find((item) => item.id === CALL)!.owner_id;
     const cases: Record<string, FirmRows> = {
@@ -257,10 +384,17 @@ describe("Cite this", () => {
       out: { ...base, items: base.items.map((item) => (item.id === CALL ? { ...item, meta: { ...(item.meta as object), firm_memory: "out" } } : item)) },
       guest: { ...base, people: base.people.map((person) => (person.id === author ? { ...person, is_guest: true } : person)) },
     };
-    for (const [name, rows] of Object.entries(cases))
+    cases["deleted"] = { ...base, items: base.items.filter((item) => item.id !== CALL) };
+    for (const [name, rows] of Object.entries(cases)) {
+      const own = ownItems({ mine: {} });
+      await citeLine(citeDeps(analyst, own), { targetItemId: "mine", sourceItemId: CALL, quote: QUESTION });
       expect(await readCitedLines({ ...own.deps, corpus: corpusOf(rows) }, "mine"), name).toEqual([
         { id: "cite-1", state: "gone" },
       ]);
+      expect(own.store.get("mine"), name).toEqual({
+        citations: [{ id: "cite-1", cited_at: "2026-11-18T10:00:00.000Z", gone: true }],
+      });
+    }
   });
 
   it("hides a line cited from a call's own words once its owner is no longer on that call's board", async () => {

@@ -11,7 +11,10 @@ import {
   cardOf,
   citable,
   CITE_MAX_PER_ITEM,
+  citationEntriesOf,
   citationsOf,
+  isTombstone,
+  withCitationsDeleted,
   liveSource,
   resolveCitations,
   sourceWords,
@@ -71,7 +74,7 @@ export async function citeLine(deps: CiteDeps, input: CiteInput): Promise<{ cita
   const held = citationsOf(target.meta);
   const same = held.find((entry) => entry.source_item_id === source.item.id && entry.quote === words);
   if (same) return { citation: same, added: false };
-  if (held.length >= CITE_MAX_PER_ITEM) throw full();
+  if (citationEntriesOf(target.meta).length >= CITE_MAX_PER_ITEM) throw full();
 
   const citation: StoredCitation = {
     id: deps.newId(),
@@ -87,22 +90,42 @@ export async function citeLine(deps: CiteDeps, input: CiteInput): Promise<{ cita
 
 /**
  * The cited lines of one item, for its owner only: anyone else gets none. Each is checked against the corpus as it is
- * for this request, so a line whose source is no longer shared comes back with no words and no link.
+ * for this request. A line whose source is no longer served to the owner comes back with no words and no link, and
+ * in this same request its words and source ids are deleted from the item, leaving a tombstone (id, time, gone).
+ *
+ * The delete re-reads the item just before it writes and rebuilds only the `citations` key, so a key another writer
+ * changed in between (tags, the offer mark, a line added meanwhile) is carried over as it now is. It goes through the
+ * owner's own write gate. If it is refused or fails, the view returned is still the hidden one, never the words, and
+ * the next read tries again. When nothing needs deleting, nothing is written.
  */
 export async function readCitedLines(
-  deps: Pick<CiteDeps, "corpus" | "readOwn">,
+  deps: Pick<CiteDeps, "corpus" | "readOwn" | "writeOwn">,
   itemId: string,
 ): Promise<CitedLine[]> {
   const target = await deps.readOwn(itemId);
   if (!target) return [];
-  return resolveCitations(deps.corpus, citationsOf(target.meta));
+  const entries = citationEntriesOf(target.meta);
+  const view = resolveCitations(deps.corpus, entries);
+  const goneIds = new Set(
+    entries
+      .filter((entry, index) => !isTombstone(entry) && view[index]?.state === "gone")
+      .map((entry) => entry.id),
+  );
+  if (!goneIds.size) return view;
+  try {
+    const fresh = await deps.readOwn(itemId);
+    if (fresh) await deps.writeOwn(itemId, withCitationsDeleted(fresh.meta, goneIds));
+  } catch {
+    // The view below already holds no words; the delete is tried again on the next read.
+  }
+  return view;
 }
 
 /** Removes one cited line from the caller's own item. Removing a line that is not there changes nothing. */
 export async function removeCitedLine(deps: OwnItemDeps, itemId: string, citationId: string): Promise<{ removed: boolean }> {
   const target = await deps.readOwn(itemId);
   if (!target) throw refused();
-  if (!citationsOf(target.meta).some((entry) => entry.id === citationId)) return { removed: false };
+  if (!citationEntriesOf(target.meta).some((entry) => entry.id === citationId)) return { removed: false };
   const rows = await deps.writeOwn(itemId, withoutCitation(target.meta, citationId));
   if (rows < 1) throw refused();
   return { removed: true };

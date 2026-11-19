@@ -7,8 +7,10 @@
  * - The words stored are the source's own, found again on the server word for word in what this person may read. The
  *   text the browser sent is never stored.
  * - A cited line is shown only to the item's owner, and only while the firm reader still serves its source to them.
- *   When the source's board stops being shared, the words and the link both go: the line reads "A cited source is no
- *   longer shared".
+ *   When the source stops being served (its board is no longer shared, or the item is made private, unplaced, marked
+ *   Out or deleted), the words and the source ids are deleted from the owner's item on the owner's next read, leaving
+ *   a tombstone (id, time, gone). The line reads "A cited source is no longer shared", and sharing the source again
+ *   does not bring the words back.
  * - No cited line holds a money figure or an opinion about a person, for anyone.
  */
 
@@ -74,6 +76,7 @@ export function citationsOf(meta: unknown): StoredCitation[] {
     const row = entry as Record<string, unknown>;
     const { id, quote, source_item_id, source_board_id, cited_at } = row;
     if (
+      row["gone"] === true ||
       typeof id !== "string" ||
       !id ||
       typeof quote !== "string" ||
@@ -87,18 +90,69 @@ export function citationsOf(meta: unknown): StoredCitation[] {
   return out;
 }
 
-/** The item's meta with one more cited line. Every other key is kept as it was. */
-export function withCitation(meta: unknown, citation: StoredCitation): Record<string, unknown> {
-  return { ...metaOf(meta), citations: [...citationsOf(meta), citation] };
+/**
+ * What is left of a cited line once its source stopped being served to the item's owner: that a line was there and
+ * when it was cited. No words and no source ids. It never turns back into a line.
+ */
+export type CitationTombstone = { id: string; cited_at: string; gone: true };
+
+export type CitationEntry = StoredCitation | CitationTombstone;
+
+export const isTombstone = (entry: CitationEntry): entry is CitationTombstone =>
+  "gone" in entry && entry.gone === true;
+
+/**
+ * Every well-formed entry under an item's `citations`, in order: cited lines and the tombstones of lines that were
+ * deleted. An entry marked gone is read as a tombstone whatever else it holds, so nothing beside its id and time is
+ * ever carried on from it.
+ */
+export function citationEntriesOf(meta: unknown): CitationEntry[] {
+  const raw = metaOf(meta)["citations"];
+  if (!Array.isArray(raw)) return [];
+  const live = new Map(citationsOf(meta).map((citation) => [citation.id, citation]));
+  const out: CitationEntry[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    const id = row["id"];
+    if (typeof id !== "string" || !id) continue;
+    if (row["gone"] === true) {
+      const at = row["cited_at"];
+      out.push({ id, cited_at: typeof at === "string" ? at : "", gone: true });
+      continue;
+    }
+    const citation = live.get(id);
+    if (citation) out.push(citation);
+  }
+  return out;
 }
 
-/** The item's meta without one cited line. The key goes when the last line does. */
+/** The item's meta with one more cited line. Every other key, and every tombstone, is kept as it was. */
+export function withCitation(meta: unknown, citation: StoredCitation): Record<string, unknown> {
+  return { ...metaOf(meta), citations: [...citationEntriesOf(meta), citation] };
+}
+
+/** The item's meta without one cited line or tombstone. The key goes when the last entry does. */
 export function withoutCitation(meta: unknown, citationId: string): Record<string, unknown> {
   const next = metaOf(meta);
-  const kept = citationsOf(meta).filter((citation) => citation.id !== citationId);
+  const kept = citationEntriesOf(meta).filter((entry) => entry.id !== citationId);
   if (kept.length) next["citations"] = kept;
   else delete next["citations"];
   return next;
+}
+
+/**
+ * The item's meta with the named cited lines deleted: each becomes a tombstone holding only its id, when it was cited
+ * and that it is gone. Only the `citations` key is rebuilt; every other key is carried over untouched.
+ */
+export function withCitationsDeleted(meta: unknown, goneIds: ReadonlySet<string>): Record<string, unknown> {
+  const entries = citationEntriesOf(meta).map(
+    (entry): CitationEntry =>
+      !isTombstone(entry) && goneIds.has(entry.id)
+        ? { id: entry.id, cited_at: entry.cited_at, gone: true }
+        : entry,
+  );
+  return { ...metaOf(meta), citations: entries };
 }
 
 /**
@@ -158,8 +212,9 @@ export type CitedLine =
  * served to this person and, for a source they may read as its summary only (a call on a board they are not on, or a
  * summary-only item), while its words are in that summary. Otherwise it is gone, and its words do not leave the server.
  */
-export function resolveCitations(corpus: FirmCorpus, stored: readonly StoredCitation[]): CitedLine[] {
+export function resolveCitations(corpus: FirmCorpus, stored: readonly CitationEntry[]): CitedLine[] {
   return stored.map((citation): CitedLine => {
+    if (isTombstone(citation)) return { id: citation.id, state: "gone" };
     const source = liveSource(corpus, citation.source_item_id);
     if (!source) return { id: citation.id, state: "gone" };
     const readable =

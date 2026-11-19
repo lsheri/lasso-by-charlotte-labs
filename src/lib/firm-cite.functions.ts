@@ -51,7 +51,8 @@ export const citeFirmLine = createServerFn({ method: "POST" })
 /**
  * The cited lines of one item, for its owner only (anyone else gets none). Each line is checked against the firm
  * reader as it is for this request, so when its source's board is no longer shared it comes back with no words and
- * no link. Nothing is stored and there is no event.
+ * no link, and its words and source ids are deleted from the item in that same request (a tombstone stays: id, time,
+ * gone). Sharing the source again does not bring the words back. There is no event.
  */
 export const getFirmCitations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
