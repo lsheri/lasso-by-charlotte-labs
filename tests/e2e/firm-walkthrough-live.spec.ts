@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
@@ -270,6 +270,16 @@ const notes: Record<string, unknown> = {};
 
 test.afterAll(() => {
   if (!PASSWORD) return;
+  // A failed test restarts the worker, and each worker ends here: keep what earlier workers of this run wrote.
+  try {
+    const before = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : null;
+    if (before?.runner === process.ppid) {
+      results.unshift(...(before.results as Row[]));
+      Object.assign(notes, { ...before.notes, ...notes });
+    }
+  } catch {
+    // An unreadable earlier file is simply replaced.
+  }
   const all = (pick: (row: Row) => boolean) =>
     results.filter(pick).map((row) => `${row.person} ${row.id} run ${row.run}`);
   const summary = {
@@ -285,7 +295,7 @@ test.afterAll(() => {
     fewerThanThreeHabits: all((row) => row.thinSaid === null && row.habits.length < 3),
   };
   mkdirSync("test-results", { recursive: true });
-  writeFileSync(OUT, JSON.stringify({ summary, notes, results }, null, 2));
+  writeFileSync(OUT, JSON.stringify({ runner: process.ppid, summary, notes, results }, null, 2));
 });
 
 for (const person of PEOPLE) {
