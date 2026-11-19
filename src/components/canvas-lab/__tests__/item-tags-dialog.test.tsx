@@ -13,6 +13,7 @@ vi.mock("@/lib/item-tags.functions", () => ({
 }));
 
 import { ItemTagsDialog } from "@/components/canvas-lab/ItemTagsDialog";
+import { BrandVariantContext, SkinContext } from "@/components/skin/use-skin";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { METHODS, ROLES, SITUATIONS, STAGES } from "@/lib/engagement-tags";
 import { ITEM_TAGS_COPY, type ItemTagsView } from "@/lib/extract-tags-shared";
@@ -95,7 +96,7 @@ describe("ItemTagsDialog", () => {
     expect([...(screen.getByLabelText(ITEM_TAGS_COPY.situationLabel) as HTMLSelectElement).options].map((option) => option.value)).toEqual(["", ...SITUATIONS]);
   });
 
-  it("can clear a tag to none, and can go back to what Charlotte read", async () => {
+  it("can clear a tag to none, and can go back to what was read", async () => {
     m.read.mockResolvedValue(SOW);
     const { onClose } = open();
     await loaded();
@@ -113,7 +114,36 @@ describe("ItemTagsDialog", () => {
     await waitFor(() => expect(m.save).toHaveBeenCalledWith({ data: expect.objectContaining({ clear: true }) }));
   });
 
-  it("offers no way back to Charlotte's reading when nothing was corrected", async () => {
+  it("names the product by the look in the helper and the way back, never a typed name", async () => {
+    m.read.mockResolvedValue(SOW);
+    const show = (skin: "lasso" | "charlotte", variant: "current" | "slate-spool") =>
+      render(
+        <SkinContext.Provider value={skin}>
+          <BrandVariantContext.Provider value={variant}>
+            <ItemTagsDialog itemId="item-1" title="SOW" profileId="p1" onClose={vi.fn()} onSaved={vi.fn()} />
+          </BrandVariantContext.Provider>
+        </SkinContext.Provider>,
+      );
+    // Charlotte's skin in today's look: her name, and no Lasso.
+    show("charlotte", "current");
+    await loaded();
+    expect(screen.getByRole("button", { name: "Use what Charlotte read" })).toBeTruthy();
+    expect(document.body.textContent).toContain("Charlotte reads these when the item is captured");
+    expect(document.body.textContent).not.toMatch(/Lasso/);
+    cleanup();
+    // The same skin under Slate, where the product is Lasso: no Charlotte anywhere in the dialog.
+    show("charlotte", "slate-spool");
+    await loaded();
+    expect(screen.getByRole("button", { name: "Use what Lasso read" })).toBeTruthy();
+    expect(document.body.textContent).toContain("Lasso reads these when the item is captured");
+    expect(document.body.textContent).not.toMatch(/Charlotte/);
+  });
+
+  it("writes the tag copy with one name only, so the look can rename it", () => {
+    expect(Object.values(ITEM_TAGS_COPY).join("\n")).not.toMatch(/Charlotte/);
+  });
+
+  it("offers no way back to the first reading when nothing was corrected", async () => {
     open();
     await loaded();
     expect(screen.queryByRole("button", { name: ITEM_TAGS_COPY.reset })).toBeNull();

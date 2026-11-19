@@ -10,7 +10,7 @@ import { canUseCharlotte, isPreviewHost } from "@/lib/skin";
 export type BrandVariant = "current" | "slate-spool";
 
 /** The one line that decides what everyone sees. Change it to "slate-spool" to make Slate / Spool script the default. */
-export const DEFAULT_BRAND_VARIANT: BrandVariant = "current";
+export const DEFAULT_BRAND_VARIANT: BrandVariant = "slate-spool";
 
 export const BRAND_VARIANT_COOKIE = "brand_variant";
 

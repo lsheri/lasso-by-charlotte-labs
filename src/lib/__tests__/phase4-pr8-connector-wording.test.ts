@@ -1,12 +1,19 @@
 // Phase 4 PR8: connector and push wording follows the brand. Lasso is untouched; Charlotte names herself in the setup
 // steps, the push phrase, the branch prompt and the walkthrough, and never claims a connector name the server does
 // not use yet.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { brandCopy, brandFor } from "@/design/brand/brand";
 import { branchPrompt } from "@/lib/branch-handoff";
 import { MCP_PUSH_PHRASE, MCP_SERVER_NAME, MCP_SETUP_STEPS } from "@/lib/mcp-setup-steps";
 import { WALKTHROUGH_VARIANTS, walkthroughFor } from "@/lib/walkthrough";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 
 const lasso = brandFor("lasso");
 const charlotte = brandFor("charlotte");

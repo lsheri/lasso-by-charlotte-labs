@@ -55,6 +55,13 @@ vi.mock("@/lib/connector-import.server", () => ({ recordNewVersion: mocks.record
 
 import { handleMcpRequest } from "../mcp-handler.server";
 
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
+
 async function call(args: Row, method = "tools/call") {
   const response = await handleMcpRequest(new Request("https://x.test/api/mcp/key", {
     method: "POST", body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: { name: "lasso_push_decisions", arguments: args } }),

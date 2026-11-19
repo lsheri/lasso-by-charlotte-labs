@@ -1,12 +1,19 @@
 // Phase 4 PR4: under Charlotte the model's fixed prompts and the hand-off text use her name; Lasso stays byte-identical.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { BRANDS, brandCopy } from "@/design/brand/brand";
+import { BRANDS, brandCopy, brandFor } from "@/design/brand/brand";
 import { ANALYSIS_PRESETS } from "@/lib/analysis-presets";
 import { packageHandoff, type H7Input } from "@/lib/ask-handoff";
 import { serverBrand, skinFromCookieHeader } from "@/lib/brand-server";
 import { ANSWER_RULES, CATALOGUE_RULES } from "@/lib/record-answer.server";
 import { whereLineFor } from "@/lib/reflect-run.server";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 
 const lasso = BRANDS.lasso;
 const charlotte = BRANDS.charlotte;
@@ -14,11 +21,15 @@ const noDb = {} as never;
 
 describe("the brand the server speaks as", () => {
   it("honours the skin cookie only for an allowed account (D1)", () => {
-    // After the flip the server speaks as Charlotte for everyone; the allow-list rule it used before is in skin.test.ts.
-    expect(serverBrand("charlotte", "someone@charlotte-labs.com")).toBe(charlotte);
-    expect(serverBrand("charlotte", "pilot@example.com")).toBe(charlotte);
-    expect(serverBrand("charlotte", null)).toBe(charlotte);
-    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toBe(charlotte);
+    // 19 Nov: Slate is the default, so the server speaks as Lasso (the Slate brand) for everyone, whatever the skin
+    // cookie says. Only an allowed account that chose the earlier look is spoken to as Charlotte.
+    const slate = brandFor("charlotte", "slate-spool");
+    expect(slate.name).toBe("Lasso");
+    expect(serverBrand("charlotte", "pilot@example.com")).toEqual(slate);
+    expect(serverBrand("charlotte", null)).toEqual(slate);
+    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toEqual(slate);
+    expect(serverBrand("charlotte", "pilot@example.com", "current")).toEqual(slate);
+    expect(serverBrand("charlotte", "someone@charlotte-labs.com", "current")).toBe(charlotte);
   });
 
   it("reads the skin from a raw Cookie header", () => {
