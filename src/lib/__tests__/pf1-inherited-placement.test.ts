@@ -89,6 +89,13 @@ vi.mock("@/lib/org-type.server", () => ({ isAffiliatedStrict: async () => false,
 
 import { pushConversation, type AttachmentOutcome } from "@/lib/mcp-handler.server";
 
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
+
 const OWNER = { tokenId: "t1", profileId: "p1", orgId: "o1", userId: "u1", kind: "link", readOnly: false, legacy: true, authKind: "link" as const };
 type Out = { result: { content: { text: string }[]; structuredContent: Record<string, unknown> } };
 const push = async (args: Row) => (await (await pushConversation(OWNER, args, 1)).json()) as Out;

@@ -11,7 +11,7 @@ import {
 } from "@/design/brand/SpoolScriptMark";
 import { BrandLockup, BrandMark } from "@/components/layout/BrandLockup";
 import { BrandVariantContext, SkinContext } from "@/components/skin/use-skin";
-import { BRANDS, brandCopy, brandFor } from "@/design/brand/brand";
+import { BRANDS, brandCopy, brandFor, launchBrand } from "@/design/brand/brand";
 import {
   DEFAULT_BRAND_VARIANT,
   parseBrandVariant,
@@ -164,8 +164,13 @@ describe("the brand switch", () => {
     expect(provider).not.toContain('"data-brand"');
   });
 
-  it("ships with the current look as the default", () => {
-    expect(DEFAULT_BRAND_VARIANT).toBe("current");
+  it("ships with Slate / Spool script as the default (19 Nov, Liam's D-1), named Lasso wherever the server speaks", () => {
+    expect(DEFAULT_BRAND_VARIANT).toBe("slate-spool");
+    expect(launchBrand().name).toBe("Lasso");
+    expect(launchBrand().wordmark).toBe("LASSO");
+    expect(launchBrand().look.mark).toBe("spool");
+    // The earlier look is one argument away, for the one-line way back.
+    expect(launchBrand(true, "current").name).toBe("Charlotte");
   });
 
   it("reads the choice from ?brand= and from the cookie value", () => {
@@ -182,7 +187,8 @@ describe("the brand switch", () => {
   });
 
   it("lets only allowed accounts and signed-out preview hosts leave the default", () => {
-    const ask = { stored: null, requested: "slate-spool" as const };
+    // The rule itself, shown against the earlier default so "refused" and "allowed" give different answers.
+    const ask = { stored: null, requested: "slate-spool" as const, fallback: "current" as const };
     expect(
       resolveBrandVariant({
         ...ask,
@@ -215,6 +221,7 @@ describe("the brand switch", () => {
         requested: null,
         email: "quinn@kestrelbay.test",
         host: "lasso.charlotte-labs.com",
+        fallback: "current",
       }),
     ).toBe("current");
     expect(
@@ -223,12 +230,17 @@ describe("the brand switch", () => {
         requested: null,
         email: null,
         host: "lasso.charlotte-labs.com",
+        fallback: "current",
       }),
     ).toBe("current");
   });
 
   it("keeps a saved choice, and lets a request change it either way", () => {
-    const who = { email: "qa.company.admin@qaprobe.test", host: "lasso.charlotte-labs.com" };
+    const who = {
+      email: "qa.company.admin@qaprobe.test",
+      host: "lasso.charlotte-labs.com",
+      fallback: "current" as const,
+    };
     expect(resolveBrandVariant({ stored: "slate-spool", requested: null, ...who })).toBe(
       "slate-spool",
     );
@@ -238,8 +250,16 @@ describe("the brand switch", () => {
     expect(resolveBrandVariant({ stored: null, requested: null, ...who })).toBe("current");
   });
 
-  it("after the default flips, everyone gets Slate and allowed accounts can still reach the old look", () => {
-    const flipped = { fallback: "slate-spool" as const, host: "lasso.charlotte-labs.com" };
+  it("now the default has flipped, everyone gets Slate and only allowed accounts can still reach the old look", () => {
+    // No fallback passed: this reads the real default.
+    const flipped = { host: "lasso.charlotte-labs.com" };
+    // ?brand=charlotte, or an old cookie, does nothing for anyone else on the live site.
+    for (const email of ["quinn@kestrelbay.test", null])
+      for (const [stored, requested] of [
+        [null, "current"],
+        ["current", null],
+      ] as const)
+        expect(resolveBrandVariant({ stored, requested, email, ...flipped })).toBe("slate-spool");
     expect(
       resolveBrandVariant({
         stored: null,
@@ -289,7 +309,13 @@ describe("the brand in each variant", () => {
 
   it("the app's own copy follows the name, so a sentence can never disagree with the lockup", () => {
     const slate = brandFor("charlotte", "slate-spool");
-    for (const text of ["WHAT LASSO READS", "Ask Lasso", "Ask Lasso about this", "Lasso is reading", "Sign in to Lasso"]) {
+    for (const text of [
+      "WHAT LASSO READS",
+      "Ask Lasso",
+      "Ask Lasso about this",
+      "Lasso is reading",
+      "Sign in to Lasso",
+    ]) {
       expect(brandCopy(slate, text)).toBe(text);
       expect(brandCopy(BRANDS.charlotte, text)).not.toMatch(/lasso/i);
     }

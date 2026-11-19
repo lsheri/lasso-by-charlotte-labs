@@ -3,7 +3,7 @@
 // the name moves, and anything a person wrote (a board title, a confirmed link's note) stays as written.
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { trailHowLine } from "@/components/canvas-lab/LiftedTrail";
 import { SuggestLegend } from "@/components/common/Suggested";
@@ -11,6 +11,13 @@ import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { SkinContext } from "@/components/skin/use-skin";
 import { brandFor, brandTitle } from "@/design/brand/brand";
 import type { Skin } from "@/lib/skin";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 
 const text = (skin: Skin, node: ReactElement) =>
   render(<SkinContext.Provider value={skin}>{node}</SkinContext.Provider>).container.textContent;

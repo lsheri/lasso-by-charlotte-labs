@@ -1,13 +1,20 @@
 // Phase 4 PR9: one switch flips the product from Lasso to Charlotte (Liam, 15 Nov 2026: "Build a flip switch, off").
 // It shipped off; Liam switched it on 16 Nov 2026. On, Charlotte is the only brand and the server speaks as Charlotte.
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { BRAND_FLIPPED, brandCopy, brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
 import { BRANCH_NEEDS_SIGNIN } from "@/lib/branch-fetch";
 import { earlierNameLine } from "@/lib/mcp-earlier-name";
 import { MCP_SERVER_NAME } from "@/lib/mcp-setup-steps";
 import { resolveSkin } from "@/lib/skin";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 
 describe("the flip switch", () => {
   it("is on", () => {

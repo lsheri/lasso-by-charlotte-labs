@@ -10,6 +10,7 @@ import { brandHeadTags } from "@/components/skin/BrandHeadContent";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { BrandVariantContext, SkinContext } from "@/components/skin/use-skin";
 import {
+  brandCopy,
   BRANDS,
   brandFile,
   brandFor,
@@ -84,11 +85,12 @@ describe("the head under each look", () => {
       tag: "meta" as const,
       attrs: {
         property: "og:title",
-        content: "Charlotte | The knowledge trace for AI-assisted work",
+        // The root writes its default card title in the launch brand's name, whichever look that is.
+        content: brandCopy(launchBrand(), "Lasso | The knowledge trace for AI-assisted work"),
       },
     },
     { tag: "meta" as const, attrs: { name: "theme-color", content: "#fafaf8" } },
-    { tag: "meta" as const, attrs: { name: "application-name", content: "Charlotte" } },
+    { tag: "meta" as const, attrs: { name: "application-name", content: launchBrand().name } },
     {
       tag: "meta" as const,
       attrs: { property: "og:image", content: "https://lasso.charlotte-labs.com/og-image.png" },

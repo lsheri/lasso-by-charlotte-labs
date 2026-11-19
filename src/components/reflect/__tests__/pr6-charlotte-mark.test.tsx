@@ -7,6 +7,13 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { SkinContext } from "@/components/skin/use-skin";
 import type { Skin } from "@/lib/skin";
 
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
+
 function inSkin(skin: Skin, node: React.ReactElement) {
   return <SkinContext.Provider value={skin}>{node}</SkinContext.Provider>;
 }

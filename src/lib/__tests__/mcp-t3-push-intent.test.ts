@@ -134,6 +134,13 @@ const attachment = { kind: "artifact_code", title: "pricing.py", source_artifact
 
 
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 const declare = (extra: Row = {}) => call("lasso_push_options", { title: "Pricing study", vendor: "claude", orig_conversation_id: "conv-1", expected_messages: 3, expected_attachments: 0, ...extra });
 const outcome = (value: "new" | "rejected" | "failed") => ({ title: "file", source_artifact_id: "file", chars: 0, outcome: value });
 
