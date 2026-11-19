@@ -241,6 +241,8 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
           {layout ? (
             <FirmMapReading
               reading={readingFor(state, layout)}
+              pinned={state.pinned}
+              profileId={profile.id}
               onFocus={(threadId) => dispatch({ type: "focus", threadId })}
             />
           ) : null}
