@@ -391,18 +391,28 @@ export async function readBoardValueSoFar(actor: Omit<LedgerActor, "admin">, eng
 }
 
 /**
- * The firm's line, for admins and leads: every proposal the database shows them, less their own boards that are not
- * shared (the database shows an owner their own rows; the firm's figure counts shared work only).
+ * The firm's line, for admins and leads: every proposal the database shows them, less any board that is not shared
+ * with the firm or is archived. The database also shows a person the rows of unshared boards they own or, as an
+ * admin or lead, can edit; those are theirs to read on the board, and never part of the firm's figure.
  */
 export async function readFirmValueSoFar(actor: Omit<LedgerActor, "admin">): Promise<FirmValueSoFar> {
   const { userDb, profile } = actor;
   if (!canSetFees(profile.role)) throw new Response("Forbidden", { status: 403 });
   const all = await readLedger(userDb, { orgId: profile.org_id });
+  const allValues = await readValues(userDb, { orgId: profile.org_id });
+  const boardIds = [...new Set([...all.map((row) => row.engagement_id), ...allValues.map((value) => value.engagement_id)])];
+  // Any board of theirs that is unshared or archived is one they can read themselves, so it comes back here.
+  const notCounted = new Set<string>();
+  if (boardIds.length) {
+    const { data: readable, error } = await userDb.from("engagements").select("id, shared_with_firm, archived_at").eq("org_id", profile.org_id).in("id", boardIds);
+    if (error) throw new Response("Could not load.", { status: 500 });
+    for (const board of readable ?? []) if (!board.shared_with_firm || board.archived_at) notCounted.add(board.id);
+  }
   const { data: own, error } = await userDb.from("engagements").select("id, shared_with_firm, archived_at").eq("org_id", profile.org_id).eq("owner_id", profile.id);
   if (error) throw new Response("Could not load.", { status: 500 });
-  const notCounted = new Set((own ?? []).filter((board) => !board.shared_with_firm || board.archived_at).map((board) => board.id));
+  for (const board of own ?? []) if (!board.shared_with_firm || board.archived_at) notCounted.add(board.id);
   const rows = all.filter((row) => !notCounted.has(row.engagement_id));
-  const values = (await readValues(userDb, { orgId: profile.org_id })).filter((value) => !notCounted.has(value.engagement_id));
+  const values = allValues.filter((value) => !notCounted.has(value.engagement_id));
   return { scope: "firm", figures: valueSoFar(rows, values), rows };
 }
 

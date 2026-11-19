@@ -88,7 +88,16 @@ export class FakeLedger {
     if (!role) return false;
     const partner = role === "admin" || role === "lead";
     if (fee && !partner) return false;
-    return this.isMine(userId, board["owner_id"]) || (partner && board["shared_with_firm"] === true && !board["archived_at"]);
+    if (this.isMine(userId, board["owner_id"]) || (partner && board["shared_with_firm"] === true && !board["archived_at"])) return true;
+    // 20261119130000: an admin or lead on the board through their profile in this workspace, and not as its coach.
+    return (
+      partner &&
+      this.rows("engagement_members").some((member) => {
+        if (member["engagement_id"] !== engagementId || member["member_role"] === "coach") return false;
+        const profile = this.profilesOf(userId).find((row) => row["id"] === member["profile_id"]);
+        return Boolean(profile && profile["org_id"] === orgId && !profile["deactivated_at"] && !profile["is_guest"]);
+      })
+    );
   }
 
   visible(userId: string, table: string, row: Row): boolean {

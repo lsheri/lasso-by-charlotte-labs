@@ -144,8 +144,8 @@ test("an admin sets the value; the firm card does not count the unshared board",
   expect(panel, "Maren is on the Marrowfield team and opens Start a proposal").not.toBeNull();
   const line = panel!.getByTestId("proposal-value-line");
   await line.waitFor({ timeout: 30_000 });
-  // Marrowfield is not shared with the firm, so the database shows an admin who is not its owner neither its dates
-  // nor its value. She can still set the value; the line says who will see it.
+  // Marrowfield is not shared with the firm. Maren is an admin on its team, so since 20261119130000 she reads its
+  // dates and the value she sets; the firm card below still counts none of it.
   report.saw["hollis access"] = await line.getAttribute("data-ledger-access");
   report.saw["hollis rows (direct)"] = (await readDirect(page, "proposal_ledger", "id,kind")).length;
   const valueBefore = await readDirect(page, "proposal_ledger_values", "engagement_id,amount,currency");
@@ -156,6 +156,13 @@ test("an admin sets the value; the firm card does not count the unshared board",
   await line.getByRole("button", { name: "Save" }).click();
   await expect(line.getByLabel("Proposal value")).toHaveCount(0, { timeout: 30_000 });
   await expect(line).toContainText(VALUE_SHOWN);
+  const valueAfter = await readDirect(page, "proposal_ledger_values", "engagement_id,amount,currency");
+  report.saw["hollis value after (direct)"] = valueAfter;
+  expect(valueAfter.map((row) => String(row["engagement_id"])), "she reads back the value she set").toContain(MARROWFIELD);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const again = (await openProposalPanel(page))!.getByTestId("proposal-value-line");
+  await expect(again, "the value is still shown to her after a reload").toContainText(VALUE_SHOWN, { timeout: 60_000 });
+  await expect(again).toHaveAttribute("data-ledger-access", "partner");
   report.wrote.push({ table: "proposal_ledger_values", id: MARROWFIELD, what: `value set to ${VALUE_SHOWN} (one row per board, keyed by the board id; before: ${JSON.stringify(valueBefore)})`, by: "hollis" });
   await page.screenshot({ path: "test-results/proposal-ledger-hollis-board.png" });
 
