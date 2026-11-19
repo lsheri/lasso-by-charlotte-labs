@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { brandFile } from "@/design/brand/brand";
 import { readStyles } from "@/design/stylesheet";
 
 const read = (path: string) => readFileSync(path, "utf8");
@@ -48,7 +49,11 @@ describe("B1 workboard controls and brand identity", () => {
     // Phase 4 PR9: the name reads through PRODUCT, which is "Lasso" until the flip.
     expect(mcp).toContain("name: PRODUCT,");
     expect(mcp).toContain('websiteUrl: SITE_URL');
-    // Phase 4 PR12: the loop icon until the flip, Charlotte's after it.
-    expect(mcp).toContain('`${SITE_URL}/${BRAND_FLIPPED ? "charlotte-favicon.svg" : "favicon.svg"}`');
+    // Phase 4 PR12, and 19 Nov: the launch brand's own icon (the loop, Charlotte's C, or the spool), from the same
+    // file map the page head uses, so the connector's picture can never disagree with its name.
+    expect(mcp).toContain('`${SITE_URL}${brandFile("/favicon.svg", launchBrand().look.mark)}`');
+    expect(brandFile("/favicon.svg", "loop")).toBe("/favicon.svg");
+    expect(brandFile("/favicon.svg", "charlotte")).toBe("/charlotte-favicon.svg");
+    expect(brandFile("/favicon.svg", "spool")).toBe("/slate-favicon.svg");
   });
 });

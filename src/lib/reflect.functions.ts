@@ -14,6 +14,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
     const { runReflectTurn } = await import("./reflect-run.server");
     const { serverBrand } = await import("./brand-server");
     const { readSkinCookie } = await import("./skin");
+    const { readBrandVariantChoice } = await import("./brand-variant");
     const email = typeof context.claims?.["email"] === "string" ? (context.claims["email"] as string) : null;
-    return runReflectTurn(context.supabase, context.userId, data, undefined, undefined, serverBrand(readSkinCookie(), email));
+    return runReflectTurn(context.supabase, context.userId, data, undefined, undefined, serverBrand(readSkinCookie(), email, readBrandVariantChoice()));
   });

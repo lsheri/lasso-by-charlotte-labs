@@ -1,7 +1,7 @@
 // Phase 4: one brand per skin, all or nothing (Liam, 15 Nov 2026). Charlotte shows no Lasso name or mark anywhere,
 // and Lasso shows no Charlotte. Every name, wordmark and Ask label a surface shows reads from here, so the rename
 // lives in one file. Code names (lasso_* tools, --lasso-* tokens, data-lasso, events) never change.
-import type { BrandVariant } from "@/lib/brand-variant-shared";
+import { DEFAULT_BRAND_VARIANT, type BrandVariant } from "@/lib/brand-variant-shared";
 import type { Skin } from "@/lib/skin";
 
 export type Brand = {
@@ -47,20 +47,32 @@ export const BRANDS: Record<Skin, Brand> = {
 };
 
 /**
- * Slate / Spool script (19 Nov 2026, brand exploration): the current skin with the Spool script mark and the LASSO
- * wordmark. Only the mark and the wordmark change here; the colours are the [data-brand-theme="slate-spool"] scope in
- * tokens.css. The name in sentences and the Ask label stay the skin's until Liam decides the name.
+ * Slate / Spool script (19 Nov 2026). Liam, 19 Nov: under this look the product is called Lasso everywhere, in every
+ * sentence, tab title, email, the AI connector and the icons; under the current look it stays Charlotte. So the look
+ * carries a whole brand, never a part of one: name, wordmark, Ask label and mark change together and cannot disagree.
+ * The drawn glyph sets stay the skin's. The colours are the [data-brand-theme="slate-spool"] scope in tokens.css.
  */
-const SLATE_SPOOL: Pick<Brand, "wordmark"> & { mark: BrandLook["mark"] } = { wordmark: "LASSO", mark: "spool" };
+const SLATE_SPOOL: Pick<Brand, "name" | "wordmark" | "askLabel"> & { mark: BrandLook["mark"] } = {
+  name: "Lasso",
+  wordmark: "LASSO",
+  askLabel: "Ask Lasso",
+  mark: "spool",
+};
 
 /**
- * The brand a surface shows: the skin's, in the given variant. The variant never applies to the original Lasso skin,
- * which stays exactly as it was.
+ * THE ONE SOURCE for the product's name. Every surface asks here: React through useBrand() and useBrandCopy()
+ * (src/components/skin/use-skin.ts), the server through launchBrand() or serverBrand(). The brand is the skin's, in
+ * the given variant. The variant never applies to the original Lasso skin, which stays exactly as it was.
  */
 export function brandFor(skin: Skin, variant: BrandVariant = "current"): Brand {
   const brand = BRANDS[skin];
   if (variant !== "slate-spool" || brand.look.legacyDefault) return brand;
-  return { ...brand, wordmark: SLATE_SPOOL.wordmark, look: { ...brand.look, mark: SLATE_SPOOL.mark } };
+  return {
+    name: SLATE_SPOOL.name,
+    wordmark: SLATE_SPOOL.wordmark,
+    askLabel: SLATE_SPOOL.askLabel,
+    look: { ...brand.look, mark: SLATE_SPOOL.mark },
+  };
 }
 
 /**
@@ -72,9 +84,13 @@ export function brandFor(skin: Skin, variant: BrandVariant = "current"): Brand {
  */
 export const BRAND_FLIPPED = true;
 
-/** The brand the server speaks as when no person's skin applies: Lasso until the flip, Charlotte after. */
-export function launchBrand(flipped: boolean = BRAND_FLIPPED): Brand {
-  return BRANDS[flipped ? "charlotte" : "lasso"];
+/**
+ * The brand the server speaks as when no person's choice applies (emails, the AI connector, the default head): the
+ * launch skin in the default variant. So the one line in brand-variant-shared.ts that makes Slate / Spool script the
+ * default also renames what the server says, and the two can never disagree.
+ */
+export function launchBrand(flipped: boolean = BRAND_FLIPPED, variant: BrandVariant = DEFAULT_BRAND_VARIANT): Brand {
+  return brandFor(flipped ? "charlotte" : "lasso", variant);
 }
 
 // "Ask Lasso" names the panel and its control ("Close Ask Lasso", "Past Ask Lasso chats"), which under Charlotte is her
@@ -91,7 +107,7 @@ export function brandCopy(brand: Brand, text: string): string {
     .replace(ASK_AS_VERB, `Ask ${brand.name}`)
     .replaceAll("Ask Lasso", brand.askLabel)
     .replaceAll("ASK LASSO", brand.askLabel.toUpperCase())
-    // The name in capitals, not the lockup's wordmark: a theme can change the wordmark alone (Slate / Spool script).
+    // The name in capitals, not the lockup's wordmark, so sentence copy always follows the name.
     .replaceAll("LASSO", brand.name.toUpperCase())
     .replaceAll("Lasso", brand.name);
 }
@@ -133,4 +149,67 @@ export function brandTitle(brand: Brand, title: string): string {
   if (brand.name === "Lasso") return title;
   if (FIXED_TITLES.has(title)) return brandCopy(brand, title);
   return title.replace(/ \| Lasso$/, ` | ${brand.name}`).replace(/^Lasso \| /, `${brand.name} | `);
+}
+
+/**
+ * A tab title already written for one brand, in another: used when the look changes after the page loaded, when the
+ * title in the tab is no longer the route's own "... | Lasso".
+ */
+export function rebrandTitle(from: Brand, to: Brand, title: string): string {
+  let plain = title;
+  if (from.name !== "Lasso") {
+    const fixed = [...FIXED_TITLES].find((t) => brandCopy(from, t) === title);
+    plain =
+      fixed ??
+      (title.endsWith(` | ${from.name}`)
+        ? `${title.slice(0, -from.name.length)}Lasso`
+        : title.startsWith(`${from.name} | `)
+          ? `Lasso${title.slice(from.name.length)}`
+          : title);
+  }
+  return brandTitle(to, plain);
+}
+
+// The icon files each brand mark uses. Route heads and the AI connector name Lasso's files; a brand with its own mark
+// swaps in its twins from public/.
+/** Lasso's icon files and their Charlotte twins in public/ (Phase 4 PR12, drawn from the lapel tile). */
+const CHARLOTTE_FILES: Record<string, string> = {
+  "/favicon.svg": "/charlotte-favicon.svg",
+  "/favicon-32.png": "/charlotte-favicon-32.png",
+  "/apple-touch-icon.png": "/charlotte-apple-touch-icon.png",
+  "/manifest.webmanifest": "/charlotte-manifest.webmanifest",
+  "/og-image.png": "/charlotte-og-image.png",
+};
+
+/** The Spool script twins (19 Nov 2026): the spool at rest on a Slate cloth tile. */
+const SPOOL_FILES: Record<string, string> = {
+  "/favicon.svg": "/slate-favicon.svg",
+  "/favicon-32.png": "/slate-favicon-32.png",
+  "/apple-touch-icon.png": "/slate-apple-touch-icon.png",
+  "/manifest.webmanifest": "/slate-manifest.webmanifest",
+  "/og-image.png": "/slate-og-image.png",
+};
+
+/** Each mark's icon files. The loop's are the route heads' own, so it needs no swap. */
+const FILES_BY_MARK: Record<BrandLook["mark"], Record<string, string>> = {
+  loop: {},
+  charlotte: CHARLOTTE_FILES,
+  spool: SPOOL_FILES,
+};
+
+/** The same address with a Lasso icon file swapped for the brand's twin; anything else comes back as it was. */
+export function brandFile(url: string, mark: BrandLook["mark"]): string {
+  for (const [lasso, twin] of Object.entries(FILES_BY_MARK[mark])) {
+    if (url === lasso || url.endsWith(lasso)) return url.slice(0, url.length - lasso.length) + twin;
+  }
+  return url;
+}
+
+/** The browser chrome colour the route head writes, and the one each mark's ground asks for instead. */
+const HEAD_THEME_COLOR = "#fafaf8";
+const THEME_COLOR_BY_MARK: Partial<Record<BrandLook["mark"], string>> = { spool: "#eceef0" };
+
+/** The head's theme-color in this brand; any other colour a route sets comes back as it was. */
+export function brandThemeColor(color: string, mark: BrandLook["mark"]): string {
+  return color === HEAD_THEME_COLOR ? (THEME_COLOR_BY_MARK[mark] ?? color) : color;
 }

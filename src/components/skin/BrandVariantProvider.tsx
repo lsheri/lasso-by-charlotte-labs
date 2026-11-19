@@ -1,3 +1,4 @@
+import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { useSession } from "@/hooks/use-session";
@@ -26,6 +27,7 @@ export function BrandVariantProvider({
   const [variant, setVariant] = useState<BrandVariant>(initial);
   const { session, loading } = useSession();
   const email = session?.user.email;
+  const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
@@ -37,10 +39,20 @@ export function BrandVariantProvider({
     });
     writeBrandVariantCookie(next);
     // The original Lasso skin sets no data-skin, and the theme's tokens need one, so the attribute is harmless there.
-    if (next === "current") document.documentElement.removeAttribute("data-brand-theme");
-    else document.documentElement.setAttribute("data-brand-theme", next);
-    if (next !== variant) setVariant(next);
-  }, [loading, email, variant]);
+    // Under Slate the whole page is the token scope (see RootShell), so pages outside the app shell are themed too.
+    if (next === "current") {
+      document.documentElement.removeAttribute("data-brand-theme");
+      document.body.removeAttribute("data-lasso");
+    } else {
+      document.documentElement.setAttribute("data-brand-theme", next);
+      document.body.setAttribute("data-lasso", "on");
+    }
+    if (next !== variant) {
+      setVariant(next);
+      // The root read the old choice for the head (icons, app name, browser colour); have it read the new one.
+      void router.invalidate();
+    }
+  }, [loading, email, variant, router]);
 
   return <BrandVariantContext.Provider value={variant}>{children}</BrandVariantContext.Provider>;
 }

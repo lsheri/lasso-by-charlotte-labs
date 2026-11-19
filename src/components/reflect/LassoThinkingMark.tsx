@@ -37,6 +37,11 @@ type LassoThinkingMarkProps = {
   still?: boolean;
   /** signature only, opt-in: a faint lime loop always sits behind the motion and strokes hold at least 1.6px, for small toolbar targets. */
   persistent?: boolean;
+  /**
+   * signature only: the mark is a flourish beside a heading, not a reading state. Lasso and Charlotte draw it as
+   * before; the Spool script keeps its thread in ink, because its lime means work is happening and nothing else.
+   */
+  flourish?: boolean;
   className?: string;
 };
 
@@ -259,8 +264,8 @@ export function LassoThinkingMark(props: LassoThinkingMarkProps) {
  * web (the toolbar's persistent mark is a standing button, so it stays at rest). The same data attributes as the
  * canvas, and aria-hidden, so the surrounding UI keeps announcing "Reading".
  */
-function SpoolThinkingMark({ kind, size, thinking = false, rope = true, persistent = false, className }: LassoThinkingMarkProps) {
-  const reading = kind === "signature" ? thinking && !persistent : true;
+function SpoolThinkingMark({ kind, size, thinking = false, rope = true, persistent = false, flourish = false, className }: LassoThinkingMarkProps) {
+  const reading = kind === "signature" ? thinking && !persistent && !flourish : true;
   return (
     <span
       className={className}

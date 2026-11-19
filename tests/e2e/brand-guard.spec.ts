@@ -8,6 +8,11 @@ import { expect, test, type Page } from "@playwright/test";
  * person can see or a screen reader can hear (text, tab title, aria-label, placeholder, title and alt), and fails on
  * any "lasso" outside the two lists below.
  *
+ * 19 Nov 2026, the Lasso mode: Slate / Spool script is a whole brand whose name is Lasso, so the guard runs both ways.
+ * With LASSO_BRAND_GUARD_LOOK=slate-spool it turns that look on and fails on any "Charlotte" (the company's own name,
+ * Charlotte Labs, and its domain are not the product) and on any Charlotte C or Lasso loop mark. Without it, it runs
+ * as before and also fails on any Spool script mark or icon file. Each mode also checks the tab's icon files.
+ *
  * Run against a local dev server (never paste the password into a chat or commit it):
  *   runpane secrets exec --project lasso-by-charlotte-labs --only LASSO_QA_PASSWORD -- \
  *     env LASSO_E2E_BASE_URL=http://127.0.0.1:3199 bunx playwright test brand-guard
@@ -15,6 +20,31 @@ import { expect, test, type Page } from "@playwright/test";
 
 const EMAIL = process.env["LASSO_QA_EMAIL"] ?? "qa.company.admin@qaprobe.test";
 const PASSWORD = process.env["LASSO_QA_PASSWORD"] ?? "";
+
+/** Which look the walk turns on. Each has the other brand's name and marks as its forbidden list. */
+const SLATE = process.env["LASSO_BRAND_GUARD_LOOK"] === "slate-spool";
+const LOOK = SLATE
+  ? {
+      label: "Slate / Spool script (Lasso)",
+      param: "slate-spool",
+      theme: "slate-spool" as string | null,
+      askLabel: "Ask Lasso",
+      forbidden: /charlotte/i,
+      // The maker's name and its domain stay: "Lasso by Charlotte Labs", lasso.charlotte-labs.com.
+      notTheProduct: /charlotte[ -]labs/gi as RegExp | null,
+      forbiddenMarks: ["charlotte", "lasso"],
+      iconFiles: (href: string) => href.includes("/slate-"),
+    }
+  : {
+      label: "Charlotte",
+      param: "charlotte",
+      theme: null as string | null,
+      askLabel: "Charlotte",
+      forbidden: /lasso/i,
+      notTheProduct: null as RegExp | null,
+      forbiddenMarks: ["lasso", "slate-spool"],
+      iconFiles: (href: string) => !href.includes("/slate-"),
+    };
 
 /**
  * Wording that changes only at the flip, because pilots' Claude still lists the connector as Lasso and the MCP server
@@ -28,17 +58,17 @@ const USER_CONTENT: RegExp[] = [];
 type Surface = { id: string; path: string; auth: boolean; open?: (page: Page) => Promise<void> };
 
 const SURFACES: Surface[] = [
-  { id: "sign-in", path: "/auth?brand=charlotte", auth: false },
-  { id: "reset-password", path: "/reset-password?brand=charlotte", auth: false },
-  { id: "why", path: "/why?brand=charlotte", auth: false },
-  { id: "trust", path: "/trust?brand=charlotte", auth: false },
-  { id: "landing", path: "/?brand=charlotte", auth: false },
-  { id: "plans", path: "/plans?brand=charlotte", auth: false },
-  { id: "join", path: "/join?brand=charlotte", auth: false },
-  { id: "board-invite", path: "/board-invite?brand=charlotte", auth: false },
-  { id: "no-access", path: "/no-access?brand=charlotte", auth: false },
-  { id: "demo-sources", path: "/demo/sources?brand=charlotte", auth: false },
-  { id: "tour-preview", path: "/tour-preview?brand=charlotte", auth: false },
+  { id: "sign-in", path: `/auth?brand=${LOOK.param}`, auth: false },
+  { id: "reset-password", path: `/reset-password?brand=${LOOK.param}`, auth: false },
+  { id: "why", path: `/why?brand=${LOOK.param}`, auth: false },
+  { id: "trust", path: `/trust?brand=${LOOK.param}`, auth: false },
+  { id: "landing", path: `/?brand=${LOOK.param}`, auth: false },
+  { id: "plans", path: `/plans?brand=${LOOK.param}`, auth: false },
+  { id: "join", path: `/join?brand=${LOOK.param}`, auth: false },
+  { id: "board-invite", path: `/board-invite?brand=${LOOK.param}`, auth: false },
+  { id: "no-access", path: `/no-access?brand=${LOOK.param}`, auth: false },
+  { id: "demo-sources", path: `/demo/sources?brand=${LOOK.param}`, auth: false },
+  { id: "tour-preview", path: `/tour-preview?brand=${LOOK.param}`, auth: false },
   { id: "home", path: "/home", auth: true },
   { id: "all-work", path: "/work", auth: true },
   { id: "board", path: "/home", auth: true, open: openFirstBoard },
@@ -49,7 +79,7 @@ const SURFACES: Surface[] = [
     open: async (page) => {
       await openFirstBoard(page);
       const box = page.getByPlaceholder(/^Ask |^What do you want to think through/).last();
-      if (!(await box.isVisible())) await page.locator('[aria-label="Charlotte"]').first().click();
+      if (!(await box.isVisible())) await page.locator(`[aria-label="${LOOK.askLabel}"]`).first().click();
       await box.waitFor({ state: "visible", timeout: 15_000 });
     },
   },
@@ -73,7 +103,7 @@ async function openFirstBoard(page: Page): Promise<void> {
   await board.waitFor({ state: "attached", timeout: 30_000 });
   await page.goto((await board.getAttribute("href")) ?? "/home", { waitUntil: "domcontentloaded" });
   await page
-    .locator('[data-toolbar-control], [aria-label="Charlotte"]')
+    .locator(`[data-toolbar-control], [aria-label="${LOOK.askLabel}"]`)
     .first()
     .waitFor({ timeout: 60_000 });
 }
@@ -85,10 +115,12 @@ async function signIn(page: Page): Promise<void> {
   await page.getByRole("button", { name: /^sign in$/i }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/auth"), { timeout: 60_000 });
   // Only an allowed signed-in account can turn Charlotte on; it sticks for the rest of the walk.
-  await page.goto("/home?brand=charlotte", { waitUntil: "domcontentloaded" });
+  await page.goto(`/home?brand=${LOOK.param}`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(
-    () => document.documentElement.getAttribute("data-skin") === "charlotte",
-    null,
+    (theme) =>
+      document.documentElement.getAttribute("data-skin") === "charlotte" &&
+      document.documentElement.getAttribute("data-brand-theme") === theme,
+    LOOK.theme,
     {
       timeout: 30_000,
     },
@@ -116,7 +148,7 @@ async function readable(page: Page): Promise<string[]> {
   });
 }
 
-test("brand guard: no Lasso under Charlotte", async ({ page }) => {
+test(`brand guard: one brand only under ${LOOK.label}`, async ({ page }) => {
   test.setTimeout(10 * 60_000);
   const hits: string[] = [];
   let signedIn = false;
@@ -136,13 +168,25 @@ test("brand guard: no Lasso under Charlotte", async ({ page }) => {
       "charlotte",
     );
 
-    const marks = await page.locator('[data-brand-mark="lasso"]').count();
-    if (marks) hits.push(`${surface.id}: ${marks} Lasso loop mark(s)`);
+    const theme = await page.locator("html").getAttribute("data-brand-theme");
+    expect(theme, `${surface.id} is not in the ${LOOK.label} look`).toBe(LOOK.theme);
+
+    for (const mark of LOOK.forbiddenMarks) {
+      const marks = await page.locator(`[data-brand-mark="${mark}"]`).count();
+      if (marks) hits.push(`${surface.id}: ${marks} ${mark} mark(s)`);
+    }
+    const icons = await page
+      .locator('head link[rel~="icon"], head link[rel="apple-touch-icon"], head link[rel="manifest"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
+    expect(icons.length, `${surface.id} has no icon links`).toBeGreaterThan(0);
+    for (const href of icons) {
+      if (!LOOK.iconFiles(href)) hits.push(`${surface.id}: icon file ${href}`);
+    }
     const lines = await readable(page);
     // A blank or failed page has nothing to say, so it must not pass as clean.
     expect(lines.length, `${surface.id} rendered almost nothing`).toBeGreaterThan(5);
     for (const line of lines) {
-      if (!/lasso/i.test(line)) continue;
+      if (!LOOK.forbidden.test(LOOK.notTheProduct ? line.replace(LOOK.notTheProduct, "") : line)) continue;
       if ([...FLIP_ONLY, ...USER_CONTENT].some((allowed) => allowed.test(line))) continue;
       hits.push(`${surface.id}: ${line.replace(/\s+/g, " ").slice(0, 160)}`);
     }
@@ -150,5 +194,5 @@ test("brand guard: no Lasso under Charlotte", async ({ page }) => {
 
   const unique = [...new Set(hits)];
   for (const hit of unique) console.log(`LASSO ${hit}`);
-  expect(unique, "Lasso shown under Charlotte").toEqual([]);
+  expect(unique, `another brand shown under ${LOOK.label}`).toEqual([]);
 });

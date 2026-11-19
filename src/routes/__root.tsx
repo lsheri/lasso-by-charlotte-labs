@@ -186,9 +186,10 @@ function RootShell({ children }: { children: ReactNode }) {
     // No attribute at all for Lasso, so the default page is unchanged. SkinProvider may update it after load.
     <html lang="en" data-skin={brandFor(skin).look.legacyDefault ? undefined : skin} data-brand-theme={theme}>
       <head>
-        <BrandHeadContent skin={skin} />
+        <BrandHeadContent skin={skin} variant={theme ?? "current"} />
       </head>
-      <body>
+      {/* Slate / Spool script themes every page, so the page itself is the token scope, not only the app shell. */}
+      <body data-lasso={theme ? "on" : undefined}>
         {children}
         <Scripts />
       </body>
@@ -223,13 +224,14 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SkinProvider initial={skin}>
-        <BrandVariantProvider initial={brandVariant}>
+      {/* The variant sits outside the skin, so the skin's tab title can follow it. */}
+      <BrandVariantProvider initial={brandVariant}>
+        <SkinProvider initial={skin}>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster />
-        </BrandVariantProvider>
-      </SkinProvider>
+        </SkinProvider>
+      </BrandVariantProvider>
     </QueryClientProvider>
   );
 }
