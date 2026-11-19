@@ -14,8 +14,11 @@ export const TAG_CHECK_CALLS = 12;
 export const TAG_CHECK_SITUATIONS = 6;
 /** The spec's bar: the method matches on at least this many of the 40. */
 export const TAG_CHECK_METHOD_BAR = 34;
-/** The spec's bar: cost per item unchanged within this share. */
-export const TAG_CHECK_COST_BAR = 0.1;
+/**
+ * Cost per item may rise by this share. The spec said 10%; the first live check measured 14.5%, about six thousandths
+ * of a cent per captured item, and Liam accepted up to 20% on a card (18 Nov 2026) rather than trim the role list.
+ */
+export const TAG_CHECK_COST_BAR = 0.2;
 
 export type TagCheckCase = {
   boardKey: string;
@@ -174,7 +177,7 @@ export function tagCheckLines(report: TagCheckReport, results: readonly TagCheck
     `Tokens per item, before: ${Math.round(report.tokens.beforeIn / read)} in, ${Math.round(report.tokens.beforeOut / read)} out. After: ${Math.round(report.tokens.afterIn / read)} in, ${Math.round(report.tokens.afterOut / read)} out.`,
     report.cost.change === null
       ? "Cost: no cost was reported for the calls."
-      : `Cost for all items, before: $${report.cost.beforeUsd.toFixed(6)}. After: $${report.cost.afterUsd.toFixed(6)}. Change ${pct(report.cost.change)} (bar +10.0%): ${report.cost.pass ? "PASS" : "FAIL"}.`,
+      : `Cost for all items, before: $${report.cost.beforeUsd.toFixed(6)}. After: $${report.cost.afterUsd.toFixed(6)}. Change ${pct(report.cost.change)} (bar ${pct(TAG_CHECK_COST_BAR)}): ${report.cost.pass ? "PASS" : "FAIL"}.`,
     `Items that could not be read: ${report.failed}.`,
   ];
   for (const result of results) {
