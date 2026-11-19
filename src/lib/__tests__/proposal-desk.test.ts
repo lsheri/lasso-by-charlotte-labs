@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { navFor } from "@/components/layout/nav-config";
 import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
+import { settingsChangedDims } from "@/lib/settings-events";
 import {
   checkNewProposal,
   countBand,
@@ -12,7 +13,12 @@ import {
   deskCounts,
   deskDate,
   deskView,
+  goalChoices,
   goalHours,
+  goalLabel,
+  goalToSave,
+  SENT_COPY,
+  sentInput,
   INTAKE_COPY,
   newProposalInput,
   sameClientName,
@@ -20,7 +26,7 @@ import {
   timeLeftLine,
   type DeskProposal,
 } from "@/lib/proposal-desk-shared";
-import { createProposal, listDesk, listDeskClients, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { createProposal, listDesk, listDeskClients, setProposalSent, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const ME = "22222222-2222-4222-8222-222222222222";
@@ -33,7 +39,7 @@ const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOStr
 
 const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
   id: "p", title: "Network redesign", clientName: "Marrowfield", ownerName: "Maren", mine: false, status: "open",
-  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, ...over,
+  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, ...over,
 });
 
 describe("the turnaround goal", () => {
@@ -135,11 +141,11 @@ describe("what a person may type", () => {
 
 /* ------------------------------------------------------------------------- */
 
-type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[] } };
+type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[]; sent: { id: string; sentAt: string | null }[] } };
 
 function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRow[]; owned?: string[] } = {}): Fake {
   const caller: DeskCaller = { profileId: ME, orgId: ORG, role: over.role ?? "manager", userId: "u" };
-  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [] };
+  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [], sent: [] };
   let next = 0;
   return {
     state,
@@ -157,7 +163,10 @@ function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRo
     insertProposal: async (row) => { state.proposals.push(row); return true; },
     insertContext: async (rows) => { state.context.push(...rows); return true; },
     removeProposal: async (id) => { state.proposals = state.proposals.filter((p) => p["id"] !== id); },
-    record: async (_c, _e, dims) => { state.events.push(dims); },
+    proposal: async (id) => (over.rows ?? []).find((r) => r.id === id) ?? null,
+    setSent: async (id, sentAt) => { state.sent.push({ id, sentAt }); return true; },
+    now: () => NOW,
+    record: async (_c, e, dims) => { state.events.push(e === "proposal.created" ? dims : { event: e, ...dims }); },
     newId: () => `id-${++next}`,
     ...over,
   };
@@ -171,7 +180,7 @@ describe("the dashboard read", () => {
   it("shows a member only their own, with their own document titles", async () => {
     const list = await listDesk(fakeStore({ rows }));
     expect(list.proposals.map((p) => p.id)).toEqual(["p1"]);
-    expect(list.proposals[0]).toMatchObject({ mine: true, clientName: "Marrowfield", ownerName: "Harper", contextCount: 1, contextTitles: ["Call notes"] });
+    expect(list.proposals[0]).toMatchObject({ mine: true, canAct: true, clientName: "Marrowfield", ownerName: "Harper", contextCount: 1, contextTitles: ["Call notes"] });
     expect(list.goalHours).toBe(48);
     expect(list.canSetGoal).toBe(false);
   });
@@ -181,7 +190,7 @@ describe("the dashboard read", () => {
       const list = await listDesk(fakeStore({ rows, role }));
       expect(list.proposals.map((p) => p.id)).toEqual(["p1", "p2"]);
       const theirs = list.proposals.find((p) => p.id === "p2");
-      expect(theirs).toMatchObject({ mine: false, ownerName: "Maren", contextCount: 1 });
+      expect(theirs).toMatchObject({ mine: false, canAct: true, ownerName: "Maren", contextCount: 1 });
       expect(theirs && "contextTitles" in theirs).toBe(false);
       expect(JSON.stringify(list)).not.toContain("SECRET");
       expect(list.canSetGoal).toBe(role === "admin");
@@ -255,6 +264,67 @@ describe("starting a proposal", () => {
     const store = fakeStore({ record: async () => { throw new Error("down"); } });
     expect(await createProposal(store, newProposalInput({ title: "x", client_id: CLIENT }))).toMatchObject({ ok: true });
     expect(store.state.proposals).toHaveLength(1);
+  });
+});
+
+describe("marking a proposal as sent", () => {
+  const rows = [row({ received_at: hoursAgo(20) }), row({ id: "p2", owner_id: OTHER, received_at: hoursAgo(100) }), row({ id: "p3", org_id: "another-org", owner_id: OTHER }), row({ id: "p5", status: "won", decided_at: hoursAgo(1) }), row({ id: "p6", sent_at: hoursAgo(2) })];
+  const P = (id: string, sent: boolean) => sentInput({ profile_id: ME, proposal_id: id, sent });
+  const UUIDS: Record<string, string> = { p1: "aaaaaaaa-0000-4000-8000-000000000001", p2: "aaaaaaaa-0000-4000-8000-000000000002", p3: "aaaaaaaa-0000-4000-8000-000000000003", p5: "aaaaaaaa-0000-4000-8000-000000000005", p6: "aaaaaaaa-0000-4000-8000-000000000006" };
+  const real = rows.map((r) => ({ ...r, id: UUIDS[r.id]! }));
+
+  it("lets the owner stop the clock, and records whether it was inside the goal", async () => {
+    const store = fakeStore({ rows: real });
+    expect(await setProposalSent(store, P(UUIDS["p1"]!, true))).toEqual({ ok: true });
+    expect(store.state.sent).toEqual([{ id: UUIDS["p1"], sentAt: NOW.toISOString() }]);
+    expect(store.state.events).toEqual([{ event: "proposal.sent", change: "sent", within_goal: "yes" }]);
+  });
+
+  it("lets an admin or lead do it for someone else, and says when it went out late", async () => {
+    const store = fakeStore({ rows: real, role: "lead" });
+    expect(await setProposalSent(store, P(UUIDS["p2"]!, true))).toEqual({ ok: true });
+    expect(store.state.events[0]).toMatchObject({ within_goal: "no" });
+  });
+
+  it("refuses someone else's proposal, another workspace's and a made-up id with the same words", async () => {
+    const store = fakeStore({ rows: real });
+    for (const id of [UUIDS["p2"]!, UUIDS["p3"]!, "aaaaaaaa-0000-4000-8000-00000000ffff"]) {
+      expect(await setProposalSent(store, P(id, true))).toEqual({ ok: false, problem: SENT_COPY.notYours });
+    }
+    const admin = fakeStore({ rows: real, role: "admin" });
+    expect(await setProposalSent(admin, P(UUIDS["p3"]!, true))).toEqual({ ok: false, problem: SENT_COPY.notYours });
+    expect(store.state.sent).toEqual([]);
+    expect(admin.state.sent).toEqual([]);
+  });
+
+  it("leaves a decided proposal alone, does nothing on a repeat, and can be taken back", async () => {
+    const store = fakeStore({ rows: real });
+    expect(await setProposalSent(store, P(UUIDS["p5"]!, true))).toEqual({ ok: false, problem: SENT_COPY.closed });
+    expect(await setProposalSent(store, P(UUIDS["p6"]!, true))).toEqual({ ok: true });
+    expect(store.state.sent).toEqual([]);
+    expect(await setProposalSent(store, P(UUIDS["p6"]!, false))).toEqual({ ok: true });
+    expect(store.state.sent).toEqual([{ id: UUIDS["p6"], sentAt: null }]);
+    expect(store.state.events).toEqual([{ event: "proposal.sent", change: "unsent", within_goal: "na" }]);
+  });
+
+  it("says so when the write fails, and refuses an id that is not an id", async () => {
+    const store = fakeStore({ rows: real, setSent: async () => false });
+    expect(await setProposalSent(store, P(UUIDS["p1"]!, true))).toEqual({ ok: false, problem: SENT_COPY.failed });
+    expect(store.state.events).toEqual([]);
+    expect(() => sentInput({ proposal_id: "x", sent: true })).toThrow();
+  });
+});
+
+describe("picking the goal", () => {
+  it("offers a few plain choices, keeps a saved goal that is not one of them, and saves only whole hours in range", () => {
+    expect(goalChoices(72)).toEqual([24, 48, 72, 96, 120, 168]);
+    expect(goalChoices(36)).toEqual([24, 36, 48, 72, 96, 120, 168]);
+    expect(goalLabel(24)).toBe("24 hours");
+    expect(goalLabel(72)).toBe("72 hours (3 days)");
+    expect(goalLabel(36)).toBe("36 hours");
+    expect([goalToSave("48"), goalToSave(96), goalToSave("0"), goalToSave("abc"), goalToSave(1.5), goalToSave(721), goalToSave(null)]).toEqual([48, 96, null, null, null, null, null]);
+    expect(settingsChangedDims({ section: "workspace", setting: "proposal_goal", change: "updated" })).toEqual({ section: "workspace", setting: "proposal_goal", change: "updated" });
+    expect(EVENT_DIM_KEYS["proposal.sent"]).toEqual(["change", "within_goal"]);
   });
 });
 

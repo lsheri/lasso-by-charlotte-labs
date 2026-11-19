@@ -4,9 +4,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   deskProfileInput,
   newProposalInput,
+  sentInput,
   type DeskClient,
   type DeskList,
   type NewProposalResult,
+  type SentResult,
 } from "@/lib/proposal-desk-shared";
 
 /**
@@ -32,3 +34,9 @@ export const createProposalFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(newProposalInput)
   .handler(async ({ data, context }): Promise<NewProposalResult> => (await import("./proposal-desk.server")).deskHandlers.create(context, data));
+
+/** Marks an open proposal as gone out to the client, or takes that back. The owner, an admin or a lead. */
+export const setProposalSentFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(sentInput)
+  .handler(async ({ data, context }): Promise<SentResult> => (await import("./proposal-desk.server")).deskHandlers.sent(context, data));

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { DESK_COPY, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
-import { createProposalFn, listProposalClientsFn, listProposalsFn } from "@/lib/proposal-desk.functions";
+import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalSentFn } from "@/lib/proposal-desk.functions";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 /**
@@ -77,7 +77,16 @@ export function ProposalsPage() {
             </p>
           ) : null}
           {desk.isLoading ? <p className="text-sm text-muted-foreground">{DESK_COPY.loading}</p> : null}
-          {desk.data ? <ProposalDesk data={desk.data} /> : null}
+          {desk.data ? (
+            <ProposalDesk
+              data={desk.data}
+              onSent={async (proposalId, sent) => {
+                const result = await setProposalSentFn({ data: { profile_id: profileId as string, proposal_id: proposalId, sent } });
+                if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                return result;
+              }}
+            />
+          ) : null}
         </TabsContent>
         {showPeople ? (
           <TabsContent value="people" className="pt-4">

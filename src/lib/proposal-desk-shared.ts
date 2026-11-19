@@ -15,6 +15,45 @@ export const MAX_GOAL_HOURS = 720;
 /** The key in the workspace's settings that holds its goal. */
 export const GOAL_SETTING_KEY = "proposal_goal_hours";
 
+/** The goals an admin picks from. Few and plain, so nobody types a number. */
+export const GOAL_CHOICES: readonly number[] = [24, 48, 72, 96, 120, 168];
+
+export function goalLabel(hours: number): string {
+  if (hours % 24 !== 0 || hours < 48) return hours === 1 ? "1 hour" : `${hours} hours`;
+  return `${hours} hours (${hours / 24} days)`;
+}
+
+/** The choices to offer: the fixed list, plus the saved goal when it is not one of them. */
+export function goalChoices(current: number): number[] {
+  return [...new Set([...GOAL_CHOICES, current])].sort((a, b) => a - b);
+}
+
+/** A goal an admin may save, or null. */
+export function goalToSave(value: unknown): number | null {
+  const hours = typeof value === "string" ? Number(value) : value;
+  return typeof hours === "number" && Number.isInteger(hours) && hours >= MIN_GOAL_HOURS && hours <= MAX_GOAL_HOURS ? hours : null;
+}
+
+export const GOAL_COPY = {
+  title: "Proposal turnaround goal",
+  line: "How long your firm gives itself to get a proposal out after the brief comes in. Each open proposal shows the time left against it.",
+  label: "Goal",
+  save: "Save",
+  saving: "Saving",
+  saved: "Turnaround goal saved",
+  failed: "The goal could not be saved. Nothing changed. Try again in a moment.",
+  readOnly: (hours: number) => `Your firm's goal is ${goalLabel(hours)}. An admin can change it.`,
+} as const;
+
+export const SENT_COPY = {
+  mark: "Mark as sent",
+  undo: "Not sent yet",
+  working: "Saving",
+  failed: "That could not be saved. Nothing changed. Try again in a moment.",
+  notYours: "Only the person who started this proposal, an admin or a lead can change it.",
+  closed: "This proposal is already decided.",
+} as const;
+
 export const MAX_TITLE_CHARS = 160;
 export const MAX_CLIENT_CHARS = 120;
 export const MAX_NOTES_CHARS = 8000;
@@ -103,6 +142,8 @@ export type DeskProposal = {
   /** How many context documents wait on the proposal. Titles go only to the owner. */
   contextCount: number;
   contextTitles?: string[];
+  /** May mark it sent or record the win: the person who started it, an admin or a lead. */
+  canAct: boolean;
 };
 
 export type DeskList = {
@@ -196,6 +237,17 @@ export type DeskProfileInput = { profile_id: string | null };
 export function deskProfileInput(input: { profile_id?: string | null | undefined } | undefined): DeskProfileInput {
   return { profile_id: uuidOrNull((input as Loose)?.["profile_id"]) };
 }
+
+export type SentInput = DeskProfileInput & { proposal_id: string; sent: boolean };
+
+export function sentInput(raw: { profile_id?: string | null | undefined; proposal_id: string; sent: boolean }): SentInput {
+  const loose = raw as Loose;
+  const id = uuidOrNull(loose?.["proposal_id"]);
+  if (!id) throw new Error(SENT_COPY.failed);
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), proposal_id: id, sent: loose?.["sent"] === true };
+}
+
+export type SentResult = { ok: true } | { ok: false; problem: string };
 
 export type IntakeProblem = keyof typeof INTAKE_COPY.problems;
 

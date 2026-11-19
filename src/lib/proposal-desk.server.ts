@@ -19,6 +19,8 @@ import {
   countBand,
   goalHours,
   INTAKE_COPY,
+  SENT_COPY,
+  timeLeft,
   PROPOSAL_STATUSES,
   sameClientName,
   seesAllProposals,
@@ -29,6 +31,8 @@ import {
   type NewProposalInput,
   type NewProposalResult,
   type ProposalStatus,
+  type SentInput,
+  type SentResult,
 } from "./proposal-desk-shared";
 
 type Db = SupabaseClient<Database>;
@@ -71,7 +75,12 @@ export type DeskStore = {
   insertProposal: (row: { id: string; org_id: string; client_id: string; title: string; notes: string | null; owner_id: string }) => Promise<boolean>;
   insertContext: (rows: { proposal_id: string; work_item_id: string; position: number }[]) => Promise<boolean>;
   removeProposal: (id: string) => Promise<void>;
-  record: (caller: DeskCaller, eventType: "proposal.created", dims: Record<string, string>) => Promise<void>;
+  /** One proposal, read by the server. Null when it does not exist. */
+  proposal: (id: string) => Promise<ProposalRow | null>;
+  /** Sets or clears when the proposal went out. False when nothing changed. */
+  setSent: (id: string, sentAt: string | null) => Promise<boolean>;
+  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent", dims: Record<string, string>) => Promise<void>;
+  now: () => Date;
   newId: () => string;
 };
 
@@ -108,6 +117,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       decidedAt: row.decided_at,
       engagementId: row.engagement_id,
       contextCount: items.length,
+      canAct: own || all,
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
     };
   });
@@ -177,6 +187,35 @@ export async function createProposal(store: DeskStore, input: NewProposalInput):
     /* the proposal exists; a recording fault never undoes it */
   }
   return { ok: true, id };
+}
+
+/** Whether this person may change this proposal: it is in their workspace, and they started it or are an admin or lead. */
+export function mayAct(caller: DeskCaller, row: ProposalRow | null): row is ProposalRow {
+  return row !== null && row.org_id === caller.orgId && (row.owner_id === caller.profileId || seesAllProposals(caller.role));
+}
+
+/** Marks an open proposal as gone out to the client, which stops the clock, or takes that back. */
+export async function setProposalSent(store: DeskStore, input: SentInput): Promise<SentResult> {
+  const caller = await store.caller();
+  const row = await store.proposal(input.proposal_id);
+  // Someone else's proposal and one that does not exist read the same, so an id cannot be probed.
+  if (!mayAct(caller, row)) return { ok: false, problem: SENT_COPY.notYours };
+  if (row.status !== "open") return { ok: false, problem: SENT_COPY.closed };
+  if (Boolean(row.sent_at) === input.sent) return { ok: true };
+  const now = store.now();
+  const sentAt = input.sent ? new Date(Math.max(now.getTime(), Date.parse(row.received_at) || 0)).toISOString() : null;
+  if (!(await store.setSent(row.id, sentAt))) return { ok: false, problem: SENT_COPY.failed };
+  try {
+    const goal = goalHours(await store.settings(caller.orgId));
+    const left = sentAt ? timeLeft({ receivedAt: row.received_at, sentAt, goalHours: goal, now }) : null;
+    await store.record(caller, "proposal.sent", {
+      change: input.sent ? "sent" : "unsent",
+      within_goal: left && left.state === "sent" ? (left.withinGoal ? "yes" : "no") : "na",
+    });
+  } catch {
+    /* the change is saved; a recording fault never undoes it */
+  }
+  return { ok: true };
 }
 
 /* ---------------------------------------------------------------------------
@@ -252,6 +291,15 @@ export async function realStore(context: DeskContext, profileId: string | null):
     async removeProposal(id) {
       await adminLoose.from("proposals").delete().eq("id", id).eq("org_id", caller.orgId);
     },
+    async proposal(id) {
+      const { data } = await adminLoose.from("proposals").select(PROPOSAL_COLUMNS).eq("id", id).maybeSingle();
+      return (data as ProposalRow | null) ?? null;
+    },
+    async setSent(id, sentAt) {
+      const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    now: () => new Date(),
     async record(who, eventType, dims) {
       const { recordEvent } = await import("./telemetry.server");
       await recordEvent(supabaseAdmin, { eventType, orgId: who.orgId, userId: who.userId, profileId: who.profileId, dims });
@@ -270,5 +318,8 @@ export const deskHandlers = {
   },
   async create(context: DeskContext, data: NewProposalInput): Promise<NewProposalResult> {
     return createProposal(await realStore(context, data.profile_id), data);
+  },
+  async sent(context: DeskContext, data: SentInput): Promise<SentResult> {
+    return setProposalSent(await realStore(context, data.profile_id), data);
   },
 };

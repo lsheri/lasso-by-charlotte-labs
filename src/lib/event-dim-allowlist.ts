@@ -68,6 +68,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "firm_walkthrough.opened": ["kind", "result"],
   "prepare.opened": ["result", "role_present"],
   "proposal.created": ["client", "documents", "notes"],
+  "proposal.sent": ["change", "within_goal"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],
   "proposal_draft.questions_copied": [],

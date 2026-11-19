@@ -4,6 +4,7 @@ import { useState } from "react";
 import { chipVariants } from "@/components/ui/chip";
 import { tagVariants } from "@/components/ui/tag";
 import {
+  SENT_COPY,
   DESK_COPY,
   DESK_VIEWS,
   deskCounts,
@@ -14,6 +15,7 @@ import {
   type DeskList,
   type DeskProposal,
   type DeskView,
+  type SentResult,
 } from "@/lib/proposal-desk-shared";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +24,16 @@ import { cn } from "@/lib/utils";
  * may see. One row per proposal: who it is for, what they asked for, how long it has left against the workspace's
  * own goal, and its context documents. Nothing here rates or ranks a person; a row names only who started it.
  */
-export function ProposalDesk({ data, now }: { data: DeskList; now?: Date | undefined }) {
+export function ProposalDesk({
+  data,
+  now,
+  onSent,
+}: {
+  data: DeskList;
+  now?: Date | undefined;
+  /** Marks a proposal as gone out, or takes that back. Left out, the rows are read only. */
+  onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
+}) {
   const [view, setView] = useState<DeskView>("open");
   const counts = deskCounts(data.proposals);
   const rows = deskView(data.proposals, view);
@@ -57,7 +68,7 @@ export function ProposalDesk({ data, now }: { data: DeskList; now?: Date | undef
       ) : (
         <ul className="divide-y divide-border border-y border-border">
           {rows.map((proposal) => (
-            <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} />
+            <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} />
           ))}
         </ul>
       )}
@@ -65,7 +76,32 @@ export function ProposalDesk({ data, now }: { data: DeskList; now?: Date | undef
   );
 }
 
-function ProposalRow({ proposal, goalHours, now }: { proposal: DeskProposal; goalHours: number; now?: Date | undefined }) {
+function ProposalRow({
+  proposal,
+  goalHours,
+  now,
+  onSent,
+}: {
+  proposal: DeskProposal;
+  goalHours: number;
+  now?: Date | undefined;
+  onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
+}) {
+  const [working, setWorking] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  async function press(sent: boolean) {
+    if (!onSent || working) return;
+    setWorking(true);
+    setProblem(null);
+    try {
+      const result = await onSent(proposal.id, sent);
+      if (!result.ok) setProblem(result.problem);
+    } catch {
+      setProblem(SENT_COPY.failed);
+    } finally {
+      setWorking(false);
+    }
+  }
   const left = timeLeft({ receivedAt: proposal.receivedAt, sentAt: proposal.sentAt, goalHours, now });
   const titles = proposal.contextTitles ?? [];
   return (
@@ -91,9 +127,26 @@ function ProposalRow({ proposal, goalHours, now }: { proposal: DeskProposal; goa
       </div>
       <div className="shrink-0 text-sm sm:text-right">
         {proposal.status === "open" ? (
-          <p data-proposal-clock={left.state} className={cn(left.state === "over" ? "text-destructive" : "text-foreground")}>
-            {timeLeftLine(left, goalHours)}
-          </p>
+          <>
+            <p data-proposal-clock={left.state} className={cn(left.state === "over" ? "text-destructive" : "text-foreground")}>
+              {timeLeftLine(left, goalHours)}
+            </p>
+            {onSent && proposal.canAct ? (
+              <button
+                type="button"
+                className="mt-1 text-muted-foreground underline hover:text-foreground disabled:opacity-50"
+                disabled={working}
+                onClick={() => void press(!proposal.sentAt)}
+              >
+                {working ? SENT_COPY.working : proposal.sentAt ? SENT_COPY.undo : SENT_COPY.mark}
+              </button>
+            ) : null}
+            {problem ? (
+              <p role="alert" className="mt-1 text-destructive">
+                {problem}
+              </p>
+            ) : null}
+          </>
         ) : (
           <>
             <p className="text-foreground">{proposal.status === "won" ? DESK_COPY.wonOn(deskDate(proposal.decidedAt)) : DESK_COPY.lostOn(deskDate(proposal.decidedAt))}</p>

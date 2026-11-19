@@ -4,6 +4,7 @@ import { ConnectorsSection } from "@/components/settings/ConnectorsSection";
 import { McpSection } from "@/components/settings/McpSection";
 import { DataSection } from "@/components/settings/DataSection";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
+import { ProposalGoalCard } from "@/components/settings/ProposalGoalCard";
 import { ClientsSettingCard } from "@/components/settings/ClientsSettingCard";
 import { WorkspaceKindCard } from "@/components/settings/WorkspaceKindCard";
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
@@ -62,6 +63,7 @@ const SECTIONS: SettingsSection[] = [
         <WorkspaceKindCard />
         <ClientsSettingCard />
         <NamingConventionsCard />
+        <ProposalGoalCard />
         <ActivationKeyCard />
       </div>
     ),

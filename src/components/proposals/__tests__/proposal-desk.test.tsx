@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
-import { DESK_COPY, INTAKE_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { ProposalGoalForm } from "@/components/settings/ProposalGoalCard";
+import { DESK_COPY, GOAL_COPY, INTAKE_COPY, SENT_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, params }: { children: ReactNode; params?: { id?: string } }) => <a href={`/engagements/${params?.id}/canvas-lab`}>{children}</a>,
@@ -17,7 +18,7 @@ const NOW = new Date("2026-11-20T12:00:00Z");
 const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOString();
 const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
   id: "p", title: "Network redesign", clientName: "Marrowfield", ownerName: "Maren Hollis", mine: false, status: "open",
-  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, ...over,
+  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, ...over,
 });
 const list = (proposals: DeskProposal[], goalHours = 72): DeskList => ({ goalHours, canSetGoal: false, proposals });
 
@@ -84,6 +85,74 @@ function openDialog(over: Partial<Parameters<typeof NewProposalDialog>[0]> = {})
   return props;
 }
 const file = (name: string) => new File(["x"], name, { type: "text/plain" });
+
+describe("Mark as sent", () => {
+  it("offers it only where the person may act, and only when the page can save it", () => {
+    const rows = [proposal({ id: "a", canAct: true }), proposal({ id: "b" }), proposal({ id: "c", canAct: true, sentAt: hoursAgo(1) })];
+    const { unmount } = render(<ProposalDesk now={NOW} data={list(rows)} onSent={async () => ({ ok: true })} />);
+    expect(within(document.querySelector('[data-proposal-row="a"]') as HTMLElement).getByRole("button", { name: SENT_COPY.mark })).toBeTruthy();
+    expect(within(document.querySelector('[data-proposal-row="b"]') as HTMLElement).queryByRole("button")).toBeNull();
+    expect(within(document.querySelector('[data-proposal-row="c"]') as HTMLElement).getByRole("button", { name: SENT_COPY.undo })).toBeTruthy();
+    unmount();
+    render(<ProposalDesk now={NOW} data={list(rows)} />);
+    expect(screen.queryByRole("button", { name: SENT_COPY.mark })).toBeNull();
+  });
+
+  it("saves once on a double press, and shows a refusal or a failure on the row", async () => {
+    let finish: (value: { ok: false; problem: string }) => void = () => {};
+    const onSent = vi.fn(() => new Promise<{ ok: false; problem: string }>((resolve) => { finish = resolve; }));
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canAct: true })])} onSent={onSent} />);
+    const button = screen.getByRole("button", { name: SENT_COPY.mark });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(onSent).toHaveBeenCalledTimes(1);
+    expect(onSent).toHaveBeenCalledWith("a", true);
+    finish({ ok: false, problem: SENT_COPY.closed });
+    expect((await screen.findByRole("alert")).textContent).toBe(SENT_COPY.closed);
+    onSent.mockImplementationOnce(() => Promise.reject(new Error("offline")));
+    fireEvent.click(screen.getByRole("button", { name: SENT_COPY.mark }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(SENT_COPY.failed));
+  });
+});
+
+describe("the turnaround goal in Settings", () => {
+  it("stays locked until the saved goal has loaded, then saves the pick", async () => {
+    const onSave = vi.fn(async () => true);
+    const { rerender } = render(<ProposalGoalForm saved={undefined} canEdit onSave={onSave} />);
+    const select = screen.getByLabelText(GOAL_COPY.label) as HTMLSelectElement;
+    expect(select.disabled).toBe(true);
+    rerender(<ProposalGoalForm saved={72} canEdit onSave={onSave} />);
+    expect(select.disabled).toBe(false);
+    expect(select.value).toBe("72");
+    const save = screen.getByRole("button", { name: GOAL_COPY.save }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    fireEvent.change(select, { target: { value: "48" } });
+    fireEvent.click(save);
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(48));
+    expect((await screen.findByRole("status")).textContent).toBe(GOAL_COPY.saved);
+  });
+
+  it("says so when the save is refused or fails, and keeps an unusual saved goal on the list", async () => {
+    const onSave = vi.fn().mockResolvedValueOnce(false).mockRejectedValueOnce(new Error("offline"));
+    render(<ProposalGoalForm saved={36} canEdit onSave={onSave} />);
+    const select = screen.getByLabelText(GOAL_COPY.label) as HTMLSelectElement;
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(["24", "36", "48", "72", "96", "120", "168"]);
+    for (const pick of ["96", "24"]) {
+      fireEvent.change(select, { target: { value: pick } });
+      fireEvent.click(screen.getByRole("button", { name: GOAL_COPY.save }));
+      await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(GOAL_COPY.failed));
+      fireEvent.change(select, { target: { value: "48" } });
+    }
+    expect(onSave).toHaveBeenCalledTimes(2);
+  });
+
+  it("only reads the goal out to someone who is not an admin", () => {
+    render(<ProposalGoalForm saved={48} canEdit={false} onSave={async () => true} />);
+    expect(screen.getByText(GOAL_COPY.readOnly(48))).toBeTruthy();
+    expect(screen.queryByLabelText(GOAL_COPY.label)).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+});
 
 describe("New proposal", () => {
   it("starts a proposal for an existing client with a document and notes", async () => {
