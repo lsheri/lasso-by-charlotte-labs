@@ -18,6 +18,7 @@ import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWi
 import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
 import { VerifyThreadReader } from "@/components/verify/VerifyThreadReader";
 import { JourneyView } from "@/components/journey/JourneyView";
+import { FirmStory } from "@/components/firm-story/FirmStory";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { SettingsDialogProvider, useSettingsDialog } from "@/lib/settings-dialog-context";
@@ -130,6 +131,8 @@ function AppShellInner() {
           <VerifyThreadReader />
           <JourneyView />
           <FeedbackWidget />
+          {/* The Kestrel Bay demo story: renders nothing outside the demo firm (flag, then a server check). */}
+          <FirmStory profile={profile} />
           <MobileTabBar />
         </div>
       </AskDockStateProvider>
