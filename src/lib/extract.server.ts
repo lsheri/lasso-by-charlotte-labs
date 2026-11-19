@@ -2,6 +2,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { MODELS, chatComplete, orgNameFor, type AiMeta } from "@/lib/ai.server";
+import {
+  isHandLabelled,
+  NO_TAGS,
+  parseTagReply,
+  tagAskFor,
+  tagKeysAsked,
+  tagPromptLines,
+  validateExtractedTags,
+  type ExtractedTags,
+  type TagAsk,
+  type TagContext,
+} from "@/lib/extract-tags-shared";
 import { logHealth, logHealthOncePerDay } from "@/lib/health.server";
 import { getItemText, ITEM_TEXT_COLUMNS, type TextItem } from "@/lib/item-text.server";
 import { needsTextFetch, peekFormat } from "@/lib/peek-format";
@@ -51,12 +63,24 @@ async function sha256Hex(value: string): Promise<string> {
     .join("");
 }
 
-const SYSTEM = `You compress one piece of somebody's work into a compact index card another model will read later. Be concrete and factual. Never invent. Never evaluate or grade the person. Return strict JSON with exactly these keys: summary, decisions, entities, handoff.
-- summary: 2 to 4 sentences on what this is and what happened. At most 600 characters.
+const HEAD = `You compress one piece of somebody's work into a compact index card another model will read later. Be concrete and factual. Never invent. Never evaluate or grade the person. Return strict JSON with exactly these keys: `;
+const CARD_KEYS = "summary, decisions, entities, handoff";
+const CARD_LINES = `- summary: 2 to 4 sentences on what this is and what happened. At most 600 characters.
 - decisions: what was decided or concluded, as at most 5 short bullet lines separated by newlines. At most 450 characters. null if nothing was decided.
 - entities: key names, projects, clients, tools and topics, comma separated. At most 250 characters.
-- handoff: what this fed into or what came next. At most 250 characters. null if not inferable.
-Keep the whole JSON under 1200 characters. Stop after the closing brace.`;
+- handoff: what this fed into or what came next. At most 250 characters. null if not inferable.`;
+const TAIL = `Keep the whole JSON under 1200 characters. Stop after the closing brace.`;
+const SYSTEM = `${HEAD}${CARD_KEYS}.\n${CARD_LINES}\n${TAIL}`;
+
+/**
+ * The card prompt, plus one line per firm brain tag this item is asked for (Firm Brain Build Spec, step 5: the same
+ * call, a few more output tokens). With no tags asked it is the card prompt exactly as it was.
+ */
+export function extractSystemPrompt(ask: TagAsk): string {
+  const keys = tagKeysAsked(ask);
+  if (!keys.length) return SYSTEM;
+  return `${HEAD}${CARD_KEYS}, ${keys.join(", ")}.\n${CARD_LINES}\n${tagPromptLines(ask).join("\n")}\n${TAIL}`;
+}
 
 type ExtractFields = {
   summary: string;
@@ -94,20 +118,40 @@ export function parseExtractJson(raw: string | null | undefined): ExtractFields 
   }
 }
 
-export function extractUserPrompt(title: string, text: string): string {
-  return `TITLE: ${title}\n\nCONTENT:\n${text}\n\nReturn the JSON card.`;
+export function extractUserPrompt(title: string, text: string, brief?: string | null): string {
+  // The engagement's brief rides along only on the item that carries the situation, so the model reads both.
+  const briefBlock = brief ? `ENGAGEMENT BRIEF:\n${brief}\n\n` : "";
+  return `TITLE: ${title}\n\n${briefBlock}CONTENT:\n${text}\n\nReturn the JSON card.`;
 }
 
-async function generate(
+/** What the tags need for one item, or null when it could not be worked out: then the call asks for the card only. */
+export type Tagging = { context: TagContext; brief: string | null };
+
+export type ExtractGeneration = {
+  fields: ExtractFields | null;
+  /** The tags that survived the checks, or null when none were asked for or the card could not be read. */
+  tags: ExtractedTags | null;
+  ask: TagAsk;
+  /** The model's reply as it came back, for the demo tag check only. Never stored. */
+  reply: string | null;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: number;
+};
+
+/** The one model call per captured item: the index card and, when asked, the firm brain tags. */
+export async function generateExtract(
   title: string,
   text: string,
   meta: AiMeta,
-): Promise<{ fields: ExtractFields | null; tokensIn: number; tokensOut: number; costUsd: number }> {
+  tagging: Tagging | null = null,
+): Promise<ExtractGeneration> {
+  const ask = tagging ? tagAskFor(tagging.context, tagging.context.carrier) : NO_TAGS;
   try {
     const completion = await chatComplete(
       [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: extractUserPrompt(title, text) },
+        { role: "system", content: extractSystemPrompt(ask) },
+        { role: "user", content: extractUserPrompt(title, text, tagging?.brief) },
       ],
       {
         tier: "fast",
@@ -116,8 +160,13 @@ async function generate(
         meta,
       },
     );
+    const fields = parseExtractJson(completion.text);
     return {
-      fields: parseExtractJson(completion.text),
+      fields,
+      // One reply, two readers: the card decides whether the reply counts, and the tags are checked on their own.
+      tags: fields && tagging ? validateExtractedTags(parseTagReply(completion.text), tagging.context) : null,
+      ask,
+      reply: completion.text ?? null,
       tokensIn: completion.tokensIn,
       tokensOut: completion.tokensOut,
       costUsd: completion.costUsd,
@@ -131,12 +180,59 @@ async function generate(
       detail: (e as Error).message,
       meta: { reason: "extract_failed" },
     });
-    return { fields: null, tokensIn: 0, tokensOut: 0, costUsd: 0 };
+    return { fields: null, tags: null, ask, reply: null, tokensIn: 0, tokensOut: 0, costUsd: 0 };
+  }
+}
+
+/**
+ * The tag context for one item, or null when it could not be read. Never throws: a board that will not load must not
+ * cost the item its card, and an item with no context keeps whatever tags it already had.
+ */
+async function taggingFor(item: PreparedExtract["item"]): Promise<Tagging | null> {
+  if (!item.type || isHandLabelled(item.source_meta)) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadTagContext } = await import("./extract-tags.server");
+    return await loadTagContext(supabaseAdmin as unknown as Db, { ...item, type: item.type });
+  } catch (e) {
+    console.error("[extract] tag context failed:", (e as Error).message);
+    return null;
+  }
+}
+
+/** Stores the tags after the card is written. Never throws and never fails the extract. */
+async function storeTags(item: PreparedExtract["item"], tags: ExtractedTags, ask: TagAsk): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { storeItemTags } = await import("./extract-tags.server");
+    const stored = await storeItemTags(supabaseAdmin as unknown as Db, item, tags, ask);
+    if (!stored) throw new Error("no row written");
+  } catch (e) {
+    console.error("[extract] tags not stored:", (e as Error).message);
+    void logHealth({
+      kind: "error",
+      surface: "extract",
+      orgId: item.org_id,
+      ownerId: item.owner_id,
+      detail: "extract_tags_not_stored",
+      meta: { work_item_id: item.id, reason: "tags_not_stored" },
+    });
   }
 }
 
 export type PreparedExtract = {
-  item: { id: string; title: string; owner_id: string; org_id: string };
+  item: {
+    id: string;
+    title: string;
+    owner_id: string;
+    org_id: string;
+    /** For the firm brain tags: absent on a lean read, and then no tags are asked for. */
+    type?: string | undefined;
+    visibility?: string | null | undefined;
+    work_date?: string | null | undefined;
+    meta?: unknown;
+    source_meta?: unknown;
+  };
   text: string;
   hash: string;
   unchanged: boolean;
@@ -150,7 +246,7 @@ export async function prepareExtract(workItemId: string): Promise<PreparedExtrac
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: item } = await supabaseAdmin
     .from("work_items")
-    .select(`${ITEM_TEXT_COLUMNS}, owner_id, org_id`)
+    .select(`${ITEM_TEXT_COLUMNS}, owner_id, org_id, visibility, work_date`)
     .eq("id", workItemId)
     .maybeSingle();
   if (!item) return null;
@@ -184,6 +280,11 @@ export async function prepareExtract(workItemId: string): Promise<PreparedExtrac
       title: item.title,
       owner_id: item.owner_id,
       org_id: item.org_id,
+      type: item.type,
+      visibility: item.visibility,
+      work_date: item.work_date,
+      meta: item.meta,
+      source_meta: item.source_meta,
     },
     text,
     hash,
@@ -238,7 +339,8 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
       profileId: prepared.item.owner_id,
       orgName: await orgNameFor(supabaseAdmin as unknown as Db, prepared.item.org_id),
     };
-    const { fields, tokensIn, costUsd } = await generate(prepared.item.title, prepared.text, meta);
+    const tagging = await taggingFor(prepared.item);
+    const { fields, tags, ask, tokensIn, costUsd } = await generateExtract(prepared.item.title, prepared.text, meta, tagging);
     if (!fields) {
       // The model answered but the card could not be read back. Say so out
       // loud: a silent false here is how a file ends up with no extract and
@@ -269,7 +371,10 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
       dims: { ...usageDims({ tokensIn, costUsd }), mode: "sync" },
     });
 
-    return await writeExtract(prepared, fields);
+    const written = await writeExtract(prepared, fields);
+    // Tags go on only after the card is stored, so an item never has tags from a reply its card did not come from.
+    if (written && tags) await storeTags(prepared.item, tags, ask);
+    return written;
   } catch (e) {
     console.error("[extract] ensureExtract failed:", (e as Error).message);
     await logHealth({
