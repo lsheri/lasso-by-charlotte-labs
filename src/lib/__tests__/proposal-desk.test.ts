@@ -277,6 +277,6 @@ describe("the menu row and the records", () => {
     expect(sql).toMatch(/alter table public\.proposal_context_items enable row level security/);
     expect(sql).toMatch(/revoke all on table public\.proposals from anon, authenticated/);
     expect(sql).not.toMatch(/for (insert|update|delete|all) to/i);
-    expect(sql).not.toContain("—");
+    expect(sql).not.toContain("\u2014");
   });
 });
