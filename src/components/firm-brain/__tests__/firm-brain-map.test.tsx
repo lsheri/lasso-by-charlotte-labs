@@ -26,7 +26,12 @@ const m = vi.hoisted(() => ({
   reduce: false,
   getMap: vi.fn(),
   ask: vi.fn(),
+  walk: vi.fn(),
   threeMounted: vi.fn(),
+}));
+
+vi.mock("@/lib/firm-walkthrough.functions", () => ({
+  getFirmWalkthrough: (...a: unknown[]) => m.walk(...a),
 }));
 
 vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
@@ -205,6 +210,42 @@ describe("without WebGL, or before the 3D map loads", () => {
     expect(pulled("[data-list-thread]")).toEqual(["b5"]);
   });
 
+  // Step 6: the walk-through is reachable from the plain list, with no map drawn at all.
+  it("opens a situation or a method from the list and offers its walk-through, which sends only the tag", async () => {
+    m.walk.mockReset().mockReturnValue(new Promise(() => {}));
+    wrap(<FirmBrainMap profile={member} />);
+    await waitFor(() => expect(screen.getByTestId("firm-map-list")).toBeTruthy());
+    // Every situation and method on the map is a button in the list.
+    expect(document.querySelectorAll('[data-list-node^="situation:"]')).toHaveLength(
+      graph.situations.length,
+    );
+    expect(document.querySelectorAll('[data-list-node^="method:"]')).toHaveLength(
+      graph.methods.length,
+    );
+    expect(screen.queryByTestId("firm-walkthrough")).toBeNull();
+
+    fireEvent.click(document.querySelector('[data-list-node="situation:integration"]')!);
+    expect(screen.getByTestId("firm-map-reading").getAttribute("data-reading")).toBe("node");
+    fireEvent.click(screen.getByTestId("firm-walkthrough-open"));
+    expect(m.walk).toHaveBeenLastCalledWith({
+      data: { kind: "situation", tag: "integration", profile_id: "p1" },
+    });
+
+    fireEvent.click(document.querySelector('[data-list-node="method:workshop"]')!);
+    fireEvent.click(screen.getByTestId("firm-walkthrough-open"));
+    expect(m.walk).toHaveBeenLastCalledWith({
+      data: { kind: "method", tag: "workshop", profile_id: "p1" },
+    });
+    expect(m.walk).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers no walk-through on an engagement picked from the list", async () => {
+    wrap(<FirmBrainMap profile={member} />);
+    await waitFor(() => expect(screen.getByTestId("firm-map-list")).toBeTruthy());
+    fireEvent.click(document.querySelector('[data-list-thread="b5"]')!);
+    expect(screen.queryByTestId("firm-walkthrough")).toBeNull();
+  });
+
   it("loads the 3D map by dynamic import when WebGL is there", async () => {
     m.webgl = true;
     wrap(<FirmBrainMap profile={member} />);
@@ -253,11 +294,14 @@ describe("the flat map", () => {
     fireEvent.pointerEnter(node, { pointerType: "mouse" });
     expect(pulled("[data-thread]")).toEqual([...expected].sort());
     expect(screen.getByTestId("firm-map-reading").getAttribute("data-reading")).toBe("node");
+    // Step 6: a point only under the mouse offers no walk-through; the button would vanish on the way to it.
+    expect(screen.queryByTestId("firm-walkthrough")).toBeNull();
     fireEvent.pointerLeave(node, { pointerType: "mouse" });
     expect(pulled("[data-thread]")).toEqual([]);
     fireEvent.click(node);
     expect(pulled("[data-thread]")).toEqual([...expected].sort());
     expect(node.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("firm-walkthrough-open")).toBeTruthy();
   });
 
   it("sews the threads in date order on Replay", async () => {

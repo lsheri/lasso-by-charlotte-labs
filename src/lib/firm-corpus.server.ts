@@ -207,6 +207,16 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
 }
 
 /**
+ * Everyone in the firm's workspace by display name, guests included, so a walk-through can refuse any line that names
+ * one of them. Names only, and only for that check: they are never sent to a model or shown.
+ */
+export async function readFirmPeopleNames(admin: Db, orgId: string): Promise<string[]> {
+  const { data, error } = await admin.from("profiles").select("display_name").eq("org_id", orgId);
+  if (error) throw new Error(error.message);
+  return [...new Set((data ?? []).map((row) => (row.display_name ?? "").trim()).filter((name) => name.length > 1))];
+}
+
+/**
  * The text of one item the corpus lets the asker quote. Anything else, including summary-only items, returns null:
  * a summary-only body is never loaded, so it can never be quoted by mistake.
  */
