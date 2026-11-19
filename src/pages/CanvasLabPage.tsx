@@ -220,7 +220,6 @@ import { createSerialQueue } from "@/lib/serial-queue";
 import { teammateMarkFor } from "@/lib/teammate-mark";
 import { canMarkShown } from "@/lib/client-showings-shared";
 import { useClientShowings } from "@/hooks/use-client-showings";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { ProposalStartPanel } from "@/components/firm-brain/ProposalStartPanel";
 import { RedPenPanel } from "@/components/canvas-lab/RedPenPanel";
 import { SowTermsDialog } from "@/components/canvas-lab/SowTermsDialog";
@@ -715,16 +714,16 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
     },
   });
   const grownByItem: Record<string, string[]> = boardPushes.data ?? {};
-  /** Firm brain phase 1: Shown to client marks, one read per board, behind company-brain. */
+  /** Firm brain phase 1: Shown to client marks, one read per board. */
   const clientShowings = useClientShowings({ engagementId, profile, canEdit: boardEditable });
-  // 17 Nov, firm brain: Start a proposal, for people who can edit this board, behind company-brain.
-  const proposalAllowed = canAskTheFirm(useFeatureFlag("company-brain"), profile) && boardEditable;
+  // 17 Nov, firm brain: Start a proposal, for people who can edit this board.
+  const proposalAllowed = canAskTheFirm(profile) && boardEditable;
   // 18 Nov, firm brain: admins and leads set a SOW's fee terms, so past fees are real data, not seed data.
-  const feeTermsAllowed = canAskTheFirm(useFeatureFlag("company-brain"), profile) && canSetFees(profile?.role);
+  const feeTermsAllowed = canAskTheFirm(profile) && canSetFees(profile?.role);
   // 18 Nov, firm brain step 5: the board lead and admins correct an item's tags; the server checks the same rule.
   const tagsAllowed = useCanCorrectTags({ engagementId, profile });
-  // 19 Nov, firm brain step 8: the board's reading list and exemplar marks, behind company-brain. The server checks each call.
-  const readingListAllowed = canAskTheFirm(useFeatureFlag("company-brain"), profile) && profile?.is_guest !== true;
+  // 19 Nov, firm brain step 8: the board's reading list and exemplar marks. The server checks each call.
+  const readingListAllowed = canAskTheFirm(profile) && profile?.is_guest !== true;
   const [readingListOpen, setReadingListOpen] = useState(false);
   const exemplars = useExemplars({ engagementId, profile });
   /** U2: a pushed chat and the pieces it made, derived from every item on the board (BUNDLE-1). */

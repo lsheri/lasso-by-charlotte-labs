@@ -1,16 +1,15 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { canAskTheFirm } from "@/lib/firm-ask-shared";
 import { canSeeCommonQuestions, COMMON_QUESTIONS_COPY, type CommonQuestion } from "@/lib/manager-tools-shared";
 import { commonQuestionKindsFn } from "@/lib/manager-tools.functions";
 
 type CardProfile = { id?: string | null; role?: string | null; has_firm_view?: boolean | null; org_type?: string | null; is_guest?: boolean | null };
 
-/** Who sees the card: company-brain on, a company workspace, an admin or lead, never a guest. The server checks again. */
-export function canSeeCommonQuestionsCard(flagOn: boolean, profile: CardProfile | null | undefined): boolean {
-  return canAskTheFirm(flagOn, profile) && profile?.is_guest !== true && canSeeCommonQuestions(profile?.role);
+/** Who sees the card: a company workspace, an admin or lead, never a guest. The server checks again. */
+export function canSeeCommonQuestionsCard(profile: CardProfile | null | undefined): boolean {
+  return canAskTheFirm(profile) && profile?.is_guest !== true && canSeeCommonQuestions(profile?.role);
 }
 
 /**
@@ -19,8 +18,7 @@ export function canSeeCommonQuestionsCard(flagOn: boolean, profile: CardProfile 
  * that, and there is no name, no exact count and no wording of any question anywhere on it.
  */
 export function CommonQuestionsCard({ profile }: { profile: CardProfile | null | undefined }) {
-  const flagOn = useFeatureFlag("company-brain");
-  const allowed = canSeeCommonQuestionsCard(flagOn, profile);
+  const allowed = canSeeCommonQuestionsCard(profile);
   const read = useServerFn(commonQuestionKindsFn);
   const profileId = profile?.id ?? null;
   const [lines, setLines] = useState<CommonQuestion[] | null>(null);

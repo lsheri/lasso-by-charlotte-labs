@@ -22,8 +22,7 @@ function validateWalkInput(input: WalkInput): WalkInput {
 
 /**
  * 18 Nov, Firm Brain Build Spec step 6: the walk-through for one situation or method. The same gate as Ask the firm
- * (requireFirmMember: an active member of a company workspace, never a coach or a guest); the company-brain flag only
- * hides the button. Read live from the firm reader on every call and stored nowhere, so a board with sharing turned
+ * (requireFirmMember: an active member of a company workspace, never a coach or a guest); no flag sits in front of the button. Read live from the firm reader on every call and stored nowhere, so a board with sharing turned
  * off is gone at the next request. The one event carries the tag's kind and the outcome, never the tag itself.
  */
 export const getFirmWalkthrough = createServerFn({ method: "POST" })

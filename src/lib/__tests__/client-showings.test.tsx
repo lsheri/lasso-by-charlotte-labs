@@ -140,10 +140,10 @@ describe("the board", () => {
     expect(lineUsers).toEqual(["src/components/canvas-lab/ClientShownLine.tsx", "src/components/canvas-lab/LabCard.tsx"]);
   });
 
-  it("hides behind company-brain, off by default, and records content-free events", () => {
-    expect(FEATURE_FLAGS["company-brain"].default).toBe(false);
+  it("is limited to workspaces with a firm view, with no flag in front, and records content-free events", () => {
+    expect(Object.keys(FEATURE_FLAGS)).not.toContain("company-brain");
     const hook = readFileSync("src/hooks/use-client-showings.ts", "utf8");
-    expect(hook).toContain('useFeatureFlag("company-brain")');
+    expect(hook).not.toContain("useFeatureFlag");
     expect(hook).toContain("profileHasFirmView");
     expect(EVENT_DIM_KEYS["client_showing.marked"]).toEqual(["has_occasion", "item_type"]);
     expect(EVENT_DIM_KEYS["client_showing.unmarked"]).toEqual([]);

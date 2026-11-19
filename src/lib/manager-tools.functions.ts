@@ -15,8 +15,7 @@ import {
 /**
  * 19 Nov, Firm Brain Build Spec step 8: manager tools. Each function is signed in (the middleware), validated, and
  * then handed to its call in manager-tools.server.ts, which runs the firm member gate (an active member of a company
- * workspace, never a coach or a guest) and the role rule before anything is read or written. The company-brain flag
- * only hides the screens.
+ * workspace, never a coach or a guest) and the role rule before anything is read or written. No flag sits in front of the screens.
  */
 
 /** A board's reading list, cut to engagements this reader may see. Never says who pinned. */

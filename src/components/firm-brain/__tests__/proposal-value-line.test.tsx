@@ -9,9 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProposalDraft } from "@/lib/proposal-draft-shared";
 import { LEDGER_COPY, valueSoFar, type BoardValueSoFar, type FirmValueSoFar, type LedgerKind, type LedgerRow, type LedgerValueRow } from "@/lib/proposal-ledger-shared";
 
-const m = vi.hoisted(() => ({ board: vi.fn(), firm: vi.fn(), record: vi.fn(), remove: vi.fn(), value: vi.fn(), shown: vi.fn(), confirm: vi.fn(), rpc: vi.fn(), logEvent: vi.fn(), flag: true }));
+const m = vi.hoisted(() => ({ board: vi.fn(), firm: vi.fn(), record: vi.fn(), remove: vi.fn(), value: vi.fn(), shown: vi.fn(), confirm: vi.fn(), rpc: vi.fn(), logEvent: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@/lib/proposal-ledger.functions", () => ({
   boardValueSoFar: (...a: unknown[]) => m.board(...a),
   firmValueSoFar: (...a: unknown[]) => m.firm(...a),
@@ -79,7 +78,6 @@ const deferred = <T,>() => {
 
 beforeEach(() => {
   for (const mock of Object.values(m)) if (typeof mock === "function") (mock as ReturnType<typeof vi.fn>).mockReset();
-  m.flag = true;
   m.record.mockResolvedValue({ ok: true, row: { id: "new", kind: "questions_sent", occurred_at: "2026-11-10T12:00:00.000Z" } });
   m.remove.mockResolvedValue({ ok: true });
 });
@@ -423,11 +421,7 @@ describe("the firm card, for admins and leads", () => {
     await waitFor(() => expect(card().querySelectorAll("[data-ledger-figure]").length).toBe(7));
   });
 
-  it("is hidden, and asks the server nothing, with the flag off or no profile", () => {
-    m.flag = false;
-    const off = render(<FirmProposalsCard profileId="p1" />, { wrapper: wrap });
-    expect(off.container.innerHTML).toBe("");
-    m.flag = true;
+  it("is hidden, and asks the server nothing, with no profile", () => {
     const nobody = render(<FirmProposalsCard profileId={undefined} />, { wrapper: wrap });
     expect(nobody.container.innerHTML).toBe("");
     expect(m.firm).not.toHaveBeenCalled();

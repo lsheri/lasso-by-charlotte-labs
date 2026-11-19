@@ -14,13 +14,11 @@ import type { FirmWalkthroughResult } from "@/lib/firm-walkthrough-shared";
 import { WALK_OFFER_COPY } from "@/lib/walk-offer-shared";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   tags: vi.fn(),
   save: vi.fn(),
   walk: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/firm-junior.functions", () => ({
   getFirmJuniorTags: (...a: unknown[]) => m.tags(...a),
@@ -89,7 +87,6 @@ const offer = () => screen.queryByTestId("walk-offer");
 const shown = () => waitFor(() => expect(offer()).toBeTruthy());
 
 beforeEach(() => {
-  m.flag = true;
   for (const fn of [m.tags, m.save, m.walk]) fn.mockReset();
   m.tags.mockResolvedValue(TAGS);
   m.save.mockResolvedValue({ ok: true });
@@ -128,14 +125,6 @@ describe("when the offer appears", () => {
     ["no profile", call(), null],
   ])("never appears, and asks the server nothing, for %s", async (_name, item, profile) => {
     wrap(<WalkOffer item={item} profile={profile} />);
-    await act(async () => {});
-    expect(offer()).toBeNull();
-    expect(m.tags).not.toHaveBeenCalled();
-  });
-
-  it("never appears with the flag off", async () => {
-    m.flag = false;
-    wrap(<WalkOffer item={call()} profile={analyst} />);
     await act(async () => {});
     expect(offer()).toBeNull();
     expect(m.tags).not.toHaveBeenCalled();

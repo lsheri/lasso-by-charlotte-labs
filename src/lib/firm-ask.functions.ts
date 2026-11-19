@@ -14,7 +14,7 @@ function validate(input: AskInput): AskInput {
 
 /**
  * 17 Nov, firm brain: Ask the firm. Any active member of a company workspace may ask, except coaches and guests;
- * the company-brain flag only hides the box. Answers come only from what the firm reader serves this asker, and
+ * no flag sits in front of the box. Answers come only from what the firm reader serves this asker, and
  * nothing is stored. Fees are shown to admins and leads only.
  */
 export const askTheFirm = createServerFn({ method: "POST" })

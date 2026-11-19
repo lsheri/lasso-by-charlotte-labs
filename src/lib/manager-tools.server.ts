@@ -164,7 +164,7 @@ export type CallContext = { supabase: Db; userId: string };
 
 /**
  * The one gate for every manager tool: an active member of a company workspace who is neither a coach nor a guest,
- * then that person's own firm corpus. The company-brain flag only hides the screens; this is the real check.
+ * then that person's own firm corpus. No flag sits in front of the screens; this is the real check.
  */
 async function gate(context: CallContext, profileId: string | null | undefined): Promise<ManagerContext & { supabase: Db }> {
   const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, profileId);

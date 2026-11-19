@@ -196,16 +196,15 @@ describe("privacy on the map", () => {
     );
   });
 
-  it("shows to firm members with the flag, never with it off, to a guest or a coach, or outside a company", () => {
+  it("shows to firm members, never to a guest or a coach, or outside a company", () => {
     const member = { role: "em", has_firm_view: true, org_type: "company", is_guest: false };
-    expect(canSeeFirmMap(true, member)).toBe(true);
-    expect(canSeeFirmMap(false, member)).toBe(false);
-    expect(canSeeFirmMap(true, { ...member, is_guest: true })).toBe(false);
-    expect(canSeeFirmMap(true, { ...member, role: "coach" })).toBe(false);
-    expect(canSeeFirmMap(true, { ...member, has_firm_view: false, org_type: "personal" })).toBe(
+    expect(canSeeFirmMap(member)).toBe(true);
+    expect(canSeeFirmMap({ ...member, is_guest: true })).toBe(false);
+    expect(canSeeFirmMap({ ...member, role: "coach" })).toBe(false);
+    expect(canSeeFirmMap({ ...member, has_firm_view: false, org_type: "personal" })).toBe(
       false,
     );
-    expect(canSeeFirmMap(true, null)).toBe(false);
+    expect(canSeeFirmMap(null)).toBe(false);
   });
 });
 

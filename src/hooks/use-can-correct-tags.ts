@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { supabase } from "@/integrations/supabase/client";
 import { canCorrectTags } from "@/lib/extract-tags-shared";
 import { canAskTheFirm } from "@/lib/firm-ask-shared";
 
 /**
- * Whether the board shows "Tags…" on its cards: behind company-brain, in a company workspace, for a workspace admin
+ * Whether the board shows "Tags…" on its cards: in a company workspace, for a workspace admin
  * or the board's lead (its owner). One small read per board for everyone who is not an admin. This only decides what
  * the menu shows; saveItemTagsFn checks the same rule on the server.
  */
@@ -17,7 +16,7 @@ export function useCanCorrectTags({
   engagementId: string;
   profile: { id?: string | null; role?: string | null; org_type?: string | null; has_firm_view?: boolean | null } | null | undefined;
 }): boolean {
-  const surface = canAskTheFirm(useFeatureFlag("company-brain"), profile);
+  const surface = canAskTheFirm(profile);
   const admin = profile?.role === "admin";
   const { data: ownerId } = useQuery({
     queryKey: ["board-lead", engagementId],

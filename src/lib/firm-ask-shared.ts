@@ -60,9 +60,9 @@ export function startersFor(role: string | null | undefined): FirmAskStarter[] {
   return FIRM_ASK_STARTERS.filter((starter) => starter !== "charged" || feeAccess);
 }
 
-/** Who sees the box: the company-brain flag is on, the workspace is a company, and the person is not a coach. The server checks again. */
-export function canAskTheFirm(flagOn: boolean, profile: { role?: string | null; has_firm_view?: boolean | null; org_type?: string | null } | null | undefined): boolean {
-  if (!flagOn || !profile || profile.role === "coach") return false;
+/** Who sees the box: the workspace is a company, and the person is not a coach. The server checks again. */
+export function canAskTheFirm(profile: { role?: string | null; has_firm_view?: boolean | null; org_type?: string | null } | null | undefined): boolean {
+  if (!profile || profile.role === "coach") return false;
   return typeof profile.has_firm_view === "boolean" ? profile.has_firm_view : profile.org_type === "company";
 }
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 19 Nov, Kestrel Bay demo story: the overlay in the signed-in shell. Hidden without the flag, outside the demo firm,
+// 19 Nov, Kestrel Bay demo story: the overlay in the signed-in shell. Hidden outside the demo firm,
 // when the server says no and when its check fails; both modes from one script; the "You are" chip and the handoff
 // card; explore and resume on the same beat; only the beat number is stored; reactions and the role pick leave as
 // content-free events; the product name follows the brand.
@@ -9,7 +9,6 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   access: vi.fn(),
   navigate: vi.fn(),
   log: vi.fn(),
@@ -18,7 +17,6 @@ const m = vi.hoisted(() => ({
   brand: "Charlotte",
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => m.navigate,
@@ -58,7 +56,6 @@ async function start() {
 }
 
 beforeEach(() => {
-  m.flag = true;
   m.path = "/home";
   m.search = "?tour=1";
   m.brand = "Charlotte";
@@ -73,14 +70,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("who sees the story", () => {
-  it("renders nothing and calls nothing without the flag", async () => {
-    m.flag = false;
-    mount();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.queryByTestId("firm-story")).toBeNull();
-    expect(m.access).not.toHaveBeenCalled();
-  });
-
   it("renders nothing and calls nothing for a profile in another workspace, or with no profile", async () => {
     mount({ id: "p9", org_id: "15db4d78-eed3-4443-b9ef-437a67ad1b79" });
     mount(null);
@@ -89,7 +78,7 @@ describe("who sees the story", () => {
     expect(m.access).not.toHaveBeenCalled();
   });
 
-  it("renders nothing when the server says no, even in the demo firm with the flag on", async () => {
+  it("renders nothing when the server says no, even in the demo firm", async () => {
     m.access.mockResolvedValue({ allowed: false });
     mount();
     await waitFor(() => expect(m.access).toHaveBeenCalledWith({ data: { profile_id: "p1" } }));

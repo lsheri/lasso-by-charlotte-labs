@@ -256,7 +256,7 @@ describe("where the reading list and the exemplar mark may appear", () => {
     expect(users("ReadingListDialog")).toEqual(["src/components/canvas-lab/ReadingListDialog.tsx", "src/pages/CanvasLabPage.tsx"]);
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     expect(page).toContain("{readingListAllowed ? <DropdownMenuItem onSelect={() => setReadingListOpen(true)}>{READING_LIST_COPY.menu}</DropdownMenuItem> : null}");
-    expect(page).toContain('const readingListAllowed = canAskTheFirm(useFeatureFlag("company-brain"), profile) && profile?.is_guest !== true;');
+    expect(page).toContain('const readingListAllowed = canAskTheFirm(profile) && profile?.is_guest !== true;');
     // The entry sits in the measured toolbar's overflow menu, beside Start a proposal and How it ended.
     const toolbar = page.slice(page.indexOf("<BoardToolbarSurface items={boardToolbarItems}"));
     expect(toolbar.slice(0, toolbar.indexOf("/>"))).toContain("READING_LIST_COPY.menu");
