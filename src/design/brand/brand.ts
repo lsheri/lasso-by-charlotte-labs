@@ -1,6 +1,7 @@
 // Phase 4: one brand per skin, all or nothing (Liam, 15 Nov 2026). Charlotte shows no Lasso name or mark anywhere,
 // and Lasso shows no Charlotte. Every name, wordmark and Ask label a surface shows reads from here, so the rename
 // lives in one file. Code names (lasso_* tools, --lasso-* tokens, data-lasso, events) never change.
+import type { BrandVariant } from "@/lib/brand-variant-shared";
 import type { Skin } from "@/lib/skin";
 
 export type Brand = {
@@ -18,8 +19,8 @@ export type Brand = {
 };
 
 export type BrandLook = {
-  /** The still and live mark: Lasso's loop, or Charlotte's C with its live hub. */
-  mark: "loop" | "charlotte";
+  /** The still and live mark: Lasso's loop, Charlotte's C with its live hub, or the Spool script's thread. */
+  mark: "loop" | "charlotte" | "spool";
   /** GraphiteIcon's glyphs: the hand-drawn animated set, or the Exhibit set (stroke 1.5, still). */
   glyphs: "graphite" | "exhibit";
   /** Work-kind icons: Lucide, or the Exhibit kind glyphs. */
@@ -45,8 +46,21 @@ export const BRANDS: Record<Skin, Brand> = {
   },
 };
 
-export function brandFor(skin: Skin): Brand {
-  return BRANDS[skin];
+/**
+ * Slate / Spool script (19 Nov 2026, brand exploration): the current skin with the Spool script mark and the LASSO
+ * wordmark. Only the mark and the wordmark change here; the colours are the [data-brand-theme="slate-spool"] scope in
+ * tokens.css. The name in sentences and the Ask label stay the skin's until Liam decides the name.
+ */
+const SLATE_SPOOL: Pick<Brand, "wordmark"> & { mark: BrandLook["mark"] } = { wordmark: "LASSO", mark: "spool" };
+
+/**
+ * The brand a surface shows: the skin's, in the given variant. The variant never applies to the original Lasso skin,
+ * which stays exactly as it was.
+ */
+export function brandFor(skin: Skin, variant: BrandVariant = "current"): Brand {
+  const brand = BRANDS[skin];
+  if (variant !== "slate-spool" || brand.look.legacyDefault) return brand;
+  return { ...brand, wordmark: SLATE_SPOOL.wordmark, look: { ...brand.look, mark: SLATE_SPOOL.mark } };
 }
 
 /**
@@ -77,7 +91,8 @@ export function brandCopy(brand: Brand, text: string): string {
     .replace(ASK_AS_VERB, `Ask ${brand.name}`)
     .replaceAll("Ask Lasso", brand.askLabel)
     .replaceAll("ASK LASSO", brand.askLabel.toUpperCase())
-    .replaceAll("LASSO", brand.wordmark)
+    // The name in capitals, not the lockup's wordmark: a theme can change the wordmark alone (Slate / Spool script).
+    .replaceAll("LASSO", brand.name.toUpperCase())
     .replaceAll("Lasso", brand.name);
 }
 

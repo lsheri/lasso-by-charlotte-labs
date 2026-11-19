@@ -6,6 +6,7 @@
  * expiring Figma asset URL or an external image fetch.
  */
 import { useBrand } from "@/components/skin/use-skin";
+import { SpoolScriptMark } from "@/design/brand/SpoolScriptMark";
 import { CharlotteMark } from "@/design/brand/CharlotteMark";
 
 import { LassoLoopMark } from "./LassoLoopMark";
@@ -26,10 +27,20 @@ export function BrandLockup({
   markClassName?: string;
 }) {
   const s = SIZES[size];
+  const brand = useBrand();
+  if (brand.look.mark === "spool") {
+    // The Spool script lockup: the gap is 0.22 of the mark, and the wordmark is medium caps at .22em.
+    return (
+      <span className={`inline-flex items-center ${className}`} style={{ gap: Math.round(s.px * 0.22 * 100) / 100 }}>
+        <BrandMark className={`${s.mark} shrink-0 ${markClassName}`} px={s.px} />
+        <span className={`font-mono ${s.word} font-medium tracking-[0.22em] text-foreground`}>{brand.wordmark}</span>
+      </span>
+    );
+  }
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <BrandMark className={`${s.mark} shrink-0 ${markClassName}`} px={s.px} />
-      <span className={`font-mono ${s.word} tracking-[0.24em] text-foreground`}>{useBrand().wordmark}</span>
+      <span className={`font-mono ${s.word} tracking-[0.24em] text-foreground`}>{brand.wordmark}</span>
     </span>
   );
 }
@@ -39,7 +50,16 @@ export function BrandLockup({
  * Lasso keeps the caller's className exactly; Charlotte sizes a fixed block to `px`, matching the class's size.
  */
 export function BrandMark({ className = "", px }: { className?: string; px: number }) {
-  if (useBrand().look.mark !== "charlotte") return <LassoLoopMark className={className} />;
+  const mark = useBrand().look.mark;
+  if (mark === "spool") {
+    // At rest wherever the still mark sits (nav, headers, sign-in): the thread is lime only while work is happening.
+    return (
+      <span className="shrink-0" style={{ display: "block", width: px, height: px }} aria-hidden="true" data-skin-mark="spool">
+        <SpoolScriptMark state="rest" size={px} />
+      </span>
+    );
+  }
+  if (mark !== "charlotte") return <LassoLoopMark className={className} />;
   return (
     <span className="shrink-0" style={{ display: "block", width: px, height: px }} aria-hidden="true" data-skin-mark="charlotte">
       <CharlotteMark state="live" size={px} />

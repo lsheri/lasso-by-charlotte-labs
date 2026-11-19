@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { useBrand } from "@/components/skin/use-skin";
+import { SpoolScriptMark } from "@/design/brand/SpoolScriptMark";
 import { CharlotteMark } from "@/design/brand/CharlotteMark";
 
 import {
@@ -248,7 +249,31 @@ function runSignature(
  * hook order inside one. Lasso renders the canvas exactly as before.
  */
 export function LassoThinkingMark(props: LassoThinkingMarkProps) {
-  return useBrand().look.mark === "charlotte" ? <CharlotteThinkingMark {...props} /> : <LassoCanvasMark {...props} />;
+  const mark = useBrand().look.mark;
+  if (mark === "spool") return <SpoolThinkingMark {...props} />;
+  return mark === "charlotte" ? <CharlotteThinkingMark {...props} /> : <LassoCanvasMark {...props} />;
+}
+
+/**
+ * Spool script: the thread turns lime only while the product is actually reading, on the same rule as Charlotte's
+ * web (the toolbar's persistent mark is a standing button, so it stays at rest). The same data attributes as the
+ * canvas, and aria-hidden, so the surrounding UI keeps announcing "Reading".
+ */
+function SpoolThinkingMark({ kind, size, thinking = false, rope = true, persistent = false, className }: LassoThinkingMarkProps) {
+  const reading = kind === "signature" ? thinking && !persistent : true;
+  return (
+    <span
+      className={className}
+      style={{ display: "block", width: size, height: size }}
+      aria-hidden="true"
+      data-lasso-thinking-mark={kind}
+      data-thinking={kind === "signature" ? (thinking ? "true" : "false") : undefined}
+      data-rope={rope ? "true" : "false"}
+      data-skin-mark="spool"
+    >
+      <SpoolScriptMark state={reading ? "live" : "rest"} size={size} />
+    </span>
+  );
 }
 
 /**

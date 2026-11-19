@@ -5,7 +5,7 @@
  * Rules, enforced by src/design/__tests__/brand-marks.test.ts:
  * - Only these files draw a mark (inline SVG, canvas or image). Everything else renders one of the switches below,
  *   which pick the mark from the skin.
- * - Each file tags the element it draws with data-brand-mark="lasso" | "charlotte". The brand guard
+ * - Each file tags the element it draws with data-brand-mark="lasso" | "charlotte" | "slate-spool". The brand guard
  *   (tests/e2e/brand-guard.spec.ts) fails on any data-brand-mark="lasso" under Charlotte.
  * - The Lasso-only components are imported only by a switch.
  *
@@ -24,6 +24,7 @@ export const DRAWINGS = {
   "src/components/canvas-lab/ask-draft/AskLiveMark.tsx": "Lasso: the Ask box loop with its light; also the switch to Charlotte's",
   "src/design/brand/CharlotteMark.tsx": "Charlotte: the Monoline C and its reading web",
   "src/design/brand/CharlotteTile.tsx": "Charlotte: the lapel tile (icons, stories)",
+  "src/design/brand/SpoolScriptMark.tsx": "Slate / Spool script: the spool and the thread that writes the l",
 } as const;
 
 /** Components that choose the mark from the skin. Screens render these, never a drawing directly. */
