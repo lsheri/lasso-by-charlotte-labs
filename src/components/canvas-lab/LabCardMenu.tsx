@@ -1,4 +1,5 @@
 import { MoreHorizontal } from "@/design/brand/icons";
+import { ITEM_TAGS_COPY } from "@/lib/extract-tags-shared";
 import { RED_PEN_COPY } from "@/lib/red-pen-shared";
 import { SOW_TERMS_COPY } from "@/lib/sow-terms-shared";
 
@@ -40,6 +41,7 @@ export function LabCardMenu({
   onClientShown,
   onRedPen,
   onSowTerms,
+  onTags,
   cardFace,
   onCardFaceChange,
 }: {
@@ -78,6 +80,8 @@ export function LabCardMenu({
   onRedPen?: (() => void) | undefined;
   /** 18 Nov, firm brain: set a SOW's fee terms. Admins and leads only, behind company-brain. */
   onSowTerms?: (() => void) | undefined;
+  /** 18 Nov, firm brain step 5: correct this item's tags. The board lead and admins only, behind company-brain. */
+  onTags?: (() => void) | undefined;
   /** FACE-3: both present on the board only. */
   cardFace?: CardFace | undefined;
   onCardFaceChange?: ((face: CardFace) => void) | undefined;
@@ -118,6 +122,7 @@ export function LabCardMenu({
         {onClientShown && clientShownLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onClientShown}>{clientShownLabel}</DropdownMenuItem> : null}
         {onRedPen ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRedPen}>{RED_PEN_COPY.menu}</DropdownMenuItem> : null}
         {onSowTerms ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onSowTerms}>{SOW_TERMS_COPY.menu}</DropdownMenuItem> : null}
+        {onTags ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTags}>{ITEM_TAGS_COPY.menu}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator className="canvas-lab-menu-sep" />
         {local ? (
