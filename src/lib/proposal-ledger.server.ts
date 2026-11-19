@@ -368,7 +368,7 @@ export async function readBoardValueSoFar(actor: Omit<LedgerActor, "admin">, eng
   const editor = isOwner || (await isEditor(userDb, engagementId, profile.id));
   const shared = Boolean(board.shared_with_firm);
   const archived = Boolean(board.archived_at);
-  const access = ledgerAccess({ role: profile.role, isOwner, shared, archived });
+  const access = ledgerAccess({ role: profile.role, isOwner, isEditor: editor, shared, archived });
   const canSetValue = canSetLedgerValue({ role: profile.role, isOwner, isEditor: editor, shared, archived });
   if (access === "none") return { ...none, canSetValue, shared };
   const rows = await readLedger(userDb, { orgId: profile.org_id, engagementId });

@@ -115,7 +115,7 @@ describe("each role, for every server function", () => {
     });
   });
 
-  it("boardValueSoFar on an unshared board: only its owner sees rows, and an em owner sees no value anywhere", async () => {
+  it("boardValueSoFar on an unshared board: its owner and an admin who can edit it are let in, and an em owner sees no value anywhere", async () => {
     const seen: Record<string, unknown> = {};
     for (const who of ROLES) {
       const result = await status(
@@ -127,8 +127,9 @@ describe("each role, for every server function", () => {
       if (result !== "ok") seen[who] = result;
     }
     expect(seen).toEqual({
-      // The admin is on the board, so may set its value, but the database shows them nothing on an unshared board.
-      admin: ["none", 0, true],
+      // The admin can edit the board, so may set its value and read the ledger. The rows themselves come from the
+      // database's read rule (20261119130000), which this test's stand-in does not model, so it hands back none.
+      admin: ["partner", 0, true],
       lead: ["none", 0, false],
       owner: ["owner", 2, false],
       editor: ["none", 0, false],
