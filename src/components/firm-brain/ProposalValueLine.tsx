@@ -22,6 +22,7 @@ import {
 import { boardValueSoFar, recordProposalStep, removeProposalStep, setProposalValue } from "@/lib/proposal-ledger.functions";
 
 import { ProposalLedgerFigures } from "./ProposalLedgerFigures";
+import { WonTextButton } from "./WonTextButton";
 
 type Editing = { what: "step"; kind: HumanKind; exists: boolean } | { what: "value" } | null;
 
@@ -297,6 +298,7 @@ export function ProposalValueLine({
             </span>
           </div>
           {editingStep && (editingStep.kind === "won" || editingStep.kind === "lost") ? stepForm(editingStep.kind, editingStep.exists) : null}
+          {timeline.outcome?.kind === "won" && !editingStep ? <WonTextButton engagementId={engagementId} profileId={profileId} /> : null}
           {data.finished && !timeline.outcome && data.canEdit ? <p data-ledger-finished-hint className="mt-1 text-muted-foreground">{LEDGER_COPY.finishedHint}</p> : null}
         </li>
       </ol>

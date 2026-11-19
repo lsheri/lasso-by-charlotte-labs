@@ -23,6 +23,8 @@ vi.mock("@/lib/firm-ask.functions", () => ({ previewFirmSource: vi.fn(), keepOut
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.logEvent(...a) }));
 // 19 Nov: the panel now carries the proposal's "Value so far" line. Here it reads as someone the database shows
 // nothing, so it renders nothing; the line has its own tests in proposal-value-line.test.tsx.
+// "Text the lead" has its own test; here the server says this person has no such button.
+vi.mock("@/lib/won-text.functions", () => ({ wonTextStatus: async () => ({ show: false }), sendWonText: async () => ({ ok: false, problem: "" }) }));
 vi.mock("@/lib/proposal-ledger.functions", () => ({
   boardValueSoFar: async () => ({ scope: "board", access: "none", canEdit: false, canSeeValue: false, canSetValue: false, shared: false, finished: false, rows: [], sources: {} }),
   recordProposalStep: vi.fn(),
