@@ -41,11 +41,13 @@ export function firmMemoryOf(item: { type: string; meta: unknown; shownToClient:
 /**
  * How the asker may read one item, or null when it stays out. Summary only becomes full for people on that board
  * (Liam, 17 Nov: "people who own a board or collaborate on it get that board's full notes"). Out stays out for
- * everyone: it is the author's or owner's explicit choice.
+ * everyone: it is the author's or owner's explicit choice. A call never opens in full for someone off its board, even
+ * when it is marked In or shown to the client: a transcript holds other people's words (Liam, 18 Nov 2026).
  */
-export function firmGrade(memory: FirmMemory, askerIsOnBoard: boolean): FirmGrade | null {
+export function firmGrade(memory: FirmMemory, askerIsOnBoard: boolean, type?: string): FirmGrade | null {
   if (memory === "out") return null;
-  if (memory === "in" || askerIsOnBoard) return "full";
+  if (askerIsOnBoard) return "full";
+  if (memory === "in" && type !== "call") return "full";
   return "summary";
 }
 

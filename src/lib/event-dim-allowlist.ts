@@ -19,6 +19,21 @@
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 import { WORKBOARD_EVENT_DIMS } from "./workboard-event-allowlist";
 
+/**
+ * Dimensions that stay in our own events table and are never copied to PostHog, where an event can be joined to a
+ * person. A question's topic next to a person would show who asks about what (Liam, 18 Nov 2026).
+ */
+export const LEDGER_ONLY_DIMS: Partial<Record<TelemetryEvent, readonly string[]>> = {
+  "firm_ask.asked": ["topic"],
+};
+
+/** The dims a PostHog copy of this event may carry. */
+export function mirrorDims(eventType: TelemetryEvent, dims: TelemetryDims): TelemetryDims {
+  const held = LEDGER_ONLY_DIMS[eventType];
+  if (!held?.length) return dims;
+  return Object.fromEntries(Object.entries(dims).filter(([key]) => !held.includes(key))) as TelemetryDims;
+}
+
 /** Closed landing.see_it_work_clicked.location vocabulary. */
 export const LANDING_SEE_IT_WORK_LOCATIONS = ["hero", "hero_workboard"] as const;
 

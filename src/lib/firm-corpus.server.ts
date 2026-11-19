@@ -118,7 +118,7 @@ export function assembleFirmCorpus(orgId: string, rows: FirmRows): FirmCorpus {
       .filter((showing) => showing.work_item_id === item.id && showing.engagement_id === boardId)
       .map((showing) => ({ on: showing.shown_on, occasion: showing.occasion }))
       .sort((a, b) => a.on.localeCompare(b.on));
-    const grade = firmGrade(firmMemoryOf({ type: item.type, meta: item.meta, shownToClient: shown.length > 0 }), askerOn.has(boardId));
+    const grade = firmGrade(firmMemoryOf({ type: item.type, meta: item.meta, shownToClient: shown.length > 0 }), askerOn.has(boardId), item.type);
     if (!grade) continue;
     const meta = item.meta && typeof item.meta === "object" ? (item.meta as Record<string, unknown>) : {};
     const card = latest.get(item.id);

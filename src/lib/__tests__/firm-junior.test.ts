@@ -330,7 +330,7 @@ describe("Prepare me", () => {
           : item,
       ),
     });
-    expect(marked.items.find((item) => item.id === target.id)!.grade).toBe("full");
+    expect(marked.items.find((item) => item.id === target.id)!.grade).toBe("summary");
     const { result, loaded } = await prepare(marked, "clinical_department_chief");
     expect(loaded).not.toContain(target.id);
     expect(result.entries.find((entry) => entry.itemId === target.id)!.grade).toBe("covered");

@@ -380,7 +380,7 @@ describe("the walk-through", () => {
       (item) => item.type === "call" && (item.methods ?? []).includes("expert_calls"),
     )!;
     const marked = corpusOf(withItem(demoRows(), call.id, { meta: { firm_memory: "in" } }));
-    expect(marked.items.find((item) => item.id === call.id)!.grade).toBe("full");
+    expect(marked.items.find((item) => item.id === call.id)!.grade).toBe("summary");
     // Three boards so the engine reads: the marked call's board and two more with the same method.
     const tagged: FirmCorpus = {
       ...marked,
