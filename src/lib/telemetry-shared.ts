@@ -550,6 +550,10 @@ export type TelemetryEvent =
   | "proposal_draft.section_confirmed"
   /** 17 Nov, firm brain: the proposal owner copied the questions for the lead. No dims. Portal registration required. */
   | "proposal_draft.questions_copied"
+  /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */
+  | "proposal_text.pressed"
+  /** 19 Nov, Proposal Desk: what that press came to. Dims: channel (sms), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */
+  | "proposal_text.result"
   /** 17 Nov, firm brain: the red pen checked a deliverable. Dims: claims, unsupported, weak (bucketed counts). Portal registration required. */
   | "red_pen.ran"
   /** 17 Nov, firm brain: a red pen claim's source was opened. Dims: grade (sourced | weak | unsupported). Portal registration required. */

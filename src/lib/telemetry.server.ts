@@ -390,6 +390,20 @@ export async function resolveConsentStamp(
 }
 
 /**
+ * How many events of one name a workspace has recorded since a moment. A number and nothing else: no row, hash,
+ * profile or dimension is read back, so a daily limit can count its own event without becoming a view of who did what.
+ * Null when the count could not be read; a caller that limits on it must treat null as "do not proceed".
+ */
+export async function countEventsSince(supabase: SupabaseClient<Database>, input: { orgId: string; eventType: TelemetryEvent; since: string }): Promise<number | null> {
+  try {
+    const { count, error } = await supabase.from("events").select("id", { count: "exact", head: true }).eq("org_id", input.orgId).eq("event_type", input.eventType).gte("server_ts", input.since);
+    return error || typeof count !== "number" ? null : count;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The single write path for telemetry: the canonical events row plus the
  * content-free PostHog mirror. Never throws.
  */

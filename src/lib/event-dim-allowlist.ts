@@ -73,6 +73,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "proposal_draft.section_confirmed": [],
   "proposal_draft.precedents_shown": ["close", "loose"],
   "proposal_draft.started": ["input_kind"],
+  "proposal_text.pressed": ["channel"],
+  "proposal_text.result": ["channel", "outcome"],
   "red_pen.claim_opened": ["grade"],
   "red_pen.ran": ["claims", "unsupported", "weak"],
   "sow_terms.saved": ["action", "basis"],

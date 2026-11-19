@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { TIER_COPY } from "@/lib/data-consent-shared";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { LegalLinks } from "@/components/legal/LegalPage";
 import { useBrand } from "@/components/skin/use-skin";
 import { brandCopyDeep } from "@/design/brand/brand";
 
@@ -193,6 +194,9 @@ function TrustPage() {
             >
               {C.back}
             </Link>
+            <div className="mt-4">
+              <LegalLinks current="/trust" />
+            </div>
           </div>
         </div>
       </main>

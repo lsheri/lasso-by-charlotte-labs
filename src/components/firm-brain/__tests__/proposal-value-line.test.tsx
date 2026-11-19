@@ -20,6 +20,8 @@ vi.mock("@/lib/proposal-ledger.functions", () => ({
   noteProposalShown: (...a: unknown[]) => m.shown(...a),
 }));
 vi.mock("@/lib/proposal.functions", () => ({ confirmProposalSection: (...a: unknown[]) => m.confirm(...a) }));
+// "Text the lead" has its own test; here the server says this person has no such button.
+vi.mock("@/lib/won-text.functions", () => ({ wonTextStatus: async () => ({ show: false }), sendWonText: async () => ({ ok: false, problem: "" }) }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.logEvent(...a) }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
