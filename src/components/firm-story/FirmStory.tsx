@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useBrand } from "@/components/skin/use-skin";
@@ -13,6 +13,7 @@ import {
   STORY_BOARD_ID,
   STORY_DONE,
   firstBeatFor,
+  forgetOtherStoryBeats,
   invitedBySearch,
   isAtPlace,
   modeFromSearch,
@@ -39,8 +40,11 @@ type StoryProfile = { id: string; org_id: string } | null | undefined;
  * view and the proposal board. It can show only when the company-brain flag is on, the active profile is in the demo
  * firm's workspace, and the server agrees (firmStoryAccessFn). For everyone else it renders nothing and calls nothing.
  *
- * Even then the entry is opt-in: there is no start button unless the address carries `?tour` or this person already
- * started in this tab, so an ordinary demo of the firm shows no trace of the story.
+ * Even then the entry is opt-in: unless the address carries `?tour` or this person already started in this tab,
+ * there is no start button, no request to the server and no watching of the page, so an ordinary demo of the firm
+ * shows no trace of the story.
+ *
+ * The one thing it does for everyone: forget a story beat that someone else left in this tab's session storage.
  *
  * It writes no product rows. The beat number is kept in session storage; presenter mode, "exploring" and the taps on
  * a card live in memory. The firm_story.* events are emitted here and nowhere else.
@@ -48,41 +52,67 @@ type StoryProfile = { id: string; org_id: string } | null | undefined;
 export function FirmStory({ profile }: { profile: StoryProfile }) {
   const flag = useFeatureFlag("company-brain");
   const inDemoFirm = profile?.org_id === KESTREL_BAY_ORG_ID;
+  const profileId = profile?.id ?? null;
+  const search = useRouterState({ select: (state) => state.location.searchStr ?? "" });
+
+  // Whoever is signed in, in any workspace: a beat left in this tab by someone else is removed, never read.
+  useEffect(() => {
+    if (profileId) forgetOtherStoryBeats(profileId);
+  }, [profileId]);
+
+  // Opted in: the tour link was in the address at some point on this page, or this person's story was already under
+  // way in this tab. It is remembered for that person only, and until the page is reloaded.
+  const [optedIn, setOptedIn] = useState<string | null>(() => (profileId && hasOptedIn(profileId, here()) ? profileId : null));
+  useEffect(() => {
+    if (profileId && hasOptedIn(profileId, search)) setOptedIn(profileId);
+  }, [search, profileId]);
+  const invited = profileId !== null && optedIn === profileId;
+
   const readAccess = useServerFn(firmStoryAccessFn);
   const access = useQuery({
-    queryKey: ["firm-story-access", profile?.id ?? null],
-    enabled: flag && inDemoFirm,
+    queryKey: ["firm-story-access", profileId],
+    // Not asked at all for a person who was not given the link and has not started.
+    enabled: flag && inDemoFirm && invited,
     staleTime: 5 * 60_000,
     retry: false,
-    queryFn: () => readAccess({ data: { profile_id: profile?.id ?? null } }),
+    queryFn: () => readAccess({ data: { profile_id: profileId } }),
   });
 
-  if (!flag || !inDemoFirm || !profile || !access.data?.allowed) return null;
+  if (!flag || !inDemoFirm || !profile || !invited || !access.data?.allowed) return null;
   // Keyed by the person, so a change of profile starts from that person's own stored beat and nothing else.
   return <FirmStoryStage key={profile.id} profileId={profile.id} orgId={profile.org_id} window={access.data.window} />;
 }
 
 const here = () => globalThis.location?.search ?? "";
+const hasOptedIn = (profileId: string, search: string) => invitedBySearch(search) || readStoredBeat(profileId) !== null;
+
+/** Wide screens: the frame starts past the sidebar, by the sidebar's own width token, or past the board's 52px rail. */
+const PAST_SIDEBAR = "md:pl-[calc(var(--nav-width)+0.875rem)]";
+const PAST_BOARD_RAIL = "md:pl-[calc(52px+1rem)]";
 
 function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: string; orgId: string; window: "partner" | "lead" }) {
   const brand = useBrand();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const search = useRouterState({ select: (state) => state.location.searchStr ?? "" });
-  const dialogOpen = useDialogOpen();
+  // The stage is mounted only for a person who opted in, so the page is watched for dialogs only for them.
+  const dialogOpen = useDialogOpen(true);
 
   // Read in the first render, not in an effect: a reload mid-story must not paint the start button for a frame.
   const [beat, setBeatState] = useState<number | null>(() => readStoredBeat(profileId));
-  // Opted in: the tour link was in the address at some point on this page, or the story was already under way.
-  const [invited, setInvited] = useState(() => invitedBySearch(here()) || readStoredBeat(profileId) !== null);
   const [exploring, setExploring] = useState(false);
   const [mode, setMode] = useState<StoryMode>(() => modeFromSearch(here()));
   const [reactions, setReactions] = useState<Record<number, StoryReaction>>({});
   const [rolePick, setRolePick] = useState<StoryRolePick | null>(null);
 
+  // After End tour or Explore the pressed button is gone with its card: hand the keyboard to the button that
+  // replaces it, so the next Tab does not start from the top of the page.
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const focusLauncher = useRef(false);
   useEffect(() => {
-    if (invitedBySearch(search)) setInvited(true);
-  }, [search]);
+    if (!focusLauncher.current || !launcherRef.current) return;
+    focusLauncher.current = false;
+    launcherRef.current.focus();
+  });
 
   const version = FIRM_STORY_SCRIPT.version;
   const emit = useCallback(
@@ -118,16 +148,15 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
     setExploring(false);
     setReactions({});
     setRolePick(null);
+    focusLauncher.current = true;
   }, [profileId]);
 
   const view = storyView(storyWindow, beat);
-  if (view.kind === "idle" && !invited) return null;
-
-  // An open dialog wins: the card collapses, and the frame drops to the dialogs' own layer, where the dialog and
-  // its scrim (later in the page) sit over it. Otherwise it is above the board page, a full-screen layer of its own.
-  const layer = dialogOpen ? "z-(--layer-backdrop)" : "z-(--layer-ledger)";
+  // An open dialog wins: the card collapses, and the frame drops below the dialogs' layer, so every dialog and its
+  // scrim sit over it wherever they are in the page. Otherwise it is above the board page, a full-screen layer.
+  const layer = dialogOpen ? "z-(--layer-tabbar)" : "z-(--layer-ledger)";
   // Wide screens: bottom left, past the sidebar (or the board page's narrow rail), never over the sidebar's footer.
-  const gutter = /\/canvas-lab(\/|$)/.test(pathname) ? "md:pl-[4.25rem]" : "md:pl-[17rem]";
+  const gutter = /\/canvas-lab(\/|$)/.test(pathname) ? PAST_BOARD_RAIL : PAST_SIDEBAR;
   const frame = `pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] ${layer} flex justify-center px-4 md:bottom-4 md:justify-start ${gutter} print:hidden`;
 
   if (view.kind === "idle" || exploring || dialogOpen) {
@@ -140,6 +169,7 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
             variant="outline"
             size="sm"
             data-testid="firm-story-launcher"
+            ref={launcherRef}
             onClick={() => {
               if (resuming) {
                 setExploring(false);
@@ -203,6 +233,7 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
             onBack={() => (beat === null ? undefined : moveTo(previousBeat(storyWindow, beat)))}
             onExplore={() => {
               if (shown) emit("firm_story.explored", { beat: shown.n, mode });
+              focusLauncher.current = true;
               setExploring(true);
             }}
             onResumeHere={() => (view.kind === "handoff" && view.resumeAt !== null ? moveTo(view.resumeAt) : undefined)}

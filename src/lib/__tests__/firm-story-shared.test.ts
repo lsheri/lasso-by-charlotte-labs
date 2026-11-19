@@ -15,6 +15,7 @@ import {
   FIRM_STORY_COPY,
   STORY_STORAGE_KEY,
   firstBeatFor,
+  forgetOtherStoryBeats,
   invitedBySearch,
   isAtPlace,
   lastBeatFor,
@@ -204,11 +205,23 @@ describe("the one stored value", () => {
   it("never returns another person's beat, and removes it and the first build's bare key", () => {
     const store = fakeStore({ [`${STORY_STORAGE_KEY}.other`]: "5", [STORY_STORAGE_KEY]: "3", "lasso.active_profile_id": "keep", "lasso.firm-story.beat.v10": "keep" });
     expect(readStoredBeat("p1", store)).toBeNull();
+    expect(store.data.size).toBe(4); // reading changes nothing
+    forgetOtherStoryBeats("p1", store);
     expect([...store.data.keys()].sort()).toEqual(["lasso.active_profile_id", "lasso.firm-story.beat.v10"]);
+  });
+
+  it("forgets every story beat when the person's id cannot be a key, and survives blocked storage", () => {
+    const store = fakeStore({ [mine]: "6", [STORY_STORAGE_KEY]: "3", other: "keep" });
+    forgetOtherStoryBeats("a b", store);
+    expect([...store.data.keys()]).toEqual(["other"]);
+    const blocked = { length: 1, key: () => { throw new Error("blocked"); }, getItem: () => null, setItem: () => undefined, removeItem: () => undefined };
+    expect(() => forgetOtherStoryBeats("p1", blocked)).not.toThrow();
+    expect(() => forgetOtherStoryBeats("p1", null)).not.toThrow();
   });
 
   it("keeps this person's own beat while clearing the others", () => {
     const store = fakeStore({ [mine]: "6", [`${STORY_STORAGE_KEY}.other`]: "2" });
+    forgetOtherStoryBeats("p1", store);
     expect(readStoredBeat("p1", store)).toBe(6);
     expect([...store.data.keys()]).toEqual([mine]);
   });

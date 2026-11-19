@@ -5,6 +5,8 @@
 // gives way to an open dialog. N1: no flash of the start button on reload. N2: the handoff card has Back.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({ access: vi.fn(), navigate: vi.fn(), log: vi.fn(), path: "/home", search: "" }));
@@ -58,10 +60,39 @@ afterEach(cleanup);
 describe("S1: the entry is opt-in", () => {
   it("shows nothing to an allowed person who was not given the tour link and has not started", async () => {
     mount();
-    await waitFor(() => expect(m.access).toHaveBeenCalled());
     await settle();
     expect(screen.queryByTestId("firm-story")).toBeNull();
     expect(screen.queryByTestId("firm-story-launcher")).toBeNull();
+  });
+
+  it("F2: does not ask the server at all without the link or a stored beat, and asks once the link is there", async () => {
+    const view = mount();
+    await settle();
+    expect(m.access).not.toHaveBeenCalled();
+    at("?tour=1");
+    view.rerender(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(m.access).toHaveBeenCalledTimes(1));
+    expect(await screen.findByTestId("firm-story-launcher")).toBeTruthy();
+  });
+
+  it("F5: does not watch the page for dialogs for a person who has not opted in", async () => {
+    const observe = vi.spyOn(MutationObserver.prototype, "observe");
+    try {
+      mount();
+      await settle();
+      expect(observe).not.toHaveBeenCalled();
+      cleanup();
+      at("?tour=1");
+      mount();
+      await screen.findByTestId("firm-story-launcher");
+      expect(observe).toHaveBeenCalled();
+    } finally {
+      observe.mockRestore();
+    }
   });
 
   it("shows Start the tour when the address carries ?tour, whatever its value", async () => {
@@ -76,8 +107,8 @@ describe("S1: the entry is opt-in", () => {
   it("does not treat other words in the address as the tour link", async () => {
     at("?detour=1&tourist=yes");
     mount();
-    await waitFor(() => expect(m.access).toHaveBeenCalled());
     await settle();
+    expect(m.access).not.toHaveBeenCalled();
     expect(screen.queryByTestId("firm-story")).toBeNull();
   });
 
@@ -106,8 +137,10 @@ describe("S1: the entry is opt-in", () => {
     await screen.findByTestId("firm-story-launcher");
     const frame = screen.getByTestId("firm-story").className;
     expect(frame).toContain("md:justify-start");
-    expect(frame).toMatch(/md:pl-\[17rem\]/);
+    // F7: from the sidebar's own width token, so the button follows the sidebar if its width changes.
+    expect(frame).toContain("md:pl-[calc(var(--nav-width)+0.875rem)]");
     expect(frame).not.toMatch(/(^| )md:pl-4( |$)/);
+    expect(readFileSync("src/design/tokens.css", "utf8")).toMatch(/--nav-width:\s*\d+px/);
   });
 
   it("sits past the narrow rail on the board page, which has no sidebar", async () => {
@@ -115,7 +148,9 @@ describe("S1: the entry is opt-in", () => {
     m.path = "/engagements/4a4abc70-32af-4cdb-8772-3850f9d673bc/canvas-lab";
     mount();
     await screen.findByTestId("firm-story-launcher");
-    expect(screen.getByTestId("firm-story").className).toMatch(/md:pl-\[4\.25rem\]/);
+    expect(screen.getByTestId("firm-story").className).toContain("md:pl-[calc(52px+1rem)]");
+    // The rail has no width token; this is where its width lives. If it changes, change PAST_BOARD_RAIL with it.
+    expect(readFileSync("src/components/canvas-lab/WorkboardChrome.tsx", "utf8")).toContain("workboard-side-rail z-30 flex w-[52px]");
   });
 });
 
@@ -158,9 +193,9 @@ describe("S2: ending, restarting and changing person", () => {
     expect(window.sessionStorage.length).toBe(0);
     cleanup();
     mount();
-    await waitFor(() => expect(m.access).toHaveBeenCalledTimes(2));
     await settle();
     expect(screen.queryByTestId("firm-story-card")).toBeNull();
+    expect(screen.queryByTestId("firm-story")).toBeNull();
   });
 
   it("the Engagement lead's last card has a way out, and the lead can then start again at its first beat", async () => {
@@ -192,8 +227,8 @@ describe("S2: ending, restarting and changing person", () => {
     window.sessionStorage.setItem("something.else", "kept");
     m.access.mockResolvedValue({ allowed: true, window: "lead" });
     mount("lead-profile");
-    await waitFor(() => expect(m.access).toHaveBeenCalled());
     await settle();
+    expect(m.access).not.toHaveBeenCalled();
     expect(screen.queryByTestId("firm-story-card")).toBeNull();
     expect(screen.queryByTestId("firm-story")).toBeNull();
     expect(window.sessionStorage.getItem(keyFor("partner-profile"))).toBeNull();
@@ -230,9 +265,10 @@ describe("S3: an open dialog", () => {
     try {
       await waitFor(() => expect(screen.queryByTestId("firm-story-card")).toBeNull());
       expect(screen.getByTestId("firm-story-launcher").textContent).toBe("Resume tour");
-      // On the dialogs' own layer and earlier in the page, so the dialog and its scrim sit over it.
+      // Below the dialogs' layer, so every dialog and its scrim sit over it wherever they are in the page.
       const frame = screen.getByTestId("firm-story").className;
-      expect(frame).toContain("z-(--layer-backdrop)");
+      expect(frame).toContain("z-(--layer-tabbar)");
+      expect(frame).not.toContain("z-(--layer-backdrop)");
       expect(frame).not.toContain("z-(--layer-ledger)");
       expect(m.log).not.toHaveBeenCalled(); // giving way to a dialog is not "explored"
     } finally {
@@ -270,6 +306,145 @@ describe("S3: an open dialog", () => {
       expect(screen.getByTestId("firm-story-card")).toBeTruthy();
     } finally {
       closed.remove();
+    }
+  });
+});
+
+describe("F3: dialogs built by hand, which carry no data-state", () => {
+  function handBuilt(display?: string) {
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    if (display) dialog.style.display = display;
+    document.body.append(dialog);
+    return dialog;
+  }
+
+  it("gives way while one is in the page, and comes back when it is removed", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "1");
+    mount();
+    await waitFor(() => card());
+    const dialog = handBuilt();
+    try {
+      await waitFor(() => expect(screen.queryByTestId("firm-story-card")).toBeNull());
+    } finally {
+      await act(async () => {
+        dialog.remove();
+        await settle();
+      });
+    }
+    await waitFor(() => expect(card().getAttribute("data-story-beat")).toBe("1"));
+  });
+
+  it("follows Settings, which stays in the page hidden: shown, then hidden again", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "1");
+    const settings = handBuilt("none");
+    try {
+      mount();
+      await waitFor(() => card());
+      await settle();
+      expect(screen.getByTestId("firm-story-card")).toBeTruthy();
+      await act(async () => {
+        settings.style.display = "";
+        await settle();
+      });
+      await waitFor(() => expect(screen.queryByTestId("firm-story-card")).toBeNull());
+      await act(async () => {
+        settings.style.display = "none";
+        await settle();
+      });
+      await waitFor(() => expect(card().getAttribute("data-story-beat")).toBe("1"));
+    } finally {
+      settings.remove();
+    }
+  });
+
+  it("counts a hand-built dialog inside a hidden parent as closed", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "1");
+    const parent = document.createElement("div");
+    parent.hidden = true;
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    parent.append(dialog);
+    document.body.append(parent);
+    try {
+      mount();
+      await waitFor(() => card());
+      await settle();
+      expect(screen.getByTestId("firm-story-card")).toBeTruthy();
+    } finally {
+      parent.remove();
+    }
+  });
+});
+
+describe("F4: a beat left in the tab by someone else", () => {
+  it("is removed when the next person is in another workspace, with no request and nothing shown", async () => {
+    window.sessionStorage.setItem(keyFor("harper"), "6");
+    window.sessionStorage.setItem("lasso.active_profile_id", "kept");
+    const client = new QueryClient();
+    render(
+      <QueryClientProvider client={client}>
+        <FirmStory profile={{ id: "outsider", org_id: "another-org" }} />
+      </QueryClientProvider>,
+    );
+    await settle();
+    expect(window.sessionStorage.getItem(keyFor("harper"))).toBeNull();
+    expect(window.sessionStorage.getItem("lasso.active_profile_id")).toBe("kept");
+    expect(m.access).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("firm-story")).toBeNull();
+  });
+
+  it("reads storage once per first render, and reading removes nothing", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "2");
+    const remove = vi.spyOn(Storage.prototype, "removeItem");
+    try {
+      mount();
+      await waitFor(() => card());
+      expect(remove).not.toHaveBeenCalled();
+    } finally {
+      remove.mockRestore();
+    }
+  });
+});
+
+describe("F6: the keyboard after the card goes", () => {
+  it("moves focus to Start the tour after End tour", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "2");
+    mount();
+    await waitFor(() => card());
+    const end = screen.getByRole("button", { name: "End tour" });
+    end.focus();
+    fireEvent.click(end);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("firm-story-launcher")));
+  });
+
+  it("moves focus to Resume tour after Explore on my own", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "2");
+    mount();
+    await waitFor(() => card());
+    fireEvent.click(screen.getByRole("button", { name: "Explore on my own" }));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("firm-story-launcher")));
+    expect(screen.getByTestId("firm-story-launcher").textContent).toBe("Resume tour");
+  });
+
+  it("does not take focus from a dialog when the card only gives way to it", async () => {
+    window.sessionStorage.setItem(keyFor("p1"), "2");
+    mount();
+    await waitFor(() => card());
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("data-state", "open");
+    const inside = document.createElement("button");
+    dialog.append(inside);
+    document.body.append(dialog);
+    inside.focus();
+    try {
+      await waitFor(() => expect(screen.queryByTestId("firm-story-card")).toBeNull());
+      await settle();
+      expect(document.activeElement).toBe(inside);
+    } finally {
+      dialog.remove();
     }
   });
 });

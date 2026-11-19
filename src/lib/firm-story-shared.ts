@@ -203,14 +203,26 @@ function forgetOtherPeople(own: string, storage: BeatStore): void {
 }
 
 /**
- * This person's stored beat, or null. Blocked or broken storage reads as "not started". A beat left by a different
- * person on the same tab is never returned, and is removed.
+ * Forgets every story beat in this tab that is not this person's. Called for whoever is signed in, in any workspace,
+ * so a demo person's beat never waits in the tab for the next person. With no profile it forgets them all.
+ */
+export function forgetOtherStoryBeats(profileId: string | null | undefined, storage: BeatStore | null = store()): void {
+  if (!storage) return;
+  try {
+    forgetOtherPeople(storyStorageKey(profileId) ?? "", storage);
+  } catch {
+    // Storage is blocked. There is nothing to forget.
+  }
+}
+
+/**
+ * This person's stored beat, or null. Blocked or broken storage reads as "not started". The key names the person, so
+ * a beat left by someone else on the same tab is never returned. Reading changes nothing.
  */
 export function readStoredBeat(profileId: string | null | undefined, storage: BeatStore | null = store()): number | null {
   const key = storyStorageKey(profileId);
   if (!key || !storage) return null;
   try {
-    forgetOtherPeople(key, storage);
     return parseStoredBeat(storage.getItem(key));
   } catch {
     return null;
