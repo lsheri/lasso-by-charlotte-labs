@@ -96,9 +96,9 @@ export function WonTextButton({ engagementId, profileId }: { engagementId: strin
           <p data-won-text-words className="max-w-[32ch] self-start rounded-[var(--radius)] bg-muted px-3 py-2 text-foreground">
             {status.preview}
           </p>
-          <p className="text-muted-foreground">{status.connected ? WON_TEXT_COPY.helper : WON_TEXT_COPY.awaiting}</p>
+          <p className="max-w-[40ch] text-muted-foreground">{status.connected ? WON_TEXT_COPY.helper : WON_TEXT_COPY.awaiting}</p>
           {problem ? (
-            <p role="alert" className="text-destructive">
+            <p role="alert" className="max-w-[40ch] text-destructive">
               {problem}
             </p>
           ) : null}

@@ -22,7 +22,10 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PersonalRouteImport } from './routes/personal'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TextsRouteImport } from './routes/texts'
 import { Route as TourPreviewRouteImport } from './routes/tour-preview'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
@@ -147,9 +150,24 @@ const PlansRoute = PlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TextsRoute = TextsRouteImport.update({
+  id: '/texts',
+  path: '/texts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TourPreviewRoute = TourPreviewRouteImport.update({
@@ -477,7 +495,10 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/texts': typeof TextsRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
@@ -551,7 +572,10 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/texts': typeof TextsRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
@@ -627,7 +651,10 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/personal': typeof PersonalRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/texts': typeof TextsRoute
   '/tour-preview': typeof TourPreviewRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
@@ -703,7 +730,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/texts'
     | '/tour-preview'
     | '/trust'
     | '/why'
@@ -777,7 +807,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/texts'
     | '/tour-preview'
     | '/trust'
     | '/why'
@@ -852,7 +885,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/personal'
     | '/plans'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/texts'
     | '/tour-preview'
     | '/trust'
     | '/why'
@@ -928,7 +964,10 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PersonalRoute: typeof PersonalRoute
   PlansRoute: typeof PlansRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TermsRoute: typeof TermsRoute
+  TextsRoute: typeof TextsRoute
   TourPreviewRoute: typeof TourPreviewRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
@@ -1049,11 +1088,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/texts': {
+      id: '/texts'
+      path: '/texts'
+      fullPath: '/texts'
+      preLoaderRoute: typeof TextsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tour-preview': {
@@ -1587,7 +1647,10 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PersonalRoute: PersonalRoute,
   PlansRoute: PlansRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TermsRoute: TermsRoute,
+  TextsRoute: TextsRoute,
   TourPreviewRoute: TourPreviewRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
