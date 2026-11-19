@@ -524,6 +524,8 @@ export type TelemetryEvent =
   | "firm_ask.source_opened"
   /** 17 Nov, firm brain: an author or board owner kept an item out of firm answers. No dims. Portal registration required. */
   | "firm_ask.kept_out"
+  /** 18 Nov, firm brain step 6: one walk-through was opened from the firm map. Dims: kind (situation | method), result (habits | thin | none). Never which situation or method, never a name. Portal registration required. */
+  | "firm_walkthrough.opened"
   /** 17 Nov, firm brain: Start a proposal read a board's notes into a brief. Dims: input_kind (board_notes). Portal registration required. */
   | "proposal_draft.started"
   /** 17 Nov, firm brain: precedents were found for a proposal. Dims: close and loose (bucketed counts). Portal registration required. */

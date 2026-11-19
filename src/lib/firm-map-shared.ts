@@ -68,6 +68,7 @@ export const FIRM_MAP_COPY = {
   empty:
     "Nothing is shared with the firm yet. Share a board with the firm and its thread appears here.",
   listTitle: "Engagements by situation",
+  listMethods: "Methods the firm has used",
   mapLabel: "Map of engagements shared with the firm",
   overviewEyebrow: "What the firm has done",
   overviewTitle: "Everything the firm has done, ready to pull on",
@@ -473,10 +474,13 @@ export function readingFor(state: MapState, layout: FirmMapLayout): MapReading {
 }
 
 /** The plain list: engagements grouped by situation, in vocabulary order, oldest first within each. */
-export function listBySituation(layout: FirmMapLayout): { label: string; threads: MapThread[] }[] {
+export function listBySituation(
+  layout: FirmMapLayout,
+): { nodeId: string; label: string; threads: MapThread[] }[] {
   return layout.nodes
     .filter((node) => node.kind === "situation")
     .map((node) => ({
+      nodeId: node.id,
       label: node.label,
       threads: layout.threads.filter((thread) => thread.nodeIds[0] === node.id),
     }))

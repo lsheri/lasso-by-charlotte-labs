@@ -1,5 +1,8 @@
 import { FIRM_MAP_COPY, type MapReading, type MapThread } from "@/lib/firm-map-shared";
 import { firmDate } from "@/lib/firm-ask-shared";
+import { walkTagOfNode } from "@/lib/firm-walkthrough-shared";
+
+import { FirmWalkthrough } from "./FirmWalkthrough";
 
 const eyebrow =
   "font-mono text-(length:--type-label) uppercase tracking-wider text-muted-foreground";
@@ -43,13 +46,21 @@ function ThreadRows({
 /**
  * The reading panel beside the map: what the selected point, held thread or last answer means, in plain words. It
  * names engagements, situations and methods only; counts are of engagements, never of people.
+ *
+ * A pinned situation or method also offers its walk-through ("How we do this"). Only a pinned point does: a point that
+ * is merely under the mouse leaves the panel as soon as the mouse moves toward the button.
  */
 export function FirmMapReading({
   reading,
   onFocus,
+  pinned = null,
+  profileId = null,
 }: {
   reading: MapReading;
   onFocus: (threadId: string | null) => void;
+  /** The point held by a tap or click, if any. */
+  pinned?: string | null;
+  profileId?: string | null | undefined;
 }) {
   if (reading.kind === "overview") {
     const { totals } = reading;
@@ -132,6 +143,7 @@ export function FirmMapReading({
 
   const { node, threads, related } = reading;
   const total = threads.length;
+  const walkTag = pinned === node.id ? walkTagOfNode(node.id) : null;
   return (
     <div data-testid="firm-map-reading" data-reading="node" className="flex flex-col gap-4">
       <div>
@@ -145,6 +157,7 @@ export function FirmMapReading({
           ? FIRM_MAP_COPY.situationBody(total)
           : FIRM_MAP_COPY.methodBody(total)}
       </p>
+      {walkTag ? <FirmWalkthrough key={node.id} tag={walkTag} profileId={profileId} /> : null}
       {related.length ? (
         <section className="flex flex-col gap-2">
           <h4 className={eyebrow}>
