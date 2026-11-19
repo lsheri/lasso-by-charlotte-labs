@@ -29,7 +29,7 @@ export async function findDemoOrg(admin: Db): Promise<string | null> {
 }
 
 /** Finds an auth user by email, page by page; the admin API has no lookup by email. */
-async function findUserId(admin: Db, email: string): Promise<string | null> {
+export async function findUserId(admin: Db, email: string): Promise<string | null> {
   for (let page = 1; page <= 20; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
     if (error) throw new Error(`listing users: ${error.message}`);
