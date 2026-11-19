@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { MODELS, chatComplete, orgNameFor, type AiMeta } from "@/lib/ai.server";
 import {
+  clientPromptLine,
   isHandLabelled,
   NO_TAGS,
   parseTagReply,
@@ -118,14 +119,21 @@ export function parseExtractJson(raw: string | null | undefined): ExtractFields 
   }
 }
 
-export function extractUserPrompt(title: string, text: string, brief?: string | null): string {
+export function extractUserPrompt(title: string, text: string, brief?: string | null, client?: string | null): string {
   // The engagement's brief rides along only on the item that carries the situation, so the model reads both.
   const briefBlock = brief ? `ENGAGEMENT BRIEF:\n${brief}\n\n` : "";
-  return `TITLE: ${title}\n\n${briefBlock}CONTENT:\n${text}\n\nReturn the JSON card.`;
+  // The client's name rides along on every tagged item: without it an interview with the client's market reads
+  // like one with the client's own staff. One short line, never the brief (cost).
+  const clientLine = clientPromptLine(client);
+  const clientBlock = clientLine ? `${clientLine}\n\n` : "";
+  return `TITLE: ${title}\n\n${clientBlock}${briefBlock}CONTENT:\n${text}\n\nReturn the JSON card.`;
 }
 
-/** What the tags need for one item, or null when it could not be worked out: then the call asks for the card only. */
-export type Tagging = { context: TagContext; brief: string | null };
+/**
+ * What the tags need for one item, or null when it could not be worked out: then the call asks for the card only.
+ * client is the name of the board's client, or null when the item is on no board or the board names none.
+ */
+export type Tagging = { context: TagContext; brief: string | null; client?: string | null };
 
 export type ExtractGeneration = {
   fields: ExtractFields | null;
@@ -151,7 +159,7 @@ export async function generateExtract(
     const completion = await chatComplete(
       [
         { role: "system", content: extractSystemPrompt(ask) },
-        { role: "user", content: extractUserPrompt(title, text, tagging?.brief) },
+        { role: "user", content: extractUserPrompt(title, text, tagging?.brief, tagging?.client) },
       ],
       {
         tier: "fast",
