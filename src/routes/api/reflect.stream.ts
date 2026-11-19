@@ -12,8 +12,9 @@ export const Route = createFileRoute("/api/reflect/stream")({
         const body = { ...raw, scope_source: parseScopeSource(raw.scope_source) };
         return ndjsonStream(async (emit) => {
           const { runReflectTurn } = await import("@/lib/reflect-run.server");
-          const { serverBrand, skinFromCookieHeader } = await import("@/lib/brand-server");
-          const brand = serverBrand(skinFromCookieHeader(request.headers.get("cookie")), auth.email);
+          const { serverBrand, skinFromCookieHeader, variantFromCookieHeader } = await import("@/lib/brand-server");
+          const cookies = request.headers.get("cookie");
+          const brand = serverBrand(skinFromCookieHeader(cookies), auth.email, variantFromCookieHeader(cookies));
           return runReflectTurn(
             auth.supabase,
             auth.userId,

@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useSession } from "@/hooks/use-session";
-import { brandFor, brandTitle } from "@/design/brand/brand";
+import { brandFor, launchBrand, rebrandTitle, type Brand } from "@/design/brand/brand";
 
-import { SkinContext } from "./use-skin";
+import { SkinContext, useBrandVariant } from "./use-skin";
 import { resolveSkin, skinFromBrandParam, writeSkinCookie, type Skin } from "@/lib/skin";
 
 /**
@@ -14,6 +14,9 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
   const [skin, setSkin] = useState<Skin>(initial);
   const { session, loading } = useSession();
   const email = session?.user.email;
+  // The variant provider sits outside this one, so the tab title follows the look as well as the skin.
+  const variant = useBrandVariant();
+  const titledAs = useRef<Brand | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -33,17 +36,21 @@ export function SkinProvider({ initial, children }: { initial: Skin; children: R
   // Phase 4: route heads write "... | Lasso" without knowing the skin. BrandHeadContent renames the first title on the
   // server (PR11); this catches a skin chosen after load, renaming each time the router sets it. Lasso never observes anything.
   useEffect(() => {
-    const brand = brandFor(skin);
+    const brand = brandFor(skin, variant);
     if (brand.look.legacyDefault) return;
+    // A title in the tab can be the route's own ("... | Lasso"), the root's default (the launch brand's), or one this
+    // effect already renamed for the look before a change. Each becomes this brand's.
+    const earlier = [titledAs.current, launchBrand()].filter((from): from is Brand => from !== null);
+    titledAs.current = brand;
     const rename = () => {
-      const next = brandTitle(brand, document.title);
+      const next = earlier.reduce((title, from) => rebrandTitle(from, brand, title), document.title);
       if (next !== document.title) document.title = next;
     };
     rename();
     const observer = new MutationObserver(rename);
     observer.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
-  }, [skin]);
+  }, [skin, variant]);
 
   return <SkinContext.Provider value={skin}>{children}</SkinContext.Provider>;
 }

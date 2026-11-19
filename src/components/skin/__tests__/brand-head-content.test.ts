@@ -15,15 +15,44 @@ describe("brandHeadTags", () => {
     expect(brandHeadTags(tags, "lasso")).toBe(tags);
   });
 
-  it("renames the tab title under Charlotte and leaves other tags alone", () => {
+  it("renames the tab title and its link preview card under Charlotte and leaves other tags alone", () => {
     const out = brandHeadTags(tags, "charlotte");
     expect(out[0]).toEqual({ tag: "title", children: "Sign in | Charlotte" });
-    expect(out.slice(1)).toEqual(tags.slice(1));
+    // 19 Nov: the card title follows the tab title, so a shared link never names the other brand.
+    expect(out[1]).toEqual({
+      tag: "meta",
+      attrs: { property: "og:title", content: "Sign in | Charlotte" },
+    });
+    expect(out.slice(2)).toEqual(tags.slice(2));
+  });
+
+  it("names the brand in the page descriptions, the app's own copy, under each look", () => {
+    const described: RouterManagedTag[] = [
+      "description",
+      "og:description",
+      "twitter:description",
+    ].map((key) => ({
+      tag: "meta",
+      attrs: {
+        [key === "description" || key.startsWith("twitter") ? "name" : "property"]: key,
+        content: "Set a new password for your Lasso account.",
+      },
+    }));
+    for (const tag of brandHeadTags(described, "charlotte"))
+      expect(tag.attrs?.["content"]).toBe("Set a new password for your Charlotte account.");
+    expect(brandHeadTags(described, "charlotte", "slate-spool")).toEqual(described);
+    const robots: RouterManagedTag[] = [
+      { tag: "meta", attrs: { name: "robots", content: "noindex Lasso" } },
+    ];
+    expect(brandHeadTags(robots, "charlotte")).toEqual(robots);
   });
 
   it("leaves a person's own words before the bar alone", () => {
     const own: RouterManagedTag[] = [{ tag: "title", children: "Lasso pricing notes | Lasso" }];
-    expect(brandHeadTags(own, "charlotte")[0]).toEqual({ tag: "title", children: "Lasso pricing notes | Charlotte" });
+    expect(brandHeadTags(own, "charlotte")[0]).toEqual({
+      tag: "title",
+      children: "Lasso pricing notes | Charlotte",
+    });
   });
 });
 
@@ -37,8 +66,14 @@ describe("brandHeadTags icons", () => {
     { tag: "link", attrs: { rel: "stylesheet", href: "/src/styles.css" } },
     { tag: "meta", attrs: { name: "application-name", content: "Lasso" } },
     { tag: "meta", attrs: { name: "apple-mobile-web-app-title", content: "Lasso" } },
-    { tag: "meta", attrs: { property: "og:image", content: "https://lasso.charlotte-labs.com/og-image.png" } },
-    { tag: "meta", attrs: { name: "twitter:image", content: "https://lasso.charlotte-labs.com/og-image.png" } },
+    {
+      tag: "meta",
+      attrs: { property: "og:image", content: "https://lasso.charlotte-labs.com/og-image.png" },
+    },
+    {
+      tag: "meta",
+      attrs: { name: "twitter:image", content: "https://lasso.charlotte-labs.com/og-image.png" },
+    },
     { tag: "meta", attrs: { name: "description", content: "Lasso keeps the trace." } },
   ];
 
@@ -47,7 +82,9 @@ describe("brandHeadTags icons", () => {
   });
 
   it("swaps every icon, the manifest, the app name and the preview image under Charlotte", () => {
-    const out = brandHeadTags(head, "charlotte").map((tag) => tag.attrs?.["href"] ?? tag.attrs?.["content"]);
+    const out = brandHeadTags(head, "charlotte").map(
+      (tag) => tag.attrs?.["href"] ?? tag.attrs?.["content"],
+    );
     expect(out).toEqual([
       "/charlotte-favicon.svg",
       "/charlotte-favicon-32.png",
@@ -58,7 +95,8 @@ describe("brandHeadTags icons", () => {
       "Charlotte",
       "https://lasso.charlotte-labs.com/charlotte-og-image.png",
       "https://lasso.charlotte-labs.com/charlotte-og-image.png",
-      "Lasso keeps the trace.",
+      // 19 Nov: the description is the app's own copy, so it takes the name too.
+      "Charlotte keeps the trace.",
     ]);
   });
 
