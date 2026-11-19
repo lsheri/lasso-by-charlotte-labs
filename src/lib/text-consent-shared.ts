@@ -24,8 +24,15 @@ export type TextConsentInput = {
   phone: string;
   agreed: boolean;
   workspace?: string | null;
+  /** The roster person a link names (19 Nov). Kept only if that person is in the link's workspace. */
+  contact?: string | null;
 };
-export type TextConsentRecord = { name: string; phone: string; workspace: string | null };
+export type TextConsentRecord = {
+  name: string;
+  phone: string;
+  workspace: string | null;
+  contact: string | null;
+};
 export type TextConsentCheck =
   { ok: true; record: TextConsentRecord } | { ok: false; problems: TextConsentProblem[] };
 
@@ -83,7 +90,12 @@ export function checkTextConsent(
   // The tick is a deliberate act: only the boolean true counts, never a truthy string.
   if (input?.agreed !== true) problems.push("agree");
   if (!name || !phone || problems.length > 0) return { ok: false, problems };
-  return { ok: true, record: { name, phone, workspace: cleanWorkspace(input?.workspace) } };
+  const workspace = cleanWorkspace(input?.workspace);
+  // A person is named only together with their workspace; one without the other names nobody.
+  return {
+    ok: true,
+    record: { name, phone, workspace, contact: workspace ? cleanWorkspace(input?.contact) : null },
+  };
 }
 
 export const TEXT_CONSENT_COPY = {

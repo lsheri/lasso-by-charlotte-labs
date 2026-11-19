@@ -42,6 +42,28 @@ const box = () => screen.getByRole("checkbox", { name: TEXT_CONSENT_WORDING });
 const press = () => fireEvent.click(screen.getByRole("button", { name: COPY.submit }));
 
 describe("TextConsentForm", () => {
+  it("sends the roster person named by the link along with the workspace", async () => {
+    const submit = vi.fn(async (): Promise<TextConsentResult> => ({ ok: true }));
+    render(
+      <TextConsentForm
+        submit={submit}
+        workspace={ORG}
+        contact="0000000c-0000-4000-8000-000000000007"
+      />,
+    );
+    fill();
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: COPY.submit }));
+    await waitFor(() =>
+      expect(submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspace: ORG,
+          contact: "0000000c-0000-4000-8000-000000000007",
+        }),
+      ),
+    );
+  });
+
   it("shows the registered wording beside a box that starts unticked, with links to both policies", () => {
     setup();
     expect(box().getAttribute("aria-checked")).toBe("false");
@@ -81,6 +103,7 @@ describe("TextConsentForm", () => {
       phone: "(206) 867-5309",
       agreed: true,
       workspace: ORG,
+      contact: null,
     });
     expect(screen.getByRole("status").textContent).toContain(COPY.done);
     expect(document.body.textContent).not.toMatch(/867|5309/);

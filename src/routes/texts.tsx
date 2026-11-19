@@ -12,14 +12,17 @@ import { recordTextConsentFn } from "@/lib/text-consent.functions";
 /**
  * 19 Nov 2026: the public page where a person agrees to receive text messages from Lasso. No sign-in: the person
  * agreeing is usually a consultant who has no account. They reach it by a link a firm's admin sends them, either
- * /texts on its own or /texts?w=<workspace id>, which files the agreement under that workspace. Screen replay is
+ * /texts on its own, /texts?w=<workspace id>, which files the agreement under that workspace, or the link the roster
+ * copies for one person, /texts?w=<workspace id>&c=<roster person id>, which also ties it to them. Screen replay is
  * stopped while this page is open and the form is marked ph-no-capture, so a name or number typed here never
  * reaches analytics, masked or not.
  */
 export const Route = createFileRoute("/texts")({
-  validateSearch: (search: Record<string, unknown>): { w?: string } => {
+  validateSearch: (search: Record<string, unknown>): { w?: string; c?: string } => {
     const workspace = cleanWorkspace(search["w"]);
-    return workspace ? { w: workspace } : {};
+    if (!workspace) return {};
+    const contact = cleanWorkspace(search["c"]);
+    return contact ? { w: workspace, c: contact } : { w: workspace };
   },
   head: () => ({
     meta: [
@@ -36,7 +39,7 @@ export const Route = createFileRoute("/texts")({
 });
 
 function TextsPage() {
-  const { w } = Route.useSearch();
+  const { w, c } = Route.useSearch();
   const record = useServerFn(recordTextConsentFn);
   useEffect(() => {
     stopSessionReplay();
@@ -51,7 +54,11 @@ function TextsPage() {
           <h1 className="page-title mt-2">{COPY.heading}</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{COPY.intro}</p>
           <div className="ph-no-capture mt-10">
-            <TextConsentForm workspace={w ?? null} submit={(input) => record({ data: input })} />
+            <TextConsentForm
+              workspace={w ?? null}
+              contact={c ?? null}
+              submit={(input) => record({ data: input })}
+            />
           </div>
           <div className="mt-14 border-t border-border pt-6">
             <LegalLinks current="/texts" />
