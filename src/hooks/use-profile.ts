@@ -4,7 +4,9 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { FeatureFlag } from "@/lib/feature-flags";
 import type { OrgType } from "@/lib/org-type";
+import { workspaceFlagsFor } from "@/lib/workspace-flags";
 import { isBusinessType } from "@/lib/workspace-capabilities";
 
 
@@ -26,6 +28,8 @@ export type Profile = {
   has_roster: boolean;
   shows_admin_role: boolean;
   has_firm_view: boolean;
+  /** Flags this workspace switches on by its own row (workspaceFlagsFor), so they never wait on PostHog. */
+  workspace_flags?: FeatureFlag[];
 
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
@@ -345,6 +349,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
       has_roster: orgs?.has_roster === true,
       shows_admin_role: orgs?.shows_admin_role === true,
       has_firm_view: orgs?.has_firm_view === true,
+      workspace_flags: workspaceFlagsFor(orgs?.settings),
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

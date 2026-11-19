@@ -3,6 +3,7 @@ import { MessageSquare } from "@/design/brand/icons";
 import { useEffect } from "react";
 
 import { setClientTelemetryOrg } from "@/lib/client-telemetry";
+import { setWorkspaceFlags, type FeatureFlag } from "@/lib/feature-flags";
 import { groupWorkspace, identifyPostHog } from "@/lib/posthog-client";
 import { sha256Hex } from "@/lib/data-consent-shared";
 import { signOut } from "@/lib/sign-out";
@@ -47,6 +48,12 @@ function AppShellInner() {
       ...(profile?.org_type ? { org_type: profile.org_type } : {}),
     });
   }, [authUser?.id, profile?.display_name, profile?.org_id, profile?.org_type]);
+  // FLAGS: what the workspace itself switches on (the demo firm's firm brain), read with the profile so a blocked
+  // analytics script cannot hide it. Cleared on sign-out and replaced on a workspace switch.
+  const workspaceFlags = (profile?.workspace_flags ?? []).join(",");
+  useEffect(() => {
+    setWorkspaceFlags(authUser?.id && workspaceFlags ? (workspaceFlags.split(",") as FeatureFlag[]) : []);
+  }, [authUser?.id, workspaceFlags]);
   // FLAGS: the workspace as PostHog's org group, the same sha256(org id) the server
   // mirror sends in $groups. A hash, never the workspace name.
   useEffect(() => {

@@ -15,7 +15,7 @@ vi.mock("@/lib/posthog-client", () => ({
   },
 }));
 
-import { FEATURE_FLAGS, flagEnabled } from "@/lib/feature-flags";
+import { FEATURE_FLAGS, flagEnabled, setWorkspaceFlags, workspaceFlagsFor } from "@/lib/feature-flags";
 import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { resolveAskDraft } from "@/lib/ask-draft";
 import { sha256Hex } from "@/lib/data-consent-shared";
@@ -24,7 +24,7 @@ const PROD = "lasso.charlotte-labs.com";
 const PREVIEW = "id-preview--57cd51ce-f7b4-4cd0-a7d0-761453b5935b.lovable.app";
 const mkStore = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
 
-beforeEach(() => { ph.answer = undefined; ph.listeners = []; });
+beforeEach(() => { ph.answer = undefined; ph.listeners = []; setWorkspaceFlags([]); });
 
 describe("FLAGS catalogue", () => {
   it("every flag has a boolean code default", () => {
@@ -64,6 +64,50 @@ describe("FLAGS useFeatureFlag", () => {
     ph.answer = false;
     act(() => { for (const l of ph.listeners) l(); });
     expect(result.current).toBe(false);
+  });
+});
+
+describe("FLAGS a workspace switches on itself (the demo firm must not depend on PostHog)", () => {
+  it("marks the seeded demo firm and a workspace set to firm_brain, and nothing else", () => {
+    expect(workspaceFlagsFor({ type: "company", demo_firm: "kestrel-bay" })).toEqual(["company-brain"]);
+    expect(workspaceFlagsFor({ type: "company", firm_brain: true })).toEqual(["company-brain"]);
+    for (const settings of [null, undefined, "kestrel-bay", [], {}, { type: "company" }, { demo_firm: "" }, { demo_firm: "  " }, { demo_firm: true }, { firm_brain: "true" }, { firm_brain: 1 }, { firm_brain: false }]) {
+      expect(workspaceFlagsFor(settings), JSON.stringify(settings)).toEqual([]);
+    }
+  });
+  it("is off with PostHog blocked in an unmarked workspace, and on in a marked one", () => {
+    expect(flagEnabled("company-brain")).toBe(false);
+    setWorkspaceFlags(workspaceFlagsFor({ demo_firm: "kestrel-bay" }));
+    expect(flagEnabled("company-brain")).toBe(true);
+  });
+  it("stays on in a marked workspace while PostHog still answers false for the not yet identified person", () => {
+    ph.answer = false;
+    setWorkspaceFlags(["company-brain"]);
+    expect(flagEnabled("company-brain")).toBe(true);
+    // The mark is per flag: another flag still follows PostHog.
+    expect(flagEnabled("ask-floating")).toBe(false);
+  });
+  it("goes back to PostHog and the default on sign-out or a switch to an unmarked workspace", () => {
+    setWorkspaceFlags(["company-brain"]);
+    setWorkspaceFlags([]);
+    expect(flagEnabled("company-brain")).toBe(false);
+    ph.answer = true;
+    expect(flagEnabled("company-brain")).toBe(true);
+  });
+  it("ignores a name that is not in the catalogue", () => {
+    setWorkspaceFlags(["not-a-flag" as never]);
+    expect(flagEnabled("company-brain")).toBe(false);
+  });
+  it("re-renders an open surface when the profile arrives, with no PostHog event at all", () => {
+    const { result, unmount } = renderHook(() => useFeatureFlag("company-brain"));
+    expect(result.current).toBe(false);
+    act(() => setWorkspaceFlags(["company-brain"]));
+    expect(result.current).toBe(true);
+    act(() => setWorkspaceFlags([]));
+    expect(result.current).toBe(false);
+    unmount();
+    // No listener is left behind.
+    setWorkspaceFlags(["company-brain"]);
   });
 });
 
