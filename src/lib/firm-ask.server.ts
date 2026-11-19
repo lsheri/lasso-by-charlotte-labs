@@ -48,6 +48,7 @@ const SELECT_SYSTEM = [
   `Return JSON only, ids and nothing else: {"items": ["<item id>", "<item id>"]}.`,
   `Pick at most ${FIRM_ASK_PICK_MAX} items, most relevant first. Match on meaning, not only words: "obesity care" matches "weight management".`,
   "Each finished engagement has a CLOSE-OUT line with its own id: what happened and the lesson. Pick it when the question is about lessons, what went wrong or how work went.",
+  'An item marked "proposal draft" is a proposal the firm is writing now. It counts as the firm\'s work on its topic: pick it when the question is about that topic, including "have we done X" and "have we worked on X".',
   'An empty list is a valid answer when nothing is relevant. Never pick something only loosely related to fill the list.',
 ].join("\n");
 
@@ -60,8 +61,14 @@ const ANSWER_SYSTEM = [
   "- Never repeat an opinion about a named or described person, even if a document holds one.",
   '- If the question asks to rank, count, compare or judge people ("who is best"), set "about_people" to true and make no claims.',
   '- If the documents do not answer the question, set "not_found" to true. You may put the nearest related work and how it differs in "nearest", in one sentence. Never present near work as a match.',
+  '- A document of type "proposal draft" is a proposal the firm is writing, not delivered work. When it is on the topic of the question it is a match, not near work: make a claim from it, and say in that claim that it is a proposal draft. Never set "not_found" only because the matching work is a proposal draft.',
   `- At most 6 claims. The summary uses only what the claims say.`,
 ].join("\n");
+
+/** How a saved proposal draft is named to both model calls. */
+export const PROPOSAL_DRAFT_TYPE = "proposal draft";
+/** What a claim from a proposal draft opens with when the model did not say it is one. */
+export const PROPOSAL_DRAFT_LEAD = "Proposal draft, not delivered work: ";
 
 function boardCard(corpus: FirmCorpus, boardId: string): string {
   const board = corpus.boards.find((entry) => entry.id === boardId)!;
@@ -73,7 +80,10 @@ function boardCard(corpus: FirmCorpus, boardId: string): string {
 }
 
 function itemCard(item: FirmCorpus["items"][number]): string {
-  return [`  ITEM ${item.id} [${item.type}] ${item.title}`, item.date && `date ${item.date}`, item.summary && `summary: ${maskFees(item.summary)}`, item.decisions && `decisions: ${maskFees(item.decisions.replace(/\n/g, "; "))}`, item.entities && `about: ${item.entities}`]
+  // A saved draft has no summary card of its own: its gist stands in, so it can be found by topic and not only by title.
+  const summary = item.summary ?? item.proposalDraft?.gist ?? null;
+  const type = item.proposalDraft ? `${item.type}, ${PROPOSAL_DRAFT_TYPE}` : item.type;
+  return [`  ITEM ${item.id} [${type}] ${item.title}`, item.date && `date ${item.date}`, summary && `summary: ${maskFees(summary)}`, item.decisions && `decisions: ${maskFees(item.decisions.replace(/\n/g, "; "))}`, item.entities && `about: ${item.entities}`]
     .filter(Boolean)
     .join(" | ");
 }
@@ -93,7 +103,7 @@ export function buildAnswerMessages(corpus: FirmCorpus, question: string, read: 
     if (!item) return `<document id="${source.itemId}" board="${board.title}" type="close-out" read="document">\n${source.text}\n</document>`;
     const mark = item.shown.length ? ` | shown to client ${item.shown[item.shown.length - 1]!.on}` : "";
     const kind = source.grade === "full" ? "document" : "index card only";
-    return `<document id="${source.itemId}" board="${board.title}" type="${item.type}" date="${item.date ?? ""}"${mark ? ` mark="${mark.slice(3)}"` : ""} read="${kind}">\n${source.text}\n</document>`;
+    return `<document id="${source.itemId}" board="${board.title}" type="${item.proposalDraft ? PROPOSAL_DRAFT_TYPE : item.type}" date="${item.date ?? ""}"${mark ? ` mark="${mark.slice(3)}"` : ""} read="${kind}">\n${source.text}\n</document>`;
   });
   const list = read.map((source) => source.itemId).join(", ");
   const again = retry ? "\nYour last answer's quotes were not found in the documents. Copy each quote exactly, character for character.\n" : "";
@@ -138,10 +148,20 @@ async function readPicked(corpus: FirmCorpus, ids: readonly string[], loadText: 
         continue;
       }
     }
-    const card = [item.summary, item.decisions].filter(Boolean).join("\n");
+    const card = [item.summary ?? item.proposalDraft?.gist, item.decisions].filter(Boolean).join("\n");
     if (card) read.push({ itemId: id, boardId: item.boardId, grade: "summary", text: maskFees(card) });
   }
   return read;
+}
+
+/**
+ * A claim from a proposal draft always says so. The model is told to; where it did not, code opens the claim with it,
+ * so a proposal in progress is never read as work the firm delivered.
+ */
+export function sayItIsADraft(corpus: FirmCorpus, claim: FirmAskResult["claims"][number]): FirmAskResult["claims"][number] {
+  const item = corpus.items.find((entry) => entry.id === claim.itemId);
+  if (!item?.proposalDraft || /\b(proposal|draft)\b/i.test(claim.text)) return claim;
+  return { ...claim, text: `${PROPOSAL_DRAFT_LEAD}${claim.text}`.slice(0, 400) };
 }
 
 function empty(corpus: FirmCorpus, status: FirmAskResult["status"], read: readonly ReadSource[] = [], nearest: string | null = null): FirmAskResult {
@@ -200,6 +220,7 @@ export async function runFirmAsk(deps: FirmAskDeps, input: FirmAskInput): Promis
     count(answer);
     parsed = parseJsonObject(answer.text);
     checked = checkClaims(parsed["claims"], read);
+    checked = { ...checked, claims: checked.claims.map((claim) => sayItIsADraft(corpus, claim)) };
     // Retry once only when the model offered claims and every quote failed.
     if (checked.claims.length || !checked.offered || parsed["about_people"] === true || parsed["not_found"] === true) break;
   }

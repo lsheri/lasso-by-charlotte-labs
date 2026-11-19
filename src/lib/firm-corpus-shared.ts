@@ -98,6 +98,12 @@ export type FirmItem = {
   role?: Role | null;
   stage?: Stage | null;
   /**
+   * Set on a saved proposal draft: a proposal the firm is writing, not delivered work. `gist` is what it is about, made
+   * by code from the draft's own sections (draftGistOf), or null when the draft has nothing to say yet. Ask the firm
+   * uses it to find the draft by topic and to say plainly that it is a draft.
+   */
+  proposalDraft?: { gist: string | null };
+  /**
    * Marked by an admin or lead as an example of good work (firm_exemplars). A yes or no only: who marked it is never
    * read into the corpus.
    */

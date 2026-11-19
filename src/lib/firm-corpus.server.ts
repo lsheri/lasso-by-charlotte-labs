@@ -17,6 +17,7 @@ import { hasFirmView } from "@/lib/workspace-capabilities";
 
 import { methodsOf, roleOf, situationOf, stageOf } from "./engagement-tags";
 import { firmGrade, firmMemoryOf, type FirmBoard, type FirmCorpus, type FirmItem } from "./firm-corpus-shared";
+import { draftGistOf, isProposalDraft } from "./proposal-draft-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -140,6 +141,7 @@ export function assembleFirmCorpus(orgId: string, rows: FirmRows): FirmCorpus {
       role: roleOf(meta),
       stage: stageOf(meta),
       ...(marked.has(`${boardId}:${item.id}`) ? { exemplar: true } : {}),
+      ...(isProposalDraft(meta) ? { proposalDraft: { gist: draftGistOf(meta) } } : {}),
     });
   }
 
