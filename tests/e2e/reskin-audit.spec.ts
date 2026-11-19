@@ -28,7 +28,13 @@ async function wear(page: Page, skin: "charlotte" | "proof", slate: boolean): Pr
     ([nextSkin, withSlate, slateMode]) => {
       const root = document.documentElement;
       root.setAttribute("data-skin", nextSkin as string);
-      if (!slateMode) return;
+      if (!slateMode) {
+        // 19 Nov: Slate is the default, so a page now arrives wearing it. Default mode audits the earlier look, which
+        // has no brand theme and no page-wide token scope, so both come off.
+        root.removeAttribute("data-brand-theme");
+        document.body.removeAttribute("data-lasso");
+        return;
+      }
       if (withSlate) root.setAttribute("data-brand-theme", "slate-spool");
       else root.removeAttribute("data-brand-theme");
       document.body.setAttribute("data-lasso", "on");
