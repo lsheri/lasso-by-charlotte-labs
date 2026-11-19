@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ChecksLibrary } from "@/components/firm/ChecksLibrary";
 import { FirmArchive } from "@/components/firm/FirmArchive";
 import { FirmLiveBoards } from "@/components/firm/FirmLiveBoards";
+import { FirmProposalsCard } from "@/components/firm/FirmProposalsCard";
 import { FirmMetricGrid } from "@/components/firm/FirmMetricGrid";
 import { FirmProduced } from "@/components/firm/FirmProduced";
 import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
@@ -86,6 +87,9 @@ export function FirmDashboardPage() {
             </section>
 
             <FirmLiveBoards profileId={profile?.id} />
+
+            {/* 19 Nov, proposal ledger: value so far across shared proposals; hidden unless company-brain is on. */}
+            <FirmProposalsCard profileId={canSee ? profile?.id : undefined} />
 
             {/*
               The frame pairs the archive with the check library at roughly 2:1,

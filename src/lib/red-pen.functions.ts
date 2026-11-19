@@ -31,7 +31,7 @@ export const runRedPenFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validate)
   .handler(async ({ data, context }): Promise<RedPenResult> => {
-    const { profile } = await gate(context, data);
+    const { profile, engagementId } = await gate(context, data);
     const { loadSpanScope } = await import("./span-audit.server");
     const scope = await loadSpanScope(context.supabase, data.item_id, profile.id);
     const { chatComplete, resolveAiMeta, AiError } = await import("./ai.server");
@@ -66,6 +66,14 @@ export const runRedPenFn = createServerFn({ method: "POST" })
       handoffs: { red_pen: result } as never,
       context_manifest: null,
     });
+
+    // 19 Nov, proposal ledger: a finished run on a proposal deliverable of a proposal board writes one red_pen_run
+    // row, counted from the stored grades. Detached: a ledger failure never fails the run.
+    await (async () => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { ledgerAfterRedPen } = await import("./proposal-ledger.server");
+      await ledgerAfterRedPen({ userDb: context.supabase, admin: supabaseAdmin as unknown as typeof context.supabase, profile }, { engagementId, itemId: data.item_id, runId: run.id, claims: result.claims });
+    })().catch(() => {});
 
     const { recordEvent } = await import("./telemetry.server");
     const { bucket } = await import("./telemetry-shared");

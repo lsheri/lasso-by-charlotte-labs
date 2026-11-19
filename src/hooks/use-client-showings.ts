@@ -27,7 +27,7 @@ export function useClientShowings({
   canEdit,
 }: {
   engagementId: string;
-  profile: { org_id?: string | null; org_type?: string | null; has_firm_view?: boolean | null } | null | undefined;
+  profile: { id?: string | null; org_id?: string | null; org_type?: string | null; has_firm_view?: boolean | null } | null | undefined;
   canEdit: boolean;
 }): ClientShowingsApi {
   const flagOn = useFeatureFlag("company-brain");
@@ -65,6 +65,12 @@ export function useClientShowings({
       });
       if (error) throw error;
       note("client_showing.marked", { item_type: input.itemType, has_occasion: occasion ? "true" : "false" });
+      // 19 Nov, proposal ledger: a proposal shown to the client is "sent to client". The server reads the saved mark
+      // itself and dates the ledger from it, so the fact is entered once, here. It never affects the mark.
+      const profileId = profile?.id ?? null;
+      void import("@/lib/proposal-ledger.functions")
+        .then(({ noteProposalShown }) => noteProposalShown({ data: { engagement_id: engagementId, item_id: input.itemId, profile_id: profileId } }))
+        .catch(() => {});
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: clientShowingsKey(engagementId) }),
   });

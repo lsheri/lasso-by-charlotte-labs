@@ -69,13 +69,21 @@ export const findProposalPrecedents = createServerFn({ method: "POST" })
       boards: full.boards.filter((board) => board.id !== data.engagement_id),
       items: full.items.filter((item) => item.boardId !== data.engagement_id),
     };
-    const { cleanBrief, precedentView, goodProposals, pastFees } = await import("./proposal-shared");
+    const { cleanBrief, precedentView, goodProposals, pastFees, PROPOSAL_BRIEF_FIELDS } = await import("./proposal-shared");
     const { coverageLine } = await import("./firm-corpus-shared");
+    // 19 Nov, proposal ledger: the first time a person sends their brief on from a board they can edit, its date is
+    // recorded once. It runs beside the precedent search and can never fail or hold it.
+    const sentBrief = cleanBrief(data.brief);
+    const ledger = import("./proposal-ledger.server")
+      .then(({ ledgerAfterBrief }) =>
+        ledgerAfterBrief({ userDb: context.supabase, admin: supabaseAdmin, profile }, { engagementId: data.engagement_id, hasBrief: PROPOSAL_BRIEF_FIELDS.some((field) => Boolean(sentBrief[field])) }),
+      )
+      .catch(() => {});
     const { pickPrecedents } = await import("./proposal-precedents.server");
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(context.supabase as never, { surface: "proposal_precedents", orgId: profile.org_id, profileId: profile.id, userId: context.userId });
 
-    const picks = await pickPrecedents(chatComplete, corpus, cleanBrief(data.brief), meta);
+    const picks = await pickPrecedents(chatComplete, corpus, sentBrief, meta);
     const precedents = picks.map((pick) => precedentView(corpus, pick)).filter((view): view is Precedent => view !== null);
     const chosen = new Set(precedents.map((view) => view.boardId));
     const options = corpus.boards
@@ -92,6 +100,7 @@ export const findProposalPrecedents = createServerFn({ method: "POST" })
       userId: context.userId,
       dims: { close: bucket(precedents.filter((view) => view.closeness === "close").length), loose: bucket(precedents.filter((view) => view.closeness === "loose").length) },
     });
+    await ledger;
     return {
       precedents,
       options,
@@ -234,6 +243,12 @@ export const draftProposal = createServerFn({ method: "POST" })
       await caller.storage.from("work-files").remove([path]).catch(() => {});
       throw failure;
     }
+
+    // 19 Nov, proposal ledger: the draft is saved, so one draft_completed row is written for it (and the brief date
+    // if none is recorded), with counts taken from the saved draft. Detached: a ledger failure never fails the draft.
+    await import("./proposal-ledger.server")
+      .then(({ ledgerAfterDraft }) => ledgerAfterDraft(supabaseAdmin, { orgId: profile.org_id, engagementId: data.engagement_id, itemId: itemId!, draft }))
+      .catch(() => {});
 
     const { recordEvent } = await import("./telemetry.server");
     const { bucket } = await import("./telemetry-shared");
