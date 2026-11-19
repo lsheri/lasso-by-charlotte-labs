@@ -77,7 +77,8 @@ describe("tags the firm must never see", () => {
   });
 
   it("reads no new table to do it: tags ride on work_items.meta, which the reader already filters", () => {
-    expect([...FIRM_CORPUS_TABLES].sort()).toEqual(["client_showings", "engagement_members", "engagements", "profiles", "work_item_extracts", "work_item_tasks", "work_items"]);
+    // firm_exemplars joined the list with step 8 (the exemplar mark). It holds marks, not tags: tags still read no table of their own.
+    expect([...FIRM_CORPUS_TABLES].sort()).toEqual(["client_showings", "engagement_members", "engagements", "firm_exemplars", "profiles", "work_item_extracts", "work_item_tasks", "work_items"]);
   });
 });
 
