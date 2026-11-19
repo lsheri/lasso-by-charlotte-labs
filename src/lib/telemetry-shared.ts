@@ -526,6 +526,8 @@ export type TelemetryEvent =
   | "firm_ask.kept_out"
   /** 18 Nov, firm brain step 6: one walk-through was opened from the firm map. Dims: kind (situation | method), result (habits | thin | none). Never which situation or method, never a name. Portal registration required. */
   | "firm_walkthrough.opened"
+  /** 18 Nov, firm brain step 7: one Prepare me was run from Home. Dims: role_present (yes | no: whether any call with the picked role is shared with the firm), result (questions | covered | empty | none). Never which role, never a question. Portal registration required. */
+  | "prepare.opened"
   /** 17 Nov, firm brain: Start a proposal read a board's notes into a brief. Dims: input_kind (board_notes). Portal registration required. */
   | "proposal_draft.started"
   /** 17 Nov, firm brain: precedents were found for a proposal. Dims: close and loose (bucketed counts). Portal registration required. */
