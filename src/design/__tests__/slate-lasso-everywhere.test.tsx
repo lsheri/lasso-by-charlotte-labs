@@ -22,7 +22,7 @@ import {
 } from "@/design/brand/brand";
 import { serverBrand, variantFromCookieHeader } from "@/lib/brand-server";
 import { DEFAULT_BRAND_VARIANT } from "@/lib/brand-variant-shared";
-import { earlierNameLine } from "@/lib/mcp-earlier-name";
+import { earlierNameFor, earlierNameLine } from "@/lib/mcp-earlier-name";
 
 const SLATE = brandFor("charlotte", "slate-spool");
 const QA = "qa.company.admin@qaprobe.test";
@@ -56,8 +56,26 @@ describe("the server's name follows the default look", () => {
     }
   });
 
-  it("under Lasso the connector needs no earlier-name line and signs as Lasso by Charlotte Labs", () => {
-    expect(earlierNameLine(SLATE.name)).toBe("");
+  it("the connector answers to the name people learned before: Charlotte under Lasso, Lasso under Charlotte", () => {
+    // 19 Nov: people were told "Push to Charlotte" from 16 Nov, so it keeps working now the product is Lasso again.
+    expect(earlierNameFor(SLATE)).toBe("Charlotte");
+    const line = earlierNameLine(SLATE.name, earlierNameFor(SLATE));
+    expect(line).toContain("'Push to Charlotte'");
+    expect(line).toContain("'send to Charlotte'");
+    expect(line).toContain("Charlotte was Lasso's earlier name");
+    expect(line).not.toContain("'Push to Lasso'");
+    // The earlier look is unchanged, word for word.
+    expect(earlierNameFor(BRANDS.charlotte)).toBe("Lasso");
+    expect(earlierNameLine("Charlotte", earlierNameFor(BRANDS.charlotte))).toBe(earlierNameLine("Charlotte"));
+    expect(earlierNameLine("Charlotte")).toContain("Lasso was Charlotte's earlier name");
+    // The original Lasso never had another name, so its description gains nothing.
+    expect(earlierNameFor(BRANDS.lasso)).toBeNull();
+    expect(earlierNameLine(BRANDS.lasso.name, earlierNameFor(BRANDS.lasso))).toBe("");
+    // The live connector today.
+    expect(earlierNameLine(launchBrand().name, earlierNameFor(launchBrand()))).toContain("'Push to Charlotte'");
+  });
+
+  it("under Lasso the connector signs as Lasso by Charlotte Labs", () => {
     expect(makerLine(SLATE)).toBe("Lasso by Charlotte Labs");
     expect(brandFile("https://x.test/favicon.svg", SLATE.look.mark)).toBe(
       "https://x.test/slate-favicon.svg",
