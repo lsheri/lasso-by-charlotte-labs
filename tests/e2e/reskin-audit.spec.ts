@@ -10,10 +10,32 @@ import { expect, test, type Page } from "@playwright/test";
  * and images are exempt (their colours belong to the vendor). Writes test-results/reskin-audit.json and a proof-skin
  * screenshot per screen, and fails when distinct leaks rise above the ceiling in src/design/reskin-audit.json.
  *
+ * 19 Nov 2026: with LASSO_RESKIN_LOOK=slate-spool the starting look is Slate / Spool script (the Charlotte skin with
+ * the Slate scope on, the page body as its scope, as the app sets them), so the same proof shows that everything Slate
+ * colours still follows the skin. The proof side drops the Slate scope, because its ten values are brand values too.
+ * That run writes test-results/reskin-audit-slate.json. Without the variable the audit runs exactly as before.
+ *
  *   runpane secrets exec --project lasso-by-charlotte-labs --only DEMO_FIRM_PASSWORD -- \
  *     env LASSO_E2E_BASE_URL=http://127.0.0.1:3199 bunx playwright test reskin-audit --workers=1
  */
 const PASSWORD = process.env["DEMO_FIRM_PASSWORD"] ?? "";
+const SLATE = process.env["LASSO_RESKIN_LOOK"] === "slate-spool";
+const TAIL = SLATE ? "-slate" : "";
+
+/** Puts the page in the starting look, or in the proof skin. */
+async function wear(page: Page, skin: "charlotte" | "proof", slate: boolean): Promise<void> {
+  await page.evaluate(
+    ([nextSkin, withSlate, slateMode]) => {
+      const root = document.documentElement;
+      root.setAttribute("data-skin", nextSkin as string);
+      if (!slateMode) return;
+      if (withSlate) root.setAttribute("data-brand-theme", "slate-spool");
+      else root.removeAttribute("data-brand-theme");
+      document.body.setAttribute("data-lasso", "on");
+    },
+    [skin, slate, SLATE] as const,
+  );
+}
 const MARROWFIELD = "4a4abc70-32af-4cdb-8772-3850f9d673bc";
 const PROOF_CSS = readFileSync("src/design/skins/proof.css", "utf8");
 const CEILING = (JSON.parse(readFileSync("src/design/reskin-audit.json", "utf8")) as { leaks: number }).leaks;
@@ -108,7 +130,7 @@ test("a brand change needs only the skin values", async ({ browser }) => {
     await page.addStyleTag({ content: PROOF_CSS });
     // Stop transitions so the second read sees settled values.
     await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
-    await page.evaluate(() => document.documentElement.setAttribute("data-skin", "charlotte"));
+    await wear(page, "charlotte", true);
     await page.waitForTimeout(300);
     // A planted leak on the first screen proves the audit can see one: a literal colour inside the shell.
     if (screen === SCREENS[0] && !phone)
@@ -120,11 +142,11 @@ test("a brand change needs only the skin values", async ({ browser }) => {
         document.querySelector('[data-lasso="on"]')?.appendChild(canary);
       });
     const before = await snapshot(page);
-    await page.evaluate(() => document.documentElement.setAttribute("data-skin", "proof"));
+    await wear(page, "proof", false);
     await page.waitForTimeout(300);
     const after = await snapshot(page);
     const label = `${screen.name}${phone ? "-phone" : ""}`;
-    await page.screenshot({ path: `test-results/reskin-proof-${label}.png` });
+    await page.screenshot({ path: `test-results/reskin-proof${TAIL}-${label}.png` });
     let found = 0;
     const length = Math.min(before.length, after.length);
     for (let i = 0; i < length; i += 1) {
@@ -141,7 +163,7 @@ test("a brand change needs only the skin values", async ({ browser }) => {
     }
     perScreen[label] = found;
     if (screen === SCREENS[0] && !phone) await page.evaluate(() => document.querySelector(".reskin-canary")?.remove());
-    await page.evaluate(() => document.documentElement.setAttribute("data-skin", "charlotte"));
+    await wear(page, "charlotte", true);
   }
 
   const canaryKeys = [...leaks.keys()].filter((key) => key.includes("reskin-canary"));
@@ -155,7 +177,7 @@ test("a brand change needs only the skin values", async ({ browser }) => {
     acc[prop] = (acc[prop] ?? 0) + 1;
     return acc;
   }, {});
-  writeFileSync("test-results/reskin-audit.json", JSON.stringify({ distinct: rows.length, byProp, perScreen, rows }, null, 2));
+  writeFileSync(`test-results/reskin-audit${TAIL}.json`, JSON.stringify({ distinct: rows.length, byProp, perScreen, rows }, null, 2));
   await context.close();
-  expect(rows.length, `distinct reskin leaks (ceiling ${CEILING}); see test-results/reskin-audit.json`).toBeLessThanOrEqual(CEILING);
+  expect(rows.length, `distinct reskin leaks (ceiling ${CEILING}); see test-results/reskin-audit${TAIL}.json`).toBeLessThanOrEqual(CEILING);
 });

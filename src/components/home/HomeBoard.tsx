@@ -251,7 +251,7 @@ export function HomeBoard() {
             style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
           >
             <div className="flex items-center justify-center gap-3">
-              <LassoThinkingMark kind="signature" size={LOOP_SIZE_TITLE} thinking />
+              <LassoThinkingMark kind="signature" size={LOOP_SIZE_TITLE} thinking flourish />
               <h1 id="home-title" className="font-serif text-[66px] font-normal leading-[1.05] text-foreground">
                 {copy("Welcome to Lasso")}
               </h1>

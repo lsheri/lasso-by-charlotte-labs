@@ -277,24 +277,23 @@ describe("the brand in each variant", () => {
     expect(brandFor("lasso", "current")).toBe(BRANDS.lasso);
   });
 
-  it("Slate / Spool script changes the mark and the wordmark, and nothing else", () => {
+  it("Slate / Spool script is a whole brand named Lasso; only the drawn glyph sets stay the skin's", () => {
     const brand = brandFor("charlotte", "slate-spool");
-    expect(brand.wordmark).toBe("LASSO");
-    expect(brand.look.mark).toBe("spool");
-    expect({ ...brand, wordmark: "", look: { ...brand.look, mark: "" } }).toEqual({
-      ...BRANDS.charlotte,
-      wordmark: "",
-      look: { ...BRANDS.charlotte.look, mark: "" },
+    expect(brand).toEqual({
+      name: "Lasso",
+      wordmark: "LASSO",
+      askLabel: "Ask Lasso",
+      look: { ...BRANDS.charlotte.look, mark: "spool" },
     });
   });
 
-  it("the app's own copy keeps the skin's name in every case, so only the lockup reads LASSO", () => {
+  it("the app's own copy follows the name, so a sentence can never disagree with the lockup", () => {
     const slate = brandFor("charlotte", "slate-spool");
-    expect(brandCopy(slate, "WHAT LASSO READS")).toBe("WHAT CHARLOTTE READS");
-    expect(brandCopy(slate, "Ask Lasso")).toBe("Charlotte");
-    expect(brandCopy(slate, "Lasso is reading")).toBe("Charlotte is reading");
+    for (const text of ["WHAT LASSO READS", "Ask Lasso", "Ask Lasso about this", "Lasso is reading", "Sign in to Lasso"]) {
+      expect(brandCopy(slate, text)).toBe(text);
+      expect(brandCopy(BRANDS.charlotte, text)).not.toMatch(/lasso/i);
+    }
     expect(brandCopy(BRANDS.charlotte, "WHAT LASSO READS")).toBe("WHAT CHARLOTTE READS");
-    expect(brandCopy(BRANDS.lasso, "WHAT LASSO READS")).toBe("WHAT LASSO READS");
   });
 
   it("never touches the original Lasso skin", () => {
