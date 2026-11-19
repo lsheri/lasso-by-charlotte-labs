@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { firmDate } from "@/lib/firm-ask-shared";
+import { FIRM_BRAIN_LIMIT_COPY, isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import { RED_PEN_COPY, RED_PEN_ORDER, type RedPenClaim, type RedPenGrade, type RedPenResult } from "@/lib/red-pen-shared";
 import { latestRedPen, runRedPenFn } from "@/lib/red-pen.functions";
 
@@ -53,6 +54,7 @@ export function RedPenPanel({
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [limited, setLimited] = useState(false);
   const key = ["red-pen", itemId] as const;
   const query = useQuery({
     queryKey: key,
@@ -67,7 +69,8 @@ export function RedPenPanel({
     setFailed(false);
     try {
       queryClient.setQueryData(key, await run({ data: { item_id: itemId, profile_id: profileId ?? null } }));
-    } catch {
+    } catch (error) {
+      setLimited(isFirmBrainLimit(error));
       setFailed(true);
     } finally {
       setRunning(false);
@@ -95,7 +98,7 @@ export function RedPenPanel({
             </span>
           ) : null}
         </div>
-        {failed || query.isError ? <p className="text-(length:--type-small) text-destructive">{RED_PEN_COPY.error}</p> : null}
+        {failed || query.isError ? <p className="text-(length:--type-small) text-destructive">{failed && limited ? FIRM_BRAIN_LIMIT_COPY.shown : RED_PEN_COPY.error}</p> : null}
         {result && !running ? (
           result.claims.length === 0 ? (
             <p className="text-(length:--type-body) text-foreground">{RED_PEN_COPY.none}</p>

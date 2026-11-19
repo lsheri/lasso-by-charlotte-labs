@@ -12,6 +12,7 @@ import {
   type FirmAskResult,
   type FirmAskStarter,
 } from "@/lib/firm-ask-shared";
+import { FIRM_BRAIN_LIMIT_COPY, isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
 
 import { FirmAnswer } from "./FirmAnswer";
@@ -39,6 +40,7 @@ export function AskTheFirm({
   const [starter, setStarter] = useState<FirmAskStarter | null>(null);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [limited, setLimited] = useState(false);
   const [refused, setRefused] = useState(false);
   const [result, setResult] = useState<FirmAskResult | null>(null);
   const [openItem, setOpenItem] = useState<string | null>(null);
@@ -60,7 +62,10 @@ export function AskTheFirm({
     } catch (error) {
       // A guest or someone outside a company workspace: the server says no, so the box goes away.
       if (error instanceof Response && error.status === 403) setRefused(true);
-      else setFailed(true);
+      else {
+        setLimited(isFirmBrainLimit(error));
+        setFailed(true);
+      }
     } finally {
       setPending(false);
     }
@@ -127,7 +132,7 @@ export function AskTheFirm({
           {FIRM_ASK_COPY.pending}
         </p>
       ) : null}
-      {failed ? <p className="mt-4 text-(length:--type-small) text-destructive">{FIRM_ASK_COPY.error}</p> : null}
+      {failed ? <p className="mt-4 text-(length:--type-small) text-destructive">{limited ? FIRM_BRAIN_LIMIT_COPY.shown : FIRM_ASK_COPY.error}</p> : null}
       {result && !pending ? <FirmAnswer result={result} onOpenSource={setOpenItem} profileId={profile?.id} /> : null}
       <FirmSourcePreview itemId={openItem} profileId={profile?.id} onClose={() => setOpenItem(null)} />
     </section>

@@ -119,6 +119,26 @@ describe("asking", () => {
     await waitFor(() => expect(screen.queryByTestId("ask-the-firm")).toBeNull());
   });
 
+  it("says the daily limit was reached, not try again, when the server refuses for spend", async () => {
+    m.ask.mockRejectedValue(new Response("limit", { status: 429 }));
+    wrap(<AskTheFirm profile={member} />);
+    fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+    await waitFor(() => expect(screen.getByText("Today's limit for the firm brain has been reached. It resets at midnight UTC.")).toBeTruthy());
+    expect(screen.queryByText("That did not work. Try again.")).toBeNull();
+    // The box stays: tomorrow it works again.
+    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+  });
+
+  it("still says try again for any other failure", async () => {
+    m.ask.mockRejectedValue(new Error("network"));
+    wrap(<AskTheFirm profile={member} />);
+    fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+    await waitFor(() => expect(screen.getByText("That did not work. Try again.")).toBeTruthy());
+    expect(screen.queryByText(/Today's limit/)).toBeNull();
+  });
+
   it("opens a source as a read-only preview, and lets its author keep it out", async () => {
     m.ask.mockResolvedValue(answered);
     m.preview.mockResolvedValue({ itemId: "i1", title: "Final readout", boardTitle: "Weight management service line", type: "deck", date: "2025-06-20", grade: "full", text: "Slide 3: Getting surgery a vote in governance early unlocked the design.", shownOn: "2025-06-24", canKeepOut: true });
