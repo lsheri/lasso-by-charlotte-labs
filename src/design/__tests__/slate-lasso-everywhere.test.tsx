@@ -221,8 +221,6 @@ describe("no product name is typed into the app", () => {
       "an error thrown at build time for a missing glyph, never shown",
     "src/lib/demo-firm/validate.ts":
       "a seed check's own message to developers, never shown in the app",
-    "src/lib/extract-tags-shared.ts":
-      "two tag dialog lines in the firm brain Pane's file; reported, not edited here",
   };
 
   it("names Charlotte only in the listed files (Charlotte Labs, the company, is not the product)", () => {

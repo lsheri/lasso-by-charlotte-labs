@@ -296,10 +296,14 @@ export function canCorrectTags(viewer: { role: string | null | undefined; isBoar
   return viewer.role === "admin" || viewer.isBoardLead;
 }
 
+/**
+ * Written with the name Lasso, like all app copy; the dialog passes helper and reset through useBrandCopy so the name
+ * follows the look (Liam, 19 Nov 2026). Never type the other name here.
+ */
 export const ITEM_TAGS_COPY = {
   menu: "Tags…",
   title: "Tags",
-  helper: "How the firm finds this work again. Charlotte reads these when the item is captured; what you set here stays, even when the item is read again.",
+  helper: "How the firm finds this work again. Lasso reads these when the item is captured; what you set here stays, even when the item is read again.",
   methodLabel: "How the work was done",
   roleLabel: "Who the call was with",
   stageLabel: "Stage",
@@ -307,7 +311,7 @@ export const ITEM_TAGS_COPY = {
   none: "Not set",
   correctedNote: "Set by the board lead.",
   save: "Save tags",
-  reset: "Use what Charlotte read",
+  reset: "Use what Lasso read",
   cancel: "Cancel",
   loading: "Loading…",
   loadFailed: "Could not load the tags. Close and try again.",
