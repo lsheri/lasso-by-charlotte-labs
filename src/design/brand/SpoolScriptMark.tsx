@@ -6,8 +6,12 @@ import type { CSSProperties } from "react";
 
 import "./spool-script-mark.css";
 
-/** rest: thread in ink (nav, favicon). live: thread in the live colour. drawing: the live thread draws on once, then holds. */
-export type SpoolMarkState = "rest" | "live" | "drawing";
+/**
+ * logo: the brand mark itself, wherever the lockup sits (nav, headers, sign-in). Its thread is lime, always: that is
+ * the logo (Liam, 19 Nov). rest: thread in ink, for a working mark that is idle. live: thread lime because work is
+ * happening. drawing: the live thread draws on once, then holds.
+ */
+export type SpoolMarkState = "logo" | "rest" | "live" | "drawing";
 
 export const SPOOL_FLANGES = "M5 30H23M5 52H23";
 export const SPOOL_CORE = "M10 30V52M18 30V52";

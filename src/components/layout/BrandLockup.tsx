@@ -52,10 +52,10 @@ export function BrandLockup({
 export function BrandMark({ className = "", px }: { className?: string; px: number }) {
   const mark = useBrand().look.mark;
   if (mark === "spool") {
-    // At rest wherever the still mark sits (nav, headers, sign-in): the thread is lime only while work is happening.
+    // The logo, wherever the still mark sits (nav, headers, sign-in): its thread is always lime, with an ink line under it.
     return (
       <span className="shrink-0" style={{ display: "block", width: px, height: px }} aria-hidden="true" data-skin-mark="spool">
-        <SpoolScriptMark state="rest" size={px} />
+        <SpoolScriptMark state="logo" size={px} />
       </span>
     );
   }

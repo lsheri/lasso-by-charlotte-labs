@@ -123,11 +123,11 @@ describe("Spool script mark", () => {
     expect(renderToStaticMarkup(<SpoolScriptMark size={16} />)).not.toContain(SPOOL_CORE);
   });
 
-  it("rest has no lime and no outline; live and drawing put an ink outline under the thread", () => {
+  it("rest has no lime and no outline; the logo, live and drawing put an ink outline under the lime thread", () => {
     const rest = renderToStaticMarkup(<SpoolScriptMark size={24} state="rest" />);
     expect(rest).toContain('data-spool-state="rest"');
     expect(rest).not.toContain('class="spool-outline"');
-    for (const state of ["live", "drawing"] as const) {
+    for (const state of ["logo", "live", "drawing"] as const) {
       const html = renderToStaticMarkup(<SpoolScriptMark size={24} state={state} />);
       expect(html).toContain(`data-spool-state="${state}"`);
       expect(html.indexOf('class="spool-outline"')).toBeGreaterThan(-1);
@@ -145,7 +145,7 @@ describe("Spool script mark", () => {
     const css = readFileSync("src/design/brand/spool-script-mark.css", "utf8");
     expect(css).toMatch(/\.spool-thread\{stroke:var\(--spool-ink\)/);
     expect(css).toMatch(
-      /\[data-spool-state="live"\],\[data-spool-state="drawing"\]\) \.spool-thread\{stroke:var\(--spool-live\)\}/,
+      /\[data-spool-state="logo"\],\[data-spool-state="live"\],\[data-spool-state="drawing"\]\) \.spool-thread\{stroke:var\(--spool-live\)\}/,
     );
     expect(css).toContain("--spool-live:var(--live)");
     expect(css).toMatch(/animation:spool-draw \.9s ease-in-out both/);
@@ -326,10 +326,12 @@ describe("the brand in each variant", () => {
     expect(brandFor("lasso", "slate-spool")).toBe(BRANDS.lasso);
   });
 
-  it("the lockup shows the spool at rest beside LASSO only under Slate / Spool script", () => {
+  it("the lockup shows the spool logo, lime thread over an ink line, beside LASSO only under Slate / Spool script", () => {
     const slate = under("charlotte", "slate-spool", <BrandLockup size="sm" />);
     expect(slate).toContain('data-brand-mark="slate-spool"');
-    expect(slate).toContain('data-spool-state="rest"');
+    // 19 Nov, Liam: the main logo carries the lime thread. Lime is the logo here, not a sign of work.
+    expect(slate).toContain('data-spool-state="logo"');
+    expect(slate).toContain('class="spool-outline"');
     expect(slate).toContain('data-skin-mark="spool"');
     expect(slate).toContain(">LASSO<");
     expect(slate).toContain("gap:5.28px");
