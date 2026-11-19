@@ -26,31 +26,21 @@ describe("AskLiveMark follows the skin", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("draws the C under Charlotte, never the loop", () => {
-    const { container } = render(
-      inSkin("charlotte", <AskLiveMark pending={false} error={false} turnKey="t" />),
-    );
+    const { container } = render(inSkin("charlotte", <AskLiveMark pending={false} error={false} turnKey="t" />));
     expect(container.querySelector('[data-brand-mark="lasso"]')).toBeNull();
-    expect(
-      container.querySelector('[data-brand-mark="charlotte"]')?.getAttribute("data-charlotte-mark"),
-    ).toBe("live");
+    expect(container.querySelector('[data-brand-mark="charlotte"]')?.getAttribute("data-charlotte-mark")).toBe("live");
   });
 
   it("grows the web while reading and goes all ink on a failed send", () => {
     const reading = render(inSkin("charlotte", <AskLiveMark pending error={false} turnKey="t" />));
-    expect(
-      reading.container.querySelector("[data-charlotte-mark]")?.getAttribute("data-charlotte-mark"),
-    ).toBe("reading");
+    expect(reading.container.querySelector("[data-charlotte-mark]")?.getAttribute("data-charlotte-mark")).toBe("reading");
     reading.unmount();
     const failed = render(inSkin("charlotte", <AskLiveMark pending={false} error turnKey="t" />));
-    expect(
-      failed.container.querySelector("[data-charlotte-mark]")?.getAttribute("data-charlotte-mark"),
-    ).toBe("idle");
+    expect(failed.container.querySelector("[data-charlotte-mark]")?.getAttribute("data-charlotte-mark")).toBe("idle");
   });
 
   it("keeps the tagged loop in Lasso", () => {
-    const { container } = render(
-      inSkin("lasso", <AskLiveMark pending={false} error={false} turnKey="t" />),
-    );
+    const { container } = render(inSkin("lasso", <AskLiveMark pending={false} error={false} turnKey="t" />));
     expect(container.querySelector('svg[data-brand-mark="lasso"]')).not.toBeNull();
   });
 });

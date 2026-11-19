@@ -42,10 +42,7 @@ describe("LassoThinkingMark under Charlotte", () => {
 
   it("shows the toolbar's persistent mark as the still C, with the canvas's data attributes", () => {
     const { container } = render(
-      inSkin(
-        "charlotte",
-        <LassoThinkingMark kind="signature" size={22} thinking persistent className="ask-mark" />,
-      ),
+      inSkin("charlotte", <LassoThinkingMark kind="signature" size={22} thinking persistent className="ask-mark" />),
     );
     const host = container.firstElementChild as HTMLElement;
     expect(host.tagName).toBe("SPAN");
@@ -64,12 +61,8 @@ describe("LassoThinkingMark under Charlotte", () => {
   });
 
   it("grows the web only while actually reading", () => {
-    const reading = render(
-      inSkin("charlotte", <LassoThinkingMark kind="signature" size={40} thinking />),
-    );
-    expect(reading.container.querySelector("svg")!.getAttribute("data-charlotte-mark")).toBe(
-      "reading",
-    );
+    const reading = render(inSkin("charlotte", <LassoThinkingMark kind="signature" size={40} thinking />));
+    expect(reading.container.querySelector("svg")!.getAttribute("data-charlotte-mark")).toBe("reading");
     expect(raf).toHaveBeenCalled();
 
     raf.mockClear();
@@ -80,18 +73,14 @@ describe("LassoThinkingMark under Charlotte", () => {
   });
 
   it("pins a still, thinking mark part-grown with no loop", () => {
-    const { container } = render(
-      inSkin("charlotte", <LassoThinkingMark kind="signature" size={40} thinking still />),
-    );
+    const { container } = render(inSkin("charlotte", <LassoThinkingMark kind="signature" size={40} thinking still />));
     expect(container.querySelector("svg")!.getAttribute("class")).toBe("wm reading");
     expect(raf).not.toHaveBeenCalled();
   });
 
   it("treats the older indicator kinds as reading", () => {
     for (const kind of ["orbit", "loop", "gather", "trace"] as const) {
-      const { container } = render(
-        inSkin("charlotte", <LassoThinkingMark kind={kind} size={40} />),
-      );
+      const { container } = render(inSkin("charlotte", <LassoThinkingMark kind={kind} size={40} />));
       expect(container.firstElementChild!.getAttribute("data-lasso-thinking-mark")).toBe(kind);
       expect(container.firstElementChild!.hasAttribute("data-thinking")).toBe(false);
       expect(container.querySelector("svg")!.getAttribute("data-charlotte-mark")).toBe("reading");

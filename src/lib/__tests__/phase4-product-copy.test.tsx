@@ -39,44 +39,28 @@ describe("brandTitle", () => {
 
   it("moves the app's own mid-sentence titles whole (Phase 4 PR6)", () => {
     const charlotte = brandFor("charlotte");
-    expect(brandTitle(charlotte, "Why Lasso, the coach in your corner")).toBe(
-      "Why Charlotte, the coach in your corner",
-    );
-    expect(brandTitle(charlotte, "Lasso for students | Your work record, yours")).toBe(
-      "Charlotte for students | Your work record, yours",
-    );
-    expect(brandTitle(charlotte, "Lasso: the human judgment in your team's AI work, traced")).toBe(
-      "Charlotte: the human judgment in your team's AI work, traced",
-    );
-    expect(brandTitle(brandFor("lasso"), "Why Lasso, the coach in your corner")).toBe(
-      "Why Lasso, the coach in your corner",
-    );
+    expect(brandTitle(charlotte, "Why Lasso, the coach in your corner")).toBe("Why Charlotte, the coach in your corner");
+    expect(brandTitle(charlotte, "Lasso for students | Your work record, yours")).toBe("Charlotte for students | Your work record, yours");
+    expect(brandTitle(charlotte, "Lasso: the human judgment in your team's AI work, traced")).toBe("Charlotte: the human judgment in your team's AI work, traced");
+    expect(brandTitle(brandFor("lasso"), "Why Lasso, the coach in your corner")).toBe("Why Lasso, the coach in your corner");
   });
 });
 
 describe("swept components follow the skin", () => {
   it("the suggestion legend names who suggested it", () => {
-    expect(text("lasso", <SuggestLegend />)).toBe(
-      "Green means Lasso suggested it. Nothing is saved until you confirm.",
-    );
-    expect(text("charlotte", <SuggestLegend />)).toBe(
-      "Green means Charlotte suggested it. Nothing is saved until you confirm.",
-    );
+    expect(text("lasso", <SuggestLegend />)).toBe("Green means Lasso suggested it. Nothing is saved until you confirm.");
+    expect(text("charlotte", <SuggestLegend />)).toBe("Green means Charlotte suggested it. Nothing is saved until you confirm.");
   });
 
   it("the coverage note says who the text was in front of", () => {
     const note = <CoverageNote fullCount={2} summaryCount={0} noTextCount={0} share={0.5} />;
     expect(text("lasso", note)).toContain("50% of the selected text was in front of Lasso.");
-    expect(text("charlotte", note)).toContain(
-      "50% of the selected text was in front of Charlotte.",
-    );
+    expect(text("charlotte", note)).toContain("50% of the selected text was in front of Charlotte.");
   });
 
   it("a trail line takes the skin's name but keeps a person's note as written", () => {
     const born = { how: "born" } as Parameters<typeof trailHowLine>[0];
-    const confirmed = { how: "confirmed", note: "Lasso call notes" } as Parameters<
-      typeof trailHowLine
-    >[0];
+    const confirmed = { how: "confirmed", note: "Lasso call notes" } as Parameters<typeof trailHowLine>[0];
     expect(trailHowLine(born)).toBe("Lasso saw this happen");
     expect(trailHowLine(born, "Charlotte")).toBe("Charlotte saw this happen");
     expect(trailHowLine(confirmed, "Charlotte")).toBe("Lasso call notes");

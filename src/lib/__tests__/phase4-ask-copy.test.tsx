@@ -34,47 +34,28 @@ describe("brandCopy", () => {
   });
 
   it("keeps the invitation when a verb phrase follows, and swaps every other mention", () => {
-    expect(brandCopy(charlotte, "Ask Lasso about this section")).toBe(
-      "Ask Charlotte about this section",
-    );
+    expect(brandCopy(charlotte, "Ask Lasso about this section")).toBe("Ask Charlotte about this section");
     expect(brandCopy(charlotte, "Lasso is reading")).toBe("Charlotte is reading");
     expect(brandCopy(charlotte, "WHAT LASSO READS")).toBe("WHAT CHARLOTTE READS");
-    expect(brandCopy(charlotte, "Analyses Lasso can run on this work")).toBe(
-      "Analyses Charlotte can run on this work",
-    );
+    expect(brandCopy(charlotte, "Analyses Lasso can run on this work")).toBe("Analyses Charlotte can run on this work");
   });
 
   it("the hook reads the skin from context", () => {
     function Probe() {
       return <>{useBrandCopy()("Ask Lasso")}</>;
     }
-    const inSkin = (skin: "lasso" | "charlotte") =>
-      render(
-        <SkinContext.Provider value={skin}>
-          <Probe />
-        </SkinContext.Provider>,
-      ).container.textContent;
+    const inSkin = (skin: "lasso" | "charlotte") => render(<SkinContext.Provider value={skin}><Probe /></SkinContext.Provider>).container.textContent;
     expect(inSkin("lasso")).toBe("Ask Lasso");
     expect(inSkin("charlotte")).toBe("Charlotte");
   });
 });
 
 describe("Ask scope sentence", () => {
-  const ask = {
-    draftPointed: [],
-    boardPickedCount: 0,
-    engagementBrief: null,
-    selectedItems: [{ id: "a" }],
-    mapped: [{ id: "a" }, { id: "b" }],
-  } as never;
+  const ask = { draftPointed: [], boardPickedCount: 0, engagementBrief: null, selectedItems: [{ id: "a" }], mapped: [{ id: "a" }, { id: "b" }] } as never;
 
   it("takes the skin's name and leaves a workstream's own name alone", () => {
     const workstream = { name: "Lasso rollout", ids: ["a"] };
-    expect(askScopeSummary(ask, false, workstream).sentence).toBe(
-      "Lasso will read the 1 piece in Lasso rollout, as written.",
-    );
-    expect(askScopeSummary(ask, false, workstream, "Charlotte").sentence).toBe(
-      "Charlotte will read the 1 piece in Lasso rollout, as written.",
-    );
+    expect(askScopeSummary(ask, false, workstream).sentence).toBe("Lasso will read the 1 piece in Lasso rollout, as written.");
+    expect(askScopeSummary(ask, false, workstream, "Charlotte").sentence).toBe("Charlotte will read the 1 piece in Lasso rollout, as written.");
   });
 });

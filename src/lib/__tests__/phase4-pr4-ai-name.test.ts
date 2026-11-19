@@ -44,12 +44,9 @@ describe("the model's fixed prompts", () => {
   it("leaves every Lasso prompt byte-identical", async () => {
     expect(brandCopy(lasso, CATALOGUE_RULES)).toBe(CATALOGUE_RULES);
     expect(brandCopy(lasso, ANSWER_RULES)).toBe(ANSWER_RULES);
-    for (const preset of Object.values(ANALYSIS_PRESETS))
-      expect(brandCopy(lasso, preset.systemPrompt)).toBe(preset.systemPrompt);
+    for (const preset of Object.values(ANALYSIS_PRESETS)) expect(brandCopy(lasso, preset.systemPrompt)).toBe(preset.systemPrompt);
     const whole = { mode: "whole", ids: [] } as never;
-    expect(await whereLineFor(noDb, whole)).toBe(
-      "WHERE THE PERSON IS: Ask Lasso, across their whole record, with no board open.",
-    );
+    expect(await whereLineFor(noDb, whole)).toBe("WHERE THE PERSON IS: Ask Lasso, across their whole record, with no board open.");
     expect(await whereLineFor(noDb, whole, lasso)).toBe(await whereLineFor(noDb, whole));
   });
 
@@ -57,17 +54,11 @@ describe("the model's fixed prompts", () => {
     const rules = brandCopy(charlotte, CATALOGUE_RULES);
     expect(rules).toContain("Charlotte can:");
     expect(rules).toContain("Charlotte cannot:");
-    for (const text of [
-      rules,
-      brandCopy(charlotte, ANSWER_RULES),
-      ...Object.values(ANALYSIS_PRESETS).map((p) => brandCopy(charlotte, p.systemPrompt)),
-    ]) {
+    for (const text of [rules, brandCopy(charlotte, ANSWER_RULES), ...Object.values(ANALYSIS_PRESETS).map((p) => brandCopy(charlotte, p.systemPrompt))]) {
       expect(text).not.toMatch(/Lasso/);
     }
     const where = await whereLineFor(noDb, { mode: "whole", ids: [] } as never, charlotte);
-    expect(where).toBe(
-      "WHERE THE PERSON IS: Charlotte, across their whole record, with no board open.",
-    );
+    expect(where).toBe("WHERE THE PERSON IS: Charlotte, across their whole record, with no board open.");
   });
 });
 
@@ -85,9 +76,7 @@ describe("the hand-off to another AI", () => {
 
   it("is byte-identical for Lasso with or without the brand", () => {
     for (const choice of ["chat_and_used", "answer_used", "full_board"] as const) {
-      expect(packageHandoff({ ...base, choice, brand: lasso })).toBe(
-        packageHandoff({ ...base, choice }),
-      );
+      expect(packageHandoff({ ...base, choice, brand: lasso })).toBe(packageHandoff({ ...base, choice }));
     }
   });
 

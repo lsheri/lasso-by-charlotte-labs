@@ -3,13 +3,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  BRAND_FLIPPED,
-  brandCopy,
-  brandCopyDeep,
-  launchBrand,
-  makerLine,
-} from "@/design/brand/brand";
+import { BRAND_FLIPPED, brandCopy, brandCopyDeep, launchBrand, makerLine } from "@/design/brand/brand";
 import { BRANCH_NEEDS_SIGNIN } from "@/lib/branch-fetch";
 import { earlierNameLine } from "@/lib/mcp-earlier-name";
 import { MCP_SERVER_NAME } from "@/lib/mcp-setup-steps";
@@ -50,26 +44,14 @@ describe("the flip switch", () => {
   it("on, Charlotte is the only skin, whatever was asked for and whoever is signed in", () => {
     for (const requested of ["lasso", "charlotte", null] as const) {
       for (const email of [null, "someone@example.com", "qa.company.admin@qaprobe.test"]) {
-        expect(
-          resolveSkin({
-            current: "lasso",
-            requested,
-            email,
-            host: "lasso.charlotte-labs.com",
-            flipped: true,
-          }),
-        ).toBe("charlotte");
+        expect(resolveSkin({ current: "lasso", requested, email, host: "lasso.charlotte-labs.com", flipped: true })).toBe(
+          "charlotte",
+        );
       }
     }
-    expect(
-      resolveSkin({
-        current: "lasso",
-        requested: "charlotte",
-        email: null,
-        host: "lasso.charlotte-labs.com",
-        flipped: false,
-      }),
-    ).toBe("lasso");
+    expect(resolveSkin({ current: "lasso", requested: "charlotte", email: null, host: "lasso.charlotte-labs.com", flipped: false })).toBe(
+      "lasso",
+    );
   });
 });
 
@@ -90,9 +72,7 @@ describe("the earlier name after the flip (PR10)", () => {
   it("keeps 'Push to Lasso' working once the push tool says Charlotte", () => {
     const product = launchBrand(true).name;
     // tools/list renames first, then adds the earlier-name line, so the rename cannot touch it.
-    const renamed = brandCopyDeep(launchBrand(true), {
-      description: "When the user says 'Push to Lasso', save it.",
-    });
+    const renamed = brandCopyDeep(launchBrand(true), { description: "When the user says 'Push to Lasso', save it." });
     const description = `${earlierNameLine(product)}${renamed.description}`;
     expect(description).toContain("'Push to Charlotte'");
     expect(description).toContain("'Push to Lasso'");

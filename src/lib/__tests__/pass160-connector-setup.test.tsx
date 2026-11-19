@@ -35,18 +35,7 @@ vi.mock("@/lib/mcp-connections.functions", () => ({
   listConnections: () =>
     Promise.resolve(
       token
-        ? [
-            {
-              id: "c1",
-              kind: "link",
-              label: "Claude",
-              client_name: null,
-              key_last4: "abcd",
-              can_reveal: true,
-              older: false,
-              ...token,
-            },
-          ]
+        ? [{ id: "c1", kind: "link", label: "Claude", client_name: null, key_last4: "abcd", can_reveal: true, older: false, ...token }]
         : [],
     ),
   createConnection: () => Promise.resolve({ id: "c2", kind: "link", secret: "raw" }),
