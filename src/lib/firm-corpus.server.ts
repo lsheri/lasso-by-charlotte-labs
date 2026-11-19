@@ -28,6 +28,7 @@ export const FIRM_CORPUS_TABLES = [
   "work_items",
   "work_item_extracts",
   "client_showings",
+  "firm_exemplars",
   "profiles",
 ] as const;
 
@@ -79,6 +80,8 @@ export type FirmRows = {
   }[];
   extracts: { work_item_id: string; summary: string | null; decisions: string | null; entities: string | null; created_at: string }[];
   showings: { work_item_id: string; engagement_id: string; shown_on: string; occasion: string | null }[];
+  /** Exemplar marks: the item and the board it was marked on, nothing else. Optional so older fixtures stay valid. */
+  exemplars?: { work_item_id: string; engagement_id: string }[];
   people: { id: string; display_name: string | null; is_guest: boolean }[];
   /** Boards the asker is on, as a member or the owner. */
   askerBoards: string[];
@@ -101,6 +104,9 @@ export function assembleFirmCorpus(orgId: string, rows: FirmRows): FirmCorpus {
     const seen = latest.get(extract.work_item_id);
     if (!seen || extract.created_at > seen.created_at) latest.set(extract.work_item_id, extract);
   }
+
+  // A mark counts only on the board it was made on, and only while that board is in this read.
+  const marked = new Set((rows.exemplars ?? []).filter((mark) => boardIds.has(mark.engagement_id)).map((mark) => `${mark.engagement_id}:${mark.work_item_id}`));
 
   const items: FirmItem[] = [];
   for (const item of rows.items) {
@@ -133,6 +139,7 @@ export function assembleFirmCorpus(orgId: string, rows: FirmRows): FirmCorpus {
       methods: methodsOf(meta),
       role: roleOf(meta),
       stage: stageOf(meta),
+      ...(marked.has(`${boardId}:${item.id}`) ? { exemplar: true } : {}),
     });
   }
 
@@ -157,6 +164,23 @@ async function inPages<T>(ids: string[], read: (page: string[]) => PromiseLike<{
     out.push(...(data ?? []));
   }
   return out;
+}
+
+/**
+ * Exemplar marks on the shared boards just read, by item and board only: the column that says who marked is never
+ * selected. A mark is decoration on work the reader already has, so a failed read shows no marks rather than taking
+ * the firm reader down.
+ */
+async function readExemplarMarks(admin: Db, orgId: string, boardIds: string[], itemIds: string[]): Promise<NonNullable<FirmRows["exemplars"]>> {
+  const shared = new Set(boardIds);
+  try {
+    const rows = await inPages(itemIds, (page) =>
+      admin.from("firm_exemplars").select("work_item_id, engagement_id").eq("org_id", orgId).in("work_item_id", page),
+    );
+    return rows.filter((row) => shared.has(row.engagement_id));
+  } catch {
+    return [];
+  }
 }
 
 /** Reads what the firm may read, for one asker. Call only with the admin client from requireFirmMember. */
@@ -195,6 +219,7 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
   const showings = await inPages(itemIds, (page) =>
     admin.from("client_showings").select("work_item_id, engagement_id, shown_on, occasion").eq("org_id", orgId).in("work_item_id", page),
   );
+  const exemplars = await readExemplarMarks(admin, orgId, boardIds, itemIds);
   const peopleIds = [...new Set([...items.map((item) => item.owner_id), ...boardRows.map((board) => board.owner_id)].filter((id): id is string => Boolean(id)))];
   const people = await inPages(peopleIds, (page) => admin.from("profiles").select("id, display_name, is_guest").eq("org_id", orgId).in("id", page));
   const { data: memberships } = await admin.from("engagement_members").select("engagement_id").eq("profile_id", asker.id).in("engagement_id", boardIds);
@@ -203,7 +228,7 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
     ...boardRows.filter((board) => board.owner_id === asker.id).map((board) => board.id),
   ];
 
-  return assembleFirmCorpus(orgId, { boards: boardRows, placements, items, extracts, showings, people, askerBoards });
+  return assembleFirmCorpus(orgId, { boards: boardRows, placements, items, extracts, showings, exemplars, people, askerBoards });
 }
 
 /**

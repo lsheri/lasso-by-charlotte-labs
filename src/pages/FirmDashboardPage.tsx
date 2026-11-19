@@ -10,6 +10,7 @@ import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { TrustSummary } from "@/components/firm/TrustSummary";
 import { WhatLeavesTheFirm } from "@/components/firm/WhatLeavesTheFirm";
 import { ToneCard } from "@/components/notebook/ToneCard";
+import { CommonQuestionsCard } from "@/components/firm-brain/CommonQuestionsCard";
 import { FirmBrainMap } from "@/components/firm-brain/FirmBrainMap";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
@@ -65,6 +66,7 @@ export function FirmDashboardPage() {
 
       <div className="space-y-8">
         <FirmBrainMap profile={profile} />
+        <CommonQuestionsCard profile={profile} />
         <ToneCard tone="record" label="WHAT THIS PAGE MEASURES">
           <TrustSummary />
         </ToneCard>

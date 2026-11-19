@@ -7,8 +7,9 @@ import { FirmSourceCard } from "./FirmSourceCard";
  * built by code, the coverage line, and what was read. "Not found" never stretches; "about people" shows engagements.
  */
 export function FirmAnswer({ result, onOpenSource }: { result: FirmAskResult; onOpenSource: (itemId: string) => void }) {
+  // Work the firm marked as an exemplar is listed first; nothing else about the order changes.
   const readList = (ids: string[]) =>
-    ids.map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
+    [...ids.filter((id) => result.sources[id]?.exemplar), ...ids.filter((id) => !result.sources[id]?.exemplar)].map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
   const full = readList(result.read.full);
   const summary = readList(result.read.summary);
 

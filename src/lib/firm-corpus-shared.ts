@@ -95,6 +95,11 @@ export type FirmItem = {
   /** A call's job title, never a name. */
   role?: Role | null;
   stage?: Stage | null;
+  /**
+   * Marked by an admin or lead as an example of good work (firm_exemplars). A yes or no only: who marked it is never
+   * read into the corpus.
+   */
+  exemplar?: boolean;
 };
 
 export type FirmCorpus = {

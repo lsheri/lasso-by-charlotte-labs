@@ -17,6 +17,7 @@ import {
 import { DRAFT_COPY } from "@/lib/proposal-draft-shared";
 import { draftProposal, draftProposalBrief, findProposalPrecedents, latestProposalDraft, type PrecedentsResult, type ProposalDraftResult } from "@/lib/proposal.functions";
 
+import { ExemplarBadge } from "./ExemplarBadge";
 import { FirmSourcePreview } from "./FirmSourcePreview";
 import { ProposalDraftView } from "./ProposalDraftView";
 
@@ -274,11 +275,12 @@ export function ProposalStartPanel({
               <p className="text-(length:--type-small) text-muted-foreground">{PROPOSAL_COPY.goodHint}</p>
               <ul className="mt-1 flex flex-col gap-1">
                 {result.good.map((proposal) => (
-                  <li key={proposal.itemId}>
+                  <li key={proposal.itemId} data-good-exemplar={proposal.exemplar ? "true" : undefined}>
                     <button type="button" data-good-proposal onClick={() => setOpenItem(proposal.itemId)} className="text-left text-(length:--type-small) text-foreground underline">
                       {proposal.title}
                     </button>
-                    <span className="text-(length:--type-small) text-muted-foreground">{` · shown ${firmDate(proposal.shownOn)}`}</span>
+                    {proposal.shownOn ? <span className="text-(length:--type-small) text-muted-foreground">{` · shown ${firmDate(proposal.shownOn)}`}</span> : null}
+                    {proposal.exemplar ? <ExemplarBadge className="ml-2 align-middle" /> : null}
                   </li>
                 ))}
               </ul>

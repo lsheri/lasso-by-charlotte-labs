@@ -1,5 +1,7 @@
 import { FIRM_ASK_COPY, FIRM_TYPE_LABELS, firmDate, type FirmAskSource } from "@/lib/firm-ask-shared";
 
+import { ExemplarBadge } from "./ExemplarBadge";
+
 /**
  * One source under a firm answer: board, item, type, date, and the "Shown to client" mark when the firm showed it.
  * Opens a read-only preview served by the firm reader, never the board (most askers cannot open other boards).
@@ -28,6 +30,7 @@ export function FirmSourceCard({
         {source.date ? <span>{firmDate(source.date)}</span> : null}
         <span>{grade === "quoted" ? FIRM_ASK_COPY.quoted : FIRM_ASK_COPY.fromSummary}</span>
         {source.shownOn ? <span data-firm-source-shown className="text-foreground">{`${FIRM_ASK_COPY.shown}, ${firmDate(source.shownOn)}`}</span> : null}
+        {source.exemplar ? <ExemplarBadge /> : null}
       </span>
     </Tag>
   );
