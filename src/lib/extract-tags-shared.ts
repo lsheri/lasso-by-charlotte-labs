@@ -60,8 +60,10 @@ export function tagPromptLines(ask: TagAsk): string[] {
   const lines: string[] = [];
   if (ask.method) {
     // Worded from the first live tag check (18 Nov 2026, 21 of 40): the model added synthesis to plain research notes
-    // and read interviews with the client's market as stakeholder interviews. Every word here is paid for per capture.
-    lines.push(`- method: the one main way this item's own work was done, as a JSON array of ids: ${METHODS.join(", ")}. stakeholder_interviews: people inside the client; customer_research: its customers or buyers. synthesis: only a storyline across other work, never a note's own findings. [] for a SOW, proposal or admin note.`);
+    // and read interviews with the client's market as stakeholder interviews. The second check (32 of 40) still missed
+    // five market interviews because nothing said who the client was, so CLIENT here points at clientPromptLine below.
+    // Every word here is paid for per capture.
+    lines.push(`- method: the one main way this item's own work was done, as a JSON array of ids: ${METHODS.join(", ")}. stakeholder_interviews: people who work at CLIENT; customer_research: its customers, buyers or market. synthesis: only a storyline across other work, never a note's own findings. [] for a SOW, proposal or admin note.`);
   }
   if (ask.callRole) {
     lines.push(`- call_role: the job of the person outside the team on this call, one id: ${ROLES.join(", ")}. Never a person's name. null for an internal call.`);
@@ -69,6 +71,26 @@ export function tagPromptLines(ask: TagAsk): string[] {
   if (ask.stage) lines.push(`- stage: "draft" if the item calls itself a draft, v0, v1 or scratch, else "reviewed".`);
   if (ask.situation) lines.push(`- situation: the kind of problem the client brought, as one id: ${SITUATIONS.join(", ")}.`);
   return lines;
+}
+
+/** A client name longer than this is cut: the line is paid for on every capture and a name is all it is for. */
+export const CLIENT_NAME_CHARS = 80;
+
+/**
+ * The one line that tells the model who the client is, so it can tell the client's own staff from the client's
+ * market (Liam, 19 Nov 2026: send the client name, not the whole brief). The name is typed by a person, so it is
+ * flattened to one line of plain characters and cut short: it can never start a new line of the prompt or close the
+ * content. Null when there is no usable name, and then no line is sent.
+ */
+export function clientPromptLine(name: string | null | undefined): string | null {
+  if (typeof name !== "string") return null;
+  const flat = name
+    .replace(/[\u0000-\u001f\u007f<>`{}\[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, CLIENT_NAME_CHARS)
+    .trim();
+  return /[\p{L}\p{N}]/u.test(flat) ? `CLIENT: ${flat}` : null;
 }
 
 /** What the extractor knows about one item when it checks the model's tags. */
