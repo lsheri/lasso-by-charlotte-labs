@@ -3,7 +3,6 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import {
   canAskTheFirm,
   FIRM_ASK_COPY,
@@ -21,7 +20,7 @@ import { FirmSourcePreview } from "./FirmSourcePreview";
 type AskProfile = { id?: string | null; role?: string | null; has_firm_view?: boolean | null; org_type?: string | null };
 
 /**
- * 17 Nov, firm brain: the Ask the firm box, on Home and the firm view. Hidden unless company-brain is on, the
+ * 17 Nov, firm brain: the Ask the firm box, on Home and the firm view. Hidden unless the
  * workspace is a company and the person is not a coach; the server checks again and refuses guests. Nothing about the
  * question is kept: the answer lives in this component's state only.
  */
@@ -35,7 +34,6 @@ export function AskTheFirm({
   /** The firm map's answer trace: null when a new question starts, then the answer. Nothing else about the question leaves. */
   onResult?: (result: FirmAskResult | null) => void;
 }) {
-  const flagOn = useFeatureFlag("company-brain");
   const ask = useServerFn(askTheFirm);
   const [question, setQuestion] = useState("");
   const [starter, setStarter] = useState<FirmAskStarter | null>(null);
@@ -46,7 +44,7 @@ export function AskTheFirm({
   const [openItem, setOpenItem] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  if (!canAskTheFirm(flagOn, profile) || refused) return null;
+  if (!canAskTheFirm(profile) || refused) return null;
 
   async function submit(event: FormEvent) {
     event.preventDefault();

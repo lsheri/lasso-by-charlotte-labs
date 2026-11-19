@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { canAskTheFirm } from "@/lib/firm-ask-shared";
 import { getFirmJuniorTags } from "@/lib/firm-junior.functions";
 
@@ -17,13 +16,12 @@ type JuniorProfile = {
 
 /**
  * 18 Nov, Firm Brain Build Spec step 7: the junior tools on Home, next to Ask the firm, with the same rule for who
- * sees them: company-brain on, a company workspace, not a coach. The server checks again and refuses guests, and then
+ * sees them: a company workspace, not a coach. The server checks again and refuses guests, and then
  * this goes away. It loads the one list both tools pick from (tag keys and counts, read fresh each time Home opens).
  * Only on signed-in Home: never on shared, demo, tour, firm or rollup surfaces.
  */
 export function JuniorTools({ profile }: { profile: JuniorProfile | null | undefined }) {
-  const flagOn = useFeatureFlag("company-brain");
-  const allowed = canAskTheFirm(flagOn, profile);
+  const allowed = canAskTheFirm(profile);
   const load = useServerFn(getFirmJuniorTags);
   const query = useQuery({
     queryKey: ["firm-junior-tags", profile?.id ?? null],

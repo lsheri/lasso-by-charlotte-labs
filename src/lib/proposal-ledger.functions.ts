@@ -16,7 +16,7 @@ import {
 /**
  * 19 Nov, Firm Brain Build Spec step 9: the proposal ledger's server functions. Each one is requireSupabaseAuth, then
  * its handler in proposal-ledger.server.ts, which starts with requireFirmMember (an active member of a company
- * workspace, never a coach or a guest) and then its own checks. The company-brain flag only hides the screens. The
+ * workspace, never a coach or a guest) and then its own checks. No flag sits in front of the screens. The
  * handlers live in the server file so they can be tested: the build rewrites the functions in this file into stubs.
  */
 

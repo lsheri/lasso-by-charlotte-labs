@@ -144,11 +144,11 @@ function LabCardInner({
   exemplar,
   onToggleExemplar,
 }: {
-  /** 19 Nov, firm brain step 8: only the live signed-in board passes the mark, behind company-brain. */
+  /** 19 Nov, firm brain step 8: only the live signed-in board passes the mark. */
   exemplar?: boolean | undefined;
   /** Present only for admins and leads of a company workspace. */
   onToggleExemplar?: (() => void) | undefined;
-  /** Firm brain phase 1: only the live signed-in board passes marks, behind company-brain. */
+  /** Firm brain phase 1: only the live signed-in board passes marks. */
   clientShownMarks?: ClientShowing[] | undefined;
   /** 17 Nov, firm brain: opens the red pen for this deliverable. */
   onRedPen?: (() => void) | undefined;

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useReducer, useState, type ComponentType } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { useReducedMotion } from "@/hooks/use-motion";
 import type { FirmAskResult } from "@/lib/firm-ask-shared";
 import type { FirmGraph } from "@/lib/firm-graph-shared";
@@ -82,14 +81,13 @@ export const FIRM_MAP_STAGE_CLASS =
 
 /**
  * 18 Nov, Firm Brain Build Spec steps 3 and 4: the firm brain map at the top of the firm view, with Ask the firm
- * beside it. Hidden unless company-brain is on, the workspace is a company and the person is neither a coach nor a
+ * beside it. Hidden unless the workspace is a company and the person is neither a coach nor a
  * guest; the server checks again. Only on the signed-in firm view: never on shared, demo, tour or rollup surfaces.
  * Where it cannot show, Ask the firm keeps its own rules.
  */
 export function FirmBrainMap({ profile }: { profile: MapProfile | null | undefined }) {
-  const flagOn = useFeatureFlag("company-brain");
   const askClass = "rounded-[var(--radius)] border border-border bg-card p-4 shadow-card";
-  if (!canSeeFirmMap(flagOn, profile)) return <AskTheFirm profile={profile} className={askClass} />;
+  if (!canSeeFirmMap(profile)) return <AskTheFirm profile={profile} className={askClass} />;
   return <FirmBrainMapView profile={profile!} />;
 }
 

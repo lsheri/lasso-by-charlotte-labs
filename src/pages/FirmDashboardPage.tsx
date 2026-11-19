@@ -90,7 +90,7 @@ export function FirmDashboardPage() {
 
             <FirmLiveBoards profileId={profile?.id} />
 
-            {/* 19 Nov, proposal ledger: value so far across shared proposals; hidden unless company-brain is on. */}
+            {/* 19 Nov, proposal ledger: value so far across shared proposals. */}
             <FirmProposalsCard profileId={canSee ? profile?.id : undefined} />
 
             {/*

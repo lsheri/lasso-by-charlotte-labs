@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useBrand } from "@/components/skin/use-skin";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { FIRM_STORY_SCRIPT, type StoryPlace, type StoryRolePick } from "@/lib/firm-story-script";
 import {
   FIRM_STORY_COPY,
@@ -37,7 +36,7 @@ type StoryProfile = { id: string; org_id: string } | null | undefined;
 
 /**
  * The Kestrel Bay demo story, mounted once in the signed-in shell so it sits over the real surfaces: Home, the firm
- * view and the proposal board. It can show only when the company-brain flag is on, the active profile is in the demo
+ * view and the proposal board. It can show only when the active profile is in the demo
  * firm's workspace, and the server agrees (firmStoryAccessFn). For everyone else it renders nothing and calls nothing.
  *
  * Even then the entry is opt-in: unless the address carries `?tour` or this person already started in this tab,
@@ -50,7 +49,6 @@ type StoryProfile = { id: string; org_id: string } | null | undefined;
  * a card live in memory. The firm_story.* events are emitted here and nowhere else.
  */
 export function FirmStory({ profile }: { profile: StoryProfile }) {
-  const flag = useFeatureFlag("company-brain");
   const inDemoFirm = profile?.org_id === KESTREL_BAY_ORG_ID;
   const profileId = profile?.id ?? null;
   const search = useRouterState({ select: (state) => state.location.searchStr ?? "" });
@@ -72,13 +70,13 @@ export function FirmStory({ profile }: { profile: StoryProfile }) {
   const access = useQuery({
     queryKey: ["firm-story-access", profileId],
     // Not asked at all for a person who was not given the link and has not started.
-    enabled: flag && inDemoFirm && invited,
+    enabled: inDemoFirm && invited,
     staleTime: 5 * 60_000,
     retry: false,
     queryFn: () => readAccess({ data: { profile_id: profileId } }),
   });
 
-  if (!flag || !inDemoFirm || !profile || !invited || !access.data?.allowed) return null;
+  if (!inDemoFirm || !profile || !invited || !access.data?.allowed) return null;
   // Keyed by the person, so a change of profile starts from that person's own stored beat and nothing else.
   return <FirmStoryStage key={profile.id} profileId={profile.id} orgId={profile.org_id} window={access.data.window} />;
 }

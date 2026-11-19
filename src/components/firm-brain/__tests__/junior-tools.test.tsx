@@ -11,7 +11,6 @@ import { JUNIOR_COPY, type FirmPrepareResult, type JuniorTags } from "@/lib/firm
 import { FIRM_WALK_COPY, type FirmWalkthroughResult } from "@/lib/firm-walkthrough-shared";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   tags: vi.fn(),
   prepare: vi.fn(),
   walk: vi.fn(),
@@ -19,7 +18,6 @@ const m = vi.hoisted(() => ({
   cite: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/firm-junior.functions", () => ({
   getFirmJuniorTags: (...a: unknown[]) => m.tags(...a),
@@ -119,14 +117,13 @@ const submit = () => fireEvent.click(screen.getByTestId("prepare-me-submit"));
 const prepareState = () => screen.getByTestId("prepare-me").getAttribute("data-prepare");
 
 beforeEach(() => {
-  m.flag = true;
   for (const fn of [m.tags, m.prepare, m.walk, m.preview, m.cite]) fn.mockReset();
   m.tags.mockResolvedValue(TAGS);
 });
 afterEach(cleanup);
 
 describe("who sees the junior tools on Home", () => {
-  it("shows both tools to an analyst in a company workspace with the flag on, and asks for the list as them", async () => {
+  it("shows both tools to an analyst in a company workspace, and asks for the list as them", async () => {
     wrap(<JuniorTools profile={analyst} />);
     expect(screen.getByTestId("how-we-do-this")).toBeTruthy();
     expect(screen.getByTestId("prepare-me")).toBeTruthy();
@@ -141,13 +138,6 @@ describe("who sees the junior tools on Home", () => {
   ])("shows them to %s as well", (_name, profile) => {
     wrap(<JuniorTools profile={profile} />);
     expect(screen.getByTestId("junior-tools")).toBeTruthy();
-  });
-
-  it("shows nothing, and asks the server nothing, with the flag off", () => {
-    m.flag = false;
-    wrap(<JuniorTools profile={analyst} />);
-    expect(screen.queryByTestId("junior-tools")).toBeNull();
-    expect(m.tags).not.toHaveBeenCalled();
   });
 
   it.each([

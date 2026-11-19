@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 18 Nov: Firm Brain Build Spec, steps 3 and 4. The firm map on the firm view: hidden with the flag off and for a
+// 18 Nov: Firm Brain Build Spec, steps 3 and 4. The firm map on the firm view: hidden for a
 // guest; without WebGL (or before the 3D map loads) the reading panel and a plain list, with no error; reduced motion
 // moves nothing; an Ask the firm answer pulls exactly the engagements it quoted; no person and no unshared board shows.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -21,7 +21,6 @@ import {
 } from "@/lib/__tests__/helpers/demo-firm-rows";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   webgl: false,
   reduce: false,
   getMap: vi.fn(),
@@ -34,7 +33,6 @@ vi.mock("@/lib/firm-walkthrough.functions", () => ({
   getFirmWalkthrough: (...a: unknown[]) => m.walk(...a),
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/webgl-capability", () => ({ hasWebGL: () => m.webgl }));
 vi.mock("@/lib/firm-map.functions", () => ({ getFirmMap: (...a: unknown[]) => m.getMap(...a) }));
@@ -126,7 +124,6 @@ let animate: ReturnType<typeof vi.fn>;
 let errors: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  m.flag = true;
   m.webgl = false;
   m.reduce = false;
   m.getMap.mockReset().mockResolvedValue(graph);
@@ -151,19 +148,11 @@ afterEach(() => {
 });
 
 describe("who sees the map", () => {
-  it("shows to a firm member with the flag on, with Ask the firm beside it", async () => {
+  it("shows to a firm member, with Ask the firm beside it", async () => {
     wrap(<FirmBrainMap profile={member} />);
     expect(screen.getByTestId("firm-brain-map")).toBeTruthy();
     expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
     await waitFor(() => expect(m.getMap).toHaveBeenCalledWith({ data: { profile_id: "p1" } }));
-  });
-
-  it("is absent with the flag off, and never asks the server", () => {
-    m.flag = false;
-    wrap(<FirmBrainMap profile={member} />);
-    expect(screen.queryByTestId("firm-brain-map")).toBeNull();
-    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
-    expect(m.getMap).not.toHaveBeenCalled();
   });
 
   it("is absent for a guest and a coach, and never asks the server", () => {

@@ -18,6 +18,11 @@ import { readFeatureFlag } from "./posthog-client";
  * 5. Retire a flag by deleting it here and in PostHog in the same change.
  * 6. FLAGS-1 (10 Nov, Liam): every user sees every feature. A flag is added only for a future need (a
  *    staged rollout, a kill switch), never to hold a finished feature back from people.
+ *
+ * Retired: company-brain (16 to 19 Nov 2026). It hid every firm brain screen and defaulted off, so a blocked or slow
+ * PostHog hid the whole firm brain, the demo firm included. Liam turned the firm brain on for everyone (Q-20). Who sees
+ * a firm brain screen is decided by the person and the workspace (canAskTheFirm and its neighbours) and by the server.
+ * A flag that hides a finished feature must never default off again (rule 1 and rule 6).
  */
 export const FEATURE_FLAGS = {
   /**
@@ -26,13 +31,6 @@ export const FEATURE_FLAGS = {
    * the docked panel on the next page load. Preview hosts are not affected.
    */
   "ask-floating": { default: true },
-  /**
-   * The firm brain (Liam, 16 Nov): every brain surface (Shown to client, Red pen, Partner read) stays hidden until
-   * it is tested. Default off. In PostHog: a person release condition on org_id = the QA workspace only, never a
-   * group flag. Server functions and database functions check access themselves, so this only hides screens.
-   * Retired in the same change that turns it on for everyone.
-   */
-  "company-brain": { default: false },
 } as const satisfies Record<string, { default: boolean }>;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

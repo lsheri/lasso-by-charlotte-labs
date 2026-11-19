@@ -15,8 +15,8 @@ function validate(input: MapInput): MapInput {
 
 /**
  * 18 Nov, Firm Brain Build Spec step 3: the firm graph for the map, for the signed-in firm member. The same gate as
- * Ask the firm (requireFirmMember: an active member of a company workspace, never a coach or a guest); the
- * company-brain flag only hides the view. Read live from the firm reader on every call and stored nowhere, so a board
+ * Ask the firm (requireFirmMember: an active member of a company workspace, never a coach or a guest); no flag sits in front of
+ * the view. Read live from the firm reader on every call and stored nowhere, so a board
  * with sharing turned off is gone at the next load. Lesson text is left out: the map never shows it.
  */
 export const getFirmMap = createServerFn({ method: "POST" })

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ph = vi.hoisted(() => ({
@@ -64,6 +64,31 @@ describe("FLAGS useFeatureFlag", () => {
     ph.answer = false;
     act(() => { for (const l of ph.listeners) l(); });
     expect(result.current).toBe(false);
+  });
+});
+
+describe("FLAGS company-brain is retired: the firm brain never waits on PostHog", () => {
+  const files = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) return entry.name === "__tests__" ? [] : files(path);
+      return /\.tsx?$/.test(entry.name) && !/\.(test|stories)\./.test(entry.name) ? [path] : [];
+    });
+
+  it("is gone from the catalogue, so it cannot be read", () => {
+    expect(Object.keys(FEATURE_FLAGS)).not.toContain("company-brain");
+  });
+  it("no app file names it, apart from the catalogue's note on why it was retired", () => {
+    const naming = files("src").filter((path) => readFileSync(path, "utf8").includes("company-brain"));
+    expect(naming).toEqual(["src/lib/feature-flags.ts"]);
+  });
+  it("no firm brain screen, hook or page reads any flag at all", () => {
+    const firmBrain = [...files("src/components/firm-brain"), ...files("src/components/firm"), ...files("src/components/firm-story"), "src/hooks/use-client-showings.ts", "src/hooks/use-exemplars.ts", "src/hooks/use-can-correct-tags.ts", "src/pages/CanvasLabPage.tsx", "src/pages/FirmDashboardPage.tsx", "src/pages/HomePage.tsx", "src/components/peek/PeekPanel.tsx", ...["RedPenPanel", "SowTermsDialog", "ReadingListDialog", "ItemTagsDialog", "BoardOutcomeDialog"].map((name) => `src/components/canvas-lab/${name}.tsx`), "src/lib/firm-ask-shared.ts", "src/lib/firm-map-shared.ts"];
+    const reading = firmBrain.filter((path) => /useFeatureFlag|flagEnabled|readFeatureFlag|isFeatureEnabled|getFeatureFlag|posthog/.test(readFileSync(path, "utf8")));
+    expect(reading).toEqual([]);
+  });
+  it("no flag that defaults off is left: a blocked PostHog can never hide a feature again", () => {
+    for (const [name, spec] of Object.entries(FEATURE_FLAGS)) expect(spec.default, name).toBe(true);
   });
 });
 

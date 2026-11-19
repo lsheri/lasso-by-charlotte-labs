@@ -80,11 +80,11 @@ export function LabCardMenu({
   onClientShown?: (() => void) | undefined;
   /** 17 Nov, firm brain: check this deliverable's claims against the board's sources. */
   onRedPen?: (() => void) | undefined;
-  /** 18 Nov, firm brain: set a SOW's fee terms. Admins and leads only, behind company-brain. */
+  /** 18 Nov, firm brain: set a SOW's fee terms. Admins and leads only. */
   onSowTerms?: (() => void) | undefined;
-  /** 18 Nov, firm brain step 5: correct this item's tags. The board lead and admins only, behind company-brain. */
+  /** 18 Nov, firm brain step 5: correct this item's tags. The board lead and admins only. */
   onTags?: (() => void) | undefined;
-  /** 19 Nov, firm brain step 8: set or remove the exemplar mark. Admins and leads only, behind company-brain. */
+  /** 19 Nov, firm brain step 8: set or remove the exemplar mark. Admins and leads only. */
   exemplarLabel?: string | undefined;
   onExemplar?: (() => void) | undefined;
   /** FACE-3: both present on the board only. */

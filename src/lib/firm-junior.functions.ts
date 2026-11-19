@@ -19,7 +19,7 @@ function validateTagsInput(input: ProfileInput): ProfileInput {
 /**
  * 18 Nov, Firm Brain Build Spec step 7: which situations, methods and call roles the firm has shared work for, for
  * the pickers on Home. The same gate as Ask the firm (requireFirmMember: an active member of a company workspace,
- * never a coach or a guest); the company-brain flag only hides the screen. It returns tag keys from the fixed lists
+ * never a coach or a guest); no flag sits in front of the screen. It returns tag keys from the fixed lists
  * and a count of engagements for each, read live from the firm reader: no names, no titles, nothing stored, no event.
  */
 export const getFirmJuniorTags = createServerFn({ method: "POST" })
