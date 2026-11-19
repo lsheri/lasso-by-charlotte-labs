@@ -74,6 +74,13 @@ function useRenderer(): {
 }
 
 /**
+ * The map's stage. The map is about as tall as it is wide, so on a phone the stage is capped near the stage's own
+ * width (115vw): at 70vh the lower half of a phone stage was empty. From a tablet up the cap never applies.
+ */
+export const FIRM_MAP_STAGE_CLASS =
+  "relative h-[min(70vh,620px,115vw)] min-h-[360px] min-w-0 overflow-hidden rounded-[var(--radius)] border border-border bg-(--surface-raised)";
+
+/**
  * 18 Nov, Firm Brain Build Spec steps 3 and 4: the firm brain map at the top of the firm view, with Ask the firm
  * beside it. Hidden unless company-brain is on, the workspace is a company and the person is neither a coach nor a
  * guest; the server checks again. Only on the signed-in firm view: never on shared, demo, tour or rollup surfaces.
@@ -177,7 +184,7 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
       {askBox}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="relative h-[min(70vh,620px)] min-h-[360px] min-w-0 overflow-hidden rounded-[var(--radius)] border border-border bg-(--surface-raised)">
+        <div className={FIRM_MAP_STAGE_CLASS}>
           {query.isPending ? (
             <p role="status" className="p-4 text-(length:--type-small) text-muted-foreground">
               {FIRM_MAP_COPY.loading}
@@ -208,12 +215,14 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
               )}
               <p
                 data-testid="firm-map-totals"
+                data-map-keep-clear=""
                 className="pointer-events-none absolute left-4 top-3 font-mono text-(length:--type-label) uppercase tracking-wider text-muted-foreground"
               >
                 {`${layout!.totals.engagements} ${FIRM_MAP_COPY.engagements} · ${layout!.totals.situations} ${FIRM_MAP_COPY.situations} · ${layout!.totals.methods} ${FIRM_MAP_COPY.methods}`}
               </p>
               <ul
                 aria-hidden="true"
+                data-map-keep-clear=""
                 className="pointer-events-none absolute bottom-3 right-4 hidden flex-wrap justify-end gap-x-4 gap-y-1 text-(length:--type-small) text-muted-foreground sm:flex"
               >
                 <li className="flex items-center gap-1.5">
