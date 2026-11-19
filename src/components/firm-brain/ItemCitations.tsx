@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { canAskTheFirm, FIRM_TYPE_LABELS, firmDate } from "@/lib/firm-ask-shared";
 import { citationEntriesOf, CITE_COPY } from "@/lib/firm-cite-shared";
 import { getFirmCitations, removeFirmCitation } from "@/lib/firm-cite.functions";
@@ -31,7 +30,6 @@ export function ItemCitations({
   item: { id: string; owner_id?: string | null | undefined; meta?: unknown };
   profile: ReaderProfile | null | undefined;
 }) {
-  const flagOn = useFeatureFlag("company-brain");
   const load = useServerFn(getFirmCitations);
   const remove = useServerFn(removeFirmCitation);
   const queryClient = useQueryClient();
@@ -42,7 +40,7 @@ export function ItemCitations({
 
   const owner = Boolean(profile?.id) && item.owner_id === profile?.id;
   const stored = citationEntriesOf(item.meta).length;
-  const show = owner && canAskTheFirm(flagOn, profile) && stored > 0;
+  const show = owner && canAskTheFirm(profile) && stored > 0;
   const query = useQuery({
     queryKey: ["firm-citations", item.id, profile?.id ?? null, stored],
     enabled: show,

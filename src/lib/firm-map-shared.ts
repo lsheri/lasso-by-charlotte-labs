@@ -488,11 +488,10 @@ export function listBySituation(
 }
 
 /**
- * Who sees the map: everyone who sees Ask the firm (the company-brain flag on, a company workspace, not a coach),
+ * Who sees the map: everyone who sees Ask the firm (a company workspace, not a coach),
  * except guests. The server gate (requireFirmMember) checks all of it again.
  */
 export function canSeeFirmMap(
-  flagOn: boolean,
   profile:
     | {
         role?: string | null;
@@ -503,5 +502,5 @@ export function canSeeFirmMap(
     | null
     | undefined,
 ): boolean {
-  return canAskTheFirm(flagOn, profile) && profile?.is_guest !== true;
+  return canAskTheFirm(profile) && profile?.is_guest !== true;
 }

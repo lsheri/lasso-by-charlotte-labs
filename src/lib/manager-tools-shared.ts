@@ -1,7 +1,7 @@
 /**
  * 19 Nov, Firm Brain Build Spec step 8: manager tools. The pure rules behind the reading list (up to three shared
  * engagements pinned to a board), the exemplar mark and the firm's common question kinds, so each can be tested
- * without a database. The server files apply them; the company-brain flag only hides the screens.
+ * without a database. The server files apply them; no flag sits in front of the screens.
  *
  * Three promises hold everywhere here: a reading list shows only engagements the reader may already see, a kind of
  * question appears only once five people have asked it, and nothing says who pinned, who marked, who asked or whose

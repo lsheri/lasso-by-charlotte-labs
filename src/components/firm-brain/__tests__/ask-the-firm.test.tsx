@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 17 Nov, firm brain PR 4: the Ask the firm box. Hidden without the flag, outside company workspaces and for coaches;
+// 17 Nov, firm brain PR 4: the Ask the firm box. Hidden outside company workspaces and for coaches;
 // "What we charged" only for admins and leads; answers show claims with their sources and client marks, the coverage
 // line, and never stretch when nothing is found. A source opens a read-only preview.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,13 +10,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FirmAskResult } from "@/lib/firm-ask-shared";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   ask: vi.fn(),
   preview: vi.fn(),
   keepOut: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/firm-ask.functions", () => ({
   askTheFirm: (...a: unknown[]) => m.ask(...a),
@@ -49,7 +47,6 @@ const answered: FirmAskResult = {
 };
 
 beforeEach(() => {
-  m.flag = true;
   m.ask.mockReset();
   m.preview.mockReset();
   m.keepOut.mockReset();
@@ -57,17 +54,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("who sees the box", () => {
-  it("shows for a member of a company workspace with the flag on", () => {
+  it("shows for a member of a company workspace, with no flag asked", () => {
     wrap(<AskTheFirm profile={member} />);
     expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
   });
 
-  it("stays hidden without the flag, outside company workspaces, and for coaches", () => {
-    m.flag = false;
-    const { rerender } = wrap(<AskTheFirm profile={member} />);
-    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
-    m.flag = true;
-    rerender(<QueryClientProvider client={new QueryClient()}><AskTheFirm profile={{ ...member, has_firm_view: false, org_type: "personal" }} /></QueryClientProvider>);
+  it("stays hidden outside company workspaces, and for coaches", () => {
+    const { rerender } = wrap(<AskTheFirm profile={{ ...member, has_firm_view: false, org_type: "personal" }} />);
     expect(screen.queryByTestId("ask-the-firm")).toBeNull();
     rerender(<QueryClientProvider client={new QueryClient()}><AskTheFirm profile={{ ...member, role: "coach" }} /></QueryClientProvider>);
     expect(screen.queryByTestId("ask-the-firm")).toBeNull();
@@ -124,6 +117,26 @@ describe("asking", () => {
     fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
     fireEvent.click(screen.getByRole("button", { name: "Ask" }));
     await waitFor(() => expect(screen.queryByTestId("ask-the-firm")).toBeNull());
+  });
+
+  it("says the daily limit was reached, not try again, when the server refuses for spend", async () => {
+    m.ask.mockRejectedValue(new Response("limit", { status: 429 }));
+    wrap(<AskTheFirm profile={member} />);
+    fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+    await waitFor(() => expect(screen.getByText("Today's limit for the firm brain has been reached. It resets at midnight UTC.")).toBeTruthy());
+    expect(screen.queryByText("That did not work. Try again.")).toBeNull();
+    // The box stays: tomorrow it works again.
+    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+  });
+
+  it("still says try again for any other failure", async () => {
+    m.ask.mockRejectedValue(new Error("network"));
+    wrap(<AskTheFirm profile={member} />);
+    fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ask" }));
+    await waitFor(() => expect(screen.getByText("That did not work. Try again.")).toBeTruthy());
+    expect(screen.queryByText(/Today's limit/)).toBeNull();
   });
 
   it("opens a source as a read-only preview, and lets its author keep it out", async () => {

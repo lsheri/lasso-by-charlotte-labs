@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { toast } from "sonner";
 
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { supabase } from "@/integrations/supabase/client";
 import { canMarkExemplar, EXEMPLAR_COPY } from "@/lib/manager-tools-shared";
 import { markExemplarFn, unmarkExemplarFn } from "@/lib/manager-tools.functions";
@@ -24,7 +23,7 @@ const NONE = new Set<string>();
 /**
  * Exemplar marks for one board, read once per board (never per card), for the signed-in board only. The read names
  * the item column alone: who marked is not readable by members and is never asked for. The database shows marks only
- * while the board is shared with the firm, so an unshared board has none. Hidden behind company-brain and limited to
+ * while the board is shared with the firm, so an unshared board has none. Limited to
  * company workspaces.
  */
 export function useExemplars({
@@ -34,8 +33,7 @@ export function useExemplars({
   engagementId: string;
   profile: { id?: string | null; role?: string | null; is_guest?: boolean | null; org_type?: string | null; has_firm_view?: boolean | null } | null | undefined;
 }): ExemplarsApi {
-  const flagOn = useFeatureFlag("company-brain");
-  const enabled = flagOn && profileHasFirmView(profile as never) && profile?.role !== "coach" && profile?.is_guest !== true;
+  const enabled = profileHasFirmView(profile as never) && profile?.role !== "coach" && profile?.is_guest !== true;
   const queryClient = useQueryClient();
   const busy = useRef(new Set<string>());
 

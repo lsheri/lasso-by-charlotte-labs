@@ -692,6 +692,11 @@ async function routedRequest(
   options: ChatOptions,
   stream: boolean,
 ): Promise<Routed> {
+  // 19 Nov: the firm brain's daily spend limit. It reads nothing for any other surface, and refuses before any model.
+  if (options.meta?.orgId) {
+    const { assertWithinFirmBrainLimit } = await import("./firm-brain-limit.server");
+    await assertWithinFirmBrainLimit(options.meta);
+  }
   // 19 Nov, demo tour: the tour logins have a daily spend cap. This does nothing outside the demo firm's workspace.
   if (options.meta?.orgId && options.meta.profileId) {
     const { assertWithinTourCap, TourCapReached } = await import("./firm-story-cap.server");

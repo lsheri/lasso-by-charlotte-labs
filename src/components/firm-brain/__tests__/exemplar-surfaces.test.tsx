@@ -11,7 +11,6 @@ import type { FirmAskResult, FirmAskSource } from "@/lib/firm-ask-shared";
 import { EXEMPLAR_COPY } from "@/lib/manager-tools-shared";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   preview: vi.fn(),
   keepOut: vi.fn(),
   mark: vi.fn(),
@@ -21,7 +20,6 @@ const m = vi.hoisted(() => ({
   toast: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("sonner", () => ({ toast: { error: (...a: unknown[]) => m.toast(...a) } }));
 vi.mock("@/lib/firm-ask.functions", () => ({
@@ -81,7 +79,6 @@ const previewOf = (over: Record<string, unknown> = {}) => ({
 });
 
 beforeEach(() => {
-  m.flag = true;
   m.selected.length = 0;
   for (const fn of [m.preview, m.keepOut, m.mark, m.unmark, m.rows, m.toast]) fn.mockReset();
 });
@@ -242,10 +239,7 @@ describe("useExemplars, the board's one read", () => {
     expect(m.rows).toHaveBeenCalledWith("engagement_id", "board-1");
   });
 
-  it("is off, and reads nothing, without the flag, for a coach, a guest, or a personal workspace", () => {
-    m.flag = false;
-    expect(hook(admin).result.current.enabled).toBe(false);
-    m.flag = true;
+  it("is off, and reads nothing, for a coach, a guest, or a personal workspace", () => {
     expect(hook({ ...admin, role: "coach" }).result.current.enabled).toBe(false);
     expect(hook({ ...admin, is_guest: true }).result.current.enabled).toBe(false);
     expect(hook({ ...admin, has_firm_view: false, org_type: "personal" }).result.current.enabled).toBe(false);

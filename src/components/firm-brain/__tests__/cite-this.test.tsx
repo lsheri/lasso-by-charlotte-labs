@@ -12,7 +12,6 @@ import type { FirmAskResult } from "@/lib/firm-ask-shared";
 import type { FirmWalkthroughResult } from "@/lib/firm-walkthrough-shared";
 
 const m = vi.hoisted(() => ({
-  flag: true,
   cite: vi.fn(),
   citations: vi.fn(),
   remove: vi.fn(),
@@ -26,7 +25,6 @@ const m = vi.hoisted(() => ({
   workCalls: 0,
 }));
 
-vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/firm-cite.functions", () => ({
   citeFirmLine: (...a: unknown[]) => m.cite(...a),
@@ -82,7 +80,6 @@ const add = () => fireEvent.click(screen.getByTestId("cite-this-submit"));
 const alertText = () => screen.getByRole("alert").textContent;
 
 beforeEach(() => {
-  m.flag = true;
   for (const fn of [m.cite, m.citations, m.remove, m.preview, m.walk]) fn.mockReset();
   m.work = { data: { items: ITEMS }, isLoading: false, isError: false };
   m.workCalls = 0;
@@ -363,13 +360,6 @@ describe("cited lines under an item", () => {
     expect(m.citations).not.toHaveBeenCalled();
     expect(screen.queryByTestId("item-citations")).toBeNull();
     expect(document.body.textContent).not.toContain("STORED WORDS");
-  });
-
-  it("asks for nothing and shows nothing with the flag off", () => {
-    m.flag = false;
-    wrap(<ItemCitations item={item()} profile={analyst} />);
-    expect(m.citations).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("item-citations")).toBeNull();
   });
 
   it("goes away when the server refuses or returns no lines", async () => {

@@ -73,6 +73,19 @@ describe("a saved draft writes its ledger row, and can never be failed by it", (
     expect(draftFn).toMatch(/await import\("\.\/proposal-ledger\.server"\)\s*\.then\(\(\{ ledgerAfterDraft \}\) => ledgerAfterDraft\(supabaseAdmin, \{ orgId: profile\.org_id, engagementId: data\.engagement_id, itemId: itemId!, draft \}\)\)\s*\.catch\(\(\) => \{\}\);/);
   });
 
+  it("gates the brief and the precedent search on editing this board with the person's own seat, like the draft", () => {
+    const briefFn = source.slice(source.indexOf("export const draftProposalBrief = createServerFn"), source.indexOf("export type PrecedentsResult"));
+    const findFn = source.slice(source.indexOf("export const findProposalPrecedents = createServerFn"), source.indexOf("type DraftInput"));
+    for (const fn of [briefFn, findFn]) {
+      expect(fn).toContain("await draftGate(context, data.engagement_id, data.profile_id)");
+      expect(fn).not.toContain("requireFirmMember(");
+      // The gate runs before anything is read or any model is called.
+      expect(fn.indexOf("await draftGate(")).toBeLessThan(fn.search(/readPursuitNotes\(|readFirmCorpus\(|chatComplete/));
+    }
+    const gate = source.slice(source.indexOf("async function draftGate("), source.indexOf("export const draftProposal = createServerFn"));
+    expect(gate).toMatch(/requireFirmMember\(context\.supabase, context\.userId, profileId\)[\s\S]*isEngagementEditor\(context\.supabase, engagementId, member\.profile\.id\)\)\) throw new Response\("Forbidden", \{ status: 403 \}\)/);
+  });
+
   it("records the brief date beside the precedent search, never in front of it", () => {
     const findFn = source.slice(source.indexOf("export const findProposalPrecedents = createServerFn"), source.indexOf("type DraftInput"));
     expect(findFn).toMatch(/const ledger = import\("\.\/proposal-ledger\.server"\)[\s\S]*?ledgerAfterBrief\(\{ userDb: context\.supabase, admin: supabaseAdmin, profile \}[\s\S]*?\.catch\(\(\) => \{\}\);/);

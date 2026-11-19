@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { supabase } from "@/integrations/supabase/client";
 import { showingsByItem, type ClientShowing } from "@/lib/client-showings-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -18,7 +17,7 @@ export type ClientShowingsApi = {
 const NONE: ClientShowing[] = [];
 
 /**
- * Shown to client marks for one board, read once per board (never per card). Hidden behind company-brain and limited
+ * Shown to client marks for one board, read once per board (never per card). Limited
  * to company workspaces; mark_client_showing and unmark_client_showing check the role again in the database.
  */
 export function useClientShowings({
@@ -30,8 +29,7 @@ export function useClientShowings({
   profile: { id?: string | null; org_id?: string | null; org_type?: string | null; has_firm_view?: boolean | null } | null | undefined;
   canEdit: boolean;
 }): ClientShowingsApi {
-  const flagOn = useFeatureFlag("company-brain");
-  const enabled = flagOn && profileHasFirmView(profile as never);
+  const enabled = profileHasFirmView(profile as never);
   const queryClient = useQueryClient();
   const orgId = profile?.org_id ?? undefined;
 

@@ -27,18 +27,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("who sees the card", () => {
-  it("admins and leads of a company workspace, with the flag on", () => {
-    expect(canSeeCommonQuestionsCard(true, admin)).toBe(true);
-    expect(canSeeCommonQuestionsCard(true, { ...admin, role: "lead" })).toBe(true);
+  it("admins and leads of a company workspace", () => {
+    expect(canSeeCommonQuestionsCard(admin)).toBe(true);
+    expect(canSeeCommonQuestionsCard({ ...admin, role: "lead" })).toBe(true);
   });
 
-  it("nobody else: no flag, an em, a coach, a guest, a personal workspace, no profile", () => {
-    expect(canSeeCommonQuestionsCard(false, admin)).toBe(false);
-    expect(canSeeCommonQuestionsCard(true, { ...admin, role: "em" })).toBe(false);
-    expect(canSeeCommonQuestionsCard(true, { ...admin, role: "coach" })).toBe(false);
-    expect(canSeeCommonQuestionsCard(true, { ...admin, is_guest: true })).toBe(false);
-    expect(canSeeCommonQuestionsCard(true, { ...admin, has_firm_view: false, org_type: "personal" })).toBe(false);
-    expect(canSeeCommonQuestionsCard(true, null)).toBe(false);
+  it("nobody else: an em, a coach, a guest, a personal workspace, no profile", () => {
+    expect(canSeeCommonQuestionsCard({ ...admin, role: "em" })).toBe(false);
+    expect(canSeeCommonQuestionsCard({ ...admin, role: "coach" })).toBe(false);
+    expect(canSeeCommonQuestionsCard({ ...admin, is_guest: true })).toBe(false);
+    expect(canSeeCommonQuestionsCard({ ...admin, has_firm_view: false, org_type: "personal" })).toBe(false);
+    expect(canSeeCommonQuestionsCard(null)).toBe(false);
   });
 
   it("renders nothing and asks the server nothing for someone who may not see it", () => {

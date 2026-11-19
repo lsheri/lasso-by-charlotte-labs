@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import { METHOD_LABELS, type Method } from "@/lib/engagement-tags";
 import { canAskTheFirm } from "@/lib/firm-ask-shared";
 import { setWalkOffer } from "@/lib/firm-cite.functions";
@@ -31,7 +30,7 @@ type OfferItem = {
 
 /**
  * The once-only offer in the signed-in item reader: a call the person owns, titled like an interview, offers the
- * firm's walk-through for that kind of call. It shows only to the owner, with company-brain on, and only when the
+ * firm's walk-through for that kind of call. It shows only to the owner, and only when the
  * firm has shared work on that method (so the line is true). "Read it" opens the walk-through in a dialog; "Not now"
  * dismisses it. Either way the choice is saved on the person's own item, so it never shows again on any device. The
  * title is read here in the browser to pick a method from the fixed list and is sent nowhere.
@@ -43,7 +42,6 @@ export function WalkOffer({
   item: OfferItem;
   profile: OfferProfile | null | undefined;
 }) {
-  const flagOn = useFeatureFlag("company-brain");
   const loadTags = useServerFn(getFirmJuniorTags);
   const save = useServerFn(setWalkOffer);
   const queryClient = useQueryClient();
@@ -62,7 +60,7 @@ export function WalkOffer({
     };
   }, []);
 
-  const method = canAskTheFirm(flagOn, profile) ? walkOfferFor(item, profile) : null;
+  const method = canAskTheFirm(profile) ? walkOfferFor(item, profile) : null;
   const tags = useQuery({
     queryKey: ["firm-junior-tags", profile?.id ?? null],
     enabled: Boolean(method) && !settled,

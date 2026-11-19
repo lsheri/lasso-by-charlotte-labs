@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Firm brain phase 1, Shown to client (16 Nov). Walks the mark as the QA company admin, whose workspace alone has
- * the company-brain flag in PostHog, and checks a personal workspace never sees it.
+ * Firm brain phase 1, Shown to client (16 Nov). Walks the mark as the QA company admin, in a company
+ * workspace, and checks a personal workspace never sees it.
  *
  * Run against a local dev server (never paste the password into a chat or commit it):
  *   runpane secrets exec --project lasso-by-charlotte-labs --only LASSO_QA_PASSWORD -- \

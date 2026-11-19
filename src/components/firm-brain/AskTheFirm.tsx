@@ -3,7 +3,6 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFeatureFlag } from "@/hooks/use-feature-flag";
 import {
   canAskTheFirm,
   FIRM_ASK_COPY,
@@ -13,6 +12,7 @@ import {
   type FirmAskResult,
   type FirmAskStarter,
 } from "@/lib/firm-ask-shared";
+import { FIRM_BRAIN_LIMIT_COPY, isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
 
 import { FirmAnswer } from "./FirmAnswer";
@@ -21,7 +21,7 @@ import { FirmSourcePreview } from "./FirmSourcePreview";
 type AskProfile = { id?: string | null; role?: string | null; has_firm_view?: boolean | null; org_type?: string | null };
 
 /**
- * 17 Nov, firm brain: the Ask the firm box, on Home and the firm view. Hidden unless company-brain is on, the
+ * 17 Nov, firm brain: the Ask the firm box, on Home and the firm view. Hidden unless the
  * workspace is a company and the person is not a coach; the server checks again and refuses guests. Nothing about the
  * question is kept: the answer lives in this component's state only.
  */
@@ -35,18 +35,18 @@ export function AskTheFirm({
   /** The firm map's answer trace: null when a new question starts, then the answer. Nothing else about the question leaves. */
   onResult?: (result: FirmAskResult | null) => void;
 }) {
-  const flagOn = useFeatureFlag("company-brain");
   const ask = useServerFn(askTheFirm);
   const [question, setQuestion] = useState("");
   const [starter, setStarter] = useState<FirmAskStarter | null>(null);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [limited, setLimited] = useState(false);
   const [refused, setRefused] = useState(false);
   const [result, setResult] = useState<FirmAskResult | null>(null);
   const [openItem, setOpenItem] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  if (!canAskTheFirm(flagOn, profile) || refused) return null;
+  if (!canAskTheFirm(profile) || refused) return null;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -62,7 +62,10 @@ export function AskTheFirm({
     } catch (error) {
       // A guest or someone outside a company workspace: the server says no, so the box goes away.
       if (error instanceof Response && error.status === 403) setRefused(true);
-      else setFailed(true);
+      else {
+        setLimited(isFirmBrainLimit(error));
+        setFailed(true);
+      }
     } finally {
       setPending(false);
     }
@@ -129,7 +132,7 @@ export function AskTheFirm({
           {FIRM_ASK_COPY.pending}
         </p>
       ) : null}
-      {failed ? <p className="mt-4 text-(length:--type-small) text-destructive">{FIRM_ASK_COPY.error}</p> : null}
+      {failed ? <p className="mt-4 text-(length:--type-small) text-destructive">{limited ? FIRM_BRAIN_LIMIT_COPY.shown : FIRM_ASK_COPY.error}</p> : null}
       {result && !pending ? <FirmAnswer result={result} onOpenSource={setOpenItem} profileId={profile?.id} /> : null}
       <FirmSourcePreview itemId={openItem} profileId={profile?.id} onClose={() => setOpenItem(null)} />
     </section>

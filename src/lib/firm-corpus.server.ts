@@ -37,8 +37,8 @@ export const FIRM_CORPUS_TABLES = [
 const ID_PAGE = 100;
 
 /**
- * Anyone active in a company workspace may ask the firm, except coaches and guests. The flag only hides the surface;
- * this is the real gate.
+ * Anyone active in a company workspace may ask the firm, except coaches and guests. No flag sits in
+ * front of the surface; this is the gate.
  */
 export async function requireFirmMember(
   supabase: Db,

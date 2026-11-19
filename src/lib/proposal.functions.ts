@@ -17,14 +17,14 @@ function validateBoard(input: BoardInput): BoardInput {
 
 /**
  * 17 Nov, Start a proposal step 1: the six-line brief, read from this board's notes with the person's own access.
- * Any member of a company workspace may start one on a board they can open, except coaches and guests.
+ * Firm members who can edit this board with their own workspace seat, never coaches or guests: the same gate as
+ * the draft, so a person on another firm's board cannot start one there.
  */
 export const draftProposalBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateBoard)
   .handler(async ({ data, context }): Promise<ProposalBrief> => {
-    const { requireFirmMember } = await import("./firm-corpus.server");
-    const { profile } = await requireFirmMember(context.supabase, context.userId, data.profile_id);
+    const { profile } = await draftGate(context, data.engagement_id, data.profile_id);
     const { getItemText, ITEM_TEXT_COLUMNS } = await import("./item-text.server");
     const { readPursuitNotes, draftBrief } = await import("./proposal-precedents.server");
     const caller = context.supabase;
@@ -61,8 +61,8 @@ export const findProposalPrecedents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: FindInput) => ({ ...validateBoard(input), brief: input?.brief }))
   .handler(async ({ data, context }): Promise<PrecedentsResult> => {
-    const { requireFirmMember, readFirmCorpus } = await import("./firm-corpus.server");
-    const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, data.profile_id);
+    const { readFirmCorpus } = await import("./firm-corpus.server");
+    const { profile, supabaseAdmin } = await draftGate(context, data.engagement_id, data.profile_id);
     const full = await readFirmCorpus(supabaseAdmin, profile);
     const corpus = {
       ...full,

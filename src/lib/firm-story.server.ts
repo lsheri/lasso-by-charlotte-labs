@@ -1,6 +1,6 @@
 /**
  * The Kestrel Bay demo story: the server's answer to "may this person see it, and which window do they play?".
- * The company-brain flag only hides the launcher; this is the real check. It reads one profile row and one org id,
+ * No flag sits in front of the launcher; this is the real check. It reads one profile row and one org id,
  * writes nothing, and answers `allowed: false` for every other workspace without saying why.
  */
 

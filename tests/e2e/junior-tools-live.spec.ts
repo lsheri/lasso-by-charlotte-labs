@@ -3,8 +3,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 /**
- * Junior tools (Firm Brain Build Spec step 7), run as the Kestrel Bay analyst against a deployed build with
- * company-brain on. She opens a walk-through from Home, runs Prepare me for a role the firm has spoken to and for one
+ * Junior tools (Firm Brain Build Spec step 7), run as the Kestrel Bay analyst against a deployed build.
+ * She opens a walk-through from Home, runs Prepare me for a role the firm has spoken to and for one
  * it has not, cites a line into one of her own items, and checks the line and its link in the item reader. The cited
  * line, and any offer she dismissed on the way, are removed again in a finally, so the demo firm ends as it began.
  * Not exercised here: when a source stops being shared, its cited words are deleted on the owner's next read (unit
