@@ -409,6 +409,15 @@ describe("who sees what, mirroring the database", () => {
     for (const role of ["coach", null, undefined, ""]) expect(ledgerAccess({ role, isOwner: true, ...board })).toBe("none");
   });
 
+  it("lets an admin or lead who can edit an unshared board read its ledger, and nobody else", () => {
+    const unshared = { isOwner: false, shared: false, archived: false };
+    expect(ledgerAccess({ role: "admin", isEditor: true, ...unshared })).toBe("partner");
+    expect(ledgerAccess({ role: "lead", isEditor: true, ...unshared })).toBe("partner");
+    expect(ledgerAccess({ role: "lead", isEditor: true, isOwner: false, shared: true, archived: true })).toBe("partner");
+    expect(ledgerAccess({ role: "admin", isEditor: false, ...unshared })).toBe("none");
+    for (const role of ["em", "analyst", "coach", null]) expect(ledgerAccess({ role, isEditor: true, ...unshared })).toBe("none");
+  });
+
   it("shows the value to admins and leads only: an em owner sees none", () => {
     expect(canSeeLedgerValue("em", "owner")).toBe(false);
     expect(canSeeLedgerValue("admin", "owner")).toBe(true);
@@ -425,5 +434,24 @@ describe("who sees what, mirroring the database", () => {
     expect(canSetLedgerValue({ role: "admin", ...off })).toBe(false);
     expect(canSetLedgerValue({ role: "admin", ...off, shared: true, archived: true })).toBe(false);
     for (const role of ["em", "coach", null]) expect(canSetLedgerValue({ role, isOwner: true, isEditor: true, shared: true, archived: false })).toBe(false);
+  });
+});
+
+describe("the read rule for editing admins and leads (20261119130000)", () => {
+  const sql = readFileSync("supabase/migrations/20261119130000_s9_ledger_editor_read.sql", "utf8");
+
+  it("only replaces the read rule: no table, column, policy or grant to members changes", () => {
+    expect(sql).not.toMatch(/\b(create|alter|drop)\s+(table|policy|index|trigger)\b/i);
+    expect(sql).not.toMatch(/\bgrant\b[^;]*\banon\b/i);
+    expect(sql).toMatch(/revoke all on function public\.can_read_proposal_ledger\(uuid, uuid, boolean\) from anon/);
+  });
+
+  it("asks for an admin or lead, in this workspace, who is on the board and is not a coach or guest", () => {
+    expect(sql).toMatch(/firm_role_in\(p_org\) in \('admin', 'lead'\)\s+and exists \(select 1 from engagement_members/);
+    expect(sql).toContain("p.org_id = p_org");
+    expect(sql).toContain("m.member_role <> 'coach'");
+    expect(sql).toContain("not coalesce(p.is_guest, false)");
+    // The fee gate is untouched: value still needs an admin or lead whatever else is true.
+    expect(sql).toContain("(not p_fee or public.firm_role_in(p_org) in ('admin', 'lead'))");
   });
 });

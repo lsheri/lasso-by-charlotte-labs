@@ -115,20 +115,21 @@ describe("each role, for every server function", () => {
     });
   });
 
-  it("boardValueSoFar on an unshared board: only its owner sees rows, and an em owner sees no value anywhere", async () => {
+  it("boardValueSoFar on an unshared board: its owner and an admin who can edit it are let in, and an em owner sees no value anywhere", async () => {
     const seen: Record<string, unknown> = {};
     for (const who of ROLES) {
       const result = await status(
         call<BoardValueSoFar>(fns.boardValueSoFar, who, { engagement_id: UNSHARED_BOARD }).then((view) => {
           seen[who] = [view.access, view.rows.length, view.canSetValue];
-          expect(JSON.stringify(view), `${who} gets no amount`).not.toMatch(/90000|amount/);
+          if (who === "admin") expect(view.value, "the admin who can edit it reads the value back").toEqual({ amount: 90_000, currency: "USD" });
+          else expect(JSON.stringify(view), `${who} gets no amount`).not.toMatch(/90000|amount/);
         }),
       );
       if (result !== "ok") seen[who] = result;
     }
     expect(seen).toEqual({
-      // The admin is on the board, so may set its value, but the database shows them nothing on an unshared board.
-      admin: ["none", 0, true],
+      // The admin can edit the board, so may set its value and reads its two rows (20261119130000).
+      admin: ["partner", 2, true],
       lead: ["none", 0, false],
       owner: ["owner", 2, false],
       editor: ["none", 0, false],
@@ -437,10 +438,14 @@ describe("valueSoFar reads with the person's own client, so the database decides
 
   it("an admin's own unshared board is not counted for the firm either, though the database shows it to them", async () => {
     const direct = await db.as(PEOPLE.admin.userId).from("proposal_ledger").select("*").eq("org_id", ORG);
-    expect(new Set((direct.data as { engagement_id: string }[]).map((row) => row.engagement_id))).toEqual(new Set([SHARED_BOARD, ADMIN_OWN_UNSHARED]));
+    // The database also shows them the unshared board they can edit; the firm's figure counts neither.
+    expect(new Set((direct.data as { engagement_id: string }[]).map((row) => row.engagement_id))).toEqual(new Set([SHARED_BOARD, ADMIN_OWN_UNSHARED, UNSHARED_BOARD]));
     const view = await call<FirmValueSoFar>(fns.firmValueSoFar, "admin", {});
     expect(new Set(view.rows.map((row) => row.engagement_id))).toEqual(new Set([SHARED_BOARD]));
     expect(view.figures.valueWon!.map((value) => value.currency)).toEqual(["USD"]);
+    expect(view.figures.valueWon).toEqual([expect.objectContaining({ currency: "USD", amount: 380_000, boardIds: [SHARED_BOARD] })]);
+    expect(JSON.stringify(view)).not.toContain(UNSHARED_BOARD);
+    expect(JSON.stringify(view)).not.toMatch(/900000|70000/);
     // On the board itself they still see it, as its owner.
     const own = await call<BoardValueSoFar>(fns.boardValueSoFar, "admin", { engagement_id: ADMIN_OWN_UNSHARED });
     expect([own.access, own.rows.length, own.value]).toEqual(["owner", 3, { amount: 70_000, currency: "GBP" }]);

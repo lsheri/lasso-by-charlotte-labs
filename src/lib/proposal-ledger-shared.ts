@@ -222,10 +222,14 @@ export function formatLedgerAmount(amount: number, currency: string): string {
 export type LedgerAccess = "owner" | "partner" | "none";
 
 /** Dates and counts: the board's owner, and admins and leads while the board is shared with the firm. */
-export function ledgerAccess(input: { role: string | null | undefined; isOwner: boolean; shared: boolean; archived: boolean }): LedgerAccess {
+export function ledgerAccess(input: { role: string | null | undefined; isOwner: boolean; isEditor?: boolean; shared: boolean; archived: boolean }): LedgerAccess {
   if (!input.role || input.role === "coach") return "none";
   if (input.isOwner) return "owner";
-  return canSetFees(input.role) && input.shared && !input.archived ? "partner" : "none";
+  if (!canSetFees(input.role)) return "none";
+  // An admin or lead who can edit a board reads its ledger even while it is not shared, so a value she saves there
+  // can be read back (Liam, 18 Nov 2026). The database read rule has the same clause.
+  if (input.isEditor) return "partner";
+  return input.shared && !input.archived ? "partner" : "none";
 }
 
 /** The value: admins and leads only, never an em owner. */
