@@ -226,3 +226,159 @@ describe("close-out lessons", () => {
     expect(pickedIds('{"items": ["outcome-00000001-0000-4000-8000-000000000000", "outcome-0000', uuidCorpus)).toEqual(["outcome-00000001-0000-4000-8000-000000000000"]);
   });
 });
+
+// 19 Nov (Liam's decision D-6): a proposal draft on a board shared with the firm is findable by topic. A saved draft
+// has no summary card, so its gist (made by code from its own sections) stands in; both model calls are told a
+// proposal draft counts as a match; and a claim from one always says it is a draft.
+describe("a saved proposal draft", () => {
+  const GIST =
+    "About one in three primary care adults at the client has prediabetes on paper, and almost nobody is in a program.";
+  const BODY = `# Proposal draft\n\n## Context\n${GIST} Fee $120,000.\n`;
+  const withDraft = (gist: string | null, grade: "full" | "summary" = "full"): FirmCorpus => ({
+    ...corpus,
+    boards: [
+      ...corpus.boards,
+      {
+        id: "b31",
+        title: "Diabetes prevention service line (proposal)",
+        client: "Marrowfield",
+        brief: null,
+        lead: "Harper Quinn",
+        startedOn: "2026-11-17",
+        outcome: null,
+        askerIsOnBoard: false,
+      },
+    ],
+    items: [
+      ...corpus.items,
+      {
+        id: "draft31",
+        boardId: "b31",
+        type: "document",
+        title: "Proposal draft: new service line",
+        date: null,
+        summary: null,
+        decisions: null,
+        entities: null,
+        grade,
+        shown: [],
+        sowFacts: null,
+        kind: "proposal",
+        proposalDraft: { gist },
+      },
+    ],
+  });
+  const askDraft = (deps: ReturnType<typeof fake>["deps"], firm: FirmCorpus) =>
+    runFirmAsk(
+      { ...deps, loadText: async (id) => (id === "draft31" ? BODY : deps.loadText(id)) },
+      {
+        corpus: firm,
+        question: "Have we worked on prediabetes for a health system?",
+        canSeeFees: false,
+        meta: undefined,
+      },
+    );
+  const cardOf = (messages: ChatMessage[]) =>
+    messages[1]!.content
+      .toString()
+      .split("\n")
+      .find((line) => line.includes("ITEM draft31")) ?? "";
+
+  it("puts what the draft is about on its card for the picking call, marked as a proposal draft", async () => {
+    const model = fake([]);
+    await askDraft(model.deps, withDraft(GIST));
+    const card = cardOf(model.seen[0]!.messages);
+    expect(card).toContain("[document, proposal draft]");
+    expect(card).toContain("prediabetes");
+    expect(model.seen[0]!.messages[0]!.content).toMatch(
+      /proposal draft.*counts as the firm's work on its topic/,
+    );
+  });
+
+  it("leaves every other card as it was, and a draft with nothing to say keeps its title only", async () => {
+    const model = fake([]);
+    await askDraft(model.deps, withDraft(null));
+    const text = model.seen[0]!.messages[1]!.content.toString();
+    expect(cardOf(model.seen[0]!.messages)).toBe(
+      "  ITEM draft31 [document, proposal draft] Proposal draft: new service line",
+    );
+    expect(text).toContain(
+      "  ITEM deck5 [deck] Final readout | date 2025-06-20 | summary: Recommends a single front door.",
+    );
+  });
+
+  it("never shows a fee on the card, even when the draft's own words hold one", async () => {
+    const model = fake([]);
+    await askDraft(model.deps, withDraft(`${GIST} The budget is $120,000.`));
+    expect(cardOf(model.seen[0]!.messages)).not.toMatch(/\$\s?\d/);
+  });
+
+  it("tells the answering call the document is a proposal draft and that it is a match, not near work", async () => {
+    const model = fake(["draft31"], {
+      claims: [
+        {
+          text: "The firm is writing a proposal draft on prediabetes.",
+          item_id: "draft31",
+          quote: "almost nobody is in a program",
+        },
+      ],
+      summary: "",
+    });
+    const { result } = await askDraft(model.deps, withDraft(GIST));
+    const sent = model.seen[1]!.messages;
+    expect(sent[1]!.content).toContain(
+      '<document id="draft31" board="Diabetes prevention service line (proposal)" type="proposal draft"',
+    );
+    expect(sent[0]!.content).toMatch(
+      /Never set "not_found" only because the matching work is a proposal draft/,
+    );
+    expect(sent[1]!.content).not.toMatch(/\$\s?\d/);
+    expect(result.status).toBe("answered");
+    expect(result.claims[0]).toMatchObject({
+      itemId: "draft31",
+      boardId: "b31",
+      grade: "quoted",
+      text: "The firm is writing a proposal draft on prediabetes.",
+    });
+  });
+
+  it("opens the claim with 'Proposal draft, not delivered work' when the model did not say it is one", async () => {
+    const model = fake(["draft31", "deck5"], {
+      claims: [
+        {
+          text: "About a third of adults have prediabetes.",
+          item_id: "draft31",
+          quote: "almost nobody is in a program",
+        },
+        {
+          text: "One front door in primary care.",
+          item_id: "deck5",
+          quote: "one front door in primary care",
+        },
+      ],
+      summary: "",
+    });
+    const { result } = await askDraft(model.deps, withDraft(GIST));
+    expect(result.claims.map((claim) => claim.text)).toEqual([
+      "Proposal draft, not delivered work: About a third of adults have prediabetes.",
+      "One front door in primary care.",
+    ]);
+  });
+
+  it("can be cited from its gist when the asker may only read its card", async () => {
+    const model = fake(["draft31"], {
+      claims: [
+        {
+          text: "A proposal draft covers prediabetes.",
+          item_id: "draft31",
+          quote: "almost nobody is in a program",
+        },
+      ],
+      summary: "",
+    });
+    const { result } = await askDraft(model.deps, withDraft(GIST, "summary"));
+    expect(model.loaded).toEqual([]);
+    expect(result.read).toEqual({ full: [], summary: ["draft31"] });
+    expect(result.claims[0]?.grade).toBe("from_summary");
+  });
+});
