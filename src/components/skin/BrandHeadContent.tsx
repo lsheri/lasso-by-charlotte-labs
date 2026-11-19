@@ -2,7 +2,7 @@ import { Asset, useRouter, useTags } from "@tanstack/react-router";
 import type { RouterManagedTag } from "@tanstack/router-core";
 import { createElement } from "react";
 
-import { brandFile, brandFor, brandThemeColor, launchBrand, rebrandTitle } from "@/design/brand/brand";
+import { brandCopy, brandFile, brandFor, brandThemeColor, launchBrand, rebrandTitle } from "@/design/brand/brand";
 import type { BrandVariant } from "@/lib/brand-variant-shared";
 import type { Skin } from "@/lib/skin";
 
@@ -10,6 +10,8 @@ import type { Skin } from "@/lib/skin";
 const APP_NAME_META = new Set(["apple-mobile-web-app-title", "application-name"]);
 /** Meta tags that repeat the page title on a link preview card. */
 const TITLE_META = new Set(["og:title", "twitter:title"]);
+/** Meta tags that describe the page, in a search result or on a link preview card. */
+const DESCRIPTION_META = new Set(["description", "og:description", "twitter:description"]);
 /** Meta tags that point at the link preview image. */
 const IMAGE_META = new Set(["og:image", "twitter:image"]);
 
@@ -38,9 +40,14 @@ export function brandHeadTags(
       const key = attrs["name"] ?? attrs["property"];
       if (APP_NAME_META.has(key)) return { ...tag, attrs: { ...attrs, content: brand.name } };
       if (IMAGE_META.has(key)) return { ...tag, attrs: { ...attrs, content: brandFile(attrs["content"], mark) } };
-      // A card title in the launch brand's name (the root's default head) follows a person's other look.
-      if (TITLE_META.has(key) && brand.name !== launch.name) {
+      // The card title follows the tab title: a route's own "... | Lasso" or the root's default in the launch brand.
+      if (TITLE_META.has(key)) {
         const content = rebrandTitle(launch, brand, attrs["content"]);
+        return content === attrs["content"] ? tag : { ...tag, attrs: { ...attrs, content } };
+      }
+      // Route descriptions are the app's own fixed copy, written as Lasso, so they take the name like any sentence.
+      if (DESCRIPTION_META.has(key)) {
+        const content = brandCopy(brand, attrs["content"]);
         return content === attrs["content"] ? tag : { ...tag, attrs: { ...attrs, content } };
       }
       if (key === "theme-color") {
