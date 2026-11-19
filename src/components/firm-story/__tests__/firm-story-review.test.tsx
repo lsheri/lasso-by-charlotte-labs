@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ access: vi.fn(), navigate: vi.fn(), log: vi.fn(), path: "/home", search: "" }));
+const m = vi.hoisted(() => ({ access: vi.fn(), recording: vi.fn(), navigate: vi.fn(), log: vi.fn(), path: "/home", search: "" }));
 
 vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => true }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
@@ -18,7 +18,10 @@ vi.mock("@tanstack/react-router", () => ({
   useRouterState: ({ select }: { select: (state: { location: { pathname: string; searchStr: string } }) => unknown }) =>
     select({ location: { pathname: m.path, searchStr: m.search } }),
 }));
-vi.mock("@/lib/firm-story.functions", () => ({ firmStoryAccessFn: (...a: unknown[]) => m.access(...a) }));
+vi.mock("@/lib/firm-story.functions", () => ({
+  firmStoryAccessFn: (...a: unknown[]) => m.access(...a),
+  firmStoryRecordingFn: (...a: unknown[]) => m.recording(...a),
+}));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }));
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: "Charlotte" }) }));
 

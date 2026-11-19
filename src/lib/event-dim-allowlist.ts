@@ -61,6 +61,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "firm_ask.kept_out": [],
   "firm_ask.source_opened": ["grade", "shown"],
   "firm_story.explored": ["beat", "mode", "script_version"],
+  "firm_story.fallback_shown": ["beat", "mode", "script_version"],
   "firm_story.finished": ["mode", "script_version"],
   "firm_story.reacted": ["beat", "mode", "reaction", "script_version"],
   "firm_story.role_picked": ["mode", "role_pick", "script_version"],

@@ -13,6 +13,7 @@ import {
   STORY_BOARD_ID,
   STORY_DONE,
   firstBeatFor,
+  hasRecording,
   forgetOtherStoryBeats,
   invitedBySearch,
   isAtPlace,
@@ -26,10 +27,10 @@ import {
   type StoryMode,
   type StoryReaction,
 } from "@/lib/firm-story-shared";
-import { firmStoryAccessFn } from "@/lib/firm-story.functions";
+import { firmStoryAccessFn, firmStoryRecordingFn } from "@/lib/firm-story.functions";
 import { logEvent } from "@/lib/telemetry";
 
-import { FirmStoryCard, type StoryWords } from "./FirmStoryCard";
+import { FirmStoryCard, type StoryRecordedState, type StoryWords } from "./FirmStoryCard";
 import { FirmStorySpotlight } from "./FirmStorySpotlight";
 import { useDialogOpen } from "./use-dialog-open";
 
@@ -103,6 +104,9 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
   const [mode, setMode] = useState<StoryMode>(() => modeFromSearch(here()));
   const [reactions, setReactions] = useState<Record<number, StoryReaction>>({});
   const [rolePick, setRolePick] = useState<StoryRolePick | null>(null);
+  // Recorded answers that were asked for, by beat. In memory only; gone on reload and on End tour.
+  const [recorded, setRecorded] = useState<Record<number, StoryRecordedState>>({});
+  const readRecording = useServerFn(firmStoryRecordingFn);
 
   // After End tour or Explore the pressed button is gone with its card: hand the keyboard to the button that
   // replaces it, so the next Tab does not start from the top of the page.
@@ -148,6 +152,7 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
     setExploring(false);
     setReactions({});
     setRolePick(null);
+    setRecorded({});
     focusLauncher.current = true;
   }, [profileId]);
 
@@ -246,6 +251,25 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
               if (rolePick === pick) return;
               setRolePick(pick);
               emit("firm_story.role_picked", { role_pick: pick, mode });
+            }}
+            recorded={
+              view.kind === "beat" && hasRecording(view.beat.n, storyWindow) ? (recorded[view.beat.n] ?? { kind: "offered" }) : { kind: "none" }
+            }
+            onShowRecorded={() => {
+              if (view.kind !== "beat") return;
+              const n = view.beat.n;
+              setRecorded((current) => ({ ...current, [n]: { kind: "loading" } }));
+              readRecording({ data: { profile_id: profileId, beat: n } })
+                .then((answer) => {
+                  setRecorded((current) => ({ ...current, [n]: answer ? { kind: "shown", answer } : { kind: "failed" } }));
+                  if (answer) emit("firm_story.fallback_shown", { beat: n, mode });
+                })
+                .catch(() => setRecorded((current) => ({ ...current, [n]: { kind: "failed" } })));
+            }}
+            onHideRecorded={() => {
+              if (view.kind !== "beat") return;
+              const n = view.beat.n;
+              setRecorded((current) => ({ ...current, [n]: { kind: "offered" } }));
             }}
             onEnd={end}
           />

@@ -692,6 +692,14 @@ async function routedRequest(
   options: ChatOptions,
   stream: boolean,
 ): Promise<Routed> {
+  // 19 Nov, demo tour: the tour logins have a daily spend cap. This does nothing outside the demo firm's workspace.
+  if (options.meta?.orgId && options.meta.profileId) {
+    const { assertWithinTourCap, TourCapReached } = await import("./firm-story-cap.server");
+    await assertWithinTourCap(options.meta).catch((error: unknown) => {
+      if (error instanceof TourCapReached) throw new AiError(error.message, "rate_limit");
+      // Anything else is a fault in the cap itself and must never stop a model call.
+    });
+  }
   let provider: Provider = activeProvider();
   let model = requestedModel ?? modelFor(options.tier ?? "smart", provider);
   let attempt = await sendRequest(model, messages, options, stream, provider);

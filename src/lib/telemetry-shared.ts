@@ -538,6 +538,8 @@ export type TelemetryEvent =
   | "firm_story.explored"
   /** 19 Nov, Kestrel Bay demo story: the last beat was finished and the closing line shown. Dims: script_version, mode. Portal registration required. */
   | "firm_story.finished"
+  /** 19 Nov, Kestrel Bay demo story, part 2: a recorded answer was shown on a beat because the live one failed or was slow. Dims: beat, script_version, mode. Never the question or the answer. Portal registration required. */
+  | "firm_story.fallback_shown"
   /** 17 Nov, firm brain: Start a proposal read a board's notes into a brief. Dims: input_kind (board_notes). Portal registration required. */
   | "proposal_draft.started"
   /** 17 Nov, firm brain: precedents were found for a proposal. Dims: close and loose (bucketed counts). Portal registration required. */
