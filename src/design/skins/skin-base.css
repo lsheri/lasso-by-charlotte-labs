@@ -65,6 +65,8 @@
   --selection:var(--skin-ink-wash);
   --select-ring:var(--skin-ink);
   --live:var(--skin-live);
+  /* The outline of a live thread on the firm map: the live colour deepened with ink, so it holds on a light stage. */
+  --live-edge:color-mix(in oklab, var(--skin-live) 72%, var(--skin-ink));
   --icon-ink-active:var(--skin-ink);
   --state-held:var(--skin-ink);
   --state-held-ink:var(--skin-page);

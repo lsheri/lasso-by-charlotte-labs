@@ -10,7 +10,7 @@ import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { TrustSummary } from "@/components/firm/TrustSummary";
 import { WhatLeavesTheFirm } from "@/components/firm/WhatLeavesTheFirm";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { AskTheFirm } from "@/components/firm-brain/AskTheFirm";
+import { FirmBrainMap } from "@/components/firm-brain/FirmBrainMap";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
@@ -64,7 +64,7 @@ export function FirmDashboardPage() {
       />
 
       <div className="space-y-8">
-        <AskTheFirm profile={profile} className="rounded-[var(--radius)] border border-border bg-card p-4 shadow-card" />
+        <FirmBrainMap profile={profile} />
         <ToneCard tone="record" label="WHAT THIS PAGE MEASURES">
           <TrustSummary />
         </ToneCard>
