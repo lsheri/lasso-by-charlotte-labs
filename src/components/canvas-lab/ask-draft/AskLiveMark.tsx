@@ -43,8 +43,8 @@ export function useOnline(): boolean {
 /** Charlotte's form of each Ask state: the web grows while reading, the lime hub at rest, all ink on failure. */
 const CHARLOTTE_STATE: Record<AskMarkState, MarkState> = { live: "reading", idle: "live", ink: "idle" };
 
-/** Spool script's form of each Ask state: the thread draws on in lime when a turn starts, and rests in ink otherwise. */
-const SPOOL_STATE: Record<AskMarkState, SpoolMarkState> = { live: "drawing", idle: "rest", ink: "rest" };
+/** Spool script's form of each Ask state: the lime thread draws on when a turn starts and holds at rest; all ink on failure. */
+const SPOOL_STATE: Record<AskMarkState, SpoolMarkState> = { live: "drawing", idle: "rest", ink: "ink" };
 
 export function AskLiveMark({ pending, error, turnKey }: { pending: boolean; error: boolean; turnKey: string }) {
   const online = useOnline();

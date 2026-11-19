@@ -260,8 +260,8 @@ export function LassoThinkingMark(props: LassoThinkingMarkProps) {
 }
 
 /**
- * Spool script: the thread turns lime only while the product is actually reading, on the same rule as Charlotte's
- * web (the toolbar's persistent mark is a standing button, so it stays at rest). The same data attributes as the
+ * Spool script: the thread is lime in every state; the state only records whether the product is reading
+ * (the toolbar's persistent mark is a standing button, so it stays at rest). The same data attributes as the
  * canvas, and aria-hidden, so the surrounding UI keeps announcing "Reading".
  */
 function SpoolThinkingMark({ kind, size, thinking = false, rope = true, persistent = false, flourish = false, className }: LassoThinkingMarkProps) {

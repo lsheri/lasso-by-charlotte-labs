@@ -216,7 +216,7 @@ describe("the page and the shell", () => {
     );
   });
 
-  it("Home's welcome mark is a flourish: the spool thread stays in ink, and lime still means work elsewhere", () => {
+  it("Home's welcome mark is a flourish at rest, and its thread is lime with an ink line like every other mark", () => {
     const draw = (flourish: boolean) =>
       render(
         <SkinContext.Provider value="charlotte">
@@ -226,6 +226,8 @@ describe("the page and the shell", () => {
         </SkinContext.Provider>,
       ).container.querySelector("svg")!;
     expect(draw(true).getAttribute("data-spool-state")).toBe("rest");
+    // 19 Nov, Liam: the welcome mark showed all in ink. Every mark carries the lime thread.
+    expect(draw(true).querySelector(".spool-outline")).not.toBeNull();
     expect(draw(false).getAttribute("data-spool-state")).toBe("live");
     expect(readFileSync("src/components/home/HomeBoard.tsx", "utf8")).toContain(
       "thinking flourish />",
