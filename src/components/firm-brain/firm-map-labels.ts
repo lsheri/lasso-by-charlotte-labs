@@ -13,17 +13,31 @@ export interface LabelBox {
   rank: number;
 }
 
+/** A part of the stage no label may cover, in the same coordinates as the labels: its centre and its size. */
+export type ClearBox = Pick<LabelBox, "x" | "y" | "width" | "height">;
+
+/** The attribute a stage overlay carries so the 3D map's labels keep off it. */
+export const KEEP_CLEAR_ATTR = "data-map-keep-clear";
+
 /** Space, in pixels, two labels keep between them. */
 export const LABEL_GAP = 6;
 
 /**
  * The ids to hide. Labels are taken in rank order (ties by id, so the answer never depends on input order); each
- * keeps its place only if it clears every label already kept by `gap`. A box with no size is unmeasured and is
- * always kept, since nothing can be said about what it covers.
+ * keeps its place only if it clears every label already kept by `gap`, and every `keepClear` box. A box with no
+ * size is unmeasured and is always kept, since nothing can be said about what it covers.
  */
-export function crowdedLabels(boxes: readonly LabelBox[], gap: number = LABEL_GAP): Set<string> {
+export function crowdedLabels(
+  boxes: readonly LabelBox[],
+  gap: number = LABEL_GAP,
+  keepClear: readonly ClearBox[] = [],
+): Set<string> {
   const hidden = new Set<string>();
-  const kept: LabelBox[] = [];
+  // The stage's own words (the counts, the key) hold their place before any label: a label that would sit on one
+  // gives way, whatever its rank, and comes back as the map turns.
+  const kept: ClearBox[] = keepClear.filter(
+    (box) => box.width > 0 && box.height > 0 && Number.isFinite(box.x + box.y),
+  );
   const ordered = [...boxes].sort((a, b) => a.rank - b.rank || a.id.localeCompare(b.id));
   for (const box of ordered) {
     if (!(box.width > 0) || !(box.height > 0) || !Number.isFinite(box.x + box.y)) continue;
