@@ -3,14 +3,19 @@
  * surfaces of the demo firm. Words live in firm-story-script.ts; this file decides who sees the story, which window
  * plays which beat, and how a beat number is kept.
  *
- * The story writes no product rows. The only thing kept is the beat number, in session storage. Presenter or
- * self-guided, and "exploring on my own", live in memory and are gone on reload.
+ * The story writes no product rows. The only thing kept is the beat number, in session storage, under a key that
+ * names the profile so the next person to sign in on the same tab starts clean. Presenter or self-guided, and
+ * "exploring on my own", live in memory and are gone on reload.
+ *
+ * The entry is opt-in: nobody sees a start button unless the address carries `?tour` or they already started in
+ * this tab, so an ordinary demo of the firm shows no trace of the story.
  *
  * Two characters, two browser windows: the Partner's and the Engagement lead's, each signed in as its own person.
  * There is no "switch person" control. When the next beat belongs to the other window, this window shows a handoff
  * card and waits there until the presenter comes back.
  */
 
+import { FIRM_ASK_COPY } from "./firm-ask-shared";
 import { FIRM_STORY_SCRIPT, type StoryBeat, type StoryPlace, type StoryWindow } from "./firm-story-script";
 
 /** The demo firm's workspace. The story exists nowhere else; the server checks this, the browser only mirrors it. */
@@ -29,6 +34,8 @@ export const FIRM_STORY_COPY = {
   start: "Start the tour",
   resume: "Resume tour",
   explore: "Explore on my own",
+  end: "End tour",
+  close: "Close",
   next: "Next",
   back: "Back",
   finish: "Finish",
@@ -36,7 +43,8 @@ export const FIRM_STORY_COPY = {
   presenterNotes: "Presenter notes",
   askViewer: "Ask the viewer",
   say: "Say and do",
-  askThis: "Ask the firm",
+  /** The product's own name for the surface, so this label cannot drift from it. */
+  askThis: FIRM_ASK_COPY.title,
   reactions: { this_is_us: "This is us", not_a_problem: "Not a problem for us" } satisfies Record<StoryReaction, string>,
   reactionsLabel: "How close is this to your firm?",
   beatOf: (n: number, last: number) => `Beat ${n} of ${last}`,
@@ -145,6 +153,15 @@ export function withProduct(text: string, product: string): string {
   return text.replaceAll("{product}", product);
 }
 
+/** The tour link: the address carries `?tour`, with any value or none. Nothing else in the address counts. */
+export function invitedBySearch(search: string): boolean {
+  try {
+    return new URLSearchParams(search).has("tour");
+  } catch {
+    return false;
+  }
+}
+
 /** Presenter mode from the address bar: `?tour=presenter`. Anything else is self-guided. */
 export function modeFromSearch(search: string): StoryMode {
   try {
@@ -156,9 +173,15 @@ export function modeFromSearch(search: string): StoryMode {
 
 /* ---------- the one stored value ---------- */
 
+/** The stem of every key the story has ever used. The bare stem was the key of the first build. */
 export const STORY_STORAGE_KEY = "lasso.firm-story.beat.v1";
 
-type BeatStore = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+type BeatStore = Pick<Storage, "getItem" | "setItem" | "removeItem"> & Partial<Pick<Storage, "length" | "key">>;
+
+/** This person's key, or null when the profile id is not something safe to put in a key. */
+export function storyStorageKey(profileId: string | null | undefined): string | null {
+  return profileId && /^[A-Za-z0-9-]{1,64}$/.test(profileId) ? `${STORY_STORAGE_KEY}.${profileId}` : null;
+}
 
 function store(): BeatStore | null {
   try {
@@ -168,20 +191,39 @@ function store(): BeatStore | null {
   }
 }
 
-/** The stored beat, or null. Blocked or broken storage reads as "not started". */
-export function readStoredBeat(storage: BeatStore | null = store()): number | null {
+/** Removes every story key that is not this person's, so a beat never waits in the tab for someone else. */
+function forgetOtherPeople(own: string, storage: BeatStore): void {
+  if (typeof storage.length !== "number" || typeof storage.key !== "function") return;
+  const stale: string[] = [];
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (key && key !== own && (key === STORY_STORAGE_KEY || key.startsWith(`${STORY_STORAGE_KEY}.`))) stale.push(key);
+  }
+  for (const key of stale) storage.removeItem(key);
+}
+
+/**
+ * This person's stored beat, or null. Blocked or broken storage reads as "not started". A beat left by a different
+ * person on the same tab is never returned, and is removed.
+ */
+export function readStoredBeat(profileId: string | null | undefined, storage: BeatStore | null = store()): number | null {
+  const key = storyStorageKey(profileId);
+  if (!key || !storage) return null;
   try {
-    return parseStoredBeat(storage?.getItem(STORY_STORAGE_KEY));
+    forgetOtherPeople(key, storage);
+    return parseStoredBeat(storage.getItem(key));
   } catch {
     return null;
   }
 }
 
-/** Keeps the beat number and nothing else. A failed write is not the person's problem: the story carries on in memory. */
-export function writeStoredBeat(beat: number | null, storage: BeatStore | null = store()): void {
+/** Keeps the beat number and nothing else; null forgets it. A failed write is not the person's problem. */
+export function writeStoredBeat(profileId: string | null | undefined, beat: number | null, storage: BeatStore | null = store()): void {
+  const key = storyStorageKey(profileId);
+  if (!key || !storage) return;
   try {
-    if (beat === null) storage?.removeItem(STORY_STORAGE_KEY);
-    else storage?.setItem(STORY_STORAGE_KEY, String(beat));
+    if (beat === null) storage.removeItem(key);
+    else storage.setItem(key, String(beat));
   } catch {
     // Storage is blocked. The story still works for this page.
   }

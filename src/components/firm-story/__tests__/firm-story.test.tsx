@@ -14,6 +14,7 @@ const m = vi.hoisted(() => ({
   navigate: vi.fn(),
   log: vi.fn(),
   path: "/home",
+  search: "?tour=1",
   brand: "Charlotte",
 }));
 
@@ -21,7 +22,8 @@ vi.mock("@/hooks/use-feature-flag", () => ({ useFeatureFlag: () => m.flag }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => m.navigate,
-  useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => unknown }) => select({ location: { pathname: m.path } }),
+  useRouterState: ({ select }: { select: (state: { location: { pathname: string; searchStr: string } }) => unknown }) =>
+    select({ location: { pathname: m.path, searchStr: m.search } }),
 }));
 vi.mock("@/lib/firm-story.functions", () => ({ firmStoryAccessFn: (...a: unknown[]) => m.access(...a) }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }));
@@ -29,7 +31,10 @@ vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: m.brand 
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
 import { FIRM_STORY_SCRIPT } from "@/lib/firm-story-script";
-import { KESTREL_BAY_ORG_ID, STORY_STORAGE_KEY } from "@/lib/firm-story-shared";
+import { KESTREL_BAY_ORG_ID, storyStorageKey } from "@/lib/firm-story-shared";
+
+// Every test here runs as profile p1, with the tour link in the address unless it says otherwise.
+const STORY_STORAGE_KEY = storyStorageKey("p1") as string;
 
 const demoProfile = { id: "p1", org_id: KESTREL_BAY_ORG_ID };
 
@@ -55,13 +60,14 @@ async function start() {
 beforeEach(() => {
   m.flag = true;
   m.path = "/home";
+  m.search = "?tour=1";
   m.brand = "Charlotte";
   m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
   m.navigate.mockReset();
   m.log.mockReset();
   window.sessionStorage.clear();
   window.localStorage.clear();
-  window.history.replaceState(null, "", "/home");
+  window.history.replaceState(null, "", "/home?tour=1");
 });
 
 afterEach(cleanup);
@@ -171,6 +177,7 @@ describe("the Partner's window", () => {
     expect(m.log).toHaveBeenCalledWith("firm_story.finished", KESTREL_BAY_ORG_ID, expect.objectContaining({ script_version: FIRM_STORY_SCRIPT.version }));
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByTestId("firm-story-card")).toBeNull();
+    expect(window.sessionStorage.length).toBe(0);
     expect((await launcher()).textContent).toBe("Start the tour");
   });
 });
@@ -217,6 +224,7 @@ describe("two modes from one script", () => {
     expect(window.sessionStorage.length).toBe(1); // the mode is not stored
     cleanup();
     window.history.replaceState(null, "", "/home?tour=presenter");
+    m.search = "?tour=presenter";
     mount();
     await waitFor(() => expect(card().getAttribute("data-story-mode")).toBe("presenter"));
   });

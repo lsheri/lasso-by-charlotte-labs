@@ -1,17 +1,6 @@
 import { useEffect, useState } from "react";
 
-type Box = { top: number; left: number; width: number; height: number };
-
-/** The surface's box on screen, or null when it is not on the page or has no size. */
-export function measureAnchor(testId: string, root: ParentNode = document): Box | null {
-  // An open dialog covers the surface, so an outline drawn over the dialog would point at nothing.
-  if (root.querySelector('[role="dialog"][data-state="open"]')) return null;
-  const target = root.querySelector(`[data-testid="${CSS.escape(testId)}"]`);
-  if (!target) return null;
-  const rect = target.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return null;
-  return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-}
+import { measureAnchor, type AnchorBox as Box } from "./measure-anchor";
 
 function same(a: Box | null, b: Box | null): boolean {
   if (!a || !b) return a === b;

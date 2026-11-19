@@ -13,6 +13,7 @@ import {
   STORY_BOARD_ID,
   STORY_DONE,
   firstBeatFor,
+  invitedBySearch,
   isAtPlace,
   modeFromSearch,
   nextBeat,
@@ -29,13 +30,17 @@ import { logEvent } from "@/lib/telemetry";
 
 import { FirmStoryCard, type StoryWords } from "./FirmStoryCard";
 import { FirmStorySpotlight } from "./FirmStorySpotlight";
+import { useDialogOpen } from "./use-dialog-open";
 
 type StoryProfile = { id: string; org_id: string } | null | undefined;
 
 /**
  * The Kestrel Bay demo story, mounted once in the signed-in shell so it sits over the real surfaces: Home, the firm
- * view and the proposal board. It shows only when the company-brain flag is on, the active profile is in the demo
+ * view and the proposal board. It can show only when the company-brain flag is on, the active profile is in the demo
  * firm's workspace, and the server agrees (firmStoryAccessFn). For everyone else it renders nothing and calls nothing.
+ *
+ * Even then the entry is opt-in: there is no start button unless the address carries `?tour` or this person already
+ * started in this tab, so an ordinary demo of the firm shows no trace of the story.
  *
  * It writes no product rows. The beat number is kept in session storage; presenter mode, "exploring" and the taps on
  * a card live in memory. The firm_story.* events are emitted here and nowhere else.
@@ -53,26 +58,31 @@ export function FirmStory({ profile }: { profile: StoryProfile }) {
   });
 
   if (!flag || !inDemoFirm || !profile || !access.data?.allowed) return null;
-  return <FirmStoryStage orgId={profile.org_id} window={access.data.window} />;
+  // Keyed by the person, so a change of profile starts from that person's own stored beat and nothing else.
+  return <FirmStoryStage key={profile.id} profileId={profile.id} orgId={profile.org_id} window={access.data.window} />;
 }
 
-function FirmStoryStage({ orgId, window: storyWindow }: { orgId: string; window: "partner" | "lead" }) {
+const here = () => globalThis.location?.search ?? "";
+
+function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: string; orgId: string; window: "partner" | "lead" }) {
   const brand = useBrand();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const search = useRouterState({ select: (state) => state.location.searchStr ?? "" });
+  const dialogOpen = useDialogOpen();
 
-  const [beat, setBeatState] = useState<number | null>(null);
+  // Read in the first render, not in an effect: a reload mid-story must not paint the start button for a frame.
+  const [beat, setBeatState] = useState<number | null>(() => readStoredBeat(profileId));
+  // Opted in: the tour link was in the address at some point on this page, or the story was already under way.
+  const [invited, setInvited] = useState(() => invitedBySearch(here()) || readStoredBeat(profileId) !== null);
   const [exploring, setExploring] = useState(false);
-  const [closed, setClosed] = useState(false);
-  const [mode, setMode] = useState<StoryMode>("self");
+  const [mode, setMode] = useState<StoryMode>(() => modeFromSearch(here()));
   const [reactions, setReactions] = useState<Record<number, StoryReaction>>({});
   const [rolePick, setRolePick] = useState<StoryRolePick | null>(null);
 
-  // Read once on mount: the stored beat, and presenter mode from the address bar.
   useEffect(() => {
-    setBeatState(readStoredBeat());
-    setMode(modeFromSearch(globalThis.location?.search ?? ""));
-  }, []);
+    if (invitedBySearch(search)) setInvited(true);
+  }, [search]);
 
   const version = FIRM_STORY_SCRIPT.version;
   const emit = useCallback(
@@ -92,45 +102,63 @@ function FirmStoryStage({ orgId, window: storyWindow }: { orgId: string; window:
   /** Stores a beat and, when this window plays it somewhere else, goes there. */
   const moveTo = useCallback(
     (n: number) => {
-      writeStoredBeat(n);
+      writeStoredBeat(profileId, n);
       setBeatState(n);
       setExploring(false);
-      setClosed(false);
       const view = storyView(storyWindow, n);
       if (view.kind === "beat" && !isAtPlace(view.beat.place, globalThis.location?.pathname ?? "")) goTo(view.beat.place);
     },
-    [goTo, storyWindow],
+    [goTo, profileId, storyWindow],
   );
 
+  /** Ends the story in this tab: the beat is forgotten and the taps on the cards with it. The start button returns. */
+  const end = useCallback(() => {
+    writeStoredBeat(profileId, null);
+    setBeatState(null);
+    setExploring(false);
+    setReactions({});
+    setRolePick(null);
+  }, [profileId]);
+
   const view = storyView(storyWindow, beat);
-  const launcher = view.kind === "idle" || exploring || (view.kind === "done" && closed);
+  if (view.kind === "idle" && !invited) return null;
 
-  // Above the board page, which is a full-screen layer of its own. Bottom left on wide screens, clear of centred dialogs.
-  const frame = "pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-(--layer-ledger) flex justify-center px-4 md:bottom-4 md:justify-start print:hidden";
+  // An open dialog wins: the card collapses, and the frame drops to the dialogs' own layer, where the dialog and
+  // its scrim (later in the page) sit over it. Otherwise it is above the board page, a full-screen layer of its own.
+  const layer = dialogOpen ? "z-(--layer-backdrop)" : "z-(--layer-ledger)";
+  // Wide screens: bottom left, past the sidebar (or the board page's narrow rail), never over the sidebar's footer.
+  const gutter = /\/canvas-lab(\/|$)/.test(pathname) ? "md:pl-[4.25rem]" : "md:pl-[17rem]";
+  const frame = `pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] ${layer} flex justify-center px-4 md:bottom-4 md:justify-start ${gutter} print:hidden`;
 
-  if (launcher) {
-    const resuming = exploring && view.kind !== "idle" && view.kind !== "done";
+  if (view.kind === "idle" || exploring || dialogOpen) {
+    const resuming = view.kind !== "idle";
     return (
       <div className={frame} data-testid="firm-story">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          data-testid="firm-story-launcher"
-          className="pointer-events-auto"
-          onClick={() => {
-            if (resuming) {
-              setExploring(false);
-              return;
-            }
-            emit("firm_story.started", { mode, window: storyWindow });
-            setReactions({});
-            setRolePick(null);
-            moveTo(firstBeatFor(storyWindow));
-          }}
-        >
-          {resuming ? FIRM_STORY_COPY.resume : FIRM_STORY_COPY.start}
-        </Button>
+        <div className="pointer-events-auto flex items-center gap-1 rounded-[var(--radius)] bg-card">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-testid="firm-story-launcher"
+            onClick={() => {
+              if (resuming) {
+                setExploring(false);
+                return;
+              }
+              emit("firm_story.started", { mode, window: storyWindow });
+              setReactions({});
+              setRolePick(null);
+              moveTo(firstBeatFor(storyWindow));
+            }}
+          >
+            {resuming ? FIRM_STORY_COPY.resume : FIRM_STORY_COPY.start}
+          </Button>
+          {resuming ? (
+            <Button type="button" variant="ghost" size="sm" data-story-end onClick={end}>
+              {FIRM_STORY_COPY.end}
+            </Button>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -163,6 +191,7 @@ function FirmStoryStage({ orgId, window: storyWindow }: { orgId: string; window:
             goLabel={view.kind === "beat" && view.beat.place && !atPlace ? FIRM_STORY_COPY.open[view.beat.place] : null}
             reaction={view.kind === "beat" ? (reactions[view.beat.n] ?? null) : null}
             rolePick={rolePick}
+            canGoBack={beat !== null && previousBeat(storyWindow, beat) !== beat}
             onMode={setMode}
             onGo={() => (view.kind === "beat" ? goTo(view.beat.place) : undefined)}
             onNext={() => {
@@ -187,7 +216,7 @@ function FirmStoryStage({ orgId, window: storyWindow }: { orgId: string; window:
               setRolePick(pick);
               emit("firm_story.role_picked", { role_pick: pick, mode });
             }}
-            onClose={() => setClosed(true)}
+            onEnd={end}
           />
         </div>
       </div>

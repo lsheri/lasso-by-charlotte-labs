@@ -26,6 +26,8 @@ export type FirmStoryCardProps = {
   goLabel: string | null;
   reaction: StoryReaction | null;
   rolePick: StoryRolePick | null;
+  /** On a handoff card: whether this window has an earlier beat to go back to. */
+  canGoBack: boolean;
   onMode: (mode: StoryMode) => void;
   onGo: () => void;
   onNext: () => void;
@@ -34,7 +36,8 @@ export type FirmStoryCardProps = {
   onResumeHere: () => void;
   onReact: (reaction: StoryReaction) => void;
   onRolePick: (pick: StoryRolePick) => void;
-  onClose: () => void;
+  /** Ends the story in this tab: the beat is forgotten and the start button returns. */
+  onEnd: () => void;
 };
 
 const shell =
@@ -46,6 +49,20 @@ function DemoLine({ text }: { text: string }) {
     <p data-story-demo-line className="border-t border-border pt-2 text-(length:--type-small) text-muted-foreground">
       {text}
     </p>
+  );
+}
+
+/** The two ways off a card: look around and come back, or end the story in this tab. */
+function Leave({ onExplore, onEnd }: { onExplore: () => void; onEnd: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <Button type="button" variant="ghost" size="sm" onClick={onExplore}>
+        {FIRM_STORY_COPY.explore}
+      </Button>
+      <Button type="button" variant="ghost" size="sm" data-story-end onClick={onEnd}>
+        {FIRM_STORY_COPY.end}
+      </Button>
+    </div>
   );
 }
 
@@ -66,8 +83,8 @@ export function FirmStoryCard(props: FirmStoryCardProps) {
           {words.closing}
         </p>
         <div className="flex justify-end">
-          <Button type="button" variant="outline" size="sm" onClick={props.onClose}>
-            Close
+          <Button type="button" variant="outline" size="sm" onClick={props.onEnd}>
+            {FIRM_STORY_COPY.close}
           </Button>
         </div>
         <DemoLine text={words.demoLine} />
@@ -83,14 +100,19 @@ export function FirmStoryCard(props: FirmStoryCardProps) {
           {view.resumeAt === null ? FIRM_STORY_COPY.otherWindowDone : FIRM_STORY_COPY.handoffBody(words.title)}
         </p>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={props.onExplore}>
-            {FIRM_STORY_COPY.explore}
-          </Button>
-          {view.resumeAt !== null ? (
-            <Button type="button" variant="ink" size="sm" onClick={props.onResumeHere}>
-              {FIRM_STORY_COPY.handoffBack}
-            </Button>
-          ) : null}
+          <Leave onExplore={props.onExplore} onEnd={props.onEnd} />
+          <div className="flex flex-wrap items-center gap-2">
+            {props.canGoBack ? (
+              <Button type="button" variant="outline" size="sm" onClick={props.onBack}>
+                {FIRM_STORY_COPY.back}
+              </Button>
+            ) : null}
+            {view.resumeAt !== null ? (
+              <Button type="button" variant="ink" size="sm" onClick={props.onResumeHere}>
+                {FIRM_STORY_COPY.handoffBack}
+              </Button>
+            ) : null}
+          </div>
         </div>
         <DemoLine text={words.demoLine} />
       </section>
@@ -179,9 +201,7 @@ export function FirmStoryCard(props: FirmStoryCardProps) {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={props.onExplore}>
-          {FIRM_STORY_COPY.explore}
-        </Button>
+        <Leave onExplore={props.onExplore} onEnd={props.onEnd} />
         <div className="flex flex-wrap items-center gap-2">
           {props.goLabel ? (
             <Button type="button" variant="outline" size="sm" data-story-go onClick={props.onGo}>

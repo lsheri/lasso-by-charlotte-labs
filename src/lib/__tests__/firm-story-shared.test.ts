@@ -5,14 +5,17 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { FIRM_ASK_COPY } from "../firm-ask-shared";
 import { FIRM_STORY_SCRIPT } from "../firm-story-script";
 import {
   KESTREL_BAY_ORG_ID,
   STORY_BEATS,
   STORY_DONE,
   STORY_LAST_BEAT,
+  FIRM_STORY_COPY,
   STORY_STORAGE_KEY,
   firstBeatFor,
+  invitedBySearch,
   isAtPlace,
   lastBeatFor,
   modeFromSearch,
@@ -23,6 +26,7 @@ import {
   readStoredBeat,
   storyAccess,
   storyView,
+  storyStorageKey,
   storyWindowFor,
   withProduct,
   writeStoredBeat,
@@ -163,11 +167,16 @@ describe("the one stored value", () => {
     const data = new Map(Object.entries(initial));
     return {
       data,
+      get length() {
+        return data.size;
+      },
+      key: (index: number) => [...data.keys()][index] ?? null,
       getItem: (key: string) => data.get(key) ?? null,
       setItem: (key: string, value: string) => void data.set(key, value),
       removeItem: (key: string) => void data.delete(key),
     };
   }
+  const mine = `${STORY_STORAGE_KEY}.p1`;
 
   it("accepts only a beat number", () => {
     expect(parseStoredBeat("0")).toBe(0);
@@ -177,13 +186,38 @@ describe("the one stored value", () => {
     }
   });
 
-  it("stores the beat as digits under one key, and removes it", () => {
+  it("names the person in the key and nothing else, and refuses an id that is not safe in a key", () => {
+    expect(storyStorageKey("p1")).toBe(mine);
+    expect(storyStorageKey("cc538a6b-3a0a-4dcc-b200-23fc1dced467")).toBe(`${STORY_STORAGE_KEY}.cc538a6b-3a0a-4dcc-b200-23fc1dced467`);
+    for (const bad of [null, undefined, "", "a b", "a.b", "<script>", "x".repeat(65)]) expect(storyStorageKey(bad), String(bad)).toBeNull();
+  });
+
+  it("stores the beat as digits under this person's key, and removes it", () => {
     const store = fakeStore();
-    writeStoredBeat(5, store);
-    expect([...store.data.entries()]).toEqual([[STORY_STORAGE_KEY, "5"]]);
-    expect(readStoredBeat(store)).toBe(5);
-    writeStoredBeat(null, store);
+    writeStoredBeat("p1", 5, store);
+    expect([...store.data.entries()]).toEqual([[mine, "5"]]);
+    expect(readStoredBeat("p1", store)).toBe(5);
+    writeStoredBeat("p1", null, store);
     expect(store.data.size).toBe(0);
+  });
+
+  it("never returns another person's beat, and removes it and the first build's bare key", () => {
+    const store = fakeStore({ [`${STORY_STORAGE_KEY}.other`]: "5", [STORY_STORAGE_KEY]: "3", "lasso.active_profile_id": "keep", "lasso.firm-story.beat.v10": "keep" });
+    expect(readStoredBeat("p1", store)).toBeNull();
+    expect([...store.data.keys()].sort()).toEqual(["lasso.active_profile_id", "lasso.firm-story.beat.v10"]);
+  });
+
+  it("keeps this person's own beat while clearing the others", () => {
+    const store = fakeStore({ [mine]: "6", [`${STORY_STORAGE_KEY}.other`]: "2" });
+    expect(readStoredBeat("p1", store)).toBe(6);
+    expect([...store.data.keys()]).toEqual([mine]);
+  });
+
+  it("reads and writes nothing without a usable profile id", () => {
+    const store = fakeStore({ [mine]: "6" });
+    expect(readStoredBeat(null, store)).toBeNull();
+    writeStoredBeat("a b", 3, store);
+    expect([...store.data.entries()]).toEqual([[mine, "6"]]);
   });
 
   it("treats blocked or tampered storage as not started, without throwing", () => {
@@ -192,10 +226,59 @@ describe("the one stored value", () => {
       setItem: () => { throw new Error("blocked"); },
       removeItem: () => { throw new Error("blocked"); },
     };
-    expect(readStoredBeat(blocked)).toBeNull();
-    expect(() => writeStoredBeat(3, blocked)).not.toThrow();
-    expect(readStoredBeat(fakeStore({ [STORY_STORAGE_KEY]: "<script>" }))).toBeNull();
-    expect(readStoredBeat(null)).toBeNull();
+    expect(readStoredBeat("p1", blocked)).toBeNull();
+    expect(() => writeStoredBeat("p1", 3, blocked)).not.toThrow();
+    expect(() => writeStoredBeat("p1", null, blocked)).not.toThrow();
+    expect(readStoredBeat("p1", fakeStore({ [mine]: "<script>" }))).toBeNull();
+    expect(readStoredBeat("p1", null)).toBeNull();
+  });
+});
+
+describe("the tour link", () => {
+  it("is ?tour with any value or none, and nothing else", () => {
+    for (const yes of ["?tour", "?tour=", "?tour=1", "?tour=presenter", "?brand=charlotte&tour=x"]) expect(invitedBySearch(yes), yes).toBe(true);
+    for (const no of ["", "?", "?detour=1", "?tourist=1", "?Tour=1", "?q=tour", "#tour"]) expect(invitedBySearch(no), no).toBe(false);
+  });
+});
+
+describe("the words the story borrows from the product", () => {
+  // Presenter notes tell a person to press controls by name. If a control is renamed, its note must change too.
+  const NAMED_CONTROLS: Record<string, string> = {
+    "Ask the firm": "src/lib/firm-ask-shared.ts",
+    "What it read": "src/lib/firm-ask-shared.ts",
+    "What we charged": "src/lib/firm-ask-shared.ts",
+    "More tools": "src/components/canvas-lab/BoardToolbarSurface.tsx",
+    "Start a proposal": "src/lib/proposal-shared.ts",
+    "Red pen": "src/lib/red-pen-shared.ts",
+    "Share with firm": "src/lib/firm-share-copy.ts",
+  };
+
+  it("takes the Ask the firm label from the product's own copy", () => {
+    expect(FIRM_STORY_COPY.askThis).toBe(FIRM_ASK_COPY.title);
+    expect(readFileSync("src/lib/firm-story-shared.ts", "utf8")).toContain("askThis: FIRM_ASK_COPY.title");
+  });
+
+  it("names only controls that still carry that label in the product", () => {
+    const notes = STORY_BEATS.map((beat) => beat.notes).join(" ");
+    for (const [label, file] of Object.entries(NAMED_CONTROLS)) {
+      expect(notes, `the notes no longer name "${label}": drop it from this list`).toContain(label);
+      expect(readFileSync(file, "utf8"), `"${label}" is no longer in ${file}: the control was renamed, so fix the script`).toContain(`"${label}"`);
+    }
+  });
+
+  it("lists every control the notes tell the presenter to open, use, run or turn on", () => {
+    const told = [...STORY_BEATS.map((beat) => beat.notes).join(" ").matchAll(/(?:Open|Use|Run|turn on|into|then) ((?:[A-Z][a-z]+)(?: [a-z]+){0,3}?)(?= in | on |[.:,]| and )/g)].map((match) => match[1]!);
+    const listed = Object.keys(NAMED_CONTROLS);
+    const unlisted = told.filter((label) => !listed.includes(label) && !["Share", "Then"].includes(label));
+    expect(unlisted).toEqual([]);
+  });
+});
+
+describe("the server function", () => {
+  it("is signed-in only: the auth middleware is on it", () => {
+    const source = readFileSync("src/lib/firm-story.functions.ts", "utf8").replace(/\s+/g, " ");
+    expect(source).toMatch(/export const firmStoryAccessFn = createServerFn\(\{ method: "POST" \}\) \.middleware\(\[requireSupabaseAuth\]\)/);
+    expect(source).toContain('import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware"');
   });
 });
 
