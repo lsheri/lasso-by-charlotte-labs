@@ -146,6 +146,15 @@ export async function unmarkExemplar(ctx: ManagerContext, input: { itemId: strin
 }
 
 /**
+ * Removes every mark on one board, and says how many it removed. For the demo tour's reset only (demo-firm/tour.server.ts),
+ * which is founder only: no profile is checked here, so nothing a signed-in person can reach may call it.
+ */
+export async function clearBoardExemplars(admin: Db, orgId: string, boardId: string): Promise<{ removed: number; error: { message: string } | null }> {
+  const { data, error } = await admin.from("firm_exemplars").delete().eq("org_id", orgId).eq("engagement_id", boardId).select("id");
+  return { removed: (data ?? []).length, error: error ? { message: error.message } : null };
+}
+
+/**
  * The kinds of question people ask the firm, for admins and leads. Called with the caller's own client: the database
  * function identifies the caller itself, returns a kind only once five people have asked it, and returns a band,
  * never a count. The admin client would get nothing. Only fixed labels and bands leave this function.

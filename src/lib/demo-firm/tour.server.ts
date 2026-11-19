@@ -7,6 +7,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import { clearBoardExemplars } from "../manager-tools.server";
+
 import { demoEmail } from "./people";
 import { actAsDemoPerson, findDemoOrg, findUserId, type ActAs } from "./seed.server";
 import { TOUR_BOARD_ID, TOUR_KEEP, TOUR_PEOPLE, tourLeftClean, type TourResetLeft } from "./tour-keep";
@@ -69,11 +71,12 @@ export async function seedTourLogins(admin: Db, newPassword: () => string): Prom
 
 export type TourResetResult = { ok: boolean; refused: boolean; left: TourResetLeft | null; problems: string[] };
 
-async function readLeft(admin: Db): Promise<TourResetLeft> {
+async function readLeft(admin: Db, orgId: string): Promise<TourResetLeft> {
   const board = await admin.from("engagements").select("shared_with_firm").eq("id", TOUR_BOARD_ID).maybeSingle();
   const ledger = await admin.from("proposal_ledger").select("id").eq("engagement_id", TOUR_BOARD_ID);
   const value = await admin.from("proposal_ledger_values").select("amount, currency").eq("engagement_id", TOUR_BOARD_ID).maybeSingle();
-  const marks = await admin.from("firm_exemplars").select("id").eq("engagement_id", TOUR_BOARD_ID);
+  // Marks are read only inside the firm brain's own file: a second pass that removes nothing shows none were left.
+  const marks = await clearBoardExemplars(admin, orgId, TOUR_BOARD_ID);
   const draft = await admin.from("work_items").select("id").eq("id", TOUR_KEEP.draftItemId).maybeSingle();
   const failed = [board.error, ledger.error, value.error, marks.error, draft.error].find(Boolean);
   if (failed) throw new Error(`reading the board: ${failed.message}`);
@@ -81,7 +84,7 @@ async function readLeft(admin: Db): Promise<TourResetLeft> {
     shared: board.data?.shared_with_firm === true,
     ledgerRows: (ledger.data ?? []).length,
     value: value.data ? `${Number(value.data.amount)} ${value.data.currency}` : null,
-    marks: (marks.data ?? []).length,
+    marks: marks.removed,
     draft: Boolean(draft.data),
   };
 }
@@ -127,7 +130,7 @@ export async function resetTour(admin: Db, actAs: ActAs = actAsDemoPerson): Prom
     });
   }
   // b. Marks made on the board.
-  await step("marks", () => admin.from("firm_exemplars").delete().eq("engagement_id", TOUR_BOARD_ID).eq("org_id", orgId));
+  await step("marks", () => clearBoardExemplars(admin, orgId, TOUR_BOARD_ID));
   // c. Ledger rows a session added, then the three kept rows and the value back to what they were.
   await step("added ledger rows", () => admin.from("proposal_ledger").delete().eq("engagement_id", TOUR_BOARD_ID).not("id", "in", `(${keptIds.join(",")})`));
   for (const row of TOUR_KEEP.ledger) {
@@ -159,7 +162,7 @@ export async function resetTour(admin: Db, actAs: ActAs = actAsDemoPerson): Prom
   await step("notices", () => admin.from("notifications").delete().eq("org_id", orgId).eq("kind", "firm_share_changed").eq("subject_id", TOUR_BOARD_ID));
 
   try {
-    const left = await readLeft(admin);
+    const left = await readLeft(admin, orgId);
     return { ok: problems.length === 0 && tourLeftClean(left), refused: false, left, problems };
   } catch (error) {
     return { ok: false, refused: false, left: null, problems: [...problems, error instanceof Error ? error.message : String(error)] };

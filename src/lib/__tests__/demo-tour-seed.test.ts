@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ org: "org-demo" as string | null, userIds: new Map<string, string>() }));
+const m = vi.hoisted(() => ({ org: "org-demo" as string | null, userIds: new Map<string, string>(), clearMarks: vi.fn() }));
+vi.mock("../manager-tools.server", () => ({
+  clearBoardExemplars: (...a: unknown[]) => m.clearMarks(...a),
+}));
 vi.mock("../demo-firm/seed.server", () => ({
   findDemoOrg: async () => m.org,
   findUserId: async (_admin: unknown, email: string) => m.userIds.get(email) ?? null,
@@ -73,6 +76,7 @@ const cleanRows = () => ({
 beforeEach(() => {
   m.org = "org-demo";
   m.userIds = new Map();
+  m.clearMarks.mockReset().mockResolvedValue({ removed: 0, error: null });
 });
 
 describe("the tour logins", () => {
@@ -150,6 +154,7 @@ describe("the reset", () => {
     });
     expect(result).toMatchObject({ ok: false, refused: true, left: null });
     expect(writes(fake.calls)).toEqual([]);
+    expect(m.clearMarks).not.toHaveBeenCalled();
     expect(fake.remove).not.toHaveBeenCalled();
   });
 
@@ -218,10 +223,21 @@ describe("the reset", () => {
   });
 
   it("reports a step that failed and is then not clean", async () => {
-    const fake = fakeAdmin(cleanRows(), { "firm_exemplars.delete": "refused" });
+    const fake = fakeAdmin(cleanRows());
+    m.clearMarks.mockResolvedValueOnce({ removed: 0, error: { message: "refused" } });
     const result = await resetTour(fake.admin, vi.fn());
     expect(result.ok).toBe(false);
     expect(result.problems).toContain("marks: refused");
+  });
+
+  it("removes marks only through the firm brain's own function, for this board in this firm, and is not clean if any were still there", async () => {
+    const fake = fakeAdmin(cleanRows());
+    await resetTour(fake.admin, vi.fn());
+    expect(m.clearMarks.mock.calls.map((call) => call.slice(1))).toEqual([["org-demo", TOUR_BOARD_ID], ["org-demo", TOUR_BOARD_ID]]);
+    m.clearMarks.mockReset().mockResolvedValueOnce({ removed: 2, error: null }).mockResolvedValueOnce({ removed: 1, error: null });
+    const result = await resetTour(fakeAdmin(cleanRows()).admin, vi.fn());
+    expect(result.left?.marks).toBe(1);
+    expect(result.ok).toBe(false);
   });
 });
 
@@ -245,7 +261,7 @@ describe("who can reach them", () => {
   it("the reset never names a table outside the board's own, and the kept ids are not sent by the browser", () => {
     const source = readFileSync("src/lib/demo-firm/tour.server.ts", "utf8");
     const tables = [...source.matchAll(/\.from\("([a-z_-]+)"\)/g)].map((hit) => hit[1]);
-    expect([...new Set(tables)].sort()).toEqual(["engagement_members", "engagements", "firm_exemplars", "notifications", "profiles", "proposal_ledger", "proposal_ledger_values", "user_active_profile", "work-files", "work_items"]);
+    expect([...new Set(tables)].sort()).toEqual(["engagement_members", "engagements", "notifications", "profiles", "proposal_ledger", "proposal_ledger_values", "user_active_profile", "work-files", "work_items"]);
     expect(readFileSync("src/components/qa/TourSeedPanel.tsx", "utf8")).not.toMatch(/tour-keep|TOUR_KEEP/);
   });
 });
