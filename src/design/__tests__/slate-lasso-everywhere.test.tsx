@@ -162,8 +162,10 @@ describe("the head under each look", () => {
     expect(manifest.name).toBe("Lasso");
     for (const icon of manifest.icons)
       expect(statSync(`public${icon.src}`).size).toBeGreaterThan(0);
-    // At rest in a tab: no lime in the favicon.
-    expect(readFileSync("public/slate-favicon.svg", "utf8").toLowerCase()).not.toContain("04f85b");
+    // 19 Nov, Liam: the logo carries the lime thread, so the favicon does too, on its cloth tile.
+    const favicon = readFileSync("public/slate-favicon.svg", "utf8").toLowerCase();
+    expect(favicon).toContain('stroke="#04f85b"');
+    expect(favicon).toContain('fill="#1e2933"');
   });
 
   it("a colour a route chose for itself is left alone", () => {
