@@ -18,6 +18,45 @@ const box = (
   rank,
 });
 
+describe("crowdedLabels and the stage's own words", () => {
+  // The counts line at the top left of the stage, as the 3D map measures it: centre and size, in stage pixels.
+  const counts = { x: 170, y: 20, width: 310, height: 14 };
+
+  it("hides a label that would sit on the counts, whatever its rank, and keeps one that clears them", () => {
+    const hidden = crowdedLabels(
+      [box("on-counts", 300, 22, -5), box("clear", 300, 80, 9)],
+      LABEL_GAP,
+      [counts],
+    );
+    expect([...hidden]).toEqual(["on-counts"]);
+  });
+
+  it("uses the same gap for the counts as between labels", () => {
+    const edge = counts.x + counts.width / 2 + 40;
+    expect(
+      crowdedLabels([box("a", edge + LABEL_GAP - 1, 20, 1)], LABEL_GAP, [counts]).has("a"),
+    ).toBe(true);
+    expect(crowdedLabels([box("a", edge + LABEL_GAP, 20, 1)], LABEL_GAP, [counts]).has("a")).toBe(
+      false,
+    );
+  });
+
+  it("changes nothing when no part of the stage is marked, or a marked part has no size yet", () => {
+    const boxes = [box("a", 0, 0, 1), box("b", 60, 0, 2)];
+    expect(crowdedLabels(boxes, LABEL_GAP, [])).toEqual(crowdedLabels(boxes));
+    expect(
+      crowdedLabels(boxes, LABEL_GAP, [
+        { x: 0, y: 0, width: 0, height: 0 },
+        { x: Number.NaN, y: 0, width: 50, height: 10 },
+      ]),
+    ).toEqual(crowdedLabels(boxes));
+  });
+
+  it("never reports a marked part of the stage as a hidden label", () => {
+    expect(crowdedLabels([], LABEL_GAP, [counts, counts]).size).toBe(0);
+  });
+});
+
 describe("crowdedLabels", () => {
   it("hides nothing when there are no labels or only one", () => {
     expect(crowdedLabels([]).size).toBe(0);

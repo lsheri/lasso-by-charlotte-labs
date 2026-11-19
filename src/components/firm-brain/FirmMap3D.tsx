@@ -4,7 +4,13 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { FIRM_MAP_COPY, type MapNode, type Vec3 } from "@/lib/firm-map-shared";
 
-import { crowdedLabels, labelRank, type LabelBox } from "./firm-map-labels";
+import {
+  crowdedLabels,
+  KEEP_CLEAR_ATTR,
+  labelRank,
+  type ClearBox,
+  type LabelBox,
+} from "./firm-map-labels";
 import { SEW_MS, type FirmMapRendererProps } from "./firm-map-renderer";
 
 /**
@@ -338,10 +344,27 @@ export default function FirmMap3D({
     let delays = new Map<string, number>();
     const fullRange = SEG * RADIAL * 6;
 
+    // The words the stage itself shows over the map (the counts, the key). Labels give way to them.
+    let keepClear: ClearBox[] = [];
+    const measureKeepClear = () => {
+      const frame = stage.getBoundingClientRect();
+      keepClear = [
+        ...(stage.parentElement?.querySelectorAll<HTMLElement>(`[${KEEP_CLEAR_ATTR}]`) ?? []),
+      ].map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          x: rect.left - frame.left + rect.width / 2,
+          y: rect.top - frame.top + rect.height / 2,
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+    };
     const resize = () => {
       const width = stage.clientWidth;
       const height = stage.clientHeight;
       if (!width || !height) return;
+      measureKeepClear();
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       // On a tall stage (a phone) the view widens so the whole map still fits side to side.
@@ -413,8 +436,12 @@ export default function FirmMap3D({
     const boxes: LabelBox[] = [];
     const wanted = new Map<string, number>();
     let frame = 0;
+    let ticks = 0;
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
+      // The overlays can change size after the first frame (a web font arriving), so they are measured again now and then.
+      ticks += 1;
+      if (ticks % 90 === 0) measureKeepClear();
       controls.update();
       if (replayAt !== null) {
         const elapsed = now - replayAt;
@@ -494,7 +521,7 @@ export default function FirmMap3D({
           rank: labelRank({ kind: view.node.kind, dim, distance, showing: view.showing }),
         });
       }
-      const crowded = crowdedLabels(boxes);
+      const crowded = crowdedLabels(boxes, undefined, keepClear);
       for (const [id, opacity] of wanted) {
         const view = nodeViews.get(id)!;
         view.showing = opacity > 0 && !crowded.has(id);
