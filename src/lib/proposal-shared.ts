@@ -132,19 +132,34 @@ export function precedentView(corpus: FirmCorpus, pick: { boardId: string; close
   };
 }
 
-export type GoodProposal = { itemId: string; title: string; boardTitle: string; shownOn: string };
+export type GoodProposal = {
+  itemId: string;
+  title: string;
+  boardTitle: string;
+  /** Null for an exemplar that was never marked as shown to a client. */
+  shownOn: string | null;
+  /** Marked by an admin or lead as an example of good work. Never who marked it. */
+  exemplar?: boolean;
+};
 
-/** The firm's proposals that were shown to a client, newest first. */
+/**
+ * What good looks like: work an admin or lead marked as an exemplar first, then the firm's proposals that were shown
+ * to a client, each group newest first.
+ */
 export function goodProposals(corpus: FirmCorpus): GoodProposal[] {
   return corpus.items
-    .filter((item) => item.kind === "proposal" && item.shown.length > 0 && item.grade === "full")
+    .filter((item) => item.exemplar === true || (item.kind === "proposal" && item.shown.length > 0 && item.grade === "full"))
     .map((item) => ({
       itemId: item.id,
       title: item.title,
       boardTitle: corpus.boards.find((board) => board.id === item.boardId)?.title ?? "",
-      shownOn: item.shown.at(-1)!.on,
+      shownOn: item.shown.at(-1)?.on ?? null,
+      ...(item.exemplar ? { exemplar: true } : {}),
     }))
-    .sort((a, b) => b.shownOn.localeCompare(a.shownOn));
+    .sort(
+      (a, b) =>
+        Number(b.exemplar === true) - Number(a.exemplar === true) || (b.shownOn ?? "").localeCompare(a.shownOn ?? "") || a.title.localeCompare(b.title),
+    );
 }
 
 export type PastFee = {

@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ShareWithCoaches } from "@/components/coaching/ShareWithCoaches";
+import { ItemCitations } from "@/components/firm-brain/ItemCitations";
+import { WalkOffer } from "@/components/firm-brain/WalkOffer";
 import { AiReads } from "@/components/peek/AiReads";
 import { PeekActionBar, type PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { RenderedContent } from "@/components/peek/RenderedContent";
@@ -90,6 +92,11 @@ type PeekBodyProps = {
   analysesInHeader?: boolean | undefined;
   /** Lets the body close itself where it is rendered without a sheet. */
   onClose?: (() => void) | undefined;
+  /**
+   * Opt-in only from All work: the owner's cited lines and the once-only walk-through offer. Other reader surfaces
+   * (client, packet, record, engagement) never show them.
+   */
+  firmTools?: boolean | undefined;
 };
 
 /** Thin wrapper: the sheet-based peek every page but the engagement page uses. */
@@ -138,6 +145,7 @@ export function PeekBody({
   viewerProfileId,
   analysesInHeader,
   onClose,
+  firmTools,
 }: PeekBodyProps) {
   const profile = useProfile().data;
   const fetchUrl = useServerFn(getWorkFileUrl);
@@ -275,6 +283,7 @@ export function PeekBody({
         />
 
         <ShareWithCoaches item={active} owned={owned} />
+        {firmTools && owned ? <WalkOffer key={active.id} item={active} profile={profile} /> : null}
 
         {canEdit && isDeliverableType(active.type) ? (
           <div className="mt-3">
@@ -327,6 +336,7 @@ export function PeekBody({
             onDownload={() => void download(active)}
           />
         )}
+        {firmTools && owned ? <ItemCitations key={active.id} item={active} profile={profile} /> : null}
         {canEdit ? <AiReads workItemId={active.id} /> : null}
         {/* GRANOLA-1b: a re-imported call keeps its earlier versions, so calls show their history too. */}
         {isDeliverableType(active.type) || active.type === "call" ? (

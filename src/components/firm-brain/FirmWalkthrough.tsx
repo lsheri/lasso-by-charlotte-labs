@@ -10,6 +10,7 @@ import {
 } from "@/lib/firm-walkthrough-shared";
 import { getFirmWalkthrough } from "@/lib/firm-walkthrough.functions";
 
+import { CiteThis } from "./CiteThis";
 import { FirmSourceCard } from "./FirmSourceCard";
 import { FirmSourcePreview } from "./FirmSourcePreview";
 
@@ -23,13 +24,16 @@ const eyebrow =
  *
  * The walk-through lives in this component's state only and is asked for again on every press, so nothing is kept
  * here or on the server. Give it a `key` per point: a new point starts empty, and a reply for the old one is ignored.
+ * `autoOpen` asks once as it appears, for places where the person has already pressed to read it.
  */
 export function FirmWalkthrough({
   tag,
   profileId,
+  autoOpen = false,
 }: {
   tag: WalkTag;
   profileId: string | null | undefined;
+  autoOpen?: boolean;
 }) {
   const load = useServerFn(getFirmWalkthrough);
   const [pending, setPending] = useState(false);
@@ -42,9 +46,12 @@ export function FirmWalkthrough({
 
   useEffect(() => {
     alive.current = true;
+    // The busy ref makes a second run of this effect a no-op, so one appearance asks once.
+    if (autoOpen) void open();
     return () => {
       alive.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // A guest or someone outside a company workspace: the server says no, so the button goes away.
@@ -159,6 +166,11 @@ export function FirmWalkthrough({
                               onOpen={() => setOpenItem(quote.itemId)}
                             />
                           ) : null}
+                          <CiteThis
+                            quote={quote.quote}
+                            sourceItemId={quote.itemId}
+                            profileId={profileId}
+                          />
                         </div>
                       );
                     })}

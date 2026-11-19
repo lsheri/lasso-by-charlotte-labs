@@ -1,8 +1,9 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { DEMO_PEOPLE } from "../../src/lib/demo-firm/people";
+import { namesStaff } from "../../src/lib/firm-walkthrough-shared";
 
 /**
  * The walk-through pass bar (Firm Brain Build Spec step 6), run as Kestrel Bay demo people against a deployed build,
@@ -214,7 +215,13 @@ async function walkOnce(page: Page, person: string, item: Case, run: number): Pr
   const written = (
     await walk.locator("[data-walk-habit] > p, [data-walk-quote]").allInnerTexts()
   ).join("\n");
-  row.staffNames = staffIn(written);
+  // The app's own rule decides, so a colleague called June does not fail a quote dated "in June".
+  row.staffNames = namesStaff(
+    written,
+    DEMO_PEOPLE.map((each) => each.name),
+  )
+    ? staffIn(written)
+    : [];
   row.money =
     MONEY.test(written) ||
     MONEY.test((await walk.locator("[data-walk-example]").allInnerTexts()).join("\n"));
@@ -247,7 +254,7 @@ async function walkOnce(page: Page, person: string, item: Case, run: number): Pr
       .map((line) => line.trim())
       .filter(Boolean);
     const date = await example.locator("[data-walk-example-date]").innerText();
-    if (lines.length < 3 || !/^\d{1,2} \w{3} \d{4}$/.test(date.trim())) ok = false;
+    if (lines.length < 3 || !/^\d{1,2} \w{3,4} \d{4}$/.test(date.trim())) ok = false;
     if (run === 1 && (await previewText(page, example)) === null) ok = false;
   }
   row.examplesOk = ok;
@@ -263,6 +270,16 @@ const notes: Record<string, unknown> = {};
 
 test.afterAll(() => {
   if (!PASSWORD) return;
+  // A failed test restarts the worker, and each worker ends here: keep what earlier workers of this run wrote.
+  try {
+    const before = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : null;
+    if (before?.runner === process.ppid) {
+      results.unshift(...(before.results as Row[]));
+      Object.assign(notes, { ...before.notes, ...notes });
+    }
+  } catch {
+    // An unreadable earlier file is simply replaced.
+  }
   const all = (pick: (row: Row) => boolean) =>
     results.filter(pick).map((row) => `${row.person} ${row.id} run ${row.run}`);
   const summary = {
@@ -278,7 +295,7 @@ test.afterAll(() => {
     fewerThanThreeHabits: all((row) => row.thinSaid === null && row.habits.length < 3),
   };
   mkdirSync("test-results", { recursive: true });
-  writeFileSync(OUT, JSON.stringify({ summary, notes, results }, null, 2));
+  writeFileSync(OUT, JSON.stringify({ runner: process.ppid, summary, notes, results }, null, 2));
 });
 
 for (const person of PEOPLE) {

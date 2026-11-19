@@ -38,19 +38,21 @@ export const askTheFirm = createServerFn({ method: "POST" })
       { corpus, question: data.question, canSeeFees: profile.role === "admin" || profile.role === "lead", meta },
     );
 
-    // Counts only: the question never travels.
+    // Counts only: the question never travels. Its kind is read in code against the fixed situation and method lists
+    // (no model, never its words), so the firm's common questions can be counted without storing any question.
+    const { firmAskedDims } = await import("./manager-tools-shared");
     const { recordEvent } = await import("./telemetry.server");
-    const { bucket } = await import("./telemetry-shared");
     await recordEvent(context.supabase, {
       eventType: "firm_ask.asked",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: {
-        result: result.status,
-        boards_read: bucket(corpus.boards.length),
-        sources: bucket(new Set(result.claims.map((claim) => claim.itemId)).size),
-        starter: data.starter ?? "none",
-      },
+      dims: firmAskedDims({
+        status: result.status,
+        boardsRead: corpus.boards.length,
+        sources: new Set(result.claims.map((claim) => claim.itemId)).size,
+        starter: data.starter,
+        question: data.question,
+      }),
     });
     return result;
   });
@@ -67,6 +69,10 @@ export type FirmSourcePreview = {
   shownOn: string | null;
   /** The item's author or the board's owner may keep it out of firm answers. */
   canKeepOut: boolean;
+  /** Marked as an example of good work. Never who marked it. */
+  exemplar: boolean;
+  /** Admins and leads may set or remove the mark. */
+  canMarkExemplar: boolean;
 };
 
 type ItemInput = { item_id: string; profile_id?: string | null | undefined };
@@ -125,6 +131,8 @@ export const previewFirmSource = createServerFn({ method: "POST" })
       text,
       shownOn: item.shown.at(-1)?.on ?? null,
       canKeepOut: await mayKeepOut(supabaseAdmin, profile.id, item.id, board.id),
+      exemplar: item.exemplar === true,
+      canMarkExemplar: canSeeFees,
     };
   });
 

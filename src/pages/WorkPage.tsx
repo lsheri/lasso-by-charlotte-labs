@@ -907,6 +907,7 @@ export function WorkPage() {
         open={peek !== null}
         canEdit={!isCoach}
         viewerProfileId={profile?.id ?? null}
+        firmTools
         onRename={(item) => {
           if (!ownsWorkItem(profile, item)) return;
           setPeek(null);

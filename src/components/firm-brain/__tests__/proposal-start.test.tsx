@@ -21,6 +21,14 @@ vi.mock("@/lib/proposal.functions", () => ({
 }));
 vi.mock("@/lib/firm-ask.functions", () => ({ previewFirmSource: vi.fn(), keepOutOfFirmAnswers: vi.fn() }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.logEvent(...a) }));
+// 19 Nov: the panel now carries the proposal's "Value so far" line. Here it reads as someone the database shows
+// nothing, so it renders nothing; the line has its own tests in proposal-value-line.test.tsx.
+vi.mock("@/lib/proposal-ledger.functions", () => ({
+  boardValueSoFar: async () => ({ scope: "board", access: "none", canEdit: false, canSeeValue: false, canSetValue: false, shared: false, finished: false, rows: [], sources: {} }),
+  recordProposalStep: vi.fn(),
+  removeProposalStep: vi.fn(),
+  setProposalValue: vi.fn(),
+}));
 
 import { ProposalStartPanel } from "@/components/firm-brain/ProposalStartPanel";
 

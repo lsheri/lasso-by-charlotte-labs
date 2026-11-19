@@ -12,6 +12,7 @@ import {
 import { getRequestHeader } from "@tanstack/react-start/server";
 
 import { resolveEnvironment, resolveHostClass } from "./environment.server";
+import { mirrorDims } from "./event-dim-allowlist";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 
@@ -224,7 +225,7 @@ export async function mirrorToPostHog(
     ...(context?.uuid ? { uuid: context.uuid } : {}),
     properties: {
       ...(context ? contextProperties(context) : {}),
-      ...dims,
+      ...mirrorDims(eventType, dims),
       $process_person_profile: context?.anonymous !== true && context?.joinablePerson === true,
       ...(context?.anonymous !== true && context?.joinablePerson === true && context.personProperties && Object.keys(context.personProperties).length > 0
         ? { $set: context.personProperties } : {}),
