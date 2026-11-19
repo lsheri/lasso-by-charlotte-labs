@@ -105,13 +105,16 @@ describe("the score", () => {
     expect(tagCheckLines(leaked, []).join("\n")).toMatch(/Names in stored roles: 1 \(must be 0\): FAIL/);
   });
 
-  it("compares cost before and after, and holds it to ten percent", () => {
+  it("compares cost before and after, and holds it to twenty percent", () => {
     const within = scoreTagCheck(scored.map((entry) => result(entry, { before: usage(2000, 250), after: usage(2120, 264) })), NAMES);
     expect(within.cost.change).toBeGreaterThan(0);
     expect(within.cost.pass).toBe(true);
     const over = scoreTagCheck(scored.map((entry) => result(entry, { before: usage(300, 150), after: usage(600, 170) })), NAMES);
     expect(over.cost.pass).toBe(false);
-    expect(tagCheckLines(over, scored.map((entry) => result(entry))).join("\n")).toMatch(/Change \+\d+\.\d% \(bar \+10\.0%\): FAIL/);
+    expect(tagCheckLines(over, scored.map((entry) => result(entry))).join("\n")).toMatch(/Change \+\d+\.\d% \(bar \+20\.0%\): FAIL/);
+    // The figures from the live check (18 Nov 2026): 14.5% over passes at the accepted bar, 20.1% does not.
+    expect(scoreTagCheck(scored.map((entry) => result(entry, { before: usage(817, 566), after: usage(1050, 624) })), NAMES).cost.pass).toBe(true);
+    expect(scoreTagCheck(scored.map((entry) => result(entry, { before: usage(1000, 200), after: usage(1201, 240) })), NAMES).cost.pass).toBe(false);
     expect(scoreTagCheck([], NAMES).cost).toMatchObject({ change: null, pass: null });
   });
 

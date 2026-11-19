@@ -38,6 +38,16 @@ const ctx = (over: Partial<TagContext> = {}): TagContext => ({ type: "document",
 const call = (over: Partial<TagContext> = {}) => ctx({ type: "call", ...over });
 
 describe("what one item is asked for", () => {
+  it("tells the model to give one main method and how to tell the lookalike methods apart", () => {
+    const [line] = tagPromptLines({ method: true, callRole: false, stage: false, situation: false });
+    expect(line).toContain("the one main way");
+    expect(line).toContain("stakeholder_interviews: people inside the client");
+    expect(line).toContain("customer_research: its customers or buyers");
+    expect(line).toContain("never a note's own findings");
+    // The line is paid for on every capture: it may not grow without someone deciding so.
+    expect(line!.length).toBeLessThan(560);
+  });
+
   it("asks every item for a method, a call for a role, a deliverable for a stage, and only the carrier for the situation", () => {
     expect(tagKeysAsked(tagAskFor({ type: "ai_thread" }, false))).toEqual(["method"]);
     expect(tagKeysAsked(tagAskFor({ type: "email" }, false))).toEqual(["method"]);
@@ -316,10 +326,11 @@ describe("what the tags add to the call", () => {
     const carrier = tagTokenEstimate(tagAskFor({ type: "document" }, true));
     console.log("[step 5 cost] estimated extra tokens per item (in/out):", { document, thread, call: aCall, carrier });
     expect(tagTokenEstimate(NO_TAGS)).toEqual({ tokensIn: 0, tokensOut: 0 });
-    expect(thread.tokensIn).toBeLessThanOrEqual(110);
-    expect(document.tokensIn).toBeLessThanOrEqual(140);
+    // Raised by 40 on 18 Nov 2026: the method line gained two definitions after the live check scored 21 of 40.
+    expect(thread.tokensIn).toBeLessThanOrEqual(150);
+    expect(document.tokensIn).toBeLessThanOrEqual(180);
     expect(document.tokensOut).toBeLessThanOrEqual(20);
-    expect(aCall.tokensIn).toBeLessThanOrEqual(320);
+    expect(aCall.tokensIn).toBeLessThanOrEqual(360);
     expect(aCall.tokensOut).toBeLessThanOrEqual(25);
     expect(carrier.tokensOut).toBeLessThanOrEqual(30);
   });

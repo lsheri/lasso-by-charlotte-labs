@@ -59,7 +59,9 @@ export function tagKeysAsked(ask: TagAsk): string[] {
 export function tagPromptLines(ask: TagAsk): string[] {
   const lines: string[] = [];
   if (ask.method) {
-    lines.push(`- method: how this item's own work was done, as a JSON array of ids, usually one: ${METHODS.join(", ")}. [] for a SOW, proposal or admin note.`);
+    // Worded from the first live tag check (18 Nov 2026, 21 of 40): the model added synthesis to plain research notes
+    // and read interviews with the client's market as stakeholder interviews. Every word here is paid for per capture.
+    lines.push(`- method: the one main way this item's own work was done, as a JSON array of ids: ${METHODS.join(", ")}. stakeholder_interviews: people inside the client; customer_research: its customers or buyers. synthesis: only a storyline across other work, never a note's own findings. [] for a SOW, proposal or admin note.`);
   }
   if (ask.callRole) {
     lines.push(`- call_role: the job of the person outside the team on this call, one id: ${ROLES.join(", ")}. Never a person's name. null for an internal call.`);
