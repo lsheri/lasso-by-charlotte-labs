@@ -20,7 +20,8 @@ const MEDROVA = process.env["MEDROVA_BOARD"] ?? "d108b328-7c12-47b0-9a1a-f22de64
 const URL_BASE = process.env["VITE_SUPABASE_URL"] ?? process.env["SUPABASE_URL"] ?? "";
 const API_KEY = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "";
 const EMPTY = "Not enough people have asked yet. A kind of question appears here once five people have asked it.";
-const NAMES = /Hollis|Quinn|Yilmaz|Pereira|pinned by|added by|marked by/i;
+// Whole words: the client "Hollisford Engineering" is not Maren Hollis.
+const NAMES = /\b(?:Hollis|Quinn|Yilmaz|Pereira)\b|pinned by|added by|marked by/i;
 
 type Step = { person: string; step: string; ok: boolean; saw: string };
 const steps: Step[] = [];

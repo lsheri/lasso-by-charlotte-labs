@@ -83,7 +83,9 @@ async function prepare(page: Page, role: string): Promise<{ status: string; box:
 /** Open one of her items in the All work reader by its title. */
 async function openInAllWork(page: Page, title: string): Promise<boolean> {
   await page.goto("/work", { waitUntil: "domcontentloaded" });
-  const row = page.getByLabel(title, { exact: true }).first();
+  // A desktop card's label is the title and then what it is ("… . Sheet from Other. Double click to open."); a phone
+  // row's label is the title alone.
+  const row = page.locator(`[aria-label="${title}"], [aria-label^="${title}. "]`).first();
   try {
     await row.waitFor({ timeout: 60_000 });
     await row.click();
@@ -230,6 +232,8 @@ test("an analyst reads a walk-through, prepares for two roles and cites a line i
     const list = page.getByTestId("item-citations");
     await list.waitFor({ timeout: 60_000 }).catch(() => {});
     const live = list.locator('[data-cited-line="live"]');
+    // The list is on screen before its lines are: each line is checked against its source first.
+    await live.first().waitFor({ timeout: 60_000 }).catch(() => {});
     const lines = (await live.locator("blockquote").allInnerTexts()).map(collapse);
     record("the cited line is on her item, word for word", lines.includes(cited) || lines.includes(quote), lines.join(" | "));
     const link = live.locator("[data-cited-open]").first();
@@ -260,6 +264,7 @@ test("an analyst reads a walk-through, prepares for two roles and cites a line i
         if (await openInAllWork(page, targetTitle)) {
           const list = page.getByTestId("item-citations");
           await list.waitFor({ timeout: 30_000 }).catch(() => {});
+          await list.locator("[data-cited-line]").first().waitFor({ timeout: 60_000 }).catch(() => {});
           for (let guard = 0; guard < 5; guard += 1) {
             const lines = await list.locator("[data-cited-line]").all();
             let mine: Locator | null = null;
@@ -269,8 +274,14 @@ test("an analyst reads a walk-through, prepares for two roles and cites a line i
             }
             if (!mine) break;
             const before = lines.length;
-            await mine.locator("[data-cited-remove]").click();
-            await expect(list.locator("[data-cited-line]")).toHaveCount(before - 1, { timeout: 30_000 });
+            // The first press was once lost while the list was still settling (18 Nov 2026), which left the line on
+            // her item: press again until the line is gone. The button is disabled while a removal is in flight.
+            const target = mine;
+            await expect(async () => {
+              if ((await list.locator("[data-cited-line]").count()) >= before)
+                await target.locator("[data-cited-remove]").click({ timeout: 5_000 });
+              await expect(list.locator("[data-cited-line]")).toHaveCount(before - 1, { timeout: 8_000 });
+            }).toPass({ timeout: 90_000 });
             removed += 1;
           }
         }
