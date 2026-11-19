@@ -22,7 +22,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 import { registerProfileQueryClient } from "@/hooks/use-profile";
 import { readSkinCookie } from "@/lib/skin";
+import { readBrandVariant } from "@/lib/brand-variant";
 import { BrandHeadContent } from "@/components/skin/BrandHeadContent";
+import { BrandVariantProvider } from "@/components/skin/BrandVariantProvider";
 import { SkinProvider } from "@/components/skin/SkinProvider";
 import { brandCopy, brandFor, launchBrand } from "@/design/brand/brand";
 
@@ -98,7 +100,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Read on the server during render, so a Charlotte page never paints as Lasso first.
-  beforeLoad: () => ({ skin: readSkinCookie() }),
+  beforeLoad: () => ({ skin: readSkinCookie(), brandVariant: readBrandVariant() }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -177,10 +179,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  const { skin } = Route.useRouteContext();
+  const { skin, brandVariant } = Route.useRouteContext();
+  // The variant worn over the skin; the app as it ships, and the original Lasso skin, carry no attribute.
+  const theme = brandFor(skin).look.legacyDefault || brandVariant === "current" ? undefined : brandVariant;
   return (
     // No attribute at all for Lasso, so the default page is unchanged. SkinProvider may update it after load.
-    <html lang="en" data-skin={brandFor(skin).look.legacyDefault ? undefined : skin}>
+    <html lang="en" data-skin={brandFor(skin).look.legacyDefault ? undefined : skin} data-brand-theme={theme}>
       <head>
         <BrandHeadContent skin={skin} />
       </head>
@@ -193,7 +197,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient, skin } = Route.useRouteContext();
+  const { queryClient, skin, brandVariant } = Route.useRouteContext();
   const router = useRouter();
 
   // The identity helpers outside React share this one cache, so concurrent
@@ -220,9 +224,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SkinProvider initial={skin}>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster />
+        <BrandVariantProvider initial={brandVariant}>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster />
+        </BrandVariantProvider>
       </SkinProvider>
     </QueryClientProvider>
   );

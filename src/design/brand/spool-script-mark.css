@@ -1,0 +1,16 @@
+/* Spool script mark (.spool-mark), 19 Nov 2026. Colours come from the skin's job tokens, as the Charlotte mark's do:
+   ink from --text-primary, the thread from --live. Names are --spool-* so they never shadow a job token.
+   The thread is lime only while the product is working; at rest it is ink. No em dashes. */
+.spool-mark{display:block;overflow:visible;flex-shrink:0;--spool-ink:var(--text-primary);--spool-live:var(--live)}
+.spool-mark path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.spool-mark .spool-main{stroke:var(--spool-ink);stroke-width:var(--spool-main)}
+.spool-mark .spool-fine{stroke:var(--spool-ink);stroke-width:var(--spool-fine-w)}
+.spool-mark .spool-thread{stroke:var(--spool-ink);stroke-width:var(--spool-thread-w)}
+.spool-mark .spool-outline{stroke:var(--spool-ink);stroke-width:var(--spool-outline-w)}
+.spool-mark:is([data-spool-state="live"],[data-spool-state="drawing"]) .spool-thread{stroke:var(--spool-live)}
+/* Drawing: the thread writes itself once, then holds. */
+.spool-mark[data-spool-state="drawing"] :is(.spool-thread,.spool-outline){stroke-dasharray:1;animation:spool-draw .9s ease-in-out both}
+@keyframes spool-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.spool-mark[data-spool-state="drawing"] :is(.spool-thread,.spool-outline){animation:none}}
+/* A switch that sizes a fixed block (BrandMark) lets the mark fill it. */
+[data-skin-mark="spool"] > svg.spool-mark{width:100%;height:100%}

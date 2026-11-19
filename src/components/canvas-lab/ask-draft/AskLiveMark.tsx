@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useBrand } from "@/components/skin/use-skin";
+import { SpoolScriptMark, type SpoolMarkState } from "@/design/brand/SpoolScriptMark";
 import { CharlotteMark, type MarkState } from "@/design/brand/CharlotteMark";
 import { anchoredDelayMs, askMarkState, READING_CYCLE_MS, type AskMarkState } from "@/lib/ask-reading-clock";
 
@@ -42,6 +43,9 @@ export function useOnline(): boolean {
 /** Charlotte's form of each Ask state: the web grows while reading, the lime hub at rest, all ink on failure. */
 const CHARLOTTE_STATE: Record<AskMarkState, MarkState> = { live: "reading", idle: "live", ink: "idle" };
 
+/** Spool script's form of each Ask state: the thread draws on in lime when a turn starts, and rests in ink otherwise. */
+const SPOOL_STATE: Record<AskMarkState, SpoolMarkState> = { live: "drawing", idle: "rest", ink: "rest" };
+
 export function AskLiveMark({ pending, error, turnKey }: { pending: boolean; error: boolean; turnKey: string }) {
   const online = useOnline();
   const state = askMarkState({ pending, error, online });
@@ -49,6 +53,13 @@ export function AskLiveMark({ pending, error, turnKey }: { pending: boolean; err
   // Worked out once per mount and turn: a delay that changed on every render would make the light jump.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const delay = useMemo(() => (state === "live" ? anchoredDelayMs(turnKey, performance.now()) : 0), [turnKey, state]);
+  if (look.mark === "spool") {
+    return (
+      <span className="ask-l2-mark inline-flex" data-state={state} data-testid="ask-live-mark" aria-hidden="true">
+        <SpoolScriptMark state={SPOOL_STATE[state]} size={24} />
+      </span>
+    );
+  }
   if (look.mark === "charlotte") {
     return (
       <span className="ask-l2-mark inline-flex" data-state={state} data-testid="ask-live-mark" aria-hidden="true">
