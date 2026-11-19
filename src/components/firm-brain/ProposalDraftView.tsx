@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { tagVariants } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import { DRAFT_COPY, draftStatus, questionsText, type DraftSection, type DraftSource, type ProposalDraft } from "@/lib/proposal-draft-shared";
+import { todayIso } from "@/lib/client-showings-shared";
+import { LEDGER_COPY } from "@/lib/proposal-ledger-shared";
+import { recordProposalStep } from "@/lib/proposal-ledger.functions";
 import { confirmProposalSection } from "@/lib/proposal.functions";
 
 function SourceMark({ source, onOpen }: { source: DraftSource; onOpen: (itemId: string) => void }) {
@@ -74,7 +77,8 @@ function checksLine(draft: ProposalDraft): string[] {
 /**
  * 17 Nov, Start a proposal step 2: the first draft as sections, each "Draft, not reviewed" until the owner confirms
  * it. No accept-all. A status strip heads it, the checks say what they found in plain words, and the questions for
- * the lead are a block to copy. Nothing is sent from here.
+ * the lead are a block to copy. Nothing is sent from here. 19 Nov: once the questions are copied, the owner can mark
+ * them as sent, which dates that step in the proposal ledger; it is offered, never assumed.
  */
 export function ProposalDraftView({
   itemId,
@@ -82,14 +86,42 @@ export function ProposalDraftView({
   profileId,
   orgId,
   onOpen,
+  engagementId,
+  onLedgerChanged,
 }: {
   itemId: string;
   draft: ProposalDraft;
   profileId: string | null | undefined;
   orgId: string | null | undefined;
   onOpen: (itemId: string) => void;
+  /** The board this draft sits on. With it, copying the questions offers "Mark questions as sent". */
+  engagementId?: string | undefined;
+  onLedgerChanged?: (() => void) | undefined;
 }) {
   const confirm = useServerFn(confirmProposalSection);
+  const recordStep = useServerFn(recordProposalStep);
+  const [sent, setSent] = useState<"idle" | "busy" | "done" | "failed">("idle");
+  const [sentProblem, setSentProblem] = useState<string | null>(null);
+
+  async function markQuestionsSent() {
+    if (!engagementId || sent === "busy" || sent === "done") return;
+    setSent("busy");
+    setSentProblem(null);
+    try {
+      const result = await recordStep({ data: { engagement_id: engagementId, profile_id: profileId ?? null, kind: "questions_sent", date: todayIso() } });
+      if (!result.ok) {
+        setSentProblem(result.problem);
+        setSent("failed");
+        return;
+      }
+      setSent("done");
+      onLedgerChanged?.();
+    } catch {
+      setSentProblem(LEDGER_COPY.questionsMarkFailed);
+      setSent("failed");
+    }
+  }
+
   const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -155,6 +187,17 @@ export function ProposalDraftView({
           <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void copyQuestions()}>
             {copied ? DRAFT_COPY.copied : DRAFT_COPY.copyQuestions}
           </Button>
+          {copied && engagementId && sent !== "done" ? (
+            <Button type="button" size="sm" variant="outline" className="ml-2 mt-2" disabled={sent === "busy"} onClick={() => void markQuestionsSent()}>
+              {LEDGER_COPY.markQuestionsSent}
+            </Button>
+          ) : null}
+          {sent === "done" ? <p data-questions-sent className="mt-1 text-(length:--type-small) text-muted-foreground">{LEDGER_COPY.questionsMarked}</p> : null}
+          {sentProblem ? (
+            <p role="alert" className="mt-1 text-(length:--type-small) text-destructive">
+              {sentProblem}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </section>

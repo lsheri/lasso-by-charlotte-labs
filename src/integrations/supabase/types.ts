@@ -4048,6 +4048,102 @@ export type Database = {
           },
         ]
       }
+      proposal_ledger: {
+        Row: {
+          claims_unsupported: number | null
+          created_at: string
+          engagement_id: string
+          id: string
+          kind: string
+          occurred_at: string
+          org_id: string
+          questions_prepared: number | null
+          sections_sourced: number | null
+          sections_total: number | null
+          source_ref: string | null
+        }
+        Insert: {
+          claims_unsupported?: number | null
+          created_at?: string
+          engagement_id: string
+          id?: string
+          kind: string
+          occurred_at?: string
+          org_id: string
+          questions_prepared?: number | null
+          sections_sourced?: number | null
+          sections_total?: number | null
+          source_ref?: string | null
+        }
+        Update: {
+          claims_unsupported?: number | null
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          org_id?: string
+          questions_prepared?: number | null
+          sections_sourced?: number | null
+          sections_total?: number | null
+          source_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_ledger_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_ledger_values: {
+        Row: {
+          amount: number
+          currency: string
+          engagement_id: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          currency: string
+          engagement_id: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          currency?: string
+          engagement_id?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_ledger_values_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: true
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_ledger_values_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_intents: {
         Row: {
           client_name: string | null

@@ -4158,7 +4158,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
       {feeTermsAllowed ? <SowTermsDialog itemId={sowTermsItem?.id ?? null} title={sowTermsItem?.title ?? ""} profileId={profile?.id} onClose={() => setSowTermsItem(null)} /> : null}
       {tagsAllowed ? <ItemTagsDialog itemId={tagsItem?.id ?? null} title={tagsItem?.title ?? ""} profileId={profile?.id} onClose={() => setTagsItem(null)} /> : null}
       {proposalAllowed ? <RedPenPanel itemId={redPenItem?.id ?? null} title={redPenItem?.title ?? ""} profileId={profile?.id} orgId={orgId} onClose={() => setRedPenItem(null)} /> : null}
-      {proposalAllowed && proposalOpen ? <ProposalStartPanel engagementId={engagementId} profileId={profile?.id} orgId={orgId} onClose={() => setProposalOpen(false)} onDraftSaved={(id) => void addWorkToBoard([id], "inbox")} /> : null}
+      {proposalAllowed && proposalOpen ? <ProposalStartPanel engagementId={engagementId} profileId={profile?.id} orgId={orgId} onClose={() => setProposalOpen(false)} onDraftSaved={(id) => void addWorkToBoard([id], "inbox")} onOpenRedPen={setRedPenItem} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} engagementId={engagementId} /> : null}
