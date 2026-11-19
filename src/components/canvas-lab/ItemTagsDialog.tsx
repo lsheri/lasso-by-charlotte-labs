@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useBrandCopy } from "@/components/skin/use-skin";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
@@ -47,6 +48,8 @@ export function ItemTagsDialog({
 }) {
   const read = useServerFn(readItemTagsFn);
   const save = useServerFn(saveItemTagsFn);
+  // The copy is written as Lasso; the name follows the look.
+  const copy = useBrandCopy();
   const [view, setView] = useState<ItemTagsView | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [problem, setProblem] = useState<string | null>(null);
@@ -118,7 +121,7 @@ export function ItemTagsDialog({
       <DialogContent className="sm:max-w-lg" data-testid="item-tags" onClick={(event) => event.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>{ITEM_TAGS_COPY.title}</DialogTitle>
-          <DialogDescription>{ITEM_TAGS_COPY.helper}</DialogDescription>
+          <DialogDescription>{copy(ITEM_TAGS_COPY.helper)}</DialogDescription>
         </DialogHeader>
         <p className="truncate text-(length:--type-small) text-muted-foreground">{title}</p>
         <form
@@ -198,7 +201,7 @@ export function ItemTagsDialog({
           <DialogFooter className="gap-2 sm:justify-between">
             {view?.corrected ? (
               <Button type="button" variant="ghost" disabled={locked} onClick={() => void commit(true)}>
-                {ITEM_TAGS_COPY.reset}
+                {copy(ITEM_TAGS_COPY.reset)}
               </Button>
             ) : (
               <span />
