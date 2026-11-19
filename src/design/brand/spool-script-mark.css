@@ -1,14 +1,14 @@
 /* Spool script mark (.spool-mark), 19 Nov 2026. Colours come from the skin's job tokens, as the Charlotte mark's do:
    ink from --text-primary, the thread from --live. Names are --spool-* so they never shadow a job token.
-   The logo's thread is always lime (Liam, 19 Nov: "that's the logo"). A working mark's thread is lime only while the
-   product is working; at rest it is ink. No em dashes. */
+   The thread is lime in every state (Liam, 19 Nov: "every single logo wherever it is"). Only the ink state, a failed
+   or offline send, draws it in ink. Work in progress is shown by the draw-on, not by colour. No em dashes. */
 .spool-mark{display:block;overflow:visible;flex-shrink:0;--spool-ink:var(--text-primary);--spool-live:var(--live)}
 .spool-mark path{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .spool-mark .spool-main{stroke:var(--spool-ink);stroke-width:var(--spool-main)}
 .spool-mark .spool-fine{stroke:var(--spool-ink);stroke-width:var(--spool-fine-w)}
-.spool-mark .spool-thread{stroke:var(--spool-ink);stroke-width:var(--spool-thread-w)}
+.spool-mark .spool-thread{stroke:var(--spool-live);stroke-width:var(--spool-thread-w)}
 .spool-mark .spool-outline{stroke:var(--spool-ink);stroke-width:var(--spool-outline-w)}
-.spool-mark:is([data-spool-state="logo"],[data-spool-state="live"],[data-spool-state="drawing"]) .spool-thread{stroke:var(--spool-live)}
+.spool-mark[data-spool-state="ink"] .spool-thread{stroke:var(--spool-ink)}
 /* Drawing: the thread writes itself once, then holds. */
 .spool-mark[data-spool-state="drawing"] :is(.spool-thread,.spool-outline){stroke-dasharray:1;animation:spool-draw .9s ease-in-out both}
 @keyframes spool-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}

@@ -7,11 +7,12 @@ import type { CSSProperties } from "react";
 import "./spool-script-mark.css";
 
 /**
- * logo: the brand mark itself, wherever the lockup sits (nav, headers, sign-in). Its thread is lime, always: that is
- * the logo (Liam, 19 Nov). rest: thread in ink, for a working mark that is idle. live: thread lime because work is
- * happening. drawing: the live thread draws on once, then holds.
+ * The thread is lime wherever the mark is drawn: lockup, welcome, Ask, toolbar (Liam, 19 Nov: "every single logo
+ * wherever it is"). Colour belongs to the mark, not to its state. State only says what the mark is doing:
+ * logo, rest and live hold still; drawing writes the thread on once when work starts. ink is the one exception,
+ * a failed or offline send, where the whole mark goes ink to say nothing is happening.
  */
-export type SpoolMarkState = "logo" | "rest" | "live" | "drawing";
+export type SpoolMarkState = "logo" | "rest" | "live" | "drawing" | "ink";
 
 export const SPOOL_FLANGES = "M5 30H23M5 52H23";
 export const SPOOL_CORE = "M10 30V52M18 30V52";
@@ -50,7 +51,7 @@ export function SpoolScriptMark({
   onDark?: boolean;
 }) {
   const w = spoolWeights(size);
-  const lit = state !== "rest";
+  const lit = state !== "ink";
   const style = {
     "--spool-main": w.main,
     "--spool-fine-w": w.fine,

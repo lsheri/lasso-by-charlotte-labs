@@ -123,11 +123,11 @@ describe("Spool script mark", () => {
     expect(renderToStaticMarkup(<SpoolScriptMark size={16} />)).not.toContain(SPOOL_CORE);
   });
 
-  it("rest has no lime and no outline; the logo, live and drawing put an ink outline under the lime thread", () => {
-    const rest = renderToStaticMarkup(<SpoolScriptMark size={24} state="rest" />);
-    expect(rest).toContain('data-spool-state="rest"');
-    expect(rest).not.toContain('class="spool-outline"');
-    for (const state of ["logo", "live", "drawing"] as const) {
+  it("every state but ink puts an ink outline under the lime thread; ink has no outline", () => {
+    const ink = renderToStaticMarkup(<SpoolScriptMark size={24} state="ink" />);
+    expect(ink).toContain('data-spool-state="ink"');
+    expect(ink).not.toContain('class="spool-outline"');
+    for (const state of ["logo", "rest", "live", "drawing"] as const) {
       const html = renderToStaticMarkup(<SpoolScriptMark size={24} state={state} />);
       expect(html).toContain(`data-spool-state="${state}"`);
       expect(html.indexOf('class="spool-outline"')).toBeGreaterThan(-1);
@@ -141,12 +141,12 @@ describe("Spool script mark", () => {
     );
   });
 
-  it("only live states colour the thread, the draw runs once, and reduced motion shows it still", () => {
+  it("the thread is lime in every state but ink, the draw runs once, and reduced motion shows it still", () => {
     const css = readFileSync("src/design/brand/spool-script-mark.css", "utf8");
-    expect(css).toMatch(/\.spool-thread\{stroke:var\(--spool-ink\)/);
-    expect(css).toMatch(
-      /\[data-spool-state="logo"\],\[data-spool-state="live"\],\[data-spool-state="drawing"\]\) \.spool-thread\{stroke:var\(--spool-live\)\}/,
-    );
+    // 19 Nov, Liam: every mark carries the lime thread, wherever it is. Colour is the mark's, not the state's.
+    expect(css).toMatch(/\.spool-mark \.spool-thread\{stroke:var\(--spool-live\)/);
+    expect(css).toMatch(/\.spool-mark\[data-spool-state="ink"\] \.spool-thread\{stroke:var\(--spool-ink\)\}/);
+    expect(css).not.toMatch(/data-spool-state="(logo|rest|live)"\][^{]*\.spool-thread\{stroke/);
     expect(css).toContain("--spool-live:var(--live)");
     expect(css).toMatch(/animation:spool-draw \.9s ease-in-out both/);
     expect(css).toMatch(/prefers-reduced-motion:reduce\)\{[^}]*animation:none/);
