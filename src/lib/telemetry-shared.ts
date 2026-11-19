@@ -528,6 +528,16 @@ export type TelemetryEvent =
   | "firm_walkthrough.opened"
   /** 18 Nov, firm brain step 7: one Prepare me was run from Home. Dims: role_present (yes | no: whether any call with the picked role is shared with the firm), result (questions | covered | empty | none). Never which role, never a question. Portal registration required. */
   | "prepare.opened"
+  /** 19 Nov, Kestrel Bay demo story: the guided story was started in a window. Dims: script_version, mode (self | presenter), window (partner | lead). Emitted only from FirmStory. Portal registration required. */
+  | "firm_story.started"
+  /** 19 Nov, Kestrel Bay demo story: a one-tap reaction on a beat. Dims: beat (0 to 8), reaction (this_is_us | not_a_problem), script_version, mode. Never anything typed. Portal registration required. */
+  | "firm_story.reacted"
+  /** 19 Nov, Kestrel Bay demo story: the "Which is closest to you?" pick. Dims: role_pick (sells | delivers | both), script_version, mode. Portal registration required. */
+  | "firm_story.role_picked"
+  /** 19 Nov, Kestrel Bay demo story: Explore on my own was used. Dims: beat, script_version, mode. Portal registration required. */
+  | "firm_story.explored"
+  /** 19 Nov, Kestrel Bay demo story: the last beat was finished and the closing line shown. Dims: script_version, mode. Portal registration required. */
+  | "firm_story.finished"
   /** 17 Nov, firm brain: Start a proposal read a board's notes into a brief. Dims: input_kind (board_notes). Portal registration required. */
   | "proposal_draft.started"
   /** 17 Nov, firm brain: precedents were found for a proposal. Dims: close and loose (bucketed counts). Portal registration required. */
