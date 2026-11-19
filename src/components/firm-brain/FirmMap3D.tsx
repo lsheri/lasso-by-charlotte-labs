@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { FIRM_MAP_COPY, type MapNode, type Vec3 } from "@/lib/firm-map-shared";
 
+import { crowdedLabels, labelRank, type LabelBox } from "./firm-map-labels";
 import { SEW_MS, type FirmMapRendererProps } from "./firm-map-renderer";
 
 /**
@@ -20,12 +21,16 @@ const SEG = 170;
 const RADIAL = 8;
 const TUBE = 1.55;
 const FEW = 9;
+const FOV = 42;
+/** How far the deeper green outline stands out past a thread. */
+const EDGE = 0.55;
 
 type Palette = {
   stage: THREE.Color;
   ink: THREE.Color;
   method: THREE.Color;
   live: THREE.Color;
+  edge: THREE.Color;
   sunk: THREE.Color;
   mark: THREE.Color;
 };
@@ -44,6 +49,7 @@ function resolvePalette(host: HTMLElement): Palette {
     ink: read("text-(--text-primary)"),
     method: read("text-[var(--t-talk,var(--text-secondary))]"),
     live: read("text-(--live)"),
+    edge: read("text-(--live-edge)"),
     sunk: read("text-(--surface-sunk)"),
     mark: read("text-(--text-secondary)"),
   };
@@ -80,6 +86,10 @@ type NodeView = {
   halo: THREE.Sprite;
   haloMaterial: THREE.SpriteMaterial;
   label: HTMLSpanElement | null;
+  /** The label's natural size, measured once it has one, and whether it was showing on the last frame. */
+  labelWidth: number;
+  labelHeight: number;
+  showing: boolean;
 };
 type ThreadView = {
   id: string;
@@ -87,6 +97,10 @@ type ThreadView = {
   mesh: THREE.Mesh<THREE.TubeGeometry>;
   stitch: THREE.MeshLambertMaterial;
   solid: THREE.MeshLambertMaterial;
+  /** The outline: a slightly wider tube drawn inside out, so only its rim shows around the thread. */
+  edge: THREE.Mesh<THREE.TubeGeometry>;
+  edgeStitch: THREE.MeshBasicMaterial;
+  edgeSolid: THREE.MeshBasicMaterial;
   beads: THREE.Mesh[];
 };
 
@@ -142,7 +156,7 @@ export default function FirmMap3D({
     sun.position.set(1, 2, 1.5);
     scene.add(sun);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 1, 3000);
+    const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 3000);
     camera.position.set(250, 160, 650);
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
@@ -208,13 +222,23 @@ export default function FirmMap3D({
         label.dataset["node"] = node.id;
         label.className =
           node.kind === "situation"
-            ? "absolute left-0 top-0 whitespace-nowrap text-(length:--type-small) font-semibold text-foreground transition-opacity duration-300"
+            ? "absolute left-0 top-0 whitespace-nowrap text-(length:--type-small) font-semibold text-foreground transition-opacity duration-300 rounded-[var(--radius-control)] bg-(--surface-raised) px-1"
             : node.kind === "method"
-              ? "absolute left-0 top-0 whitespace-nowrap font-mono text-(length:--type-label) uppercase tracking-wider text-muted-foreground transition-opacity duration-300"
-              : "absolute left-0 top-0 whitespace-nowrap text-(length:--type-small) font-medium text-foreground opacity-0 transition-opacity duration-300";
+              ? "absolute left-0 top-0 whitespace-nowrap font-mono text-(length:--type-label) uppercase tracking-wider text-muted-foreground transition-opacity duration-300 rounded-[var(--radius-control)] bg-(--surface-raised) px-1"
+              : "absolute left-0 top-0 whitespace-nowrap text-(length:--type-small) font-medium text-foreground opacity-0 transition-opacity duration-300 rounded-[var(--radius-control)] bg-(--surface-raised) px-1";
         labelBox.appendChild(label);
       }
-      nodeViews.set(node.id, { node, mesh, material, halo, haloMaterial, label });
+      nodeViews.set(node.id, {
+        node,
+        mesh,
+        material,
+        halo,
+        haloMaterial,
+        label,
+        labelWidth: 0,
+        labelHeight: 0,
+        showing: false,
+      });
     }
 
     const beadGeometry = new THREE.SphereGeometry(2.6, 12, 10);
@@ -244,6 +268,24 @@ export default function FirmMap3D({
       });
       const mesh = new THREE.Mesh(geometry, stitch);
       scene.add(mesh);
+      const edgeGeometry = new THREE.TubeGeometry(curve, SEG, TUBE + EDGE, RADIAL, false);
+      const edgeUv = edgeGeometry.attributes["uv"] as THREE.BufferAttribute;
+      for (let j = 0; j < edgeUv.count; j += 1) edgeUv.setX(j, edgeUv.getX(j) * repeat);
+      const edgeStitch = new THREE.MeshBasicMaterial({
+        color: palette.edge,
+        map: dashTexture,
+        transparent: true,
+        alphaTest: 0.5,
+        side: THREE.BackSide,
+      });
+      const edgeSolid = new THREE.MeshBasicMaterial({
+        color: palette.edge,
+        transparent: true,
+        side: THREE.BackSide,
+      });
+      const edge = new THREE.Mesh(edgeGeometry, edgeStitch);
+      scene.add(edge);
+      disposables.push(edgeGeometry, edgeStitch, edgeSolid);
       const beads = [0, 1, 2].map(() => {
         const bead = new THREE.Mesh(beadGeometry, beadMaterial);
         bead.visible = false;
@@ -251,7 +293,17 @@ export default function FirmMap3D({
         return bead;
       });
       disposables.push(geometry, stitch, solid);
-      threadViews.push({ id: thread.id, curve, mesh, stitch, solid, beads });
+      threadViews.push({
+        id: thread.id,
+        curve,
+        mesh,
+        stitch,
+        solid,
+        edge,
+        edgeStitch,
+        edgeSolid,
+        beads,
+      });
     }
 
     function apply(
@@ -264,6 +316,8 @@ export default function FirmMap3D({
         const on = litThreads?.has(view.id) ?? false;
         view.mesh.material = on ? view.solid : view.stitch;
         view.stitch.opacity = litThreads ? 0.09 : 1;
+        view.edge.material = on ? view.edgeSolid : view.edgeStitch;
+        view.edgeStitch.opacity = litThreads ? 0.09 : 1;
         for (const bead of view.beads) bead.visible = on;
       }
       for (const view of nodeViews.values()) {
@@ -273,7 +327,7 @@ export default function FirmMap3D({
         view.haloMaterial.opacity = litThreads ? (on ? 0.55 : 0.02) : 0.1;
         if (view.label) {
           if (view.node.kind === "deck")
-            view.label.style.opacity = litThreads && on && few ? "1" : "0";
+            view.label.dataset["show"] = litThreads && on && few ? "true" : "";
           else view.label.dataset["dim"] = on ? "" : "true";
         }
       }
@@ -290,6 +344,16 @@ export default function FirmMap3D({
       if (!width || !height) return;
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
+      // On a tall stage (a phone) the view widens so the whole map still fits side to side.
+      camera.fov = Math.min(
+        76,
+        THREE.MathUtils.radToDeg(
+          2 *
+            Math.atan(
+              Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * Math.max(1, 1.15 / camera.aspect),
+            ),
+        ),
+      );
       camera.updateProjectionMatrix();
     };
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
@@ -346,6 +410,8 @@ export default function FirmMap3D({
     canvas.addEventListener("webglcontextlost", onLost);
 
     const point = new THREE.Vector3();
+    const boxes: LabelBox[] = [];
+    const wanted = new Map<string, number>();
     let frame = 0;
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -359,11 +425,16 @@ export default function FirmMap3D({
             Math.min(1, (elapsed - (delays.get(view.id) ?? 0)) / SEW_MS),
           );
           if (progress < 1) done = false;
-          view.mesh.geometry.setDrawRange(0, Math.floor(SEG * progress) * RADIAL * 6);
+          const sewn = Math.floor(SEG * progress) * RADIAL * 6;
+          view.mesh.geometry.setDrawRange(0, sewn);
+          view.edge.geometry.setDrawRange(0, sewn);
         }
         if (done) {
           replayAt = null;
-          for (const view of threadViews) view.mesh.geometry.setDrawRange(0, fullRange);
+          for (const view of threadViews) {
+            view.mesh.geometry.setDrawRange(0, fullRange);
+            view.edge.geometry.setDrawRange(0, fullRange);
+          }
         }
       }
       const seconds = now / 1000;
@@ -376,25 +447,58 @@ export default function FirmMap3D({
       }
       const width = stage.clientWidth;
       const height = stage.clientHeight;
+      // Labels that would sit on top of each other give way by rank (firm-map-labels), so the dense middle of the
+      // map stays readable; a hidden label comes back as the map turns or when its point is pulled.
+      boxes.length = 0;
+      wanted.clear();
       for (const view of nodeViews.values()) {
         const label = view.label;
         if (!label) continue;
         point.copy(view.mesh.position).project(camera);
         if (point.z > 1) {
           label.style.visibility = "hidden";
+          view.showing = false;
           continue;
         }
         label.style.visibility = "";
         const distance = camera.position.distanceTo(view.mesh.position);
         const size = Math.max(0.74, Math.min(1.1, 640 / distance));
         const lift = view.node.kind === "deck" ? 170 : 200;
-        label.style.transform = `translate(${((point.x * 0.5 + 0.5) * width).toFixed(1)}px,${((-point.y * 0.5 + 0.5) * height).toFixed(1)}px) translate(-50%,-${lift}%) scale(${size.toFixed(2)})`;
-        if (view.node.kind !== "deck") {
-          label.style.opacity =
-            label.dataset["dim"] === "true"
-              ? "0.14"
-              : Math.max(0.3, Math.min(1, (1040 - distance) / 420)).toFixed(2);
+        if (!view.labelWidth) {
+          view.labelWidth = label.offsetWidth;
+          view.labelHeight = label.offsetHeight;
         }
+        // A label near the side of the stage slides in so its words are never cut off.
+        const half = (view.labelWidth * size) / 2 + 6;
+        const at = (point.x * 0.5 + 0.5) * width;
+        const x = half * 2 < width ? Math.max(half, Math.min(width - half, at)) : width / 2;
+        const y = (-point.y * 0.5 + 0.5) * height;
+        label.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-${lift}%) scale(${size.toFixed(2)})`;
+        const dim = label.dataset["dim"] === "true";
+        const opacity =
+          view.node.kind === "deck"
+            ? label.dataset["show"] === "true"
+              ? 1
+              : 0
+            : dim
+              ? 0.14
+              : Math.max(0.8, Math.min(1, (1040 - distance) / 420));
+        wanted.set(view.node.id, opacity);
+        if (opacity === 0) continue;
+        boxes.push({
+          id: view.node.id,
+          x,
+          y: y - view.labelHeight * (lift / 100 - 0.5),
+          width: view.labelWidth * size,
+          height: view.labelHeight * size,
+          rank: labelRank({ kind: view.node.kind, dim, distance, showing: view.showing }),
+        });
+      }
+      const crowded = crowdedLabels(boxes);
+      for (const [id, opacity] of wanted) {
+        const view = nodeViews.get(id)!;
+        view.showing = opacity > 0 && !crowded.has(id);
+        view.label!.style.opacity = view.showing ? opacity.toFixed(2) : "0";
       }
       renderer.render(scene, camera);
     };

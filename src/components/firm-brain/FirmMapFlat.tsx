@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { FIRM_MAP_COPY, project, type MapNode, type Projected } from "@/lib/firm-map-shared";
 import { cn } from "@/lib/utils";
 
+import { crowdedLabels, labelRank, type LabelBox } from "./firm-map-labels";
 import { SEW_MS, type FirmMapRendererProps } from "./firm-map-renderer";
 
 /** One fixed view: the flat map never turns, so nothing spins for anyone. */
@@ -37,7 +38,7 @@ export function FirmMapFlat({
   onPick,
 }: FirmMapRendererProps) {
   const [sewing, setSewing] = useState(false);
-  const paths = useRef(new Map<string, SVGPathElement>());
+  const paths = useRef(new Map<string, SVGGElement>());
 
   const nodes = useMemo(
     () =>
@@ -85,6 +86,39 @@ export function FirmMapFlat({
 
   const few = lit !== null && lit.size > 0 && lit.size <= FEW;
 
+  // Labels that would sit on top of each other give way by the same rule as the 3D map (firm-map-labels). Sizes
+  // are estimated from the text, since this view is drawn once and never measured. A hidden label's point keeps
+  // its accessible name, and the label returns when the point is hovered, focused or picked.
+  const crowded = useMemo(() => {
+    const depths = nodes.map((entry) => entry.at.depth);
+    const far = Math.min(...depths);
+    const span = Math.max(...depths) - far || 1;
+    const boxes: LabelBox[] = [];
+    for (const { node, at } of nodes) {
+      const on = !litNodes || litNodes.has(node.id) || selected === node.id;
+      if (node.kind === "lesson" || (node.kind === "deck" && !(few && on))) continue;
+      const r = node.size * at.scale;
+      const height = node.kind === "method" ? 13 : 16;
+      boxes.push({
+        id: node.id,
+        x: at.x,
+        y: at.y - r - 6 - height / 3,
+        width: node.label.length * (node.kind === "method" ? 7.6 : 7.2),
+        height,
+        rank:
+          selected === node.id
+            ? -1
+            : labelRank({
+                kind: node.kind,
+                dim: !on,
+                distance: (1 - (at.depth - far) / span) * 3900,
+                showing: false,
+              }),
+      });
+    }
+    return crowdedLabels(boxes);
+  }, [nodes, litNodes, selected, few]);
+
   function keyed(event: KeyboardEvent, node: MapNode) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -112,24 +146,35 @@ export function FirmMapFlat({
         {threads.map(({ thread, d }) => {
           const on = lit?.has(thread.id) ?? false;
           return (
-            <path
+            // The group carries the dash and its sewing animation, which both strokes inherit: a deeper green
+            // edge underneath, the live thread on top.
+            <g
               key={thread.id}
               ref={(element) => {
                 if (element) paths.current.set(thread.id, element);
                 else paths.current.delete(thread.id);
               }}
-              d={d}
               data-thread={thread.id}
               data-lit={on ? "true" : undefined}
-              pathLength={sewing ? 1 : undefined}
               strokeDasharray={sewing ? "1 1" : on ? undefined : "7 4"}
               strokeLinecap="round"
               className={cn(
-                "fill-none stroke-(--live) transition-opacity duration-300 motion-reduce:transition-none",
-                on ? "[stroke-width:3.5]" : "[stroke-width:2.6]",
+                "fill-none transition-opacity duration-300 motion-reduce:transition-none",
                 lit && !on ? "opacity-10" : "opacity-100",
               )}
-            />
+            >
+              <path
+                d={d}
+                data-thread-edge=""
+                pathLength={sewing ? 1 : undefined}
+                className={cn("stroke-(--live-edge)", on ? "[stroke-width:5]" : "[stroke-width:4]")}
+              />
+              <path
+                d={d}
+                pathLength={sewing ? 1 : undefined}
+                className={cn("stroke-(--live)", on ? "[stroke-width:3.5]" : "[stroke-width:2.6]")}
+              />
+            </g>
           );
         })}
       </g>
@@ -139,6 +184,7 @@ export function FirmMapFlat({
           node.kind === "situation" ||
           node.kind === "method" ||
           (node.kind === "deck" && few && on);
+        const label = showLabel && !crowded.has(node.id);
         const r = node.size * at.scale;
         return (
           <g
@@ -179,7 +225,7 @@ export function FirmMapFlat({
                   : null,
               )}
             />
-            {showLabel ? (
+            {label ? (
               <text
                 x={at.x}
                 y={at.y - r - 6}
