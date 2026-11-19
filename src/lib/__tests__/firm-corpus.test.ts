@@ -149,6 +149,132 @@ describe("the corpus", () => {
     expect(sow.kind).toBe("sow");
   });
 
+  // 19 Nov (D-6): a saved proposal draft has no summary card, so the reader says what it is about from its own sections.
+  describe("a saved proposal draft", () => {
+    const section = (key: string, body: string, status = "draft") => ({
+      key,
+      heading: key,
+      body,
+      status,
+      sources: [],
+      flags: [],
+    });
+    const draftMeta = (sections: unknown[]) => ({
+      deliverable_kind: "proposal",
+      proposal_draft: {
+        sections,
+        questions: [],
+        checks: {},
+        precedentIds: [],
+        createdAt: "2026-11-17",
+      },
+    });
+    const withDraft = (meta: unknown, over: Partial<FirmRows> = {}): FirmRows => {
+      const base = rows(over);
+      return {
+        ...base,
+        placements: [
+          ...base.placements,
+          { work_item_id: "draft", engagement_id: "b2" },
+          { work_item_id: "hidden-draft", engagement_id: "b9" },
+        ],
+        items: [
+          ...base.items,
+          {
+            id: "draft",
+            owner_id: "p-ben",
+            type: "document",
+            title: "Proposal draft",
+            display_title: null,
+            visibility: "mapped",
+            work_date: null,
+            meta,
+          },
+          {
+            id: "hidden-draft",
+            owner_id: "p-ben",
+            type: "document",
+            title: "Proposal draft elsewhere",
+            display_title: null,
+            visibility: "mapped",
+            work_date: null,
+            meta,
+          },
+        ],
+      };
+    };
+    const SECTIONS = [
+      section("context", "One in three adults has prediabetes.\n\nAlmost nobody is in a program."),
+      section("objectives", "A board-approved service line by spring."),
+      section(
+        "approach",
+        "Gap: nothing on this board or in past work supports this section yet. It is a question for the lead.",
+        "gap",
+      ),
+      section("fee", "Fee: for partner decision."),
+      section("team", "Partner; engagement lead; analyst."),
+    ];
+
+    it("is marked as a draft and carries what it is about, from its context, objectives and approach only", () => {
+      const draft = assembleFirmCorpus("org", withDraft(draftMeta(SECTIONS))).items.find(
+        (item) => item.id === "draft",
+      )!;
+      expect(draft.summary).toBeNull();
+      expect(draft.proposalDraft).toEqual({
+        gist: "One in three adults has prediabetes. Almost nobody is in a program. A board-approved service line by spring.",
+      });
+      expect(draft.grade).toBe("full");
+    });
+
+    it("says nothing for a draft that is all gaps, and still marks it", () => {
+      const draft = assembleFirmCorpus(
+        "org",
+        withDraft(draftMeta([section("context", "", "draft"), SECTIONS[2]])),
+      ).items.find((item) => item.id === "draft")!;
+      expect(draft.proposalDraft).toEqual({ gist: null });
+    });
+
+    it("keeps a long draft's card short, with a share for each section", () => {
+      const long = assembleFirmCorpus(
+        "org",
+        withDraft(
+          draftMeta([section("context", "a ".repeat(900)), section("objectives", "Short aim.")]),
+        ),
+      ).items.find((item) => item.id === "draft")!;
+      expect(long.proposalDraft!.gist!.length).toBeLessThanOrEqual(720);
+      expect(long.proposalDraft!.gist).toContain("Short aim.");
+    });
+
+    it("leaves other work unmarked, and survives a draft stored in a shape it does not know", () => {
+      const corpus = assembleFirmCorpus(
+        "org",
+        withDraft({ proposal_draft: { sections: "oops", questions: [] } }),
+      );
+      expect(corpus.items.filter((item) => item.proposalDraft).map((item) => item.id)).toEqual([]);
+      const odd = assembleFirmCorpus(
+        "org",
+        withDraft(draftMeta([null, { key: "context", body: 7 }, section("objectives", "Aim.")])),
+      ).items.find((item) => item.id === "draft")!;
+      expect(odd.proposalDraft).toEqual({ gist: "Aim." });
+    });
+
+    it("stays out with its board: unshared, Out, private and guests' drafts are never in the corpus", () => {
+      const ids = (found: FirmRows) =>
+        assembleFirmCorpus("org", found).items.map((item) => item.id);
+      // b9 is not among the shared boards read, so a draft placed only there is not found.
+      expect(ids(withDraft(draftMeta(SECTIONS)))).not.toContain("hidden-draft");
+      // Sharing turned off on b2: the draft goes with it at the next read.
+      expect(
+        ids(
+          withDraft(draftMeta(SECTIONS), {
+            boards: rows().boards.filter((board) => board.id !== "b2"),
+          }),
+        ),
+      ).not.toContain("draft");
+      expect(ids(withDraft({ ...draftMeta(SECTIONS), firm_memory: "out" }))).not.toContain("draft");
+    });
+  });
+
   it("names the lead and the client, but not a quick folder as a client", () => {
     const corpus = assembleFirmCorpus("org", rows());
     expect(corpus.boards[0]).toMatchObject({ client: "St. Brigid", lead: "Ana", startedOn: "2025-03-03", outcome: "Ran to plan." });

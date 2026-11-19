@@ -374,6 +374,37 @@ export function storedDraft(meta: unknown): ProposalDraft | null {
   return Array.isArray(draft.sections) && Array.isArray(draft.questions) ? draft : null;
 }
 
+/** How much of a draft its firm index card carries. */
+export const DRAFT_GIST_CHARS = 700;
+/** The sections that say what a proposal is about. Fee and team are never read: code writes those, and a card needs neither. */
+const GIST_SECTIONS: readonly ProposalSectionKey[] = ["context", "objectives", "approach"];
+
+/**
+ * What a saved proposal draft is about, in its own words, for the firm's index card: the start of its context,
+ * objectives and approach. A saved draft has no summary card of its own (it is written by the app, not captured), so
+ * without this the firm could find it only by its title. Made by code from the draft as it stands now, so an edit
+ * shows at the next question and nothing new is stored. Gaps and empty sections are left out; null when nothing is left.
+ */
+export function draftGistOf(meta: unknown): string | null {
+  const draft = storedDraft(meta);
+  if (!draft) return null;
+  const parts: string[] = [];
+  for (const key of GIST_SECTIONS) {
+    const section = draft.sections.find((entry) => entry && entry.key === key);
+    if (!section || section.status === "gap" || typeof section.body !== "string") continue;
+    const body = section.body.replace(/\s+/g, " ").trim();
+    if (body && body !== GAP_LINE) parts.push(body);
+  }
+  if (!parts.length) return null;
+  const share = Math.floor(DRAFT_GIST_CHARS / parts.length);
+  return parts.map((part) => (part.length > share ? `${part.slice(0, share).trimEnd()}...` : part)).join(" ");
+}
+
+/** True for an item that is a saved proposal draft, whatever state its sections are in. */
+export function isProposalDraft(meta: unknown): boolean {
+  return storedDraft(meta) !== null;
+}
+
 /** Fact sources re-checked against what the reader can see now: a board no longer shared hides its quote. */
 export function recheckSources(draft: ProposalDraft, visibleItemIds: ReadonlySet<string>): ProposalDraft {
   return {
