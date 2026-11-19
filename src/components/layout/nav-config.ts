@@ -43,6 +43,8 @@ export type NavItemId =
   | "portfolio"
   | "one-on-one"
   | "coach-notes"
+  /** 20 Nov, Proposal Desk (D-34): the Proposals row, for company workspaces. */
+  | "proposals"
   | "firm-view"
   | "members"
   | "affiliation"
@@ -371,6 +373,18 @@ export const NAV_ITEMS: NavManifestItem[] = [
     to: "/one-on-one",
     icon: "one-on-one",
     runtimeOnly: true,
+  },
+  // 20 Nov, Proposal Desk (D-34, D-38): on for every company workspace, for every member. A coach is not a member.
+  {
+    id: "proposals",
+    placement: "main",
+    group: "firm",
+    label: "Proposals",
+    to: "/proposals",
+    icon: "send",
+    types: ["company"],
+    runtimeOnly: true,
+    show: (ctx) => ctx.role !== "coach",
   },
   {
     id: "firm-view",

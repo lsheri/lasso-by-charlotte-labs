@@ -118,6 +118,16 @@ function combos(): Combo[] {
   return out;
 }
 
+function withProposals(layout: string, shown: boolean): string {
+  if (!shown) return layout;
+  const lines = layout.split("\n");
+  const firm = lines.indexOf("Firm view -> /firm");
+  const at = firm >= 0 ? firm : lines.indexOf("Sources -> /connectors");
+  if (at < 0) throw new Error("No place for the Proposals row in this layout");
+  lines.splice(at, 0, "Proposals -> /proposals");
+  return lines.join("\n");
+}
+
 function keyOf(c: Combo): string {
   return [
     c.type,
@@ -483,12 +493,15 @@ describe("MN-2a navigation matrix", () => {
       const expected = EXPECTED[keyOf(c)];
       if (!expected) throw new Error("Missing matrix row");
       const [sidebarId] = expected;
-      expect(sidebarFor(c)).toBe(SIDEBAR_LAYOUTS[sidebarId]);
+      // 20 Nov, Proposal Desk (D-34, D-38): every member of a company workspace has a Proposals row, above Firm
+      // view where there is one and above Sources where there is not. No other workspace type has it.
+      const layout = withProposals(SIDEBAR_LAYOUTS[sidebarId] ?? "", c.type === "company" && c.role !== "coach");
+      expect(sidebarFor(c)).toBe(layout);
       // NAV-3: the phone More sheet is a decided flat list for workers: no
       // headings, no Create, no All work, then the switcher rows. The guest
       // sheet still mirrors its sidebar under a Workspace heading.
       const guest = c.role === "coach";
-      const moreLines = (SIDEBAR_LAYOUTS[sidebarId] ?? "").split("\n").filter((line) =>
+      const moreLines = layout.split("\n").filter((line) =>
         guest || (!line.startsWith("# ") && line !== "All work -> /work" && line !== "Create [button]"));
       const workspaceRows = navFor({ ...c, hasCoachLink: c.coachLink, workItemCount: 0,
         canManageMembers: c.role === "admin" || c.role === "lead",

@@ -550,6 +550,8 @@ export type TelemetryEvent =
   | "proposal_draft.section_confirmed"
   /** 17 Nov, firm brain: the proposal owner copied the questions for the lead. No dims. Portal registration required. */
   | "proposal_draft.questions_copied"
+  /** 20 Nov, Proposal Desk: a proposal was started from the Proposals page. Dims: client (existing | new), documents (0 | 1 | 2-5 | 6+), notes (yes | no). Never a title, a client name or the notes. Portal registration required. */
+  | "proposal.created"
   /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */
   | "proposal_text.pressed"
   /** 19 Nov, Proposal Desk: what that press came to. Dims: channel (sms), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */
