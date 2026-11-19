@@ -179,6 +179,30 @@ function metaOf(meta: unknown): Record<string, unknown> {
   return meta && typeof meta === "object" && !Array.isArray(meta) ? (meta as Record<string, unknown>) : {};
 }
 
+/**
+ * Where a board lead's correction is kept (Firm Brain Build Spec, step 5): one object beside the tags Charlotte read,
+ * holding only the tags the lead set. The extractor never writes this key, so a re-extract cannot undo a correction.
+ * A tag set to null or to an empty list here means "none", and still wins.
+ */
+export const TAG_CORRECTION_KEY = "tags_lead";
+
+/** The four tag keys a correction may hold; anything else in the object (who, when) is not a tag. */
+export const TAG_KEYS = ["situation", "method", "call_role", "stage"] as const;
+
+export type TagKey = (typeof TAG_KEYS)[number];
+
+/** The lead's correction on an item, or null when there is none. */
+export function tagCorrectionOf(meta: unknown): Record<string, unknown> | null {
+  const value = metaOf(meta)[TAG_CORRECTION_KEY];
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+/** One tag as stored: the lead's value when the lead set that tag, else what Charlotte or the seed wrote. */
+function tagValue(meta: unknown, key: TagKey): unknown {
+  const correction = tagCorrectionOf(meta);
+  return correction && Object.prototype.hasOwnProperty.call(correction, key) ? correction[key] : metaOf(meta)[key];
+}
+
 /** A string from a fixed list; any other string reads as "other", anything that is not a string as null. */
 function inList<T extends string>(list: readonly T[], value: unknown): T | null {
   if (typeof value !== "string" || !value.trim()) return null;
@@ -186,22 +210,22 @@ function inList<T extends string>(list: readonly T[], value: unknown): T | null 
 }
 
 export function situationOf(meta: unknown): Situation | null {
-  return inList(SITUATIONS, metaOf(meta)["situation"]);
+  return inList(SITUATIONS, tagValue(meta, "situation"));
 }
 
 /** `meta.method` as a deduplicated list in vocabulary order. A single string is read as a list of one. */
 export function methodsOf(meta: unknown): Method[] {
-  const raw = metaOf(meta)["method"];
-  const values = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
+  const raw = tagValue(meta, "method");
+  const values = Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw];
   const found = new Set(values.map((value) => inList(METHODS, value)).filter((value): value is Method => value !== null));
   return METHODS.filter((method) => found.has(method));
 }
 
 export function roleOf(meta: unknown): Role | null {
-  return inList(ROLES, metaOf(meta)["call_role"]);
+  return inList(ROLES, tagValue(meta, "call_role"));
 }
 
 export function stageOf(meta: unknown): Stage | null {
-  const value = metaOf(meta)["stage"];
+  const value = tagValue(meta, "stage");
   return typeof value === "string" && (STAGES as readonly string[]).includes(value) ? (value as Stage) : null;
 }

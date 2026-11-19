@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { DemoFirmSeedPanel } from "@/components/qa/DemoFirmSeedPanel";
+import { DemoTagCheckPanel } from "@/components/qa/DemoTagCheckPanel";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -105,6 +106,7 @@ function QaSeedPage() {
         </div>
       ) : null}
       <DemoFirmSeedPanel profileId={profile?.id} />
+      <DemoTagCheckPanel profileId={profile?.id} />
     </div>
   );
 }

@@ -136,6 +136,7 @@ function LabCardInner({
   clientShownMarks,
   onRedPen,
   onSowTerms,
+  onTags,
   onMarkClientShown,
   onUnmarkClientShown,
 }: {
@@ -144,6 +145,8 @@ function LabCardInner({
   /** 17 Nov, firm brain: opens the red pen for this deliverable. */
   onRedPen?: (() => void) | undefined;
   onSowTerms?: (() => void) | undefined;
+  /** 18 Nov, firm brain step 5: opens the tags dialog. Only the live signed-in board passes it, for the lead and admins. */
+  onTags?: (() => void) | undefined;
   /** Present only when the viewer may mark this deliverable (owner or editor, company workspace). */
   onMarkClientShown?: ((input: { shownOn: string; occasion: string }) => Promise<void>) | undefined;
   onUnmarkClientShown?: ((showing: ClientShowing) => Promise<void>) | undefined;
@@ -480,7 +483,7 @@ function LabCardInner({
       {readOnly ? null : (
         <div className="canvas-lab-card-bar" onPointerDown={(event) => event.stopPropagation()}>
           {deckEventOrgId && boardWork?.content?.kind === 'deck' && boardWork.content.slides.length > 0 ? <DeckStrip content={boardWork.content} cardRef={cardRef} expanded={deckExpanded} onExpandedChange={setDeckExpanded} orgId={deckEventOrgId} /> : null}
-          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} clientShownLabel={canMarkClientShown ? ((clientShownMarks?.length ?? 0) > 0 ? CLIENT_SHOWN_COPY.menuAgain : CLIENT_SHOWN_COPY.menu) : undefined} onClientShown={canMarkClientShown ? () => setClientShownOpen(true) : undefined} onRedPen={onRedPen} onSowTerms={readOnly ? undefined : onSowTerms} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
+          <LabCardMenu selected={selected} canBranch={Boolean(node.workItemId) || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={(removable ?? true) && (node.kind !== "judgment" || Boolean(node.local))} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={() => onSelect()} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onOpenLedger={isDecisions && onOpenLedger ? () => onOpenLedger("menu") : undefined} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} chatLinkLabel={canSetChatLink ? CHAT_LINK_COPY[chatLinkAction(item?.meta?.chat_url)] : undefined} onEditChatLink={canSetChatLink ? () => setChatLinkOpen(true) : undefined} onRename={canRename && item ? () => setRenameOpen(true) : undefined} clientShownLabel={canMarkClientShown ? ((clientShownMarks?.length ?? 0) > 0 ? CLIENT_SHOWN_COPY.menuAgain : CLIENT_SHOWN_COPY.menu) : undefined} onClientShown={canMarkClientShown ? () => setClientShownOpen(true) : undefined} onRedPen={onRedPen} onSowTerms={readOnly ? undefined : onSowTerms} onTags={readOnly ? undefined : onTags} cardFace={cardFace} onCardFaceChange={onCardFaceChange} />
           {canRename && item ? <RenameWorkDialog item={item} open={renameOpen} onOpenChange={setRenameOpen} /> : null}
           <Button
             type="button"
