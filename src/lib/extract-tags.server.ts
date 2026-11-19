@@ -83,10 +83,29 @@ async function knownNames(admin: Db, orgId: string): Promise<string[]> {
 }
 
 /**
+ * The name of a board's client and its brief, read once. The client is the linked client's name, else the label typed
+ * on the board, else null. Both are null when the board is not in this workspace.
+ */
+export async function boardClientAndBrief(admin: Db, engagementId: string, orgId: string): Promise<{ client: string | null; brief: string | null }> {
+  const { data, error } = await admin.from("engagements").select("brief, client_id, client_label").eq("id", engagementId).eq("org_id", orgId).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return { client: null, brief: null };
+  let client = data.client_label?.trim() || null;
+  if (data.client_id) {
+    const named = await admin.from("clients").select("name").eq("id", data.client_id).eq("org_id", orgId).maybeSingle();
+    if (named.error) throw new Error(named.error.message);
+    client = named.data?.name?.trim() || client;
+  }
+  return { client, brief: data.brief?.trim() ? data.brief.trim().slice(0, BRIEF_PROMPT_CHARS) : null };
+}
+
+/**
  * What the extractor needs to ask for and check one item's tags. Reads only what the item's type calls for: names for
  * a call, a client mark for a deliverable, and the rest of the board only when this item could carry the situation.
+ * The client's name is read for every item on a board, because the method cannot be told without it (a call with the
+ * client's market reads like one with the client's staff). An item on no board has no client and gets no line.
  */
-export async function loadTagContext(admin: Db, item: TagItem): Promise<{ context: TagContext; brief: string | null }> {
+export async function loadTagContext(admin: Db, item: TagItem): Promise<{ context: TagContext; brief: string | null; client: string | null }> {
   const self: CarrierCandidate = {
     id: item.id,
     type: item.type,
@@ -97,6 +116,7 @@ export async function loadTagContext(admin: Db, item: TagItem): Promise<{ contex
   };
   let carrier = false;
   let brief: string | null = null;
+  let client: string | null = null;
   let shown = false;
   if (isDeliverableType(item.type)) {
     const { data, error } = await admin.from("client_showings").select("id").eq("work_item_id", item.id).limit(1);
@@ -105,20 +125,27 @@ export async function loadTagContext(admin: Db, item: TagItem): Promise<{ contex
   }
   const rank = situationRank(self);
   // Rank 0 is a situation the lead set by hand: it already wins on read, so the model is not asked again.
-  if (rank !== null && rank !== 0) {
+  const mayCarry = rank !== null && rank !== 0;
+  try {
     const engagementId = await boardForItem(admin, item.id);
     if (engagementId) {
-      const others = await boardCarrierCandidates(admin, engagementId, item.org_id);
-      carrier = situationCarrierId([self, ...others.filter((other) => other.id !== item.id)]) === item.id;
-      if (carrier) {
-        const { data, error } = await admin.from("engagements").select("brief").eq("id", engagementId).eq("org_id", item.org_id).maybeSingle();
-        if (error) throw new Error(error.message);
-        brief = data?.brief?.trim() ? data.brief.trim().slice(0, BRIEF_PROMPT_CHARS) : null;
+      const board = await boardClientAndBrief(admin, engagementId, item.org_id);
+      client = board.client;
+      if (mayCarry) {
+        const others = await boardCarrierCandidates(admin, engagementId, item.org_id);
+        carrier = situationCarrierId([self, ...others.filter((other) => other.id !== item.id)]) === item.id;
+        // The brief goes only to the item that carries the situation.
+        if (carrier) brief = board.brief;
       }
     }
+  } catch (e) {
+    // A SOW or brief with no board read would be asked for the wrong tags, so it gets none this time. Any other item
+    // only loses the client line: its method is still asked for, as it was before the line existed.
+    if (mayCarry) throw e;
+    client = null;
   }
   const names = item.type === "call" ? await knownNames(admin, item.org_id) : [];
-  return { context: { type: item.type, carrier, shown, names }, brief };
+  return { context: { type: item.type, carrier, shown, names }, brief, client };
 }
 
 /**
