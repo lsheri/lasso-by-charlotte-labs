@@ -125,6 +125,7 @@ export const checkDemoTagFn = createServerFn({ method: "POST" })
     const after = await generateExtract(entry.title, text, meta, {
       context: { type: entry.type, carrier: situationCarrier(board) === entry.itemKey, shown: Boolean(item.shown?.length), names },
       brief: situationCarrier(board) === entry.itemKey ? board.brief : null,
+      client: board.client.name,
     });
     const usage = (run: { tokensIn: number; tokensOut: number; costUsd: number }) => ({ tokensIn: run.tokensIn, tokensOut: run.tokensOut, costUsd: run.costUsd });
     return {

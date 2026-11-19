@@ -275,3 +275,33 @@ body:has([data-lasso="on"]) [data-sonner-toaster] {
   --demo-viewport:#f2f0ea;
   --demo-dot:rgba(22,24,26,.13);
 }
+
+/* Brand scope: Slate cloth, Spool script mark (19 Nov 2026, brand exploration; Lasso Tailoring Studio, cloth I).
+   Worn over a skin: data-brand-theme sits beside data-skin on <html>, and this scope sets only the skin's brand values, so
+   skin-base.css builds every role, job, category and vendor colour from them exactly as it does for the skin itself.
+   Named data-brand-theme because data-brand already marks a vendor on work cards, and the reskin audit skips those.
+   Nothing is renamed and nothing is removed; without the attribute the app is unchanged.
+   One attribute stronger than the skin's own block, so these win wherever the skin applies (the app shell and the
+   overlays that open at <body>), and nowhere else.
+   Contrast on the ground #ECEEF0: ink 12.7:1, muted 5.6:1 (5.1:1 on sunk, 6.5:1 on raised). The six kind inks the
+   skin already sets stay, at 5.3:1 or better on the ground.
+   Lime is the thread. It means the product is working, and nothing else. It is 1.24:1 on the ground, so it is fill and
+   decoration only and the mark's lime thread always carries an ink outline on light surfaces.
+   Type is unchanged. No em dashes. */
+[data-brand-theme="slate-spool"][data-skin] [data-lasso="on"],
+[data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) > [role="dialog"],
+[data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) > [role="alertdialog"],
+[data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) > [data-radix-popper-content-wrapper],
+[data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) > [data-skin-overlay],
+[data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) [data-sonner-toaster] {
+  --skin-ink:#1E2933; /* ink, and the cloth labels are cut from */
+  --skin-live:#04F85B; /* the thread: live only */
+  --skin-page:#ECEEF0; /* ground */
+  --skin-raised:#FFFFFF;
+  --skin-sunk:#E1E4E8;
+  --skin-text-2:#545F69; /* muted */
+  --skin-text-3:#545F69;
+  --skin-mark:#7C8791; /* faint marks, not text */
+  --neutral-10:#F4F5F6;
+  --neutral-80:#34404B;
+}

@@ -72,6 +72,8 @@ Goal (Liam, 17 Nov): "as design healthy as can be and durable for switching thin
 
 Every PR was checked against main with the full test suite, lint, and the design-baseline screenshots (26 screens, Charlotte, desktop and phone), and has a row in `DESIGN-DECISIONS.md`.
 
+- **Slate / Spool script brand theme (19 Nov, preview only).** A second look worn over the skin, chosen by `data-brand-theme` on `<html>` and one constant. Ten skin brand values in one tokens.css scope, one new mark beside the Charlotte mark, three switches extended, no new literals outside tokens.css. Health counts unchanged. The brand guard still fails on the LASSO wordmark under the theme, by design of the guard; see DESIGN-DECISIONS.
+
 ## Health counts
 
 Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3, 18 after the skin contract (#197). The audit's target for a skin was about 20. A test keeps it at 20 or fewer.
