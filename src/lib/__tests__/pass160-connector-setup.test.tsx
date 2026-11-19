@@ -17,6 +17,13 @@ import {
   MCP_VENDORS,
 } from "@/lib/mcp-setup-steps";
 
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
+
 const BANNED = /(telemetry|analytics|data collection|scor(e|ed|ing)|monitor|track|—)/i;
 
 const logEvent = vi.fn();
@@ -28,7 +35,18 @@ vi.mock("@/lib/mcp-connections.functions", () => ({
   listConnections: () =>
     Promise.resolve(
       token
-        ? [{ id: "c1", kind: "link", label: "Claude", client_name: null, key_last4: "abcd", can_reveal: true, older: false, ...token }]
+        ? [
+            {
+              id: "c1",
+              kind: "link",
+              label: "Claude",
+              client_name: null,
+              key_last4: "abcd",
+              can_reveal: true,
+              older: false,
+              ...token,
+            },
+          ]
         : [],
     ),
   createConnection: () => Promise.resolve({ id: "c2", kind: "link", secret: "raw" }),

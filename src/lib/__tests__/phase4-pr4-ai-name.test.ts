@@ -1,12 +1,19 @@
 // Phase 4 PR4: under Charlotte the model's fixed prompts and the hand-off text use her name; Lasso stays byte-identical.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { BRANDS, brandCopy } from "@/design/brand/brand";
+import { BRANDS, brandCopy, brandFor } from "@/design/brand/brand";
 import { ANALYSIS_PRESETS } from "@/lib/analysis-presets";
 import { packageHandoff, type H7Input } from "@/lib/ask-handoff";
 import { serverBrand, skinFromCookieHeader } from "@/lib/brand-server";
 import { ANSWER_RULES, CATALOGUE_RULES } from "@/lib/record-answer.server";
 import { whereLineFor } from "@/lib/reflect-run.server";
+
+// 19 Nov: Slate / Spool script (Lasso) is the default look now. This file tests the Charlotte look, which allowed
+// accounts can still choose, so it pins the earlier default. The default itself is tested in slate-spool-brand.test.tsx.
+vi.mock("@/lib/brand-variant-shared", async (original) => ({
+  ...(await original<typeof import("@/lib/brand-variant-shared")>()),
+  DEFAULT_BRAND_VARIANT: "current",
+}));
 
 const lasso = BRANDS.lasso;
 const charlotte = BRANDS.charlotte;
@@ -14,11 +21,15 @@ const noDb = {} as never;
 
 describe("the brand the server speaks as", () => {
   it("honours the skin cookie only for an allowed account (D1)", () => {
-    // After the flip the server speaks as Charlotte for everyone; the allow-list rule it used before is in skin.test.ts.
-    expect(serverBrand("charlotte", "someone@charlotte-labs.com")).toBe(charlotte);
-    expect(serverBrand("charlotte", "pilot@example.com")).toBe(charlotte);
-    expect(serverBrand("charlotte", null)).toBe(charlotte);
-    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toBe(charlotte);
+    // 19 Nov: Slate is the default, so the server speaks as Lasso (the Slate brand) for everyone, whatever the skin
+    // cookie says. Only an allowed account that chose the earlier look is spoken to as Charlotte.
+    const slate = brandFor("charlotte", "slate-spool");
+    expect(slate.name).toBe("Lasso");
+    expect(serverBrand("charlotte", "pilot@example.com")).toEqual(slate);
+    expect(serverBrand("charlotte", null)).toEqual(slate);
+    expect(serverBrand("lasso", "someone@charlotte-labs.com")).toEqual(slate);
+    expect(serverBrand("charlotte", "pilot@example.com", "current")).toEqual(slate);
+    expect(serverBrand("charlotte", "someone@charlotte-labs.com", "current")).toBe(charlotte);
   });
 
   it("reads the skin from a raw Cookie header", () => {
@@ -33,9 +44,12 @@ describe("the model's fixed prompts", () => {
   it("leaves every Lasso prompt byte-identical", async () => {
     expect(brandCopy(lasso, CATALOGUE_RULES)).toBe(CATALOGUE_RULES);
     expect(brandCopy(lasso, ANSWER_RULES)).toBe(ANSWER_RULES);
-    for (const preset of Object.values(ANALYSIS_PRESETS)) expect(brandCopy(lasso, preset.systemPrompt)).toBe(preset.systemPrompt);
+    for (const preset of Object.values(ANALYSIS_PRESETS))
+      expect(brandCopy(lasso, preset.systemPrompt)).toBe(preset.systemPrompt);
     const whole = { mode: "whole", ids: [] } as never;
-    expect(await whereLineFor(noDb, whole)).toBe("WHERE THE PERSON IS: Ask Lasso, across their whole record, with no board open.");
+    expect(await whereLineFor(noDb, whole)).toBe(
+      "WHERE THE PERSON IS: Ask Lasso, across their whole record, with no board open.",
+    );
     expect(await whereLineFor(noDb, whole, lasso)).toBe(await whereLineFor(noDb, whole));
   });
 
@@ -43,11 +57,17 @@ describe("the model's fixed prompts", () => {
     const rules = brandCopy(charlotte, CATALOGUE_RULES);
     expect(rules).toContain("Charlotte can:");
     expect(rules).toContain("Charlotte cannot:");
-    for (const text of [rules, brandCopy(charlotte, ANSWER_RULES), ...Object.values(ANALYSIS_PRESETS).map((p) => brandCopy(charlotte, p.systemPrompt))]) {
+    for (const text of [
+      rules,
+      brandCopy(charlotte, ANSWER_RULES),
+      ...Object.values(ANALYSIS_PRESETS).map((p) => brandCopy(charlotte, p.systemPrompt)),
+    ]) {
       expect(text).not.toMatch(/Lasso/);
     }
     const where = await whereLineFor(noDb, { mode: "whole", ids: [] } as never, charlotte);
-    expect(where).toBe("WHERE THE PERSON IS: Charlotte, across their whole record, with no board open.");
+    expect(where).toBe(
+      "WHERE THE PERSON IS: Charlotte, across their whole record, with no board open.",
+    );
   });
 });
 
@@ -65,7 +85,9 @@ describe("the hand-off to another AI", () => {
 
   it("is byte-identical for Lasso with or without the brand", () => {
     for (const choice of ["chat_and_used", "answer_used", "full_board"] as const) {
-      expect(packageHandoff({ ...base, choice, brand: lasso })).toBe(packageHandoff({ ...base, choice }));
+      expect(packageHandoff({ ...base, choice, brand: lasso })).toBe(
+        packageHandoff({ ...base, choice }),
+      );
     }
   });
 
