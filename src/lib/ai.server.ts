@@ -692,6 +692,11 @@ async function routedRequest(
   options: ChatOptions,
   stream: boolean,
 ): Promise<Routed> {
+  // 19 Nov: the firm brain's daily spend limit. It reads nothing for any other surface, and refuses before any model.
+  if (options.meta?.orgId) {
+    const { assertWithinFirmBrainLimit } = await import("./firm-brain-limit.server");
+    await assertWithinFirmBrainLimit(options.meta);
+  }
   let provider: Provider = activeProvider();
   let model = requestedModel ?? modelFor(options.tier ?? "smart", provider);
   let attempt = await sendRequest(model, messages, options, stream, provider);

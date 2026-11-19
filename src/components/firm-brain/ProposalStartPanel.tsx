@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { firmDate } from "@/lib/firm-ask-shared";
+import { FIRM_BRAIN_LIMIT_COPY, isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import {
   BRIEF_LABELS,
   emptyBrief,
@@ -141,6 +142,7 @@ export function ProposalStartPanel({
   const [reading, setReading] = useState(false);
   const [finding, setFinding] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [limited, setLimited] = useState(false);
   const [result, setResult] = useState<PrecedentsResult | null>(null);
   const [chosen, setChosen] = useState<Precedent[]>([]);
   const [openItem, setOpenItem] = useState<string | null>(null);
@@ -181,7 +183,8 @@ export function ProposalStartPanel({
       setReopened(false);
       setLedgerVersion((count) => count + 1);
       onDraftSaved?.(next.itemId);
-    } catch {
+    } catch (error) {
+      setLimited(isFirmBrainLimit(error));
       setFailed(true);
     } finally {
       setDrafting(false);
@@ -193,7 +196,8 @@ export function ProposalStartPanel({
     setFailed(false);
     try {
       setBrief(await readBrief({ data: { engagement_id: engagementId, profile_id: profileId ?? null } }));
-    } catch {
+    } catch (error) {
+      setLimited(isFirmBrainLimit(error));
       setFailed(true);
     } finally {
       setReading(false);
@@ -209,7 +213,8 @@ export function ProposalStartPanel({
       setChosen(next.precedents);
       // Sending the brief on records its date, once.
       setLedgerVersion((count) => count + 1);
-    } catch {
+    } catch (error) {
+      setLimited(isFirmBrainLimit(error));
       setFailed(true);
     } finally {
       setFinding(false);
@@ -269,7 +274,7 @@ export function ProposalStartPanel({
         </Button>
       </section>
 
-      {failed ? <p className="text-(length:--type-small) text-destructive">{PROPOSAL_COPY.error}</p> : null}
+      {failed ? <p className="text-(length:--type-small) text-destructive">{limited ? FIRM_BRAIN_LIMIT_COPY.shown : PROPOSAL_COPY.error}</p> : null}
 
       {result ? (
         <>
