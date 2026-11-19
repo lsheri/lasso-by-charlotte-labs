@@ -701,6 +701,65 @@ export type Database = {
           },
         ]
       }
+      board_reading_pins: {
+        Row: {
+          board_id: string
+          created_at: string
+          id: string
+          org_id: string
+          pinned_by: string | null
+          slot: number
+          thread_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          id?: string
+          org_id: string
+          pinned_by?: string | null
+          slot: number
+          thread_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+          pinned_by?: string | null
+          slot?: number
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_reading_pins_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_reading_pins_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_reading_pins_pinned_by_fkey"
+            columns: ["pinned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_reading_pins_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_share_links: {
         Row: {
           created_at: string
@@ -2825,6 +2884,62 @@ export type Database = {
             columns: ["subject_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      firm_exemplars: {
+        Row: {
+          created_at: string
+          engagement_id: string
+          id: string
+          marked_by: string | null
+          org_id: string
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          engagement_id: string
+          id?: string
+          marked_by?: string | null
+          org_id: string
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          marked_by?: string | null
+          org_id?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firm_exemplars_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_exemplars_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_exemplars_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_exemplars_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
@@ -6506,6 +6621,18 @@ export type Database = {
         Returns: number
       }
       expire_support_grants: { Args: never; Returns: number }
+      firm_common_question_kinds: {
+        Args: { p_org: string }
+        Returns: {
+          askers_band: string
+          question_kind: string
+          question_source: string
+        }[]
+      }
+      firm_role_in: {
+        Args: { p_org: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_org_role: {
         Args: {
           p_org: string

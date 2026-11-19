@@ -42,6 +42,8 @@ export function LabCardMenu({
   onRedPen,
   onSowTerms,
   onTags,
+  exemplarLabel,
+  onExemplar,
   cardFace,
   onCardFaceChange,
 }: {
@@ -82,6 +84,9 @@ export function LabCardMenu({
   onSowTerms?: (() => void) | undefined;
   /** 18 Nov, firm brain step 5: correct this item's tags. The board lead and admins only, behind company-brain. */
   onTags?: (() => void) | undefined;
+  /** 19 Nov, firm brain step 8: set or remove the exemplar mark. Admins and leads only, behind company-brain. */
+  exemplarLabel?: string | undefined;
+  onExemplar?: (() => void) | undefined;
   /** FACE-3: both present on the board only. */
   cardFace?: CardFace | undefined;
   onCardFaceChange?: ((face: CardFace) => void) | undefined;
@@ -123,6 +128,7 @@ export function LabCardMenu({
         {onRedPen ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onRedPen}>{RED_PEN_COPY.menu}</DropdownMenuItem> : null}
         {onSowTerms ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onSowTerms}>{SOW_TERMS_COPY.menu}</DropdownMenuItem> : null}
         {onTags ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTags}>{ITEM_TAGS_COPY.menu}</DropdownMenuItem> : null}
+        {onExemplar && exemplarLabel ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onExemplar}>{exemplarLabel}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem className="canvas-lab-menu-item" onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator className="canvas-lab-menu-sep" />
         {local ? (

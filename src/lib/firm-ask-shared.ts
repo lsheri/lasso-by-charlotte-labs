@@ -184,6 +184,8 @@ export type FirmAskSource = {
   boardTitle: string;
   /** The latest "Shown to client" date, if any. */
   shownOn: string | null;
+  /** Marked by an admin or lead as an example of good work. */
+  exemplar?: boolean;
 };
 
 /** Labels for the items read, from the corpus. */
@@ -206,7 +208,7 @@ export function sourcesFor(corpus: FirmCorpus, itemIds: readonly string[]): Reco
     const item = corpus.items.find((entry) => entry.id === id);
     const board = item && corpus.boards.find((entry) => entry.id === item.boardId);
     if (!item || !board) continue;
-    out[id] = { title: item.title, type: item.type, date: item.date, boardId: board.id, boardTitle: board.title, shownOn: item.shown.at(-1)?.on ?? null };
+    out[id] = { title: item.title, type: item.type, date: item.date, boardId: board.id, boardTitle: board.title, shownOn: item.shown.at(-1)?.on ?? null, ...(item.exemplar ? { exemplar: true } : {}) };
   }
   return out;
 }

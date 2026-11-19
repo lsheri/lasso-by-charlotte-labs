@@ -41,7 +41,8 @@ export const BI2A_CONTEXT_ACTIONS = ["card"] as const;
 export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "ai.usage": ["surface", "model", "cost_usd", "tokens_in", "tokens_out", "cached_in", "duration_ms", "finish_reason", "context_mode"],
   // nav.opened item values include workspace, look_back, your_coach, connect_tools, create_menu, recent_board, find_result, board and from_your_people; dimension keys remain unchanged.
-  "firm_ask.asked": ["boards_read", "result", "sources", "starter"],
+  // topic is one of a closed set from classifyQuestionTopic (manager-tools-shared.ts): a situation or method id, or "none". Never the question.
+  "firm_ask.asked": ["boards_read", "result", "sources", "starter", "topic"],
   "firm_ask.kept_out": [],
   "firm_ask.source_opened": ["grade", "shown"],
   "firm_walkthrough.opened": ["kind", "result"],

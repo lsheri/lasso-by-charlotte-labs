@@ -17,8 +17,9 @@ export function FirmAnswer({
   /** With a profile, each citation of an item offers "Cite this". A close-out lesson is not an item, so it does not. */
   profileId?: string | null | undefined;
 }) {
+  // Work the firm marked as an exemplar is listed first; nothing else about the order changes.
   const readList = (ids: string[]) =>
-    ids.map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
+    [...ids.filter((id) => result.sources[id]?.exemplar), ...ids.filter((id) => !result.sources[id]?.exemplar)].map((id) => result.sources[id]).filter(Boolean).map((source) => `${source!.title} (${source!.boardTitle})`);
   const full = readList(result.read.full);
   const summary = readList(result.read.summary);
 
