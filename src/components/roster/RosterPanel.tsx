@@ -1,0 +1,421 @@
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { tagVariants } from "@/components/ui/tag";
+import {
+  checkRosterContact,
+  ROSTER_COPY as COPY,
+  type RosterContact,
+  type RosterList,
+  type RosterProblem,
+  type RosterSaveInput,
+  type RosterSaveResult,
+} from "@/lib/roster-shared";
+import { listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
+
+/**
+ * 19 Nov 2026, Proposal Desk: the roster, "People we work with". People a firm brings in on proposals who have no
+ * login. The server decides who sees it: an admin or a lead of a company workspace. Anyone else gets nothing here.
+ * A row shows a name, a role, where they work and one word for their text agreement. No phone number is ever on
+ * this page: the person types their own number on the public /texts page, reached by the link this panel copies.
+ * Copying a link sends nothing.
+ */
+export function RosterPanel({ profileId }: { profileId: string | null | undefined }) {
+  const load = useServerFn(listRosterFn);
+  const save = useServerFn(saveRosterContactFn);
+  return (
+    <RosterView
+      profileId={profileId ?? null}
+      load={(id) => load({ data: { profile_id: id } })}
+      save={(input) => save({ data: input })}
+      copyText={(text) => navigator.clipboard.writeText(text)}
+      origin={typeof window === "undefined" ? "" : window.location.origin}
+    />
+  );
+}
+
+export type RosterViewProps = {
+  profileId: string | null;
+  load: (profileId: string | null) => Promise<RosterList>;
+  save: (input: RosterSaveInput) => Promise<RosterSaveResult>;
+  copyText: (text: string) => Promise<void>;
+  /** The site's address, put in front of each person's link. */
+  origin: string;
+};
+
+type Loaded =
+  | { state: "loading" }
+  | { state: "failed" }
+  | { state: "hidden" }
+  | { state: "ready"; contacts: RosterContact[] };
+type Editing = { contact: RosterContact | null } | null;
+
+const byName = (a: RosterContact, b: RosterContact) => a.name.localeCompare(b.name);
+
+/** Props in, effects out, so the tests can drive it without a server. */
+export function RosterView({ profileId, load, save, copyText, origin }: RosterViewProps) {
+  const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
+  const [editing, setEditing] = useState<Editing>(null);
+  const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let current = true;
+    setLoaded({ state: "loading" });
+    setEditing(null);
+    setCopied(null);
+    Promise.resolve()
+      .then(() => load(profileId))
+      .then((list) => {
+        if (current)
+          setLoaded(
+            list.allowed
+              ? { state: "ready", contacts: [...list.contacts].sort(byName) }
+              : { state: "hidden" },
+          );
+      })
+      .catch(() => {
+        if (current) setLoaded({ state: "failed" });
+      });
+    return () => {
+      current = false;
+    };
+    // `load` is a new function each render; the profile and the retry count are what a reload depends on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId, attempt]);
+
+  const saved = useCallback((contact: RosterContact) => {
+    setLoaded((now) =>
+      now.state === "ready"
+        ? {
+            state: "ready",
+            contacts: [...now.contacts.filter((c) => c.id !== contact.id), contact].sort(byName),
+          }
+        : now,
+    );
+    setEditing(null);
+  }, []);
+
+  if (loaded.state === "hidden") return null;
+
+  async function copy(contact: RosterContact) {
+    try {
+      await copyText(origin + contact.linkPath);
+      setCopied({ id: contact.id, ok: true });
+    } catch {
+      setCopied({ id: contact.id, ok: false });
+    }
+  }
+
+  return (
+    <section aria-labelledby="roster-heading" className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-xl">
+          <h2 id="roster-heading" className="text-lg font-medium">
+            {COPY.heading}
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{COPY.intro}</p>
+        </div>
+        {loaded.state === "ready" ? (
+          <Button type="button" onClick={() => setEditing({ contact: null })}>
+            {COPY.add}
+          </Button>
+        ) : null}
+      </div>
+
+      {loaded.state === "loading" ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {COPY.loading}
+        </p>
+      ) : null}
+
+      {loaded.state === "failed" ? (
+        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm">
+          <span>{COPY.loadFailed}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setAttempt((n) => n + 1)}
+          >
+            {COPY.retry}
+          </Button>
+        </div>
+      ) : null}
+
+      {loaded.state === "ready" && loaded.contacts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{COPY.empty}</p>
+      ) : null}
+
+      {loaded.state === "ready" && loaded.contacts.length > 0 ? (
+        <ul className="divide-y divide-border rounded-[var(--radius-control)] border border-border">
+          {loaded.contacts.map((contact) => (
+            <li key={contact.id} className="space-y-2 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium break-words">{contact.name}</p>
+                  <p className="text-sm break-words text-muted-foreground">
+                    {[
+                      contact.role,
+                      contact.affiliation === "firm" ? contact.firm : COPY.independent,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <p className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={tagVariants({
+                        tone: contact.texts === "agreed" ? "accent" : "neutral",
+                      })}
+                    >
+                      {COPY.texts[contact.texts]}
+                    </span>
+                    {contact.texts === "agreed" && contact.agreedOn ? (
+                      <span className="text-(length:--type-label) text-muted-foreground">
+                        {COPY.agreedOn(contact.agreedOn)}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-label={COPY.copyLabel(contact.name)}
+                    onClick={() => void copy(contact)}
+                  >
+                    {COPY.copy}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={COPY.editLabel(contact.name)}
+                    onClick={() => setEditing({ contact })}
+                  >
+                    {COPY.edit}
+                  </Button>
+                </div>
+              </div>
+              {copied?.id === contact.id && copied.ok ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  {COPY.copied}
+                </p>
+              ) : null}
+              {copied?.id === contact.id && !copied.ok ? (
+                <div className="space-y-1">
+                  <p role="alert" className="text-sm">
+                    {COPY.copyFailed}
+                  </p>
+                  <Input
+                    readOnly
+                    aria-label={COPY.linkLabel(contact.name)}
+                    value={origin + contact.linkPath}
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {editing ? (
+        <RosterDialog
+          key={editing.contact?.id ?? "new"}
+          profileId={profileId}
+          contact={editing.contact}
+          save={save}
+          onSaved={saved}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function RosterDialog({
+  profileId,
+  contact,
+  save,
+  onSaved,
+  onClose,
+}: {
+  profileId: string | null;
+  contact: RosterContact | null;
+  save: RosterViewProps["save"];
+  onSaved: (contact: RosterContact) => void;
+  onClose: () => void;
+}) {
+  const D = COPY.dialog;
+  const [name, setName] = useState(contact?.name ?? "");
+  const [role, setRole] = useState(contact?.role ?? "");
+  const [affiliation, setAffiliation] = useState<string>(contact?.affiliation ?? "independent");
+  const [firm, setFirm] = useState(contact?.firm ?? "");
+  const [problems, setProblems] = useState<RosterProblem[]>([]);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
+
+  const clear = (problem: RosterProblem) => setProblems((now) => now.filter((p) => p !== problem));
+  const has = (problem: RosterProblem) => problems.includes(problem);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (lock.current) return;
+    const fields = { name, role, affiliation, firm };
+    const check = checkRosterContact(fields);
+    if (!check.ok) {
+      setProblems(check.problems);
+      setFailure(null);
+      return;
+    }
+    lock.current = true;
+    setBusy(true);
+    setProblems([]);
+    setFailure(null);
+    let result: RosterSaveResult | "forbidden" | "error";
+    try {
+      result = await save({ profile_id: profileId, id: contact?.id ?? null, ...fields });
+    } catch (error) {
+      result = error instanceof Response && error.status === 403 ? "forbidden" : "error";
+    }
+    lock.current = false;
+    // A dialog closed while its save was out does nothing more; the list reloads when the panel is next opened.
+    if (!live.current) return;
+    setBusy(false);
+    if (result === "forbidden") return setFailure(COPY.failures.forbidden);
+    if (result === "error") return setFailure(COPY.failures.unavailable);
+    if (result.ok) return onSaved(result.contact);
+    if (result.reason === "invalid") setProblems(result.problems);
+    setFailure(COPY.failures[result.reason]);
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => (!open ? onClose() : undefined)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{contact ? D.editTitle : D.addTitle}</DialogTitle>
+          <DialogDescription>{D.description}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} noValidate className="space-y-4">
+          <div className="space-y-1">
+            <Label htmlFor="roster-name">{D.name}</Label>
+            <Input
+              id="roster-name"
+              value={name}
+              autoComplete="off"
+              aria-invalid={has("name")}
+              aria-describedby={has("name") ? "roster-name-problem" : undefined}
+              onChange={(event) => {
+                setName(event.target.value);
+                clear("name");
+              }}
+            />
+            {has("name") ? (
+              <p id="roster-name-problem" className="text-sm text-destructive">
+                {COPY.problems.name}
+              </p>
+            ) : null}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="roster-role">{D.role}</Label>
+            <Input
+              id="roster-role"
+              value={role}
+              autoComplete="off"
+              aria-invalid={has("role")}
+              aria-describedby={has("role") ? "roster-role-problem" : "roster-role-hint"}
+              onChange={(event) => {
+                setRole(event.target.value);
+                clear("role");
+              }}
+            />
+            {has("role") ? (
+              <p id="roster-role-problem" className="text-sm text-destructive">
+                {COPY.problems.role}
+              </p>
+            ) : (
+              <p id="roster-role-hint" className="text-(length:--type-label) text-muted-foreground">
+                {D.roleHint}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="roster-affiliation">{D.affiliation}</Label>
+            <NativeSelect
+              id="roster-affiliation"
+              value={affiliation}
+              aria-invalid={has("affiliation")}
+              onChange={(event) => {
+                setAffiliation(event.target.value);
+                clear("affiliation");
+                clear("firm");
+              }}
+            >
+              <option value="independent">{D.affiliationIndependent}</option>
+              <option value="firm">{D.affiliationFirm}</option>
+            </NativeSelect>
+            {has("affiliation") ? (
+              <p className="text-sm text-destructive">{COPY.problems.affiliation}</p>
+            ) : null}
+          </div>
+          {affiliation === "firm" ? (
+            <div className="space-y-1">
+              <Label htmlFor="roster-firm">{D.firm}</Label>
+              <Input
+                id="roster-firm"
+                value={firm}
+                autoComplete="off"
+                aria-invalid={has("firm")}
+                aria-describedby={has("firm") ? "roster-firm-problem" : undefined}
+                onChange={(event) => {
+                  setFirm(event.target.value);
+                  clear("firm");
+                }}
+              />
+              {has("firm") ? (
+                <p id="roster-firm-problem" className="text-sm text-destructive">
+                  {COPY.problems.firm}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {failure ? (
+            <p role="alert" className="text-sm text-destructive">
+              {failure}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {D.cancel}
+            </Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? D.saving : D.save}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

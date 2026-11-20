@@ -34,6 +34,8 @@ export const SETTINGS_KEYS = [
   "research_participation",
   "connector",
   "ask_home",
+  /** 20 Nov, Proposal Desk: the workspace's turnaround goal for proposals. Never the hours. */
+  "proposal_goal",
 ] as const;
 
 export const SETTINGS_CHANGES = ["on", "off", "updated", "added", "removed"] as const;

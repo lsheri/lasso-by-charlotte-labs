@@ -70,14 +70,14 @@ describe("both", () => {
 
   it("carry the two facts Liam supplied (D-43), each said where it belongs and nowhere else", () => {
     expect(LEGAL_FACTS).toMatchObject({
-      legalEntity: "Charlotte Labs, doing business as Lasso",
+      legalEntity: "Charlotte Labs Inc., doing business as Lasso",
       governingState: "Washington",
     });
     expect(privacy).toContain(
-      'Lasso is made and run by Charlotte Labs, doing business as Lasso ("we", "us").',
+      'Lasso is made and run by Charlotte Labs Inc., doing business as Lasso ("we", "us").',
     );
     expect(terms).toContain(
-      "These terms are the agreement between you and Charlotte Labs, doing business as Lasso, for using Lasso.",
+      "These terms are the agreement between you and Charlotte Labs Inc., doing business as Lasso, for using Lasso.",
     );
     expect(terms).toContain(
       "These terms are governed by the laws of the State of Washington, and its courts decide any dispute about them.",
@@ -87,10 +87,12 @@ describe("both", () => {
     expect(terms).toContain("Who sends: Charlotte Labs, as Lasso.");
   });
 
-  it("state nothing Liam has not supplied: no entity suffix, address or age", () => {
+  it("state nothing Liam has not supplied: Inc. once, in the company's full name (Q-48), and no address or age", () => {
     expect(LEGAL_FACTS).toMatchObject({ postalAddress: null, minimumAge: null });
     for (const words of [privacy, terms]) {
-      expect(words).not.toMatch(/\b(Inc\.|LLC|Corp\.|Ltd)/);
+      expect(words.match(/\bInc\./g)).toHaveLength(1);
+      expect(words).toContain("Charlotte Labs Inc., doing business as Lasso");
+      expect(words).not.toMatch(/\b(LLC|Corp\.|Ltd)/);
       expect(words).not.toMatch(/Our address|under \d+|null|undefined/i);
     }
   });

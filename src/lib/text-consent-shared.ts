@@ -24,8 +24,15 @@ export type TextConsentInput = {
   phone: string;
   agreed: boolean;
   workspace?: string | null;
+  /** The roster person a link names (19 Nov). Kept only if that person is in the link's workspace. */
+  contact?: string | null;
 };
-export type TextConsentRecord = { name: string; phone: string; workspace: string | null };
+export type TextConsentRecord = {
+  name: string;
+  phone: string;
+  workspace: string | null;
+  contact: string | null;
+};
 export type TextConsentCheck =
   { ok: true; record: TextConsentRecord } | { ok: false; problems: TextConsentProblem[] };
 
@@ -83,14 +90,20 @@ export function checkTextConsent(
   // The tick is a deliberate act: only the boolean true counts, never a truthy string.
   if (input?.agreed !== true) problems.push("agree");
   if (!name || !phone || problems.length > 0) return { ok: false, problems };
-  return { ok: true, record: { name, phone, workspace: cleanWorkspace(input?.workspace) } };
+  const workspace = cleanWorkspace(input?.workspace);
+  // A person is named only together with their workspace; one without the other names nobody.
+  return {
+    ok: true,
+    record: { name, phone, workspace, contact: workspace ? cleanWorkspace(input?.contact) : null },
+  };
 }
 
 export const TEXT_CONSENT_COPY = {
   label: "Text messages",
   heading: "Get texts from Lasso",
   intro:
-    "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when something you helped with moves, for example when a proposal you worked on is won.",
+    // Liam, card Q-49, 19 Nov: "Yes, add the words", and "it must be Lasso helpful and not corporate stuck up".
+    "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when a firm asks for your part of a proposal, or when something you helped with moves, like a proposal you worked on being won. Only the moments that matter to you, never marketing.",
   nameLabel: "Your name",
   phoneLabel: "Mobile number",
   phoneHint: "United States or Canada. For example (206) 555-0142.",

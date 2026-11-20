@@ -21,16 +21,32 @@ import {
 } from "@/lib/text-consent-shared";
 
 const ORG = "0000000a-0000-4000-8000-000000000001";
+const PERSON = "0000000c-0000-4000-8000-000000000007";
 const GOOD = { name: "Renée O'Neill-Smith", phone: "(206) 867-5309", agreed: true };
 
 function fakeStore(over: Partial<ConsentStore> = {}) {
   const rows: ConsentRow[] = [];
   const store: ConsentStore = {
     workspaceExists: async (id) => id === ORG,
+    contactInWorkspace: async (workspaceId, contactId) =>
+      workspaceId === ORG && contactId === PERSON,
+    // The two database rules: one live agreement per number, and one per roster person.
     insert: async (row) => {
       if (rows.some((r) => r.phone_e164 === row.phone_e164)) return "already";
+      if (row.roster_contact_id && rows.some((r) => r.roster_contact_id === row.roster_contact_id))
+        return "already";
       rows.push(row);
       return "stored";
+    },
+    attach: async (phone, workspaceId, contactId) => {
+      if (rows.some((r) => r.roster_contact_id === contactId)) return;
+      const row = rows.find(
+        (r) =>
+          r.phone_e164 === phone &&
+          !r.roster_contact_id &&
+          (r.org_id === null || r.org_id === workspaceId),
+      );
+      if (row) Object.assign(row, { org_id: workspaceId, roster_contact_id: contactId });
     },
     ...over,
   };
@@ -49,6 +65,13 @@ describe("the wording", () => {
     );
     // A change to the sentence must come with a new version.
     expect(TEXT_CONSENT_VERSION).toBe("tc-v1");
+  });
+
+  it("says above the tick box what the texts are for: being asked for a part, and news of work you helped with (Q-49)", () => {
+    expect(TEXT_CONSENT_COPY.intro).toBe(
+      "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when a firm asks for your part of a proposal, or when something you helped with moves, like a proposal you worked on being won. Only the moments that matter to you, never marketing.",
+    );
+    expect(TEXT_CONSENT_COPY.intro).not.toMatch(/[!—–]/);
   });
 
   it("has no em dash anywhere in the page's copy", () => {
@@ -114,7 +137,7 @@ describe("checkTextConsent", () => {
   it("passes a full, ticked form", () => {
     expect(checkTextConsent({ ...GOOD, workspace: ORG })).toEqual({
       ok: true,
-      record: { name: "Renée O'Neill-Smith", phone: "+12068675309", workspace: ORG },
+      record: { name: "Renée O'Neill-Smith", phone: "+12068675309", workspace: ORG, contact: null },
     });
   });
   it("names every problem at once", () => {
@@ -195,7 +218,7 @@ describe("recordTextConsent", () => {
     expect(
       await recordTextConsent(
         GOOD,
-        deps({ workspaceExists, insert }, () => false),
+        deps(fakeStore({ workspaceExists, insert }).store, () => false),
       ),
     ).toEqual({ ok: false, reason: "busy" });
     expect(workspaceExists).not.toHaveBeenCalled();
@@ -225,6 +248,126 @@ describe("recordTextConsent", () => {
   });
 });
 
+describe("a roster person's own link", () => {
+  const OTHER_ORG = "0000000b-0000-4000-8000-000000000002";
+  const STRANGER = "0000000d-0000-4000-8000-000000000009";
+
+  it("ties the agreement to the person when they are in the link's workspace", async () => {
+    const { rows, store } = fakeStore();
+    expect(
+      await recordTextConsent({ ...GOOD, workspace: ORG, contact: PERSON }, deps(store)),
+    ).toEqual({ ok: true });
+    expect(rows).toEqual([
+      expect.objectContaining({
+        org_id: ORG,
+        roster_contact_id: PERSON,
+        phone_e164: "+12068675309",
+      }),
+    ]);
+  });
+
+  it("drops a person who is not in that workspace, keeps the agreement, and answers the same", async () => {
+    const { rows, store } = fakeStore();
+    expect(
+      await recordTextConsent({ ...GOOD, workspace: ORG, contact: STRANGER }, deps(store)),
+    ).toEqual({ ok: true });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).not.toHaveProperty("roster_contact_id");
+    expect(rows[0]?.org_id).toBe(ORG);
+  });
+
+  it("names nobody when the person comes without a workspace, with an unknown one, or as junk", async () => {
+    for (const input of [
+      { ...GOOD, contact: PERSON },
+      { ...GOOD, workspace: OTHER_ORG, contact: PERSON },
+      { ...GOOD, workspace: ORG, contact: "1 or 1=1" },
+      { ...GOOD, workspace: ORG, contact: { id: PERSON } },
+    ]) {
+      const { rows, store } = fakeStore();
+      expect(await recordTextConsent(input, deps(store))).toEqual({ ok: true });
+      expect(rows[0]).not.toHaveProperty("roster_contact_id");
+    }
+  });
+
+  it("never asks about a person before the workspace is known to exist", async () => {
+    const contactInWorkspace = vi.fn(async () => true);
+    const { store } = fakeStore({ contactInWorkspace });
+    await recordTextConsent({ ...GOOD, workspace: OTHER_ORG, contact: PERSON }, deps(store));
+    expect(contactInWorkspace).not.toHaveBeenCalled();
+  });
+
+  it("keeps the first number: a second number through the same link is not stored, and the answer is the same", async () => {
+    const { rows, store } = fakeStore();
+    await recordTextConsent({ ...GOOD, workspace: ORG, contact: PERSON }, deps(store));
+    expect(
+      await recordTextConsent(
+        { ...GOOD, phone: "(206) 555-0142", workspace: ORG, contact: PERSON },
+        deps(store),
+      ),
+    ).toEqual({ ok: true });
+    expect(rows.map((r) => r.phone_e164)).toEqual(["+12068675309"]);
+  });
+
+  it("ties an agreement made before the person had a link, once they use their link", async () => {
+    const { rows, store } = fakeStore();
+    await recordTextConsent(GOOD, deps(store));
+    expect(rows[0]).not.toHaveProperty("roster_contact_id");
+    expect(
+      await recordTextConsent({ ...GOOD, workspace: ORG, contact: PERSON }, deps(store)),
+    ).toEqual({ ok: true });
+    expect(rows).toEqual([expect.objectContaining({ org_id: ORG, roster_contact_id: PERSON })]);
+  });
+
+  it("does not attach when nothing was already on file, or when the person was dropped", async () => {
+    const attach = vi.fn(async () => undefined);
+    const { store } = fakeStore({ attach });
+    await recordTextConsent({ ...GOOD, workspace: ORG, contact: PERSON }, deps(store));
+    await recordTextConsent({ ...GOOD, workspace: ORG, contact: STRANGER }, deps(store));
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it("still answers that it saved when the tie fails: the agreement itself is on file", async () => {
+    const { store } = fakeStore({
+      insert: async () => "already",
+      attach: async () => {
+        throw new Error("Key (phone_e164)=(+12068675309)");
+      },
+    });
+    expect(
+      await recordTextConsent({ ...GOOD, workspace: ORG, contact: PERSON }, deps(store)),
+    ).toEqual({ ok: true });
+  });
+
+  it("leaves the person column off the row entirely when there is no person, so the page works before the roster table exists", () => {
+    expect(
+      Object.keys(
+        consentRow({ name: "A", phone: "+12068675309", workspace: ORG, contact: null }, ORG),
+      ),
+    ).not.toContain("roster_contact_id");
+    expect(
+      Object.keys(
+        consentRow(
+          { name: "A", phone: "+12068675309", workspace: null, contact: PERSON },
+          null,
+          PERSON,
+        ),
+      ),
+    ).not.toContain("roster_contact_id");
+  });
+
+  it("attaches only an agreement that names no person and no other workspace, read from the source", () => {
+    const source = readFileSync("src/lib/text-consent.server.ts", "utf8");
+    const attachBody = source.slice(
+      source.indexOf("async attach("),
+      source.indexOf("async insert("),
+    );
+    expect(attachBody).toContain('.is("revoked_at", null)');
+    expect(attachBody).toContain('.is("roster_contact_id", null)');
+    expect(attachBody).toContain("org_id.is.null,org_id.eq.${workspaceId}");
+    expect(attachBody).not.toContain(".select(");
+  });
+});
+
 describe("the limiter", () => {
   it("allows five presses in ten minutes from one address, then refuses, and frees up later", () => {
     const now = 1_800_000_000_000;
@@ -246,11 +389,13 @@ describe("the floors, read from the source", () => {
     for (const source of [server, fn, form, route])
       expect(source).not.toMatch(/recordEvent|logEvent|posthog\.capture|trackEvent/);
     const logs = [...server.matchAll(/console\.\w+\(([^)]*)\)/g)].map((m) => m[1]);
-    expect(logs).toHaveLength(1);
-    expect(logs[0]).not.toMatch(/row|phone|name|message|details|input|record/i);
+    // One line for a failed save and one for a failed tie, each an error code and nothing else.
+    expect(logs).toHaveLength(2);
+    for (const line of logs)
+      expect(line).not.toMatch(/row|phone|name|message|details|input|record|contact|workspace/i);
     expect(form + route).not.toMatch(/console\./);
     expect(
-      consentRow({ name: "A", phone: "+12068675309", workspace: null }, null),
+      consentRow({ name: "A", phone: "+12068675309", workspace: null, contact: null }, null),
     ).not.toHaveProperty("ip");
   });
 

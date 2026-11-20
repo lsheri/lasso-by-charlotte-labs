@@ -1,0 +1,491 @@
+/**
+ * 20 Nov 2026, the Proposal Desk: the handlers behind the Proposals page. A proposal is a row of its own; no board
+ * exists until the win (Liam, D-37).
+ *
+ * Reads run as the signed-in person, so the database's row rules decide what comes back, and the code filters again
+ * (own workspace; own proposals unless admin or lead). Writes go through the service role after the checks here,
+ * because neither table has a write policy. Every rule takes its outside world as `DeskStore`, so each is tested
+ * without a database.
+ *
+ * Privacy: a context document's title goes only to the proposal's owner; everyone else gets a count. Events carry
+ * bands and yes or no, never a title, a client's name, a note or a person.
+ */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/integrations/supabase/types";
+
+import {
+  countBand,
+  goalHours,
+  INTAKE_COPY,
+  LEAD_COPY,
+  SENT_COPY,
+  timeLeft,
+  WIN_COPY,
+  PROPOSAL_STATUSES,
+  sameClientName,
+  seesAllProposals,
+  type DeskClient,
+  type DeskList,
+  type DeskProfileInput,
+  type DeskProposal,
+  type NewProposalInput,
+  type NewProposalResult,
+  type ProposalStatus,
+  type SentInput,
+  type SentResult,
+  type WinInput,
+  type WinResult,
+  type LeadInput,
+  type LeadResult,
+} from "./proposal-desk-shared";
+import { canManageRoster } from "./roster-shared";
+
+type Db = SupabaseClient<Database>;
+/** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
+type LooseDb = SupabaseClient;
+
+export type DeskCaller = { profileId: string; orgId: string; role: string; userId: string };
+
+export type ProposalRow = {
+  id: string;
+  org_id: string;
+  client_id: string;
+  title: string;
+  owner_id: string;
+  received_at: string;
+  sent_at: string | null;
+  status: string;
+  decided_at: string | null;
+  engagement_id: string | null;
+  lead_contact_id?: string | null;
+};
+
+export type DeskStore = {
+  /** An active, non-guest member of a company workspace, or a thrown 403. */
+  caller: () => Promise<DeskCaller>;
+  settings: (orgId: string) => Promise<unknown>;
+  /** The proposals the database lets this person read. Null when the read failed. */
+  proposals: (orgId: string) => Promise<ProposalRow[] | null>;
+  clientNames: (ids: string[]) => Promise<Map<string, string>>;
+  ownerNames: (ids: string[]) => Promise<Map<string, string>>;
+  /** Which work items sit on which proposals, in order. */
+  context: (proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string }[]>;
+  itemTitles: (ids: string[]) => Promise<Map<string, string>>;
+  /** Clients (never folders, never archived) of the workspace. */
+  clients: (orgId: string) => Promise<DeskClient[]>;
+  /** Adds a client the way the app already does, as the signed-in person. Null when refused. */
+  createClient: (orgId: string, name: string) => Promise<string | null>;
+  removeClient: (id: string) => Promise<void>;
+  /** Of these work items, the ones in this workspace that belong to this person. */
+  ownedItems: (orgId: string, profileId: string, ids: string[]) => Promise<string[]>;
+  insertProposal: (row: { id: string; org_id: string; client_id: string; title: string; notes: string | null; owner_id: string }) => Promise<boolean>;
+  insertContext: (rows: { proposal_id: string; work_item_id: string; position: number }[]) => Promise<boolean>;
+  removeProposal: (id: string) => Promise<void>;
+  /** One proposal, read by the server. Null when it does not exist. */
+  proposal: (id: string) => Promise<ProposalRow | null>;
+  /** Sets or clears when the proposal went out. False when nothing changed. */
+  setSent: (id: string, sentAt: string | null) => Promise<boolean>;
+  /** Whether this roster person is on this workspace's list. */
+  rosterHas: (orgId: string, contactId: string) => Promise<boolean>;
+  /** Sets or clears the lead on an open proposal. False when nothing changed. */
+  setLead: (id: string, contactId: string | null) => Promise<boolean>;
+  /** The salesperson's notes on one proposal. */
+  notes: (id: string) => Promise<string | null>;
+  /** Makes the board, owned by this person and with them on it. Not shared with the firm. False when refused. */
+  makeBoard: (board: { id: string; orgId: string; title: string; clientId: string; brief: string | null; ownerId: string }) => Promise<boolean>;
+  /** The board's home for loose work, asked for as the signed-in person. Null when refused. */
+  boardHome: (engagementId: string) => Promise<string | null>;
+  /** Puts these work items on the board in this order, as the signed-in person, so the database's own rule decides. */
+  placeItems: (taskId: string, itemIds: string[], at: Date) => Promise<boolean>;
+  /** The board's proposal history: when the brief came in, when it went out, when it was won. */
+  writeLedger: (rows: { org_id: string; engagement_id: string; kind: "brief_received" | "sent_to_client" | "won"; occurred_at: string }[]) => Promise<boolean>;
+  /** Marks the proposal won and ties it to its board, only if it is still open. False when it was not open any more. */
+  claimWin: (id: string, engagementId: string, decidedAt: string) => Promise<boolean>;
+  /** Takes back a board this code just made and could not finish. */
+  removeBoard: (id: string) => Promise<void>;
+  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won" | "proposal.lead_set", dims: Record<string, string>) => Promise<void>;
+  now: () => Date;
+  newId: () => string;
+};
+
+const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
+
+/** The dashboard's rows. */
+export async function listDesk(store: DeskStore): Promise<DeskList> {
+  const caller = await store.caller();
+  const all = seesAllProposals(caller.role);
+  // The roster is for admins and leads, so only they are told who the lead is.
+  const pickers = canManageRoster(caller.role);
+  const rows = await store.proposals(caller.orgId);
+  if (rows === null) throw new Error("proposals_unreadable");
+  // The database already decided; this is the same rule again, so a policy mistake cannot widen what is shown.
+  const mine = rows.filter((row) => row.org_id === caller.orgId && isStatus(row.status) && (all || row.owner_id === caller.profileId));
+  const [settings, clientNames, ownerNames, context] = await Promise.all([
+    store.settings(caller.orgId),
+    store.clientNames([...new Set(mine.map((row) => row.client_id))]),
+    store.ownerNames([...new Set(mine.map((row) => row.owner_id))]),
+    store.context(mine.map((row) => row.id)),
+  ]);
+  const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
+  const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
+  const proposals: DeskProposal[] = mine.map((row) => {
+    const items = context.filter((c) => c.proposal_id === row.id);
+    const own = row.owner_id === caller.profileId;
+    return {
+      id: row.id,
+      title: row.title,
+      clientName: clientNames.get(row.client_id) ?? "",
+      ownerName: ownerNames.get(row.owner_id) ?? "",
+      mine: own,
+      status: row.status as ProposalStatus,
+      receivedAt: row.received_at,
+      sentAt: row.sent_at,
+      decidedAt: row.decided_at,
+      engagementId: row.engagement_id,
+      contextCount: items.length,
+      canAct: own || all,
+      ...(pickers ? { leadContactId: row.lead_contact_id ?? null } : {}),
+      ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
+    };
+  });
+  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, proposals };
+}
+
+/** The clients a new proposal can be for. */
+export async function listDeskClients(store: DeskStore): Promise<DeskClient[]> {
+  const caller = await store.caller();
+  return (await store.clients(caller.orgId)).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Starts a proposal: a row, its client, its context documents. No board. */
+export async function createProposal(store: DeskStore, input: NewProposalInput): Promise<NewProposalResult> {
+  const caller = await store.caller();
+  const problems = INTAKE_COPY.problems;
+
+  // 1. The documents must be this person's own, in this workspace. Checked before anything is written.
+  if (input.work_item_ids.length > 0) {
+    const owned = new Set(await store.ownedItems(caller.orgId, caller.profileId, input.work_item_ids));
+    if (input.work_item_ids.some((id) => !owned.has(id))) return { ok: false, problem: problems.notYours };
+  }
+
+  // 2. The client: one we have, or a new one. A new name that matches an existing client is that client.
+  const clients = await store.clients(caller.orgId);
+  let clientId: string | null = null;
+  let madeClient = false;
+  if (input.client_id) {
+    clientId = clients.some((c) => c.id === input.client_id) ? input.client_id : null;
+    if (!clientId) return { ok: false, problem: problems.clientGone };
+  } else if (input.new_client_name) {
+    const name = input.new_client_name;
+    clientId = clients.find((c) => sameClientName(c.name, name))?.id ?? null;
+    if (!clientId) {
+      clientId = await store.createClient(caller.orgId, name);
+      madeClient = clientId !== null;
+    }
+  }
+  if (!clientId) return { ok: false, problem: problems.failed };
+
+  // 3. The row, then its documents. If either fails, nothing is left behind.
+  const id = store.newId();
+  const undo = async () => {
+    await store.removeProposal(id);
+    if (madeClient && clientId) await store.removeClient(clientId);
+  };
+  const written = await store.insertProposal({ id, org_id: caller.orgId, client_id: clientId, title: input.title, notes: input.notes, owner_id: caller.profileId });
+  if (!written) {
+    if (madeClient) await store.removeClient(clientId);
+    return { ok: false, problem: problems.failed };
+  }
+  if (input.work_item_ids.length > 0) {
+    const listed = await store.insertContext(input.work_item_ids.map((workItemId, position) => ({ proposal_id: id, work_item_id: workItemId, position })));
+    if (!listed) {
+      await undo();
+      return { ok: false, problem: problems.failed };
+    }
+  }
+
+  try {
+    await store.record(caller, "proposal.created", {
+      client: madeClient ? "new" : "existing",
+      documents: countBand(input.work_item_ids.length),
+      notes: input.notes ? "yes" : "no",
+    });
+  } catch {
+    /* the proposal exists; a recording fault never undoes it */
+  }
+  return { ok: true, id };
+}
+
+/** Whether this person may change this proposal: it is in their workspace, and they started it or are an admin or lead. */
+export function mayAct(caller: DeskCaller, row: ProposalRow | null): row is ProposalRow {
+  return row !== null && row.org_id === caller.orgId && (row.owner_id === caller.profileId || seesAllProposals(caller.role));
+}
+
+/**
+ * Picks the lead on an open proposal from the workspace's roster, or clears it. Admins and leads only: they are the
+ * people who may see the roster. The person must be on this workspace's own list. Picking a lead sends nothing.
+ */
+export async function setProposalLead(store: DeskStore, input: LeadInput): Promise<LeadResult> {
+  const caller = await store.caller();
+  if (!canManageRoster(caller.role)) return { ok: false, problem: LEAD_COPY.notAllowed };
+  const row = await store.proposal(input.proposal_id);
+  // Another workspace's proposal and one that does not exist read the same.
+  if (!row || row.org_id !== caller.orgId) return { ok: false, problem: LEAD_COPY.notAllowed };
+  if (row.status !== "open") return { ok: false, problem: LEAD_COPY.closed };
+  if ((row.lead_contact_id ?? null) === input.lead_contact_id) return { ok: true };
+  if (input.lead_contact_id && !(await store.rosterHas(caller.orgId, input.lead_contact_id))) return { ok: false, problem: LEAD_COPY.missing };
+  if (!(await store.setLead(row.id, input.lead_contact_id))) return { ok: false, problem: LEAD_COPY.failed };
+  try {
+    await store.record(caller, "proposal.lead_set", { change: input.lead_contact_id ? "set" : "cleared" });
+  } catch {
+    /* the pick is saved; a recording fault never undoes it */
+  }
+  return { ok: true };
+}
+
+/** Marks an open proposal as gone out to the client, which stops the clock, or takes that back. */
+export async function setProposalSent(store: DeskStore, input: SentInput): Promise<SentResult> {
+  const caller = await store.caller();
+  const row = await store.proposal(input.proposal_id);
+  // Someone else's proposal and one that does not exist read the same, so an id cannot be probed.
+  if (!mayAct(caller, row)) return { ok: false, problem: SENT_COPY.notYours };
+  if (row.status !== "open") return { ok: false, problem: SENT_COPY.closed };
+  if (Boolean(row.sent_at) === input.sent) return { ok: true };
+  const now = store.now();
+  const sentAt = input.sent ? new Date(Math.max(now.getTime(), Date.parse(row.received_at) || 0)).toISOString() : null;
+  if (!(await store.setSent(row.id, sentAt))) return { ok: false, problem: SENT_COPY.failed };
+  try {
+    const goal = goalHours(await store.settings(caller.orgId));
+    const left = sentAt ? timeLeft({ receivedAt: row.received_at, sentAt, goalHours: goal, now }) : null;
+    await store.record(caller, "proposal.sent", {
+      change: input.sent ? "sent" : "unsent",
+      within_goal: left && left.state === "sent" ? (left.withinGoal ? "yes" : "no") : "na",
+    });
+  } catch {
+    /* the change is saved; a recording fault never undoes it */
+  }
+  return { ok: true };
+}
+
+/**
+ * Records the win. This is the moment the team board comes to exist (D-37): the board is made for the proposal's
+ * client, the salesperson's notes become its brief, and their context documents go on it first, in their order.
+ *
+ * Only the person who started the proposal may do this, because it puts their own documents where a team can open
+ * them; an admin or lead cannot do it on their behalf. The board is not shared with the firm: that stays a choice
+ * made on the board. Everything is made before the proposal is marked won, and taken back if any step fails, so a
+ * failure leaves the proposal open and no half-made board.
+ */
+export async function winProposal(store: DeskStore, input: WinInput): Promise<WinResult> {
+  const caller = await store.caller();
+  const row = await store.proposal(input.proposal_id);
+  if (!row || row.org_id !== caller.orgId || row.owner_id !== caller.profileId) return { ok: false, problem: WIN_COPY.notYours };
+  // A second press, or a second tab: the board already exists, so hand it back.
+  if (row.status === "won" && row.engagement_id) return { ok: true, engagementId: row.engagement_id };
+  if (row.status !== "open") return { ok: false, problem: WIN_COPY.lost };
+
+  const listed = (await store.context([row.id])).filter((c) => c.proposal_id === row.id).map((c) => c.work_item_id);
+  // A document deleted since, or no longer this person's, is left out rather than failing the win.
+  const still = new Set(listed.length > 0 ? await store.ownedItems(caller.orgId, caller.profileId, listed) : []);
+  const items = listed.filter((id) => still.has(id));
+  const notes = (await store.notes(row.id))?.trim() || null;
+
+  const now = store.now();
+  const engagementId = store.newId();
+  if (!(await store.makeBoard({ id: engagementId, orgId: caller.orgId, title: row.title, clientId: row.client_id, brief: notes, ownerId: caller.profileId }))) {
+    return { ok: false, problem: WIN_COPY.failed };
+  }
+  const undo = async (): Promise<WinResult> => {
+    try {
+      await store.removeBoard(engagementId);
+    } catch {
+      /* nothing more can be done from here */
+    }
+    return { ok: false, problem: WIN_COPY.failed };
+  };
+  try {
+    const home = await store.boardHome(engagementId);
+    if (!home) return await undo();
+    if (items.length > 0 && !(await store.placeItems(home, items, now))) return await undo();
+    const received = Date.parse(row.received_at);
+    const sent = row.sent_at ? Date.parse(row.sent_at) : NaN;
+    const ledger: Parameters<DeskStore["writeLedger"]>[0] = [
+      { org_id: caller.orgId, engagement_id: engagementId, kind: "brief_received", occurred_at: new Date(Number.isFinite(received) ? Math.min(received, now.getTime()) : now.getTime()).toISOString() },
+      ...(Number.isFinite(sent) ? [{ org_id: caller.orgId, engagement_id: engagementId, kind: "sent_to_client" as const, occurred_at: new Date(Math.min(sent, now.getTime())).toISOString() }] : []),
+      { org_id: caller.orgId, engagement_id: engagementId, kind: "won", occurred_at: now.toISOString() },
+    ];
+    if (!(await store.writeLedger(ledger))) return await undo();
+    if (!(await store.claimWin(row.id, engagementId, now.toISOString()))) {
+      // Someone got there first. Their board stands; this one goes.
+      await undo();
+      const after = await store.proposal(row.id);
+      return after && after.status === "won" && after.engagement_id ? { ok: true, engagementId: after.engagement_id } : { ok: false, problem: WIN_COPY.failed };
+    }
+  } catch {
+    return await undo();
+  }
+  try {
+    await store.record(caller, "proposal.won", { documents: countBand(items.length), notes: notes ? "yes" : "no", sent_first: row.sent_at ? "yes" : "no" });
+  } catch {
+    /* the win is saved; a recording fault never undoes it */
+  }
+  return { ok: true, engagementId };
+}
+
+/* ---------------------------------------------------------------------------
+ * The real outside world. Kept thin: every rule is above.
+ * ------------------------------------------------------------------------- */
+
+export type DeskContext = { supabase: Db; userId: string };
+
+const PROPOSAL_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_at, status, decided_at, engagement_id, lead_contact_id";
+
+export async function realStore(context: DeskContext, profileId: string | null): Promise<DeskStore> {
+  const { requireFirmMember } = await import("./firm-corpus.server");
+  const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, profileId);
+  const caller: DeskCaller = { profileId: profile.id, orgId: profile.org_id, role: profile.role, userId: context.userId };
+  const own = context.supabase;
+  const ownLoose = own as unknown as LooseDb;
+  const adminLoose = supabaseAdmin as unknown as LooseDb;
+  const removeBoard = async (id: string): Promise<void> => {
+    // Archived first: the database will not take an owner off a live board, and a board that cannot be deleted stays hidden.
+    await supabaseAdmin.from("engagements").update({ archived_at: new Date().toISOString() }).eq("id", id).eq("org_id", caller.orgId);
+    await supabaseAdmin.from("engagements").delete().eq("id", id).eq("org_id", caller.orgId);
+  };
+  return {
+    caller: async () => caller,
+    async settings(orgId) {
+      const { data } = await own.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+      return data?.settings ?? null;
+    },
+    async proposals(orgId) {
+      const { data, error } = await ownLoose.from("proposals").select(PROPOSAL_COLUMNS).eq("org_id", orgId).order("received_at", { ascending: false }).limit(500);
+      return error ? null : ((data ?? []) as ProposalRow[]);
+    },
+    async clientNames(ids) {
+      if (ids.length === 0) return new Map();
+      const { data } = await own.from("clients").select("id, name").in("id", ids);
+      return new Map((data ?? []).map((row) => [row.id, row.name]));
+    },
+    async ownerNames(ids) {
+      if (ids.length === 0) return new Map();
+      const { data } = await own.from("profiles").select("id, display_name").in("id", ids);
+      return new Map((data ?? []).map((row) => [row.id, row.display_name]));
+    },
+    async context(proposalIds) {
+      if (proposalIds.length === 0) return [];
+      const { data } = await ownLoose.from("proposal_context_items").select("proposal_id, work_item_id, position").in("proposal_id", proposalIds).order("position", { ascending: true });
+      return (data ?? []) as { proposal_id: string; work_item_id: string }[];
+    },
+    async itemTitles(ids) {
+      if (ids.length === 0) return new Map();
+      const { data } = await own.from("work_items").select("id, title, display_title").in("id", ids);
+      return new Map((data ?? []).map((row) => [row.id, row.display_title || row.title]));
+    },
+    async clients(orgId) {
+      const { data } = await own.from("clients").select("id, name, kind, quick_folder, archived_at").eq("org_id", orgId).is("archived_at", null).limit(1000);
+      return (data ?? []).filter((row) => row.kind === "client" && !row.quick_folder).map((row) => ({ id: row.id, name: row.name }));
+    },
+    async createClient(orgId, name) {
+      const id = crypto.randomUUID();
+      // The person's own client, so the app's existing rule for who may add a client decides.
+      const { error } = await own.from("clients").insert({ id, org_id: orgId, name });
+      return error ? null : id;
+    },
+    async removeClient(id) {
+      await supabaseAdmin.from("clients").delete().eq("id", id).eq("org_id", caller.orgId);
+    },
+    async ownedItems(orgId, ownerId, ids) {
+      const { data } = await supabaseAdmin.from("work_items").select("id").eq("org_id", orgId).eq("owner_id", ownerId).in("id", ids);
+      return (data ?? []).map((row) => row.id);
+    },
+    async insertProposal(row) {
+      const { error } = await adminLoose.from("proposals").insert(row);
+      return !error;
+    },
+    async insertContext(rows) {
+      const { error } = await adminLoose.from("proposal_context_items").insert(rows);
+      return !error;
+    },
+    async removeProposal(id) {
+      await adminLoose.from("proposals").delete().eq("id", id).eq("org_id", caller.orgId);
+    },
+    async proposal(id) {
+      const { data } = await adminLoose.from("proposals").select(PROPOSAL_COLUMNS).eq("id", id).maybeSingle();
+      return (data as ProposalRow | null) ?? null;
+    },
+    async setSent(id, sentAt) {
+      const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    async rosterHas(orgId, contactId) {
+      const { data, error } = await adminLoose.from("roster_contacts").select("id").eq("id", contactId).eq("org_id", orgId).maybeSingle();
+      return !error && Boolean(data);
+    },
+    async setLead(id, contactId) {
+      const { data, error } = await adminLoose.from("proposals").update({ lead_contact_id: contactId }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    async notes(id) {
+      const { data } = await adminLoose.from("proposals").select("notes").eq("id", id).eq("org_id", caller.orgId).maybeSingle();
+      return ((data as { notes: string | null } | null)?.notes) ?? null;
+    },
+    async makeBoard(board) {
+      // The service role has no signed-in person, so the owner is named here; the database fills the board's code.
+      const made = await supabaseAdmin.from("engagements").insert({ id: board.id, org_id: board.orgId, title: board.title, client_id: board.clientId, brief: board.brief, owner_id: board.ownerId, shared_with_firm: false } as never);
+      if (made.error) return false;
+      const joined = await supabaseAdmin.from("engagement_members").insert({ engagement_id: board.id, profile_id: board.ownerId, member_role: "em", added_by: board.ownerId } as never);
+      if (!joined.error) return true;
+      await removeBoard(board.id);
+      return false;
+    },
+    async boardHome(engagementId) {
+      const { data, error } = await own.rpc("ensure_board_default_task", { p_engagement: engagementId });
+      return error || !data ? null : (data as unknown as string);
+    },
+    async placeItems(taskId, itemIds, at) {
+      // One millisecond apart, so the order they were added in is the order the board has them.
+      const { error } = await own.from("work_item_tasks").insert(itemIds.map((id, index) => ({ work_item_id: id, task_id: taskId, mapped_at: new Date(at.getTime() + index).toISOString() })));
+      return !error;
+    },
+    async writeLedger(rows) {
+      const { error } = await supabaseAdmin.from("proposal_ledger").insert(rows);
+      return !error;
+    },
+    async claimWin(id, engagementId, decidedAt) {
+      const { data, error } = await adminLoose.from("proposals").update({ status: "won", decided_at: decidedAt, engagement_id: engagementId }).eq("id", id).eq("org_id", caller.orgId).eq("owner_id", caller.profileId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    removeBoard,
+    now: () => new Date(),
+    async record(who, eventType, dims) {
+      const { recordEvent } = await import("./telemetry.server");
+      await recordEvent(supabaseAdmin, { eventType, orgId: who.orgId, userId: who.userId, profileId: who.profileId, dims });
+    },
+    newId: () => crypto.randomUUID(),
+  };
+}
+
+/** The server functions' handlers. The functions file only wires them up, so these are what the tests call. */
+export const deskHandlers = {
+  async list(context: DeskContext, data: DeskProfileInput): Promise<DeskList> {
+    return listDesk(await realStore(context, data.profile_id));
+  },
+  async clients(context: DeskContext, data: DeskProfileInput): Promise<DeskClient[]> {
+    return listDeskClients(await realStore(context, data.profile_id));
+  },
+  async create(context: DeskContext, data: NewProposalInput): Promise<NewProposalResult> {
+    return createProposal(await realStore(context, data.profile_id), data);
+  },
+  async sent(context: DeskContext, data: SentInput): Promise<SentResult> {
+    return setProposalSent(await realStore(context, data.profile_id), data);
+  },
+  async lead(context: DeskContext, data: LeadInput): Promise<LeadResult> {
+    return setProposalLead(await realStore(context, data.profile_id), data);
+  },
+  async win(context: DeskContext, data: WinInput): Promise<WinResult> {
+    return winProposal(await realStore(context, data.profile_id), data);
+  },
+};

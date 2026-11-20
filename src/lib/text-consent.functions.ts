@@ -17,6 +17,7 @@ export const recordTextConsentFn = createServerFn({ method: "POST" })
       phone: typeof raw["phone"] === "string" ? raw["phone"].slice(0, 64) : "",
       agreed: raw["agreed"] === true,
       workspace: typeof raw["workspace"] === "string" ? raw["workspace"].slice(0, 64) : null,
+      contact: typeof raw["contact"] === "string" ? raw["contact"].slice(0, 64) : null,
     };
   })
   .handler(async ({ data }): Promise<TextConsentResult> =>

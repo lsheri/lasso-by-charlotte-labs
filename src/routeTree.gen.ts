@@ -49,6 +49,7 @@ import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
 import { Route as AuthenticatedRequestsRouteImport } from './routes/_authenticated/requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -290,6 +291,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReflectRoute = AuthenticatedReflectRouteImport.update({
   id: '/reflect',
   path: '/reflect',
@@ -522,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/overview': typeof AuthenticatedOverviewRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/proposals': typeof AuthenticatedProposalsRoute
   '/reflect': typeof AuthenticatedReflectRoute
   '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -599,6 +606,7 @@ export interface FileRoutesByTo {
   '/overview': typeof AuthenticatedOverviewRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/proposals': typeof AuthenticatedProposalsRoute
   '/reflect': typeof AuthenticatedReflectRoute
   '/requests': typeof AuthenticatedRequestsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -678,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/requests': typeof AuthenticatedRequestsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -757,6 +766,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/portfolio'
     | '/projects'
+    | '/proposals'
     | '/reflect'
     | '/requests'
     | '/settings'
@@ -834,6 +844,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/portfolio'
     | '/projects'
+    | '/proposals'
     | '/reflect'
     | '/requests'
     | '/settings'
@@ -912,6 +923,7 @@ export interface FileRouteTypes {
     | '/_authenticated/overview'
     | '/_authenticated/portfolio'
     | '/_authenticated/projects'
+    | '/_authenticated/proposals'
     | '/_authenticated/reflect'
     | '/_authenticated/requests'
     | '/_authenticated/settings'
@@ -1277,6 +1289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/proposals': {
+      id: '/_authenticated/proposals'
+      path: '/proposals'
+      fullPath: '/proposals'
+      preLoaderRoute: typeof AuthenticatedProposalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reflect': {
       id: '/_authenticated/reflect'
       path: '/reflect'
@@ -1552,6 +1571,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
   AuthenticatedRequestsRoute: typeof AuthenticatedRequestsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -1587,6 +1607,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
   AuthenticatedRequestsRoute: AuthenticatedRequestsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,

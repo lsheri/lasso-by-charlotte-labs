@@ -25,9 +25,11 @@ const LINK = "text-accent-deep underline underline-offset-4";
 export function TextConsentForm({
   submit,
   workspace = null,
+  contact = null,
 }: {
   submit: (input: TextConsentInput) => Promise<TextConsentResult>;
   workspace?: string | null;
+  contact?: string | null;
 }) {
   const id = useId();
   const [name, setName] = useState("");
@@ -62,7 +64,7 @@ export function TextConsentForm({
     event.preventDefault();
     if (busy.current) return;
     setFailure(null);
-    const input: TextConsentInput = { name, phone, agreed, workspace };
+    const input: TextConsentInput = { name, phone, agreed, workspace, contact };
     const check = checkTextConsent(input);
     if (!check.ok) {
       setProblems(check.problems);
