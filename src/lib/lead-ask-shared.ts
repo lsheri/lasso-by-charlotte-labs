@@ -112,6 +112,8 @@ export const ASK_COPY = {
   sending: "Sending",
   cancel: "Cancel",
   loading: "Loading the words",
+  /** Above the phone. Only a real ask reaches the person; a demo or practice ask shows what they would get. */
+  gets: (name: string, real: boolean) => `${name.trim().split(/\s+/)[0] || "The lead"} ${real ? "gets" : "would get"}`,
   /* The row's one line. */
   saidYes: (name: string) => `${name || "The lead"} said yes`,
   saidNo: (name: string) => `${name || "The lead"} said no`,
