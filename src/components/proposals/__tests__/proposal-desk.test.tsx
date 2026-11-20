@@ -368,7 +368,7 @@ describe("long words", () => {
 });
 
 describe("picking the lead", () => {
-  const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, linkPath: "/texts?w=o&c=c1", ...over });
+  const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, phoneMasked: null, email: null, linkedin: null, needsDetails: false, numberDiffers: false, invitedOn: null, linkPath: "/texts?w=o&c=c1", ...over });
   const roster = [person({}), person({ id: "c2", name: "Mina Okafor", role: null, texts: "none", agreedOn: null }), person({ id: "c3", name: "Zoë D'Arcy-Núñez", texts: "unknown", agreedOn: null })];
   const WORDS = "Lasso for Kestrel Bay Advisory: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.";
   const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
@@ -467,7 +467,7 @@ describe("picking the lead", () => {
 
 describe("20 Nov: asking the lead, on the page", () => {
   const WORDS = "Lasso for Kestrel Bay Advisory: hi Christy, Maren would love you to lead a new proposal. Are you in? Reply YES or NO. Reply STOP to opt out.";
-  const person: RosterContact = { id: "c1", name: "Christy Johnson", role: null, affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, linkPath: "/texts?w=o&c=c1" };
+  const person: RosterContact = { id: "c1", name: "Christy Johnson", role: null, affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, phoneMasked: null, email: null, linkedin: null, needsDetails: false, numberDiffers: false, invitedOn: null, linkPath: "/texts?w=o&c=c1" };
   const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
   const view = (over: Partial<AskView>): AskView => ({ name: "Christy Johnson", status: "accepted", reply: null, practice: false, waiting: true, ...over });
   const ask = () => ({ preview: vi.fn(async () => ({ ok: true as const, words: WORDS, name: "Christy Johnson", mode: "real" as const, warning: null })), send: vi.fn(async () => ({ ok: true as const, practice: false })), practiceReply: vi.fn(async () => ({ ok: true as const })) });

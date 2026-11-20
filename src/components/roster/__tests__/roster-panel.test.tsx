@@ -31,6 +31,12 @@ const person = (over: Partial<RosterContact> = {}): RosterContact => ({
   confirmed: false,
   changeUntil: null,
   linkPath: `/texts?w=${ORG}&c=0000000c-0000-4000-8000-000000000007`,
+  phoneMasked: null,
+  email: null,
+  linkedin: null,
+  needsDetails: false,
+  numberDiffers: false,
+  invitedOn: null,
   ...over,
 });
 const tomas = person({
@@ -65,6 +71,12 @@ function setup(over: Partial<RosterViewProps> & { list?: RosterList } = {}) {
 }
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
+/** A new person with the two details every add needs. Fictional: a 555-01 number and an example address. */
+const fill = (name: string) => {
+  type(COPY.dialog.name, name);
+  type(COPY.dialog.phone, "(206) 555-0142");
+  type(COPY.dialog.email, "eli@example.test");
+};
 
 describe("the list", () => {
   it("shows each person's name, role, where they work and one word for texts", async () => {
@@ -158,7 +170,7 @@ describe("copy the text agreement link", () => {
 describe("add and edit", () => {
   const open = async () => fireEvent.click(await screen.findByRole("button", { name: COPY.add }));
 
-  it("asks for a name, a role, and where they work, and never a number or an email", async () => {
+  it("asks for a name, a role, where they work, a mobile number, an email and a LinkedIn address", async () => {
     setup();
     await open();
     const dialog = screen.getByRole("dialog");
@@ -166,8 +178,48 @@ describe("add and edit", () => {
     expect(within(dialog).getByLabelText(COPY.dialog.role)).toBeTruthy();
     expect(within(dialog).getByLabelText(COPY.dialog.affiliation)).toBeTruthy();
     expect(within(dialog).queryByLabelText(COPY.dialog.firm)).toBeNull();
-    expect(dialog.querySelectorAll("input, select")).toHaveLength(3);
-    expect(dialog.querySelector('input[type="tel"], input[type="email"]')).toBeNull();
+    expect(within(dialog).getByLabelText(COPY.dialog.phone).getAttribute("type")).toBe("tel");
+    expect(within(dialog).getByLabelText(COPY.dialog.email).getAttribute("type")).toBe("email");
+    expect(within(dialog).getByLabelText(COPY.dialog.linkedin)).toBeTruthy();
+    expect(dialog.querySelectorAll("input, select")).toHaveLength(6);
+    // The form says the number is for contact, and that texts wait for the person's own agreement.
+    expect(dialog.textContent).toContain(COPY.dialog.description);
+    // The three fields are kept out of session recordings.
+    for (const id of ["roster-phone", "roster-email", "roster-linkedin"])
+      expect(dialog.querySelector(`#${id}`)?.closest(".ph-no-capture")).toBeTruthy();
+  });
+
+  it("refuses an add without a number and an email, in plain words, without calling the server", async () => {
+    const { props } = setup();
+    await open();
+    type(COPY.dialog.name, "Eli Zhang");
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    expect(screen.getByText(COPY.problems.phone)).toBeTruthy();
+    expect(screen.getByText(COPY.problems.email)).toBeTruthy();
+    type(COPY.dialog.phone, "12345");
+    type(COPY.dialog.email, "eli@");
+    type(COPY.dialog.linkedin, "example.test/eli");
+    expect(screen.queryByText(COPY.problems.phone)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    expect(screen.getByText(COPY.problems.phone)).toBeTruthy();
+    expect(screen.getByText(COPY.problems.email)).toBeTruthy();
+    expect(screen.getByText(COPY.problems.linkedin)).toBeTruthy();
+    expect(props.save).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(COPY.dialog.phone).getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("says a number and an email are both needed when the server refuses on that", async () => {
+    setup({
+      save: vi.fn(async (): Promise<RosterSaveResult> => ({
+        ok: false,
+        reason: "invalid",
+        problems: ["details"],
+      })),
+    });
+    await open();
+    fill("Eli Zhang");
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    expect(await screen.findByText(COPY.problems.details)).toBeTruthy();
   });
 
   it("names the problems without calling the server, and clears each as it is fixed", async () => {
@@ -191,7 +243,7 @@ describe("add and edit", () => {
       })),
     });
     await open();
-    type(COPY.dialog.name, "Eli Zhang");
+    fill("Eli Zhang");
     type(COPY.dialog.role, "Bid writer");
     const saveButton = screen.getByRole("button", { name: COPY.dialog.save });
     fireEvent.click(saveButton);
@@ -205,6 +257,9 @@ describe("add and edit", () => {
       role: "Bid writer",
       affiliation: "independent",
       firm: "",
+      phone: "(206) 555-0142",
+      email: "eli@example.test",
+      linkedin: "",
     });
     expect(screen.getAllByRole("listitem").map((li) => li.querySelector("p")?.textContent)).toEqual(
       ["Dana Whitlock", "Eli Zhang", "Tomás Ó Briain-Lee"],
@@ -243,7 +298,7 @@ describe("add and edit", () => {
   ])("keeps the dialog open with a plain line when the server says %j", async (answer, line) => {
     setup({ save: vi.fn(async () => answer) });
     await open();
-    type(COPY.dialog.name, "Eli Zhang");
+    fill("Eli Zhang");
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
     expect((await screen.findByRole("alert")).textContent).toBe(line);
     expect((screen.getByLabelText(COPY.dialog.name) as HTMLInputElement).value).toBe("Eli Zhang");
@@ -260,7 +315,7 @@ describe("add and edit", () => {
       })),
     });
     await open();
-    type(COPY.dialog.name, "Eli Zhang");
+    fill("Eli Zhang");
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
     expect(await screen.findByText(COPY.problems.role)).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toBe(COPY.failures.invalid);
@@ -273,7 +328,7 @@ describe("add and edit", () => {
       .mockRejectedValueOnce(new Error("offline"));
     setup({ save });
     await open();
-    type(COPY.dialog.name, "Eli Zhang");
+    fill("Eli Zhang");
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
     expect((await screen.findByRole("alert")).textContent).toBe(COPY.failures.forbidden);
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
@@ -287,7 +342,7 @@ describe("add and edit", () => {
     let finish: (result: RosterSaveResult) => void = () => undefined;
     setup({ save: vi.fn(() => new Promise<RosterSaveResult>((resolve) => (finish = resolve))) });
     await open();
-    type(COPY.dialog.name, "Eli Zhang");
+    fill("Eli Zhang");
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
     fireEvent.click(screen.getByRole("button", { name: COPY.dialog.cancel }));
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -389,6 +444,108 @@ describe("what an admin sees about texts", () => {
     ).toBeTruthy();
     expect(view.container.querySelector('input[type="tel"]')).toBeNull();
     expect(view.container.textContent).not.toMatch(/\+1\d{10}|\(\d{3}\) \d{3}-\d{4}/);
+  });
+});
+
+describe("contact details", () => {
+  const dana = person({
+    phoneMasked: "(•••) •••-0142",
+    email: "dana@example.test",
+    linkedin: "https://www.linkedin.com/in/dana",
+  });
+  const legacy = person({ id: "legacy", name: "Old Entry", needsDetails: true });
+
+  it("shows the masked number, the email and a LinkedIn link on a row, kept out of recordings", async () => {
+    setup({ list: { allowed: true, contacts: [dana] } });
+    const row = (await screen.findAllByRole("listitem"))[0]!;
+    expect(row.textContent).toContain(COPY.phoneOnFile("(•••) •••-0142"));
+    expect(row.textContent).toContain("dana@example.test");
+    const link = within(row).getByRole("link", { name: COPY.linkedinLabel("Dana Whitlock") });
+    expect(link.getAttribute("href")).toBe("https://www.linkedin.com/in/dana");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link.closest(".ph-no-capture")).toBeTruthy();
+    expect(row.textContent).not.toMatch(/\d{3}\D*\d{3}\D*\d{4}/);
+  });
+
+  it("marks people who need details, counts them, and says so when one is opened", async () => {
+    setup({
+      list: {
+        allowed: true,
+        contacts: [dana, legacy, person({ id: "l2", name: "Older Entry", needsDetails: true })],
+      },
+    });
+    const rows = await screen.findAllByRole("listitem");
+    expect(rows[0]?.textContent).not.toContain(COPY.needsDetails);
+    expect(rows[1]?.textContent).toContain(COPY.needsDetails);
+    expect(screen.getByText(COPY.needsDetailsCount(2))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: COPY.editLabel("Old Entry") }));
+    expect(screen.getByText(COPY.dialog.legacy)).toBeTruthy();
+  });
+
+  it("shows no count line when everyone has details", async () => {
+    setup({ list: { allowed: true, contacts: [dana] } });
+    await screen.findAllByRole("listitem");
+    expect(screen.queryByText(/need a mobile number|needs a mobile number/)).toBeNull();
+  });
+
+  it("lets a person from before be corrected with no details, but takes details only whole", async () => {
+    const { props } = setup({ list: { allowed: true, contacts: [legacy] } });
+    fireEvent.click(await screen.findByRole("button", { name: COPY.editLabel("Old Entry") }));
+    type(COPY.dialog.email, "old@example.test");
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    expect(screen.getByText(COPY.problems.phone)).toBeTruthy();
+    expect(props.save).not.toHaveBeenCalled();
+    type(COPY.dialog.email, "");
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    await waitFor(() =>
+      expect(props.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "legacy", phone: "", email: "" }),
+      ),
+    );
+  });
+
+  it("opens an edit with the email and LinkedIn filled and the number box empty, never the number itself", async () => {
+    const { props } = setup({
+      list: { allowed: true, contacts: [dana] },
+      save: vi.fn(async (): Promise<RosterSaveResult> => ({ ok: true, contact: dana })),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: COPY.editLabel("Dana Whitlock") }));
+    expect((screen.getByLabelText(COPY.dialog.phone) as HTMLInputElement).value).toBe("");
+    expect(screen.getByText(COPY.dialog.phoneKeep("(•••) •••-0142"))).toBeTruthy();
+    expect((screen.getByLabelText(COPY.dialog.email) as HTMLInputElement).value).toBe(
+      "dana@example.test",
+    );
+    expect((screen.getByLabelText(COPY.dialog.linkedin) as HTMLInputElement).value).toBe(
+      "https://www.linkedin.com/in/dana",
+    );
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    await waitFor(() =>
+      expect(props.save).toHaveBeenCalledWith(
+        expect.objectContaining({ phone: "", email: "dana@example.test" }),
+      ),
+    );
+    // With details on file the email cannot be emptied.
+    fireEvent.click(await screen.findByRole("button", { name: COPY.editLabel("Dana Whitlock") }));
+    type(COPY.dialog.email, "");
+    fireEvent.click(screen.getByRole("button", { name: COPY.dialog.save }));
+    expect(screen.getByText(COPY.problems.email)).toBeTruthy();
+    expect(props.save).toHaveBeenCalledTimes(1);
+  });
+
+  it("says when the agreed number is not the one on file, and which one texts use", async () => {
+    setup({
+      list: {
+        allowed: true,
+        contacts: [{ ...dana, texts: "agreed", agreedOn: "2026-11-19", numberDiffers: true }],
+      },
+    });
+    expect((await screen.findAllByRole("listitem"))[0]?.textContent).toContain(COPY.numberDiffers);
+  });
+
+  it("has no button that emails anyone", async () => {
+    const { view } = setup({ list: { allowed: true, contacts: [dana] } });
+    await screen.findAllByRole("listitem");
+    expect(view.container.textContent).not.toMatch(/email (them|their)|send (the|their) link/i);
   });
 
   it("asking for a new number opens the window, copies their link, and says what the link now does", async () => {

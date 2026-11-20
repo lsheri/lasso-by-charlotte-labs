@@ -16,6 +16,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { tagVariants } from "@/components/ui/tag";
 import {
   checkRosterContact,
+  checkRosterDetails,
   filterRoster,
   ROSTER_COPY as COPY,
   ROSTER_SEARCH_FROM,
@@ -31,9 +32,14 @@ import { askNewNumberFn, listRosterFn, saveRosterContactFn } from "@/lib/roster.
 /**
  * 19 Nov 2026, Proposal Desk: the roster, "People we work with". People a firm brings in on proposals who have no
  * login. The server decides who sees it: an admin or a lead of a company workspace. Anyone else gets nothing here.
- * A row shows a name, a role, where they work and one word for their text agreement. No phone number is ever on
- * this page: the person types their own number on the public /texts page, reached by the link this panel copies.
- * Copying a link sends nothing.
+ * A row shows a name, a role, where they work, how to reach them and one word for their text agreement.
+ * An admin or lead types a mobile number, an email and, if they like, a LinkedIn address when adding someone. After
+ * that the number comes back masked to its last four digits and is never shown in full again. It is contact
+ * information only: the number texts go to is the one the person types themselves on the public /texts page,
+ * reached by the link this panel copies. Copying a link sends nothing.
+ *
+ * For the redraw: the add and edit form is RosterDialog at the foot of this file. Its markup is plain on purpose
+ * (Label, Input, NativeSelect, one hint or problem line under each field) so it can be restyled in one place.
  */
 export function RosterPanel({ profileId }: { profileId: string | null | undefined }) {
   const load = useServerFn(listRosterFn);
@@ -255,6 +261,12 @@ export function RosterView({
         </div>
       ) : null}
 
+      {all.some((c) => c.needsDetails) ? (
+        <p className="text-sm text-muted-foreground">
+          {COPY.needsDetailsCount(all.filter((c) => c.needsDetails).length)}
+        </p>
+      ) : null}
+
       {all.length > 0 && shown.length === 0 ? (
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>{COPY.noMatch}</span>
@@ -279,7 +291,34 @@ export function RosterView({
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
+                  {contact.phoneMasked || contact.email || contact.linkedin ? (
+                    <p className="ph-no-capture text-sm [overflow-wrap:anywhere] text-muted-foreground">
+                      {[
+                        contact.phoneMasked ? COPY.phoneOnFile(contact.phoneMasked) : null,
+                        contact.email,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      {contact.linkedin ? (
+                        <>
+                          {contact.phoneMasked || contact.email ? " · " : null}
+                          <a
+                            href={contact.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={COPY.linkedinLabel(contact.name)}
+                            className="underline underline-offset-2"
+                          >
+                            {COPY.linkedin}
+                          </a>
+                        </>
+                      ) : null}
+                    </p>
+                  ) : null}
                   <p className="mt-2 flex flex-wrap items-center gap-2">
+                    {contact.needsDetails ? (
+                      <span className={tagVariants({ tone: "neutral" })}>{COPY.needsDetails}</span>
+                    ) : null}
                     <span
                       className={tagVariants({
                         tone: contact.texts === "agreed" ? "accent" : "neutral",
@@ -301,6 +340,7 @@ export function RosterView({
                           ? COPY.stoppedOn(contact.stoppedOn)
                           : null,
                         contact.changeUntil ? COPY.changeOpen(contact.changeUntil) : null,
+                        contact.numberDiffers ? COPY.numberDiffers : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -395,6 +435,11 @@ function RosterDialog({
   const [role, setRole] = useState(contact?.role ?? "");
   const [affiliation, setAffiliation] = useState<string>(contact?.affiliation ?? "independent");
   const [firm, setFirm] = useState(contact?.firm ?? "");
+  // The number is never sent back in full, so its box always starts empty.
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState(contact?.email ?? "");
+  const [linkedin, setLinkedin] = useState(contact?.linkedin ?? "");
+  const hasDetails = Boolean(contact && !contact.needsDetails && contact.email);
   const [problems, setProblems] = useState<RosterProblem[]>([]);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -413,10 +458,11 @@ function RosterDialog({
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (lock.current) return;
-    const fields = { name, role, affiliation, firm };
+    const fields = { name, role, affiliation, firm, phone, email, linkedin };
     const check = checkRosterContact(fields);
-    if (!check.ok) {
-      setProblems(check.problems);
+    const details = checkRosterDetails(fields, { adding: !contact, hasDetails });
+    if (!check.ok || !details.ok) {
+      setProblems([...(check.ok ? [] : check.problems), ...(details.ok ? [] : details.problems)]);
       setFailure(null);
       return;
     }
@@ -446,7 +492,7 @@ function RosterDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{contact ? D.editTitle : D.addTitle}</DialogTitle>
-          <DialogDescription>{D.description}</DialogDescription>
+          <DialogDescription>{contact ? D.editDescription : D.description}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} noValidate className="space-y-4">
           <div className="space-y-1">
@@ -530,6 +576,104 @@ function RosterDialog({
                 </p>
               ) : null}
             </div>
+          ) : null}
+          {contact?.needsDetails ? (
+            <p className="text-sm text-muted-foreground">{D.legacy}</p>
+          ) : null}
+          <div className="ph-no-capture space-y-1">
+            <Label htmlFor="roster-phone">{D.phone}</Label>
+            <Input
+              id="roster-phone"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              autoComplete="off"
+              aria-invalid={has("phone") || has("details")}
+              aria-describedby={has("phone") ? "roster-phone-problem" : "roster-phone-hint"}
+              onChange={(event) => {
+                setPhone(event.target.value);
+                clear("phone");
+                clear("details");
+              }}
+            />
+            {has("phone") ? (
+              <p id="roster-phone-problem" className="text-sm text-destructive">
+                {COPY.problems.phone}
+              </p>
+            ) : (
+              <p
+                id="roster-phone-hint"
+                className="text-(length:--type-label) text-muted-foreground"
+              >
+                {hasDetails && contact?.phoneMasked
+                  ? D.phoneKeep(contact.phoneMasked)
+                  : D.phoneHint}
+              </p>
+            )}
+          </div>
+          <div className="ph-no-capture space-y-1">
+            <Label htmlFor="roster-email">{D.email}</Label>
+            <Input
+              id="roster-email"
+              type="email"
+              inputMode="email"
+              value={email}
+              autoComplete="off"
+              aria-invalid={has("email") || has("details")}
+              aria-describedby={has("email") ? "roster-email-problem" : "roster-email-hint"}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clear("email");
+                clear("details");
+              }}
+            />
+            {has("email") ? (
+              <p id="roster-email-problem" className="text-sm text-destructive">
+                {COPY.problems.email}
+              </p>
+            ) : (
+              <p
+                id="roster-email-hint"
+                className="text-(length:--type-label) text-muted-foreground"
+              >
+                {D.emailHint}
+              </p>
+            )}
+          </div>
+          <div className="ph-no-capture space-y-1">
+            <Label htmlFor="roster-linkedin">{D.linkedin}</Label>
+            <Input
+              id="roster-linkedin"
+              type="url"
+              inputMode="url"
+              value={linkedin}
+              autoComplete="off"
+              aria-invalid={has("linkedin")}
+              aria-describedby={
+                has("linkedin") ? "roster-linkedin-problem" : "roster-linkedin-hint"
+              }
+              onChange={(event) => {
+                setLinkedin(event.target.value);
+                clear("linkedin");
+              }}
+            />
+            {has("linkedin") ? (
+              <p id="roster-linkedin-problem" className="text-sm text-destructive">
+                {COPY.problems.linkedin}
+              </p>
+            ) : (
+              <p
+                id="roster-linkedin-hint"
+                className="text-(length:--type-label) text-muted-foreground"
+              >
+                {D.linkedinHint}
+              </p>
+            )}
+          </div>
+          {has("details") ? (
+            <p role="alert" className="text-sm text-destructive">
+              {COPY.problems.details}
+            </p>
           ) : null}
           {failure ? (
             <p role="alert" className="text-sm text-destructive">

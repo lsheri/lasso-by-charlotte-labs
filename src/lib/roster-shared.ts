@@ -4,10 +4,14 @@
  * server functions behind it. Nothing here reads or writes anything.
  *
  * Who: admins and the firm's own leads add and edit (Liam, D-37). Nobody else sees the roster.
- * Privacy floor: a roster entry holds a name, a role and a firm. It never holds a mobile number or an email. Whether
- * a person agreed to texts is worked out on the server from message_consents and arrives here as one word.
+ * Contact details (Liam, 20 Nov: "profiles cant be added from an admin without number and email. i'd like linkedin
+ * as well"): an add needs a mobile number and an email; LinkedIn is optional. They are contact information only. A
+ * number typed here is never an agreement to texts: texts go only to the number the person enters on their own link.
+ * Privacy floor: the full number never reaches the browser again after it is typed. A contact carries it masked to
+ * its last four digits. Email and LinkedIn are shown to the admins and leads who see this list, and to nobody else.
+ * Whether a person agreed to texts is worked out on the server from message_consents and arrives here as one word.
  */
-import { cleanName, cleanWorkspace } from "@/lib/text-consent-shared";
+import { cleanName, cleanWorkspace, normalizePhone } from "@/lib/text-consent-shared";
 
 export const ROSTER_TEXT_MAX = 120;
 /** A workspace's roster is a list a person reads, not a database of contacts. */
@@ -36,11 +40,38 @@ export type RosterContact = {
   changeUntil: string | null;
   /** The path of this person's own text agreement link. The page puts its own address in front. */
   linkPath: string;
+  /** The number an admin or lead typed, masked to its last four digits. Never the full number. */
+  phoneMasked: string | null;
+  email: string | null;
+  linkedin: string | null;
+  /** True for a person added before details were asked for, who has no number and email on file. */
+  needsDetails: boolean;
+  /** True when the number they agreed with themselves is not the one on file. Texts use the agreed one. */
+  numberDiffers: boolean;
+  /** The day Lasso last emailed them their link, when it has. */
+  invitedOn: string | null;
 };
 
 export type RosterList = { allowed: false } | { allowed: true; contacts: RosterContact[] };
 
-export type RosterProblem = "name" | "role" | "affiliation" | "firm";
+export type RosterProblem =
+  | "name"
+  | "role"
+  | "affiliation"
+  | "firm"
+  | "phone"
+  | "email"
+  | "linkedin"
+  /** A first set of details needs both a number and an email. */
+  | "details";
+
+/**
+ * What a save does to the details. `phone: null` keeps the number already stored. `null` for the whole thing leaves
+ * the details alone: only allowed for a person added before details were asked for.
+ */
+export type RosterDetails = { phone: string | null; email: string; linkedin: string | null };
+export type RosterDetailsCheck =
+  { ok: true; details: RosterDetails | null } | { ok: false; problems: RosterProblem[] };
 export type RosterFields = {
   name: string;
   role: string | null;
@@ -58,11 +89,19 @@ export type RosterSaveInput = {
   role: string;
   affiliation: string;
   firm: string;
+  /** Empty on an edit keeps the number already stored. */
+  phone: string;
+  email: string;
+  linkedin: string;
 };
 export type RosterSaveResult =
   | { ok: true; contact: RosterContact }
   | { ok: false; reason: "invalid"; problems: RosterProblem[] }
   | { ok: false; reason: "missing" | "full" | "unavailable" };
+
+export type RosterInviteResult =
+  | { ok: true; contact: RosterContact }
+  | { ok: false; reason: "missing" | "no_email" | "recent" | "not_set_up" | "unavailable" };
 
 export type RosterChangeInput = { profile_id: string | null; id: string | null };
 export type RosterChangeResult =
@@ -113,6 +152,77 @@ export function checkRosterContact(
       firm: affiliation === "firm" ? firm.value : null,
     },
   };
+}
+
+export const EMAIL_MAX = 254;
+export const LINKEDIN_MAX = 200;
+
+/** An email address in the one stored form, lower case, or null. Shape only: nothing proves it is read. */
+export function cleanEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (email.length < 3 || email.length > EMAIL_MAX) return null;
+  // Invisible and control characters (a pasted zero-width space, say) look right on the page and never deliver.
+  if (/[\p{Cc}\p{Cf}]/u.test(email)) return null;
+  // An apostrophe is allowed before the @ only: O'Brien and D'Arcy are real addresses.
+  return /^[^@\s<>",;:()]+@[^@\s<>"',;:()]+\.[a-z0-9-]{2,}$/.test(email) ? email : null;
+}
+
+/**
+ * A LinkedIn address in the one stored form, https and no query, or null. Accepts what people paste:
+ * linkedin.com/in/name, www.linkedin.com/in/name, with or without https. Any other site is refused.
+ */
+export function cleanLinkedin(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const typed = value.trim();
+  if (typed.length === 0 || typed.length > 400 || /\s/.test(typed)) return null;
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(typed) ? typed : `https://${typed}`);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.toLowerCase();
+  if (host !== "linkedin.com" && !/^[a-z0-9-]+\.linkedin\.com$/.test(host)) return null;
+  if (url.username || url.password || url.port) return null;
+  const path = url.pathname.replace(/\/+$/, "");
+  if (path.length < 2) return null;
+  const clean = `https://${host === "linkedin.com" ? "www.linkedin.com" : host}${path}`;
+  return clean.length <= LINKEDIN_MAX ? clean : null;
+}
+
+/** A stored number with everything but its last four digits hidden, for the people who may see the list. */
+export function maskPhone(e164: unknown): string | null {
+  return typeof e164 === "string" && /^\+1\d{10}$/.test(e164)
+    ? `(•••) •••-${e164.slice(-4)}`
+    : null;
+}
+
+/**
+ * The rules for the details on one save. An add needs a number and an email. A person who has details keeps their
+ * number when the box is left empty, and always has an email. A person from before details were asked for may be
+ * saved with all three left empty, and stays marked as needing them.
+ */
+export function checkRosterDetails(
+  input: Partial<Record<"phone" | "email" | "linkedin", unknown>> | null | undefined,
+  person: { adding: boolean; hasDetails: boolean },
+): RosterDetailsCheck {
+  const blank = (value: unknown) => typeof value !== "string" || value.trim() === "";
+  const noPhone = blank(input?.phone);
+  const noEmail = blank(input?.email);
+  const noLinkedin = blank(input?.linkedin);
+  if (!person.adding && !person.hasDetails && noPhone && noEmail && noLinkedin)
+    return { ok: true, details: null };
+  const problems: RosterProblem[] = [];
+  const phone = noPhone ? null : normalizePhone(input?.phone);
+  // The stored number is kept only for a person who has one.
+  if (noPhone ? !person.hasDetails : !phone) problems.push("phone");
+  const email = cleanEmail(input?.email);
+  if (!email) problems.push("email");
+  const linkedin = noLinkedin ? null : cleanLinkedin(input?.linkedin);
+  if (!noLinkedin && !linkedin) problems.push("linkedin");
+  if (!email || problems.length > 0) return { ok: false, problems };
+  return { ok: true, details: { phone, email, linkedin } };
 }
 
 export type ConsentMark = {
@@ -206,6 +316,9 @@ export function rosterSaveInput(input: unknown): RosterSaveInput {
     role: text(raw["role"], 400),
     affiliation: text(raw["affiliation"], 20),
     firm: text(raw["firm"], 400),
+    phone: text(raw["phone"], 64),
+    email: text(raw["email"], 400),
+    linkedin: text(raw["linkedin"], 400),
   };
 }
 
@@ -217,7 +330,7 @@ export function rosterChangeInput(input: unknown): RosterChangeInput {
 export const ROSTER_COPY = {
   heading: "People we work with",
   intro:
-    "Independent consultants and people at other firms who help with proposals and projects. They have no login. Only admins and leads see this list.",
+    "Independent consultants and people at other firms who help with proposals and projects. They have no login. Only admins and leads see this list and the contact details on it.",
   add: "Add a person",
   empty: "Nobody yet. Add the people you bring in on proposals.",
   loading: "Loading the list",
@@ -252,6 +365,14 @@ export const ROSTER_COPY = {
     not_agreed: "They have no live text agreement to change. Send them their link to agree.",
     unavailable: "That did not go through. Nothing was changed. Try again in a moment.",
   },
+  needsDetails: "Needs a number and email",
+  needsDetailsCount: (count: number) =>
+    `${count} ${count === 1 ? "person needs" : "people need"} a mobile number and email. Open Edit to add them.`,
+  numberDiffers:
+    "Agreed with a different number than the one on file. Texts use the one they agreed with.",
+  phoneOnFile: (masked: string) => `Mobile ${masked}`,
+  linkedin: "LinkedIn",
+  linkedinLabel: (name: string) => `LinkedIn page for ${name}`,
   texts: {
     agreed: "Agreed to texts",
     stopped: "Stopped texts",
@@ -263,7 +384,18 @@ export const ROSTER_COPY = {
     addTitle: "Add a person",
     editTitle: "Edit this person",
     description:
-      "Name, what they do, and where they work. No phone number or email is kept here: they enter their own number when they agree to texts.",
+      "Name, what they do, where they work and how to reach them. A mobile number and an email are needed to add someone. The number here is for contact only: Lasso texts a person only after they agree on their own link.",
+    editDescription:
+      "Their name, what they do, where they work and how to reach them. The number here is for contact only: Lasso texts a person only after they agree on their own link.",
+    phone: "Mobile number",
+    phoneHint: "United States or Canada. For example (206) 555-0142.",
+    phoneKeep: (masked: string) => `On file: ${masked}. Leave empty to keep it, or type a new one.`,
+    email: "Email",
+    emailHint: "For reaching them.",
+    linkedin: "LinkedIn address (optional)",
+    linkedinHint: "For example linkedin.com/in/their-name.",
+    legacy:
+      "This person was added before contact details were asked for. Add a mobile number and an email.",
     name: "Name",
     role: "Role or specialty",
     roleHint: "For example: pricing, health economics, bid writer.",
@@ -280,6 +412,10 @@ export const ROSTER_COPY = {
     role: "Keep the role or specialty to 120 characters.",
     affiliation: "Choose whether they work independently or at a firm.",
     firm: "Enter the firm's name, up to 120 characters.",
+    phone: "Enter their mobile number with its area code. United States or Canada only.",
+    email: "Enter their email address, like name@example.com.",
+    linkedin: "Enter a LinkedIn address, like linkedin.com/in/their-name, or leave it empty.",
+    details: "A mobile number and an email are both needed.",
   } satisfies Record<RosterProblem, string>,
   failures: {
     invalid: "Check the fields, then save again.",

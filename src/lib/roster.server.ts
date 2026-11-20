@@ -7,7 +7,13 @@
  *
  * Privacy floor: whether someone agreed to texts comes from message_consents, read here and nowhere else in the
  * roster. The read asks for three columns, the person it belongs to and two dates. It never asks for the number, so
- * a number cannot reach an answer, a log or the browser from this file. No event is recorded.
+ * the agreed number cannot reach an answer, a log or the browser from this file. No event is recorded.
+ *
+ * Contact details (20 Nov): the number, email and LinkedIn address an admin or lead types live in
+ * roster_contact_details, a table the browser roles cannot read. This file is the only one that reads or writes it.
+ * The number leaves here masked to its last four digits; the email goes to the email sender and to the admins and
+ * leads who see the list. Neither is ever logged. A number typed here is contact information only: the code that
+ * sends texts never reads this table, so typing a number can never cause a text.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -15,6 +21,8 @@ import {
   canManageRoster,
   changeOpenUntil,
   checkRosterContact,
+  checkRosterDetails,
+  maskPhone,
   NUMBER_CHANGE_DAYS,
   ROSTER_MAX_CONTACTS,
   rosterLinkPath,
@@ -24,7 +32,9 @@ import {
   type RosterChangeInput,
   type RosterChangeResult,
   type RosterContact,
+  type RosterDetails,
   type RosterFields,
+  type RosterInviteResult,
   type RosterList,
   type RosterSaveInput,
   type RosterSaveResult,
@@ -45,14 +55,46 @@ export type RosterRow = {
 
 export type ConsentMarkRow = ConsentMark & { roster_contact_id: string };
 
+/** One person's contact details as stored. Only this file sees the full number. */
+export type DetailRow = {
+  roster_contact_id: string;
+  phone_e164: string;
+  email: string;
+  linkedin_url: string | null;
+  invite_sent_at: string | null;
+};
+
+/** What the email to a roster person needs. The sender gets the address and nothing else about them. */
+export type RosterInviteMail = { to: string; name: string; workspace: string; link: string };
+
+/** The least time between two emails of the same link to the same person. */
+export const INVITE_GAP_MS = 10 * 60_000;
+
 /** Everything the rules need from outside, so each can be tested without a database. */
 export type RosterDeps = {
   /** An active, non-guest member of a company workspace, or a thrown 403. */
   caller: () => Promise<RosterCaller>;
   /** This workspace's people, by name. Null when the read failed. */
   list: (orgId: string) => Promise<RosterRow[] | null>;
-  count: (orgId: string) => Promise<number | null>;
-  insert: (orgId: string, fields: RosterFields) => Promise<RosterRow | null>;
+  /**
+   * Adds a person with their details, or corrects one, in one transaction. `id` null adds. `details` null leaves the
+   * details alone. Answers the person's id, or why nothing was written. "absent" means the database has no place for
+   * details yet; null means the write failed.
+   */
+  saveAll: (
+    orgId: string,
+    id: string | null,
+    fields: RosterFields,
+    details: RosterDetails | null,
+  ) => Promise<{ id: string } | "missing" | "full" | "details" | "absent" | null>;
+  /** Contact details for these people in this workspace. "absent" before the table exists; null when the read failed. */
+  details: (orgId: string, contactIds: readonly string[]) => Promise<DetailRow[] | "absent" | null>;
+  /** Ids of people whose agreed number is not the one on file. Worked out in the database; null when not known. */
+  differs: (orgId: string) => Promise<string[] | null>;
+  workspaceName: (orgId: string) => Promise<string | null>;
+  /** Emails one person their link. "not_set_up" while no sending service is wired. Never throws a detail. */
+  sendInvite: (mail: RosterInviteMail) => Promise<"sent" | "not_set_up" | "failed">;
+  markInvited: (orgId: string, id: string, at: string) => Promise<boolean>;
   /** Changes the row only if it is in this workspace. "missing" when it is not there. */
   update: (
     orgId: string,
@@ -73,10 +115,21 @@ const COLUMNS = `${BASE_COLUMNS}, number_change_until`;
 export const CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at, confirmed_at";
 const BASE_CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at";
 
+const dayOf = (value: string | null | undefined): string | null =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null;
+
+/**
+ * What is known about one person's details. `detail` undefined means "not known" (the table is not there yet, or
+ * the read failed): then nobody is marked as needing details on a guess.
+ */
+type Extra = { detail: DetailRow | null | undefined; differs: boolean };
+const NOT_KNOWN: Extra = { detail: undefined, differs: false };
+
 function toContact(
   row: RosterRow,
   marks: readonly ConsentMark[] | null,
   now: Date = new Date(),
+  extra: Extra = NOT_KNOWN,
 ): RosterContact {
   const affiliation: RosterAffiliation = row.affiliation === "firm" ? "firm" : "independent";
   return {
@@ -88,7 +141,113 @@ function toContact(
     ...textsStatus(marks),
     changeUntil: changeOpenUntil(row.number_change_until, now),
     linkPath: rosterLinkPath(row.org_id, row.id),
+    // The full number stops here.
+    phoneMasked: maskPhone(extra.detail?.phone_e164),
+    email: extra.detail?.email ?? null,
+    linkedin: extra.detail?.linkedin_url ?? null,
+    needsDetails: extra.detail === null,
+    numberDiffers: extra.detail ? extra.differs : false,
+    invitedOn: dayOf(extra.detail?.invite_sent_at),
   };
+}
+
+/** One person's details and whether their agreed number differs, read fresh. */
+async function extraFor(deps: RosterDeps, orgId: string, id: string): Promise<Extra> {
+  const [details, differs] = await Promise.all([
+    deps.details(orgId, [id]).catch(() => null),
+    deps.differs(orgId).catch(() => null),
+  ]);
+  if (details === null || details === "absent") return NOT_KNOWN;
+  return {
+    detail: details.find((d) => d.roster_contact_id === id) ?? null,
+    differs: (differs ?? []).includes(id),
+  };
+}
+
+/** The words of the email. Plain on purpose: Liam reviews every email's design before it is dressed up. */
+export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const esc = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  const lines = [
+    `Hello ${mail.name},`,
+    `${mail.workspace} uses Lasso to run its proposals and projects, and would like to text you about the ones you help with.`,
+    "To agree, open this link and enter your own mobile number:",
+    mail.link,
+    "If you would rather not get texts, do nothing. No text is sent unless you agree.",
+    `Sent by Lasso for ${mail.workspace}.`,
+  ];
+  return {
+    subject: `${mail.workspace.replace(/[\r\n]+/g, " ")}: agree to texts about your proposals`,
+    text: lines.join("\n\n"),
+    html: lines
+      .map((line) =>
+        line === mail.link
+          ? `<p><a href="${esc(line)}">${esc(line)}</a></p>`
+          : `<p>${esc(line)}</p>`,
+      )
+      .join("\n"),
+  };
+}
+
+/**
+ * An admin or lead asks Lasso to email one person their own agreement link. The email asks; it agrees to nothing.
+ * The person still opens the link and enters their own number before any text can go to them.
+ */
+export async function sendRosterInvite(
+  deps: RosterDeps,
+  input: RosterChangeInput,
+  origin: string,
+  now: Date = new Date(),
+): Promise<RosterInviteResult> {
+  const caller = await deps.caller();
+  if (!canManageRoster(caller.role)) throw new Response("Forbidden", { status: 403 });
+  if (!input.id) return { ok: false, reason: "missing" };
+  try {
+    const found = await deps.one(caller.orgId, input.id);
+    if (found === "missing") return { ok: false, reason: "missing" };
+    if (!found || found.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
+    const details = await deps.details(caller.orgId, [found.id]);
+    if (details === null || details === "absent") return { ok: false, reason: "unavailable" };
+    const detail = details.find((d) => d.roster_contact_id === found.id);
+    if (!detail) return { ok: false, reason: "no_email" };
+    const last = detail.invite_sent_at ? Date.parse(detail.invite_sent_at) : NaN;
+    if (Number.isFinite(last) && now.getTime() - last < INVITE_GAP_MS)
+      return { ok: false, reason: "recent" };
+    const workspace =
+      (await deps.workspaceName(caller.orgId).catch(() => null)) ?? "A firm you work with";
+    const sent = await deps.sendInvite({
+      to: detail.email,
+      name: found.full_name,
+      workspace,
+      link: origin + rosterLinkPath(found.org_id, found.id),
+    });
+    if (sent === "not_set_up") return { ok: false, reason: "not_set_up" };
+    if (sent !== "sent") return { ok: false, reason: "unavailable" };
+    const at = now.toISOString();
+    // The email went. A failed note of the time must not read as a failed send, or it would be sent twice.
+    await deps.markInvited(caller.orgId, found.id, at).catch(() => false);
+    const [marks, differs] = await Promise.all([
+      deps.consents(caller.orgId, [found.id]).catch(() => null),
+      deps.differs(caller.orgId).catch(() => null),
+    ]);
+    return {
+      ok: true,
+      contact: toContact(found, marks, now, {
+        detail: { ...detail, invite_sent_at: at },
+        differs: (differs ?? []).includes(found.id),
+      }),
+    };
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
 }
 
 /**
@@ -116,7 +275,10 @@ export async function requestNumberChange(
     const row = await deps.openChange(caller.orgId, found.id, until);
     if (row === "missing") return { ok: false, reason: "missing" };
     if (!row || row.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
-    return { ok: true, contact: toContact(row, marks, now) };
+    return {
+      ok: true,
+      contact: toContact(row, marks, now, await extraFor(deps, caller.orgId, row.id)),
+    };
   } catch {
     return { ok: false, reason: "unavailable" };
   }
@@ -130,27 +292,38 @@ export async function listRoster(deps: RosterDeps): Promise<RosterList> {
   if (rows === null) throw new Response("Unavailable", { status: 503 });
   // A row from another workspace can never be shown, whatever the read returned.
   const mine = rows.filter((row) => row.org_id === caller.orgId);
-  const marks =
-    mine.length > 0
-      ? await deps
-          .consents(
-            caller.orgId,
-            mine.map((row) => row.id),
-          )
-          .catch(() => null)
-      : [];
+  const ids = mine.map((row) => row.id);
+  const [marks, details, differs] =
+    ids.length > 0
+      ? await Promise.all([
+          deps.consents(caller.orgId, ids).catch(() => null),
+          deps.details(caller.orgId, ids).catch(() => null),
+          deps.differs(caller.orgId).catch(() => null),
+        ])
+      : [[], [], []];
+  const known = details !== null && details !== "absent" ? details : null;
   return {
     allowed: true,
     contacts: mine.map((row) =>
       toContact(
         row,
         marks === null ? null : marks.filter((mark) => mark.roster_contact_id === row.id),
+        new Date(),
+        known
+          ? {
+              detail: known.find((d) => d.roster_contact_id === row.id) ?? null,
+              differs: (differs ?? []).includes(row.id),
+            }
+          : NOT_KNOWN,
       ),
     ),
   };
 }
 
-/** Add a person, or correct one. */
+/**
+ * Add a person, or correct one. An add is refused without a valid mobile number and a valid email. A person from
+ * before details were asked for may be corrected with none, and stays marked as needing them.
+ */
 export async function saveRosterContact(
   deps: RosterDeps,
   input: RosterSaveInput,
@@ -158,22 +331,49 @@ export async function saveRosterContact(
   const caller = await deps.caller();
   if (!canManageRoster(caller.role)) throw new Response("Forbidden", { status: 403 });
   const check = checkRosterContact(input);
-  if (!check.ok) return { ok: false, reason: "invalid", problems: check.problems };
   try {
+    let hasDetails = false;
+    let absent = false;
     if (input.id) {
+      const stored = await deps.details(caller.orgId, [input.id]);
+      if (stored === null) return { ok: false, reason: "unavailable" };
+      absent = stored === "absent";
+      hasDetails = !absent && (stored as DetailRow[]).some((d) => d.roster_contact_id === input.id);
+    }
+    const detailsCheck = checkRosterDetails(input, { adding: !input.id, hasDetails });
+    if (!check.ok || !detailsCheck.ok)
+      return {
+        ok: false,
+        reason: "invalid",
+        problems: [
+          ...(check.ok ? [] : check.problems),
+          ...(detailsCheck.ok ? [] : detailsCheck.problems),
+        ],
+      };
+    let saved = absent
+      ? ("absent" as const)
+      : await deps.saveAll(caller.orgId, input.id, check.fields, detailsCheck.details);
+    if (saved === "absent") {
+      // The database has no place for details yet. A correction with none still goes through, as it always did;
+      // anything that carries details, and every add, waits: nobody is added without them.
+      if (!input.id || detailsCheck.details) return { ok: false, reason: "unavailable" };
       const row = await deps.update(caller.orgId, input.id, check.fields);
       if (row === "missing") return { ok: false, reason: "missing" };
       if (!row || row.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
-      const marks = await deps.consents(caller.orgId, [row.id]).catch(() => null);
-      return { ok: true, contact: toContact(row, marks) };
+      saved = { id: row.id };
     }
-    const count = await deps.count(caller.orgId);
-    if (count === null) return { ok: false, reason: "unavailable" };
-    if (count >= ROSTER_MAX_CONTACTS) return { ok: false, reason: "full" };
-    const row = await deps.insert(caller.orgId, check.fields);
-    if (!row || row.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
+    if (saved === "missing" || saved === "full") return { ok: false, reason: saved };
+    if (saved === "details") return { ok: false, reason: "invalid", problems: ["details"] };
+    if (saved === null) return { ok: false, reason: "unavailable" };
+    const row = await deps.one(caller.orgId, saved.id);
+    if (!row || row === "missing" || row.org_id !== caller.orgId)
+      return { ok: false, reason: "unavailable" };
     // Nobody can have agreed through a link that did not exist until now.
-    return { ok: true, contact: toContact(row, []) };
+    const marks = input.id ? await deps.consents(caller.orgId, [row.id]).catch(() => null) : [];
+    return {
+      ok: true,
+      contact: toContact(row, marks, new Date(), await extraFor(deps, caller.orgId, row.id)),
+    };
   } catch {
     return { ok: false, reason: "unavailable" };
   }
@@ -186,6 +386,10 @@ export async function saveRosterContact(
 export type RosterContext = { supabase: SupabaseClient; userId: string };
 
 const ID_PAGE = 100;
+/** The only columns asked of roster_contact_details. */
+export const DETAIL_COLUMNS = "roster_contact_id, phone_e164, email, linkedin_url, invite_sent_at";
+/** A table or function the database does not have yet: 42P01 and PGRST205 for a table, PGRST202 and 42883 for a function. */
+const NOT_THERE = new Set(["42P01", "PGRST205", "PGRST202", "42883"]);
 
 function columns(fields: RosterFields) {
   return {
@@ -241,30 +445,69 @@ export async function realDeps(
       }
       return (data ?? []) as unknown as RosterRow[];
     },
-    async count(orgId) {
-      const { count, error } = await admin
-        .from("roster_contacts")
-        .select("id", { count: "exact", head: true })
-        .eq("org_id", orgId);
-      if (error || typeof count !== "number") {
-        logFailure("count", error);
+    async saveAll(orgId, id, fields, details) {
+      const { data, error } = await admin.rpc("save_roster_contact", {
+        p_org: orgId,
+        p_id: id,
+        p_name: fields.name,
+        p_role: fields.role,
+        p_affiliation: fields.affiliation,
+        p_firm: fields.firm,
+        p_phone: details?.phone ?? null,
+        p_email: details?.email ?? null,
+        p_linkedin: details?.linkedin ?? null,
+        p_max: ROSTER_MAX_CONTACTS,
+      });
+      if (error) {
+        if (NOT_THERE.has(error.code ?? "")) return "absent";
+        logFailure("save", error);
         return null;
       }
-      return count;
+      if (data === "missing" || data === "full" || data === "details") return data;
+      return typeof data === "string" && /^[0-9a-f-]{36}$/.test(data) ? { id: data } : null;
     },
-    async insert(orgId, fields) {
-      const { data, error } = await withColumns((selected) =>
-        admin
-          .from("roster_contacts")
-          .insert({ org_id: orgId, ...columns(fields) })
-          .select(selected)
-          .maybeSingle(),
-      );
-      if (error || !data) {
-        logFailure("insert", error);
+    async details(orgId, contactIds) {
+      const rows: DetailRow[] = [];
+      for (let at = 0; at < contactIds.length; at += ID_PAGE) {
+        const { data, error } = await admin
+          .from("roster_contact_details")
+          .select(DETAIL_COLUMNS)
+          .eq("org_id", orgId)
+          .in("roster_contact_id", contactIds.slice(at, at + ID_PAGE));
+        if (error) {
+          if (NOT_THERE.has(error.code ?? "")) return "absent";
+          logFailure("details read", error);
+          return null;
+        }
+        rows.push(...((data ?? []) as unknown as DetailRow[]));
+      }
+      return rows;
+    },
+    async differs(orgId) {
+      const { data, error } = await admin.rpc("roster_number_differs", { p_org: orgId });
+      if (error) {
+        if (!NOT_THERE.has(error.code ?? "")) logFailure("number compare", error);
         return null;
       }
-      return data as unknown as RosterRow;
+      return ((data ?? []) as unknown[]).filter((id): id is string => typeof id === "string");
+    },
+    async workspaceName(orgId) {
+      const { data } = await admin.from("orgs").select("name").eq("id", orgId).maybeSingle();
+      const name = (data as { name?: unknown } | null)?.name;
+      return typeof name === "string" && name.trim() ? name.trim().slice(0, 120) : null;
+    },
+    async sendInvite(mail) {
+      // One function, stubbed until the sending service is chosen. It sends nothing today.
+      return (await import("./roster-invite-sender.server")).sendRosterInviteMail(mail);
+    },
+    async markInvited(orgId, id, at) {
+      const { error } = await admin
+        .from("roster_contact_details")
+        .update({ invite_sent_at: at })
+        .eq("org_id", orgId)
+        .eq("roster_contact_id", id);
+      if (error) logFailure("invite note", error);
+      return !error;
     },
     async update(orgId, id, fields) {
       const { data, error } = await withColumns((selected) =>
@@ -346,5 +589,9 @@ export const rosterHandlers = {
   },
   async askNewNumber(context: RosterContext, data: RosterChangeInput): Promise<RosterChangeResult> {
     return requestNumberChange(await realDeps(context, data.profile_id), data);
+  },
+  async invite(context: RosterContext, data: RosterChangeInput): Promise<RosterInviteResult> {
+    const { CANONICAL_ORIGIN } = await import("./app-host");
+    return sendRosterInvite(await realDeps(context, data.profile_id), data, CANONICAL_ORIGIN);
   },
 };
