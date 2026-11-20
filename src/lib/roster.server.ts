@@ -17,6 +17,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { EMAIL_PALETTE } from "@/design/brand/email-palette";
+
 import {
   canManageRoster,
   changeOpenUntil,
@@ -177,6 +179,7 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
   text: string;
   html: string;
 } {
+  const C = EMAIL_PALETTE;
   const esc = (value: string) =>
     value
       .replace(/&/g, "&amp;")
@@ -188,8 +191,8 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
   const how = "To agree, open your link and enter your own mobile number. It takes a minute.";
   const notYet = "If you would rather not get texts, do nothing. No text is sent unless you agree.";
   const lines = [`Hello ${mail.name},`, intro, how, mail.link, notYet, `Sent by Lasso for ${workspace}.`];
-  const body = "font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:#2a2d2b;";
-  const small = "font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#9a9c98;";
+  const body = "font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:${C.body};";
+  const small = "font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:${C.quiet};";
   const rule = `<tr><td style="padding-bottom:22px;font-size:0;line-height:0;"><img src="${EMAIL_ASSETS}/nb-rule-frontdoor.png" width="300" height="10" alt="" border="0" style="display:block;border:0;width:300px;height:10px;" /></td></tr>`;
   const link = esc(mail.link);
   const html = `<!DOCTYPE html>
@@ -200,22 +203,22 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
 <meta name="color-scheme" content="light">
 <title>Texts about your proposals</title>
 </head>
-<body style="margin:0;padding:0;background-color:#ffffff;">
+<body style="margin:0;padding:0;background-color:${C.page};">
 <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${esc(intro)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background-color:${C.page};">
 <tr><td align="center" style="padding:36px 16px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 <tr><td style="padding-bottom:28px;font-size:0;line-height:0;"><img src="${EMAIL_ASSETS}/lockup-clear.gif" width="194" height="73" alt="Lasso by Charlotte Labs" border="0" style="display:block;border:0;width:194px;height:73px;" /></td></tr>
-<tr><td style="padding-bottom:10px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;line-height:35px;color:#16181a;">Texts about your proposals</td></tr>
+<tr><td style="padding-bottom:10px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;line-height:35px;color:${C.heading};">Texts about your proposals</td></tr>
 ${rule}
 <tr><td style="padding-bottom:16px;${body}">Hello ${esc(mail.name)},</td></tr>
 <tr><td style="padding-bottom:16px;${body}">${esc(intro)}</td></tr>
-<tr><td style="padding-bottom:16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:24px;color:#2a2d2b;">${esc(how)}</td></tr>
-<tr><td style="padding-top:6px;padding-bottom:18px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#2a2d2b" style="background-color:#2a2d2b;border-radius:6px;"><a href="${link}" style="display:block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;color:#ffffff;text-decoration:none;font-weight:bold;">Open your link</a></td></tr></table></td></tr>
-<tr><td style="padding-bottom:18px;${small}">Or paste this link into your browser:<br /><a href="${link}" style="color:#0a628f;text-decoration:underline;word-break:break-all;">${link}</a></td></tr>
+<tr><td style="padding-bottom:16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:24px;color:${C.body};">${esc(how)}</td></tr>
+<tr><td style="padding-top:6px;padding-bottom:18px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${C.body}" style="background-color:${C.body};border-radius:6px;"><a href="${link}" style="display:block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;color:${C.page};text-decoration:none;font-weight:bold;">Open your link</a></td></tr></table></td></tr>
+<tr><td style="padding-bottom:18px;${small}">Or paste this link into your browser:<br /><a href="${link}" style="color:${C.link};text-decoration:underline;word-break:break-all;">${link}</a></td></tr>
 <tr><td style="padding-bottom:18px;${small}">${esc(notYet)}</td></tr>
 ${rule}
-<tr><td style="${small}">Sent by Lasso for ${esc(workspace)} &middot; <a href="https://lasso.charlotte-labs.com" style="color:#0a628f;text-decoration:underline;">lasso.charlotte-labs.com</a></td></tr>
+<tr><td style="${small}">Sent by Lasso for ${esc(workspace)} &middot; <a href="https://lasso.charlotte-labs.com" style="color:${C.link};text-decoration:underline;">lasso.charlotte-labs.com</a></td></tr>
 </table>
 </td></tr>
 </table>
