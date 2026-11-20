@@ -118,8 +118,19 @@ export async function senderRefusedRecently(admin: SupabaseClient | null, now: D
   }
 }
 
-/** The sender's settings only when it can send now: settings in place and no refusal in the pause window. */
+/**
+ * 20 Nov 2026 (Liam, D-106, Q-101: "Hold until a setting says approved"): the carriers' answer is a setting, not a
+ * guess. Until BIRD_NUMBER_APPROVED is "true" (Liam sets it the day the number is accepted), nothing ever reaches the
+ * provider: demo workspaces get practice asks and real workspaces record answers by hand. A refusal after that still
+ * pauses sending for a while.
+ */
+export function numberApproved(env: Record<string, string | undefined> = process.env): boolean {
+  return (env["BIRD_NUMBER_APPROVED"] ?? "").trim().toLowerCase() === "true";
+}
+
+/** The sender's settings only when it can send now: the number approved, settings in place, no refusal just now. */
 export async function readyTextConfig(admin: SupabaseClient | null, now: Date = new Date(), env: Record<string, string | undefined> = process.env): Promise<TextConfig | null> {
+  if (!numberApproved(env)) return null;
   const config = textConfig(env);
   if (!config) return null;
   return (await senderRefusedRecently(admin, now)) ? null : config;
