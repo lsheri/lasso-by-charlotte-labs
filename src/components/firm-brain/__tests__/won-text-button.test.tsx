@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { WON_TEXT_COPY } from "@/lib/won-text-shared";
+import { MESSAGE_EXAMPLES_COPY, WON_TEXT_COPY } from "@/lib/won-text-shared";
 
 const m = vi.hoisted(() => ({ status: vi.fn(), send: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
@@ -136,5 +136,21 @@ describe("WonTextButton", () => {
     finish({ ok: true });
     await Promise.resolve();
     expect(document.body.textContent).not.toContain(WON_TEXT_COPY.sent);
+  });
+
+  it("draws email and RCS beside the text as examples that cannot be pressed, and only the text is sent", async () => {
+    await open();
+    const examples = document.querySelector("[data-message-examples]") as HTMLElement;
+    expect(examples.querySelectorAll("[data-message-example]")).toHaveLength(3);
+    expect(examples.querySelectorAll('[data-message-example="live"]')).toHaveLength(1);
+    expect(examples.querySelector('[data-message-example="live"] [data-won-text-words]')?.textContent).toBe(WORDS);
+    for (const text of [MESSAGE_EXAMPLES_COPY.emailState, MESSAGE_EXAMPLES_COPY.rcsState, MESSAGE_EXAMPLES_COPY.subject, MESSAGE_EXAMPLES_COPY.rcsYes, MESSAGE_EXAMPLES_COPY.note]) {
+      expect(screen.getByText(text)).toBeTruthy();
+    }
+    // Nothing inside the examples is a control: no button, link or field.
+    expect(examples.querySelectorAll("button, a, input, [role=button]")).toHaveLength(0);
+    fireEvent.click(screen.getByText(MESSAGE_EXAMPLES_COPY.rcsYes));
+    expect(m.send).not.toHaveBeenCalled();
+    expect(examples.textContent).not.toMatch(/Bird/i);
   });
 });

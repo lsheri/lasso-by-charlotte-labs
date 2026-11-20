@@ -19,6 +19,29 @@ export type WonTextChannel = (typeof WON_TEXT_CHANNELS)[number];
 export const WON_TEXT_OUTCOMES = ["accepted", "opted_out", "capped", "refused", "failed"] as const;
 export type WonTextOutcome = (typeof WON_TEXT_OUTCOMES)[number];
 
+/**
+ * 20 Nov (Liam): the same news drawn three ways, side by side. Only the text is real. Email comes later and RCS is
+ * coming soon; both are pictures of what the lead would see and neither sends anything.
+ */
+export const MESSAGE_EXAMPLES_COPY = {
+  heading: "How the lead hears",
+  text: "Text",
+  textState: "Sent today",
+  email: "Email",
+  emailState: "Later",
+  rcs: "RCS",
+  rcsState: "Coming soon",
+  subject: "The proposal you helped with has been won",
+  emailBody: "The team board is ready. Open it to see the brief and the first documents.",
+  emailFoot: "You are getting this because you agreed to hear about proposals you help with. Unsubscribe at any time.",
+  rcsSender: "Verified sender",
+  rcsTitle: "Proposal won",
+  rcsBody: "The proposal you helped with has been won, and the team board is ready.",
+  rcsYes: "Open the team board",
+  rcsNo: "Not now",
+  note: "Email and RCS are examples of what is coming. Only the text is sent.",
+} as const;
+
 export const WON_TEXT_COPY = {
   open: "Text the lead",
   title: "The text the lead will get",

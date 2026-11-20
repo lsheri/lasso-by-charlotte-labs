@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 
+import { MessageExamples } from "@/components/proposals/MessageExamples";
 import { Button } from "@/components/ui/button";
 import { WON_TEXT_COPY, type WonTextStatus } from "@/lib/won-text-shared";
 import { sendWonText, wonTextStatus } from "@/lib/won-text.functions";
@@ -11,7 +12,8 @@ import { sendWonText, wonTextStatus } from "@/lib/won-text.functions";
  * Anyone else gets nothing here, and a failed read also shows nothing. The admin reads the exact words before
  * sending. While no approved number is connected (Liam, D-40) the words still show, Send answers that nothing was
  * sent, and the sent line never appears: it shows only when the server says the text was accepted. No phone number
- * is ever on this page.
+ * is ever on this page. Beside the words sit two examples, email (later) and RCS (coming soon); they are pictures and
+ * send nothing.
  */
 export function WonTextButton({ engagementId, profileId }: { engagementId: string; profileId: string | null | undefined }) {
   const load = useServerFn(wonTextStatus);
@@ -93,9 +95,7 @@ export function WonTextButton({ engagementId, profileId }: { engagementId: strin
       {open ? (
         <div data-won-text-preview className="flex flex-col gap-2">
           <p className="text-muted-foreground">{WON_TEXT_COPY.title}</p>
-          <p data-won-text-words className="max-w-[32ch] self-start rounded-[var(--radius)] bg-muted px-3 py-2 text-foreground">
-            {status.preview}
-          </p>
+          <MessageExamples words={status.preview} />
           <p className="max-w-[40ch] text-muted-foreground">{status.connected ? WON_TEXT_COPY.helper : status.needsNumber ? WON_TEXT_COPY.noNumber : WON_TEXT_COPY.awaiting}</p>
           {problem ? (
             <p role="alert" className="max-w-[40ch] text-destructive">
