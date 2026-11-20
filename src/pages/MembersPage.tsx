@@ -23,9 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { MemberRoleDialog } from "@/components/members/MemberRoleDialog";
-import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { changeMemberRoleFn } from "@/lib/members.functions";
 import { CHANGEABLE_ROLES, ROLE_COPY } from "@/lib/member-roles-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 import { COPY as DATA_COPY } from "@/components/settings/DataSection";
@@ -37,7 +35,7 @@ import {
   INVITE_RESEND_ADMIN_ONLY_LINE,
 } from "@/lib/invites-shared";
 import { ShareWorkDialog } from "@/components/coaching/ShareWorkDialog";
-import { useMemberAction, useMembers } from "@/hooks/use-members";
+import { useChangeMemberRole, useMemberAction, useMembers } from "@/hooks/use-members";
 import { isBusinessOrg, ROLE_LABELS, useProfile } from "@/hooks/use-profile";
 import {
   maskCode,
@@ -160,7 +158,7 @@ function MembersConsole() {
   const [showHistory, setShowHistory] = useState(false);
   const [shareTarget, setShareTarget] = useState<MemberRow | null>(null);
   const [roleTarget, setRoleTarget] = useState<MemberRow | null>(null);
-  const changeRole = useServerFn(changeMemberRoleFn);
+  const changeRole = useChangeMemberRole(profile?.id);
   const queryClient = useQueryClient();
 
   const isAdmin = data?.viewer_role === "admin";
@@ -440,7 +438,7 @@ function MembersConsole() {
       <MemberRoleDialog
         member={roleTarget}
         firmView={profileHasFirmView(profile)}
-        change={(memberId, role) => changeRole({ data: { profile_id: profile?.id, member_id: memberId, role } })}
+        change={changeRole}
         onChanged={(name, role) => {
           toast.success(ROLE_COPY.done(name, role));
           void queryClient.invalidateQueries({ queryKey: ["members"] });

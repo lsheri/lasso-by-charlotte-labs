@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  changeMemberRoleFn,
   deactivateMember,
   listMembers,
   reactivateMember,
@@ -45,4 +46,10 @@ export function useMemberAction(profileId: string | undefined) {
       void queryClient.invalidateQueries({ queryKey: ["profiles"] });
     },
   });
+}
+
+/** 20 Nov 2026: change a teammate's role between Admin, Lead and Member. Every rule runs on the server. */
+export function useChangeMemberRole(profileId: string | undefined) {
+  return (memberId: string, role: import("@/lib/member-roles-shared").MemberRole) =>
+    changeMemberRoleFn({ data: { profile_id: profileId, member_id: memberId, role } });
 }
