@@ -506,6 +506,98 @@ export function countBand(count: number): "0" | "1" | "2-5" | "6+" {
 }
 
 /**
+ * 20 Nov 2026 (Liam, D-86: "the mix it starts on"). The Proposals space: one proposal is Up next, with the page's
+ * one filled button; the rare changes sit under More. Nothing here rates or ranks a person: Up next is the proposal
+ * closest to its goal that this person can move, in the same reading order the list already uses.
+ */
+export const SPACE_COPY = {
+  upNext: "Up next",
+  more: "More",
+  moreLabel: (client: string, title: string) => `More for ${client ? `${client}: ` : ""}${title}`,
+  /** The lead as a chip: who, and the state of the ask in a word or two. */
+  leadLabel: "Lead:",
+  /** The ask on the chip in a word or two. The full sentence stays on the line beneath it. */
+  ask: { asked: "Asked", yes: "Yes", no: "No", stopped: "Opted out", notSent: "Not sent", notArrived: "Not arrived", noReply: "No reply", practice: "Practice" },
+} as const;
+
+const NOT_ARRIVED_STATUSES = ["undelivered", "failed", "expired"] as const;
+export type AskWord = keyof typeof SPACE_COPY.ask;
+
+/** The ask in a word, for the lead's chip, in the same order of precedence as the line beneath it. */
+export function askWord(ask: AskView | null | undefined): AskWord | null {
+  if (!ask) return null;
+  // QA M1: a practice answer is never a real yes or no. The chip keeps the practice look; the line says the answer.
+  if (ask.practice) return "practice";
+  if (ask.reply === "yes") return "yes";
+  if (ask.reply === "no") return "no";
+  if (ask.reply === "stop" || ask.status === "opted_out") return "stopped";
+  // QA M2: a refused text was never sent, so the chip says so rather than that it got lost.
+  if (ask.status === "rejected") return "notSent";
+  if ((NOT_ARRIVED_STATUSES as readonly string[]).includes(ask.status)) return "notArrived";
+  if (!ask.waiting) return "noReply";
+  return "asked";
+}
+
+export type NextStep = "send" | "win";
+
+/** The next step this person can take on a proposal: getting it out first, then recording the win. */
+export function nextStep(proposal: DeskProposal, can: { send: boolean; win: boolean }): NextStep | null {
+  if (proposal.status !== "open") return null;
+  if (can.send && proposal.canAct && !proposal.sentAt) return "send";
+  if (can.win && proposal.mine) return "win";
+  return null;
+}
+
+/**
+ * The proposal that is Up next: the first row, in the order the person reads the list, that has a step they can take.
+ * None when nothing can be moved here (Home, which is read only, or a view of decided proposals).
+ */
+export function upNextId(rows: readonly DeskProposal[], can: { send: boolean; win: boolean }): string | null {
+  return rows.find((row) => nextStep(row, can) !== null)?.id ?? null;
+}
+
+/**
+ * 20 Nov 2026 (Liam: "the board reveal ... should look more like the figjam boards that are really created"). While
+ * Record the win makes the board, the dialog draws that board building in: the brief from the notes, the documents as
+ * small pictures, the lead. Each caption names what the server is really doing, in the order it does it.
+ */
+export const REVEAL_COPY = {
+  stages: (client: string, documents: number, lead: string) =>
+    [
+      `Making the team board${client ? ` for ${client}` : ""}`,
+      "Turning your notes into its brief",
+      ...(documents > 0 ? [documents === 1 ? "Putting your context document on it" : `Putting your ${documents} context documents on it`] : []),
+      ...(lead ? [`Naming ${lead} as the lead`] : []),
+      "Opening the board",
+    ] as string[],
+  brief: "The brief",
+  briefLine: "From your notes",
+  /** A document whose title this person is not sent. */
+  document: "Context document",
+  board: "Team board",
+  label: "The team board, being made",
+  /** Each stage stays readable: about 1.4 seconds apiece. */
+  stageMs: 1400,
+} as const;
+
+/**
+ * D-86 (Liam: "No past work with us yet" beside a person with none). The work each person on the roster has led with
+ * this firm: the won proposals that name them as lead, newest first. Read from the list the page already has, so it
+ * adds no request. Only the client and the title: never a count, a fee, a value or how fast anyone answered.
+ */
+export function pastWorkByLead(proposals: readonly DeskProposal[]): Record<string, { client: string; title: string }[]> {
+  const out: Record<string, { client: string; title: string }[]> = {};
+  const won = proposals
+    .filter((proposal) => proposal.status === "won" && proposal.leadContactId)
+    .sort((a, b) => (b.decidedAt ?? "").localeCompare(a.decidedAt ?? "") || a.id.localeCompare(b.id));
+  for (const proposal of won) {
+    const id = proposal.leadContactId as string;
+    (out[id] ??= []).push({ client: proposal.clientName, title: proposal.title });
+  }
+  return out;
+}
+
+/**
  * After New proposal saves, what the page does next. The list has just been read again: when the new proposal is in
  * it, someone who may pick a lead goes straight to the lead sheet and everyone else to the rows. When it is not (the
  * read failed, or has not caught up), the page says the proposal was started and opens nothing by itself later.
