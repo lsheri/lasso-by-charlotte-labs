@@ -52,4 +52,13 @@ describe("SkeletonFrame", () => {
     for (const bar of bars) expect(bar.className).toContain("motion-reduce:animate-none");
     expect(frame.innerHTML).not.toMatch(/spin/);
   });
+
+  it("can draw a second frame with no status of its own, hidden from screen readers", () => {
+    render(<SkeletonFrame shape="rows" count={2} announce={false} testId="quiet" />);
+    expect(screen.queryByRole("status")).toBeNull();
+    const frame = screen.getByTestId("quiet");
+    expect(frame.getAttribute("aria-hidden")).toBe("true");
+    expect(frame.getAttribute("aria-busy")).toBeNull();
+    expect(frame.querySelectorAll("li")).toHaveLength(2);
+  });
 });

@@ -4,15 +4,6 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("PERF-4 wiring", () => {
-  it("answers the Firm view counts without waiting for the view event, and still records it", () => {
-    const source = read("src/lib/firm-dashboard.functions.ts");
-    const handler = source.slice(source.indexOf("export const getFirmDashboard"), source.indexOf("export const getFirmCheckLibrary"));
-    expect(handler).not.toMatch(/await recordEvent/);
-    expect(handler).toMatch(/runAfterResponse\(\(\) =>\s*recordEvent\(supabaseAdmin, \{\s*eventType: "admin\.dashboard_viewed"/);
-    // The event carries only what it carried before.
-    expect(handler).toMatch(/dims: \{ panels_shown: dashboard\.panels_shown \}/);
-  });
-
   it("writes a board's viewed row once per open, from the page only", () => {
     expect(read("src/routes/_authenticated/engagements.$id_.canvas-lab.tsx")).not.toMatch(/useRecordEngagementView\(/);
     expect(read("src/pages/CanvasLabPage.tsx").match(/useRecordEngagementView\(engagementId\)/g)).toHaveLength(1);

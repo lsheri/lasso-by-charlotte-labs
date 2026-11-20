@@ -85,11 +85,11 @@ export function FirmDashboardPage() {
         {error ? (
           <p className="text-sm text-destructive">That could not be loaded. Try again.</p>
         ) : null}
-        {isLoading || !data ? (
+        {error && !data ? null : isLoading || !data ? (
           // PERF-4: the shape of the headline row and the boards list, not a word, while the counts arrive.
           <div className="space-y-8">
             <SkeletonFrame shape="stats" count={4} label="Counting" />
-            <SkeletonFrame shape="rows" count={3} label="Counting" testId="firm-view-rows-skeleton" />
+            <SkeletonFrame shape="rows" count={3} announce={false} testId="firm-view-rows-skeleton" />
           </div>
         ) : (
           <>

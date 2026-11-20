@@ -23,6 +23,7 @@ export function SkeletonFrame({
   label = SKELETON_FRAME_COPY.label,
   className,
   testId = "skeleton-frame",
+  announce = true,
 }: {
   shape?: SkeletonFrameShape;
   /** Rows, stat columns or cards to draw. Ignored for `panel`. */
@@ -31,8 +32,17 @@ export function SkeletonFrame({
   label?: string;
   className?: string;
   testId?: string;
+  /** False for a second frame in the same section, so a screen reader hears one status line, not two. */
+  announce?: boolean;
 }) {
   const n = Math.max(1, Math.min(count, 12));
+  if (!announce) {
+    return (
+      <div aria-hidden="true" data-testid={testId} data-shape={shape} className={className}>
+        {body(shape, n)}
+      </div>
+    );
+  }
   return (
     <div role="status" aria-busy="true" aria-live="polite" data-testid={testId} data-shape={shape} className={className}>
       <span className="sr-only">{label}</span>
