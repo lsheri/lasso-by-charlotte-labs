@@ -338,6 +338,10 @@ describe("picking the lead", () => {
     const save = within(dialog).getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
     expect(within(dialog).getByText(WORDS)).toBeTruthy();
+    // The page says what is true today: nothing here promises the picked lead a text.
+    expect(within(dialog).getByText(LEAD_COPY.today)).toBeTruthy();
+    expect(within(dialog).getByText(LEAD_COPY.intro).textContent).toContain("sends nothing");
+    expect(`${LEAD_COPY.agreed("x")} ${LEAD_COPY.intro}`).not.toMatch(/they get|will get|hears when/);
     expect(dialog.querySelectorAll("[data-message-example]")).toHaveLength(3);
     expect(within(dialog).getByText(MESSAGE_EXAMPLES_COPY.rcsState)).toBeTruthy();
     const select = within(dialog).getByLabelText(LEAD_COPY.select);

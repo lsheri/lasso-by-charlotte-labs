@@ -23,7 +23,8 @@ export function LeadLine({ lead, picked, onPick }: { lead: RosterContact | undef
 
 /**
  * 20 Nov 2026 (Liam): pick the lead for a proposal from "People we work with", and see the message as it will
- * arrive. Says plainly whether the person agreed to texts: no agreement, no text. Saving the pick sends nothing.
+ * read. Says plainly whether the person agreed to texts, and what is true today: saving the pick sends nothing, and
+ * the send does not read the lead yet (demo workspaces send to their demo number).
  * No phone number is ever on this page.
  */
 export function LeadDialog({
@@ -101,6 +102,9 @@ export function LeadDialog({
             {chosen.texts === "agreed" ? copy.agreed(chosen.name) : chosen.texts === "unknown" ? copy.unknown(chosen.name) : copy.notAgreed(chosen.name)}
           </p>
         ) : null}
+        <p data-lead-today className="text-sm text-muted-foreground">
+          {copy.today}
+        </p>
         <div className="space-y-2 text-(length:--type-small)">
           <p className="micro-label">{copy.preview}</p>
           <MessageExamples words={words} />
