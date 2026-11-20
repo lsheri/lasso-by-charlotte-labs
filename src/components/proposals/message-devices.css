@@ -1,7 +1,15 @@
-/* The phone a text arrives on. These are the device's own proportions, not interface corners, so they live here
-   rather than in the corner scale. */
-.message-phone{border-width:6px;border-style:solid;border-radius:2.4rem;padding:.5rem .25rem .25rem}
-.message-phone-island{width:4.75rem;height:1.25rem;border-radius:.625rem}
+/* The phone a text arrives on. 21 Nov 2026 (Liam: "it should be normal scale always"): the phone keeps a real
+   iPhone's shape at any size, about 9 to 19.5, and is scaled down to fit its column instead of shrinking to the
+   message. The frame is a size container, so the bezel, corners, island and home bar are all sized from the
+   phone's own width (cqw) and stay in proportion. These are the device's proportions, not interface corners, so
+   they live here rather than in the corner scale. Text inside stays at a size people can read. */
+.message-phone-frame{container-type:inline-size}
+.message-phone{aspect-ratio:9/19.5;border-width:max(3px,3cqw);border-style:solid;border-radius:14cqw;padding:3cqw 3cqw 2.4cqw;display:flex;flex-direction:column}
+/* No overflow: hidden on either device: a message longer than the screen makes the device taller rather than cutting words. */
+.message-phone-island{flex:none;width:30cqw;height:8.5cqw;border-radius:4.25cqw}
+.message-phone-home{flex:none;width:34cqw;height:max(3px,1.3cqw);border-radius:1cqw}
+/* An inbox on a tablet held sideways: a real screen's shape, 4 to 3, with the email open at the top. */
+.message-inbox{aspect-ratio:4/3}
 .message-bubble{border-radius:1.15rem;border-bottom-left-radius:.3rem}
 /* One sheet, two steps: the list folds away and the confirm lines fold in, in one motion. */
 .lead-sheet-fold{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .5s cubic-bezier(.45,0,.2,1),opacity .45s cubic-bezier(.45,0,.2,1)}
