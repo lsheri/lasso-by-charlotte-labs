@@ -120,9 +120,9 @@ function AppShellInner() {
               </div>
             </header>
 
-            {/* Clears the 56px tab bar plus a 32px breathing gap. Pages with a
-              sticky CTA (Work) add their own spacer rather than taxing every page. */}
-            <main className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-12 md:pb-14 lg:px-10 xl:px-14">
+            {/* Clears the 56px tab bar, the chat pill above it (44px and a 16px gap) and a breathing gap; on a laptop,
+              the pill's corner (QA L3 of PR 289). Pages with a sticky CTA (Work) add their own spacer. */}
+            <main className="flex-1 px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-12 md:pb-24 lg:px-10 xl:px-14">
               <div className="mx-auto w-full max-w-[1440px]">
                 <Outlet />
               </div>

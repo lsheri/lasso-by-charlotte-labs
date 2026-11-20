@@ -10,12 +10,12 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
-import { pillAccess, pillPlace } from "@/lib/chat-pill-shared";
+import { pillAccess, pillPlace, pillStarters } from "@/lib/chat-pill-shared";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { FIRM_ASK_QUESTION_MAX } from "@/lib/firm-ask-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
 import { orderHomeGrid } from "@/lib/home-grid";
-import { firstNameOf, handOffQuestion, homeStarters } from "@/lib/home-ask-shared";
+import { firstNameOf, handOffQuestion } from "@/lib/home-ask-shared";
 
 import { ChatPill } from "./ChatPill";
 
@@ -58,13 +58,13 @@ export function ChatPillMount() {
         place={place}
         canAsk={canAsk}
         questionMax={FIRM_ASK_QUESTION_MAX}
-        starters={canAsk ? homeStarters(profile.role, recent?.title) : []}
+        starters={canAsk ? pillStarters(profile.role, recent?.title) : []}
         boardChat={place === "board" ? boardHandler : null}
         reduceMotion={reduceMotion}
         onOpened={(where) => emitClientEvent("pill.opened", { page: where })}
         onExpanded={(where) => emitClientEvent("pill.expanded", { page: where })}
         profileId={profileId}
-        onAsk={(question) => ask({ data: { question, starter: null, profile_id: profileId } })}
+        onAsk={(question, starter) => ask({ data: { question, starter, profile_id: profileId } })}
         onOpenSource={setOpenItem}
         onOpenOnCanvas={async (question, result) => {
           // The canvas takes it once, for this person only, while it is fresh, with the answer it already has, so the

@@ -221,3 +221,45 @@ describe("the live hand-off to a Firm brain page already open", () => {
     clearHandOff();
   });
 });
+
+// QA H1 of PR 289: the demo story and the pill never share a corner. The story only renders on a deployed build, so
+// these read the wiring itself.
+describe("the demo story and the pill", () => {
+  it("on a phone, the story frame starts above the pill (tab bar 4.5rem plus the pill's 3.75rem)", () => {
+    expect(readFileSync("src/components/firm-story/FirmStory.tsx", "utf8")).toContain(
+      "bottom-[calc(8.25rem+env(safe-area-inset-bottom))]",
+    );
+  });
+
+  it("on a laptop, Feedback steps aside while the story is on screen", () => {
+    expect(readFileSync("src/components/firm-story/FirmStory.tsx", "utf8")).toContain(
+      'root.setAttribute("data-firm-story", "")',
+    );
+    expect(readFileSync("src/components/feedback/FeedbackWidget.tsx", "utf8")).toContain(
+      "[html[data-firm-story]_&]:hidden",
+    );
+  });
+});
+
+describe("QA of PR 290", () => {
+  it("starters carry their key, and What we charged is for admins and leads only", async () => {
+    const { pillStarters } = await import("@/lib/chat-pill-shared");
+    expect(pillStarters("em", "Marrowfield").map((s) => s.starter)).toEqual([
+      "similar",
+      "went_wrong",
+    ]);
+    expect(pillStarters("admin", "Marrowfield").map((s) => s.starter)).toContain("charged");
+    expect(pillStarters("lead", "Marrowfield")[0]).toEqual({
+      text: "Which past engagements are most like Marrowfield?",
+      starter: "similar",
+    });
+    expect(pillStarters("admin", "  ")).toEqual([]);
+  });
+
+  it("a card flies for 600 to 1200ms, by distance", async () => {
+    const { flightMs } = await import("@/lib/chat-pill-shared");
+    expect(flightMs(0)).toBe(600);
+    expect(flightMs(850)).toBe(1000);
+    expect(flightMs(5000)).toBe(1200);
+  });
+});

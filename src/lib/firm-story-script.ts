@@ -49,7 +49,8 @@ export type StoryBeat = {
 const SAME_QUESTION = "Have we designed a new service line for a health system before?";
 
 export const FIRM_STORY_SCRIPT = {
-  version: 3,
+  // 4 (20 Nov 2026, QA L3 of PR 290): Ask the firm is the chat pill now, so the notes say to open the chat.
+  version: 4,
   /** Shown on every card. */
   demoLine: "Kestrel Bay Advisory is a demo firm. Every client, person and figure in it is fictional.",
   /** The last thing the story says. After it, the story stops talking. */
@@ -83,7 +84,7 @@ export const FIRM_STORY_SCRIPT = {
       title: "A lead lands",
       caption: "A lead lands. Instead of emailing three partners, ask the firm once: have we done this before?",
       notes:
-        "A health system wants a diabetes prevention service line. Type the question into Ask the firm. Point at the sources under each line and open What it read: every claim links to work the firm has shared.",
+        "A health system wants a diabetes prevention service line. Open the chat (bottom right; on a phone, bottom middle) and type the question. Point at the source under each line and open What it read: every claim links to work the firm has shared.",
       question: "How would you find that out today?",
       place: "home",
       anchor: "ask-the-firm",
@@ -114,7 +115,7 @@ export const FIRM_STORY_SCRIPT = {
       title: "What we charged, how it ended",
       caption: "Past fees and how each engagement ended, without chasing whoever ran it.",
       notes:
-        "Use What we charged in Ask the firm. Fees are read from each statement of work and shown to partners only. The line under each engagement says how it ended and what it taught.",
+        "Open the chat and pick the What have we charged starter, or ask it in your own words. Fees are read from each statement of work and shown to partners only. The line under each engagement says how it ended and what it taught.",
       question: "When you price a new piece of work, whose memory do you rely on?",
       place: "home",
       anchor: "ask-the-firm",

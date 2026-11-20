@@ -117,7 +117,8 @@ export function CanvasAnswerCard({
       ? FIRM_ASK_COPY.pending
       : pendingCaption(elapsed)
     : answer.status === "failed"
-      ? FIRM_CANVAS_COPY.failed
+      ? // QA L1 of PR 290: the failure is said once, in the line with Try again under it, not again in the caption.
+        FIRM_CANVAS_COPY.notRead
       : revealing
         ? FIRM_CANVAS_COPY.writing
         : result?.status === "answered"

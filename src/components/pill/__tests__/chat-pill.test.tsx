@@ -11,6 +11,8 @@ import { FIRM_ASK_COPY, type FirmAskResult } from "@/lib/firm-ask-shared";
 import { FIRM_BRAIN_LIMIT_COPY } from "@/lib/firm-brain-limit-shared";
 
 vi.mock("@/components/layout/BrandLockup", () => ({ BrandMark: () => <i data-mark="" /> }));
+const toast = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({ toast }));
 vi.mock("@/components/firm-brain/CiteThis", () => ({
   CiteThis: () => <span data-testid="cite-this" />,
 }));
@@ -82,7 +84,9 @@ function pill(over: Partial<Parameters<typeof ChatPill>[0]> = {}) {
     place: "home" as const,
     canAsk: true,
     questionMax: 500,
-    starters: ["Which past engagements are most like Marrowfield?"],
+    starters: [
+      { text: "Which past engagements are most like Marrowfield?", starter: "similar" as const },
+    ],
     onAsk,
     onOpenOnCanvas,
     onOpenSource,
@@ -163,7 +167,9 @@ describe("asking", () => {
     const { shut, onAsk, onOpenSource } = pill();
     fireEvent.click(shut());
     send("  How did we run staffing reviews?  ");
-    await waitFor(() => expect(onAsk).toHaveBeenCalledWith("How did we run staffing reviews?"));
+    await waitFor(() =>
+      expect(onAsk).toHaveBeenCalledWith("How did we run staffing reviews?", null),
+    );
     expect(screen.getByText(PILL_COPY.looking)).toBeTruthy();
     const card = await screen.findByTestId("chat-answer");
     await waitFor(() => expect(card.getAttribute("data-firm-answer")).toBe("answered"));
@@ -185,6 +191,39 @@ describe("asking", () => {
     );
     expect(onAsk).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(el.getAttribute("data-mode")).toBe("shut"));
+    // The prototype's words, as the answer lands on the canvas (QA M1 of PR 290).
+    expect(toast).toHaveBeenCalledWith(PILL_COPY.movedToCorner);
+  });
+
+  it("flies a picture of the card onto the canvas card holding the same answer, then lets it go", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: 100,
+      width: 380,
+      height: 300,
+      right: 480,
+      bottom: 400,
+      x: 100,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const finished = Promise.resolve();
+    HTMLElement.prototype.animate = vi.fn(() => ({ finished }) as unknown as Animation);
+    const canvasCard = document.createElement("div");
+    canvasCard.setAttribute("data-testid", "canvas-answer");
+    canvasCard.textContent = "How did we run staffing reviews?";
+    document.body.appendChild(canvasCard);
+    const { shut } = pill({ reduceMotion: false });
+    fireEvent.click(shut());
+    send("How did we run staffing reviews?");
+    fireEvent.click(
+      await screen.findByRole("button", { name: PILL_COPY.openOnCanvas }, { timeout: 5000 }),
+    );
+    await waitFor(() => expect(HTMLElement.prototype.animate).toHaveBeenCalled());
+    // The picture is gone once it has landed, and the real card shows again.
+    await waitFor(() => expect(document.querySelector(".chat-pill-ghost")).toBeNull());
+    expect(canvasCard.style.opacity).toBe("");
+    canvasCard.remove();
   });
 
   it("offers no canvas for an answer that found nothing, and says so", async () => {
@@ -210,8 +249,12 @@ describe("asking", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Which past engagements are most like Marrowfield?" }),
     );
+    // The starter's key travels with it, so Ask the firm's counts still tell starters from typed questions.
     await waitFor(() =>
-      expect(onAsk).toHaveBeenCalledWith("Which past engagements are most like Marrowfield?"),
+      expect(onAsk).toHaveBeenCalledWith(
+        "Which past engagements are most like Marrowfield?",
+        "similar",
+      ),
     );
   });
 
@@ -277,6 +320,37 @@ describe("asking", () => {
     fireEvent.click(shut());
     expect(screen.queryByLabelText(PILL_COPY.label)).toBeNull();
     expect(screen.getByText(PILL_COPY.welcomeNone)).toBeTruthy();
+  });
+});
+
+describe("QA of PR 289", () => {
+  it("leaves Escape to a dialog open over the pill", () => {
+    const { el, shut } = pill();
+    fireEvent.click(shut());
+    const handler = (event: KeyboardEvent) => event.preventDefault();
+    window.addEventListener("keydown", handler, { capture: true });
+    fireEvent.keyDown(window, { key: "Escape" });
+    window.removeEventListener("keydown", handler, { capture: true });
+    expect(el.getAttribute("data-mode")).toBe("open");
+  });
+
+  it("on a phone, gives focus to the panel itself so a screen reader says what opened", async () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+    const { shut } = pill();
+    fireEvent.click(shut());
+    const panel = screen.getByRole("dialog", { name: PILL_COPY.panel("Lasso") });
+    await waitFor(() => expect(document.activeElement).toBe(panel));
+    expect(document.activeElement).not.toBe(screen.getByLabelText(PILL_COPY.label));
+  });
+
+  it("is a modal dialog only when full screen", () => {
+    const { shut } = pill();
+    fireEvent.click(shut());
+    const panel = screen.getByRole("dialog", { name: PILL_COPY.panel("Lasso") });
+    expect(panel.getAttribute("aria-modal")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: PILL_COPY.grow }));
+    expect(panel.getAttribute("aria-modal")).toBe("true");
   });
 });
 

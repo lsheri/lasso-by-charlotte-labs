@@ -88,6 +88,10 @@
   transition-delay: 180ms;
 }
 
+/* The panel takes focus on a phone so it is announced; the focus ring belongs to its controls. */
+.chat-pill__panel:focus {
+  outline: none;
+}
 .chat-pill__head {
   position: relative;
   display: flex;
@@ -285,6 +289,20 @@
 .chat-pill[data-mode="full"] .chat-pill__head {
   padding-left: max(12px, calc((100% - 744px) / 2));
   padding-right: max(12px, calc((100% - 744px) / 2));
+}
+
+/* The card flying from the chat onto the canvas (QA M1 of PR 290): above the pill, never catching the pointer. */
+.chat-pill-ghost {
+  position: fixed;
+  z-index: calc(var(--layer-tabbar) + 2);
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: var(--corner-card);
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+}
+.chat-pill-ghost > * {
+  transform-origin: 0 0;
 }
 
 /* The page behind the full screen chat: soft, faded and a touch smaller. A drag scrubs these through inline style. */

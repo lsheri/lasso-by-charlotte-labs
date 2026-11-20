@@ -84,7 +84,9 @@ export function AskTheFirm({
 
   return (
     <section
-      data-testid="ask-the-firm"
+      // 20 Nov 2026 (QA L2 of PR 290): the chat pill carries "ask-the-firm" on every page; this box on the Firm view
+      // has its own id, so the two never clash.
+      data-testid="firm-view-ask"
       aria-labelledby="ask-the-firm-title"
       className={className ?? "mx-4 mt-4 rounded-[var(--radius)] border border-border bg-card p-4 shadow-card md:mx-6"}
     >

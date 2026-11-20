@@ -13,7 +13,10 @@ import { CanvasAnswerCard, type CanvasAnswer } from "@/components/firm-brain/Can
 import { BrandMark } from "@/components/layout/BrandLockup";
 import { ArrowUp, ArrowUpRight, ChevronDown, Maximize2, Minimize2 } from "@/design/brand/icons";
 import { isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
-import type { FirmAskResult } from "@/lib/firm-ask-shared";
+import type { FirmAskResult, FirmAskStarter } from "@/lib/firm-ask-shared";
+import { toast } from "sonner";
+
+import { landCard, liftCard } from "./fly-card";
 import {
   behindAt,
   dragPull,
@@ -29,6 +32,7 @@ import {
   type PillGeometry,
   type PillMode,
   type PillPlace,
+  type PillStarter,
   type Viewport,
 } from "@/lib/chat-pill-shared";
 
@@ -74,9 +78,10 @@ export function ChatPill({
   /** The person may ask the firm: a member of a company workspace who is not a coach or a guest. */
   canAsk: boolean;
   questionMax: number;
-  starters: readonly string[];
+  /** Each with the starter it came from, so Ask the firm's counts can still tell starters from typed questions. */
+  starters: readonly PillStarter[];
   /** Asks the firm. Resolves with the answer; a thrown error is a failure (the daily limit says so). */
-  onAsk: (question: string) => Promise<FirmAskResult>;
+  onAsk: (question: string, starter: FirmAskStarter | null) => Promise<FirmAskResult>;
   /** Opens a finished answer on the Firm brain canvas, beside its threads, without asking again. */
   onOpenOnCanvas: (question: string, result: FirmAskResult) => void | Promise<void>;
   /** Opens a line's source, as the canvas does. */
@@ -188,7 +193,10 @@ export function ChatPill({
         onOpened?.(place);
         window.setTimeout(
           () => {
+            // A laptop gets the question box. A phone gets the panel itself, so a screen reader says what opened
+            // without the keyboard rising over the sheet (QA M2 of PR 289).
             if (window.innerWidth > 767) input.current?.focus();
+            else panel.current?.focus({ preventScroll: true });
             if (msgs.current) msgs.current.scrollTop = msgs.current.scrollHeight;
           },
           reduceMotion ? 0 : PILL_MORPH_MS + 20,
@@ -231,7 +239,13 @@ export function ChatPill({
   useEffect(() => {
     if (mode === "shut") return;
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setMode("shut");
+      // A dialog over the pill takes its own Escape first (QA L1 of PR 289).
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const other = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')].some(
+        (node) => !el.current?.contains(node) && (node as HTMLElement).offsetParent !== null,
+      );
+      if (other) return;
+      setMode("shut");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -363,7 +377,7 @@ export function ChatPill({
   async function read(answer: CanvasAnswer) {
     setBusy(true);
     try {
-      const result = await onAsk(answer.question);
+      const result = await onAsk(answer.question, answer.starter);
       updateAnswer(answer.id, { status: "answered", result, limited: false });
     } catch (error) {
       updateAnswer(answer.id, { status: "failed", result: null, limited: isFirmBrainLimit(error) });
@@ -372,7 +386,7 @@ export function ChatPill({
     }
   }
 
-  async function ask(text: string) {
+  async function ask(text: string, starter: FirmAskStarter | null = null) {
     if (busy) return;
     const clean = pillQuestion(text, questionMax);
     if (!clean) {
@@ -386,7 +400,7 @@ export function ChatPill({
     const answer: CanvasAnswer = {
       id: `pill-${nextId.current}`,
       question: clean,
-      starter: null,
+      starter,
       status: "pending",
       result: null,
       limited: false,
@@ -419,11 +433,27 @@ export function ChatPill({
     await read(fresh);
   }
 
+  /**
+   * QA M1 of PR 290, the prototype's hand-over: a picture of the card is lifted before the page changes, the chat
+   * tucks itself away, and the card flies onto the canvas card that holds the same answer, beside its threads. A toast
+   * says where the chat went. With reduced motion nothing travels; the toast still says it.
+   */
   async function openOnCanvas(answer: CanvasAnswer) {
     if (!answer.result) return;
+    const source =
+      msgs.current?.querySelector<HTMLElement>(
+        `[data-pill-answer="${answer.id}"] [data-testid="chat-answer"]`,
+      ) ?? null;
+    const lifted = !reduceMotion && source ? liftCard(source) : null;
     await onOpenOnCanvas(answer.question, answer.result);
-    // The chat moves to the corner so the threads can be seen.
     window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250);
+    toast(PILL_COPY.movedToCorner);
+    if (lifted) {
+      await landCard(lifted, () => {
+        const cards = [...document.querySelectorAll<HTMLElement>('[data-testid="canvas-answer"]')];
+        return cards.reverse().find((card) => card.textContent?.includes(answer.question)) ?? null;
+      });
+    }
   }
 
   function submit(event: FormEvent) {
@@ -472,6 +502,8 @@ export function ChatPill({
         ref={panel}
         className="chat-pill__panel ph-no-autocapture"
         role="dialog"
+        tabIndex={-1}
+        aria-modal={mode === "full" || undefined}
         aria-label={PILL_COPY.panel(brandName)}
         aria-hidden={!open}
         inert={!open || undefined}
@@ -522,7 +554,7 @@ export function ChatPill({
           </div>
           {messages.map((message) =>
             message.kind === "answer" ? (
-              <div key={message.id} className="chat-pill__msg">
+              <div key={message.id} className="chat-pill__msg" data-pill-answer={message.answer.id}>
                 <CanvasAnswerCard
                   inline
                   answer={message.answer}
@@ -573,12 +605,12 @@ export function ChatPill({
               <div className="chat-pill__starters">
                 {starters.map((starter) => (
                   <button
-                    key={starter}
+                    key={starter.text}
                     type="button"
                     className="chat-pill__starter"
-                    onClick={() => void ask(starter)}
+                    onClick={() => void ask(starter.text, starter.starter)}
                   >
-                    {starter}
+                    {starter.text}
                   </button>
                 ))}
               </div>
