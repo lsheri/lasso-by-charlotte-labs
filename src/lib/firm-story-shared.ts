@@ -17,6 +17,7 @@
 
 import { FIRM_ASK_COPY } from "./firm-ask-shared";
 import { FIRM_STORY_SCRIPT, type StoryBeat, type StoryPlace, type StoryWindow } from "./firm-story-script";
+import { FIRM_VIEW_COPY } from "./role-screens-shared";
 
 /** The demo firm's workspace. The story exists nowhere else; the server checks this, the browser only mirrors it. */
 export const KESTREL_BAY_ORG_ID = "2fd479d1-64da-4971-993b-279bed821179";
@@ -52,7 +53,8 @@ export const FIRM_STORY_COPY = {
   handoffBody: (who: string) => `The next part happens in the other browser window, signed in as the ${who}. Come back to this window when it is done.`,
   handoffBack: "Back in this window: continue",
   otherWindowDone: "The rest of the tour happens in the other browser window.",
-  open: { home: "Open Home", firm: "Open the firm view", board: "Open the proposal board" } satisfies Record<StoryPlace, string>,
+  /** "Open Firm brain" is the product's own label for the same move, so the two cannot drift apart. */
+  open: { home: "Open Home", firm: FIRM_VIEW_COPY.openFirmBrain, board: "Open the proposal board" } satisfies Record<StoryPlace, string>,
   label: "Guided tour of the demo firm",
 } as const;
 
@@ -136,7 +138,7 @@ export function previousBeat(window: StoryWindow, current: number): number {
 /** Where a beat happens, as a path, or null for a card with no product screen. */
 export function placePath(place: StoryPlace | null): string | null {
   if (place === "home") return "/home";
-  if (place === "firm") return "/firm";
+  if (place === "firm") return "/firm-brain";
   if (place === "board") return `/engagements/${STORY_BOARD_ID}/canvas-lab`;
   return null;
 }

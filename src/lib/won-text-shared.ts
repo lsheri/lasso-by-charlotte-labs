@@ -53,9 +53,11 @@ export const WON_TEXT_COPY = {
   sending: "Sending",
   cancel: "Cancel",
   sent: "Sent. It is on its way to the lead's phone.",
-  /** Shown under the words before a press, while no approved number is connected. */
-  awaiting: "The number is awaiting carrier approval. Send will not send anything yet.",
-  notConnected: "The number is awaiting carrier approval, so nothing was sent.",
+  /** Shown under the words before a press, while the app has no text sender set up. */
+  awaiting: "Texting is not connected in this app yet, so Send will not send anything.",
+  notConnected: "Texting is not connected in this app yet, so nothing was sent.",
+  /** The board was archived after the button was drawn. */
+  archived: "This board is archived, so nothing was sent.",
   /** No recipient is set for this demo workspace. Shown before a press and as the answer to one. */
   noNumber: "No number is set for this demo workspace, so nothing will be sent. An admin sets one on the Proposals page, under People.",
   /** A real workspace, and no lead was picked on the proposal. */

@@ -35,8 +35,35 @@ export function textConfig(env: Record<string, string | undefined> = process.env
   const apiKey = (env["BIRD_API_KEY"] ?? "").trim();
   const from = (env["BIRD_SMS_FROM"] ?? "").trim();
   const region = KEY_SHAPE.exec(apiKey)?.[1];
-  if (!region || !SENDER_SHAPE.test(from)) return null;
+  if (!region || !SENDER_SHAPE.test(from)) {
+    reportNotConnected(env);
+    return null;
+  }
   return { apiKey, from, host: `https://${region}.platform.bird.com` };
+}
+
+/**
+ * 20 Nov: why texting is not connected, as setting names and "missing" or "wrong shape" only, never a value. Empty
+ * when both settings are usable. This is what told us the live site had no sender while Bird showed no traffic.
+ */
+export function textConfigGaps(env: Record<string, string | undefined> = process.env): string[] {
+  const gaps: string[] = [];
+  const apiKey = (env["BIRD_API_KEY"] ?? "").trim();
+  const from = (env["BIRD_SMS_FROM"] ?? "").trim();
+  if (!apiKey) gaps.push("BIRD_API_KEY missing");
+  else if (!KEY_SHAPE.test(apiKey)) gaps.push("BIRD_API_KEY wrong shape");
+  if (!from) gaps.push("BIRD_SMS_FROM missing");
+  else if (!SENDER_SHAPE.test(from)) gaps.push("BIRD_SMS_FROM wrong shape");
+  return gaps;
+}
+
+let reported = "";
+/** One server log line per running copy (and again if the gaps change), so a quiet sender shows up in the logs. */
+function reportNotConnected(env: Record<string, string | undefined>) {
+  const line = textConfigGaps(env).join("; ");
+  if (!line || line === reported) return;
+  reported = line;
+  console.warn(`[text-sender] texting is not connected: ${line}`);
 }
 
 function codeOf(body: unknown): string | null {

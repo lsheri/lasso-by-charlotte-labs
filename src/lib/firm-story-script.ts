@@ -13,7 +13,10 @@
 /** Which signed-in window plays a beat: the Partner's or the Engagement lead's. */
 export type StoryWindow = "partner" | "lead";
 
-/** Where a beat happens in the app. A board is always the Marrowfield proposal board. */
+/**
+ * Where a beat happens in the app. "firm" is the Firm brain menu row (/firm-brain), where the map sits for the
+ * Partner. A board is always the Marrowfield proposal board.
+ */
 export type StoryPlace = "home" | "firm" | "board";
 
 export type StoryBeat = {
@@ -36,13 +39,15 @@ export type StoryBeat = {
   anchor: string | null;
   /** A question to type into Ask the firm on this beat, when it has one. */
   ask: string | null;
+  /** On a phone, the card sits at the top of the screen for this beat instead of the bottom. */
+  phoneCardAtTop?: true;
 };
 
 /** The one question beats 1 and 7 share, so the second answer can be compared with the first. */
 const SAME_QUESTION = "Have we designed a new service line for a health system before?";
 
 export const FIRM_STORY_SCRIPT = {
-  version: 1,
+  version: 2,
   /** Shown on every card. */
   demoLine: "Kestrel Bay Advisory is a demo firm. Every client, person and figure in it is fictional.",
   /** The last thing the story says. After it, the story stops talking. */
@@ -87,13 +92,15 @@ export const FIRM_STORY_SCRIPT = {
       window: "partner",
       youAre: "Partner",
       title: "What the firm knows",
-      caption: "The firm map: what the firm knows, not what each partner remembers.",
+      caption: "Firm brain: what the firm knows, not what each partner remembers.",
       notes:
         "Each thread is one engagement, tied to the kind of problem it answered and how the team worked. Pick a problem to see every engagement that met it.",
       question: "If your most senior partner left tomorrow, which of this would leave with them?",
       place: "firm",
       anchor: "firm-brain-map",
       ask: null,
+      // The map is taller than a phone screen, so the card at the bottom would sit over its threads.
+      phoneCardAtTop: true,
     },
     {
       n: 3,
@@ -154,7 +161,7 @@ export const FIRM_STORY_SCRIPT = {
       title: "Next Monday",
       caption: "Next Monday, any partner asks the same question. The answer now includes this engagement, and the map has one more point.",
       notes:
-        "Ask the same question as before. The new engagement is among the sources. Open one of its sources and mark it as an exemplar: the next draft borrows from it. Then open the firm map: one more thread.",
+        "Ask the same question as before. The new engagement is among the sources. Open one of its sources and mark it as an exemplar: the next draft borrows from it. Then open Firm brain: the map has one more thread.",
       question: "How long does it take today before a colleague can build on work you finished last week?",
       place: "home",
       anchor: "ask-the-firm",

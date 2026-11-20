@@ -140,12 +140,56 @@ describe("the demo story keeps its target in sight", () => {
     await tick();
     fireEvent.wheel(window);
     page.scrollY = 0;
-    m.path = "/firm";
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, on Firm view
+    m.path = "/firm-brain";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, on Firm brain
     m.path = "/home";
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, Home again
     await tick();
     expect(page.scrollY).toBe(468);
+  });
+
+  it("puts the card at the top of a phone on beat 2 (the firm map), and back at the bottom on beat 3", async () => {
+    // A phone: 390 x 844, the map taller than the screen, the card 358 x 380 above the tab bar.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      const id = this.getAttribute("data-testid");
+      if (id === "firm-brain-map") return rectOf(205, 16, 358, 1400);
+      if (id === "ask-the-firm") return rectOf(64, 16, 358, 300);
+      if (id === "firm-story-card") {
+        const frame = this.closest('[data-testid="firm-story"]') as HTMLElement | null;
+        const top = frame?.style.top ? Number.parseFloat(frame.style.top) : 844 - 72 - 380;
+        return rectOf(top, 16, 358, 380);
+      }
+      return rectOf(0, 0, 0, 0);
+    });
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div data-testid="ask-the-firm" />
+        <div data-testid="firm-brain-map" />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    fireEvent.click(screen.getByTestId("firm-story-launcher"));
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 1, Home
+    await tick(700);
+    expect(placement()).toBe("bottom-start");
+    m.path = "/firm-brain";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, Firm brain
+    await tick(700);
+    expect(screen.getByTestId("firm-story-card").getAttribute("data-story-beat")).toBe("2");
+    expect(placement()).toBe("top-start");
+    expect(screen.getByTestId("firm-story").style.top).toBe("16px");
+    expect(window.scrollBy).not.toHaveBeenCalled(); // the map is read from its top, with the page where it is
+    m.path = "/home";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, Home again
+    await tick(700);
+    expect(placement()).toBe("bottom-start");
+    expect(screen.getByTestId("firm-story").style.top).toBe("");
   });
 
   it("asks the server for nothing more and stores only the beat", async () => {
