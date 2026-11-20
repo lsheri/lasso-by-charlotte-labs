@@ -125,3 +125,16 @@ export const resendInvite = createServerFn({ method: "POST" })
     const { resendInviteByCode } = await import("./members.server");
     return resendInviteByCode(context, data.profile_id, data.code);
   });
+
+/** 20 Nov 2026: an admin changes a teammate's role between Admin, Lead and Member. Every rule runs on the server. */
+export const changeMemberRoleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: Ctx & { member_id: string; role: string }) => ({
+    profile_id: input?.profile_id,
+    member_id: String(input?.member_id ?? ""),
+    role: String(input?.role ?? ""),
+  }))
+  .handler(async ({ data, context }) => {
+    const { changeMemberRole, realRoleChangeDeps } = await import("./members.server");
+    return changeMemberRole(await realRoleChangeDeps(context, data.profile_id), data);
+  });

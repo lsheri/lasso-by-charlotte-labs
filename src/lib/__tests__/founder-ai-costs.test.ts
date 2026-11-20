@@ -347,7 +347,8 @@ describe("where the costs may appear", () => {
     walk("src");
     const importers = files.filter((f) => /from "@\/lib\/ai-costs(-shared|\.functions|\.server)?"|from "\.\/ai-costs/.test(readFileSync(f, "utf8")));
     expect(importers.sort()).toEqual(
-      ["src/components/founder/AiCostsPage.tsx", "src/lib/ai-costs.functions.ts", "src/lib/ai-costs.server.ts"].sort(),
+      // founder-gate.server.ts takes only isStaffEmail, the pure email check, for Set up a pilot; it reads no cost data.
+      ["src/components/founder/AiCostsPage.tsx", "src/lib/ai-costs.functions.ts", "src/lib/ai-costs.server.ts", "src/lib/founder-gate.server.ts"].sort(),
     );
     const linkers = files.filter(
       (f) => f !== "src/routeTree.gen.ts" && f !== "src/routes/_authenticated/founder.costs.tsx" && /["'`]\/founder\/costs["'`]/.test(readFileSync(f, "utf8")),

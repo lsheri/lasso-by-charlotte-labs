@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import {
   INVITE_ADMIN_ONLY_LINE,
+  ROLE_NOT_OFFERED_LINE,
   INVITE_BLOCKED_STATES,
   type CreateInviteResult,
   type InviteEmailResult,
@@ -125,7 +126,7 @@ export const createInvite = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       profile_id?: string | undefined;
-      role: "coach" | "em" | "admin";
+      role: "coach" | "em" | "lead" | "admin";
       email?: string | undefined;
     }) =>
       input,
@@ -152,6 +153,19 @@ export const createInvite = createServerFn({ method: "POST" })
         dims: { state: "not_permitted" },
       });
       return { ok: false, reason: "not_permitted", message: INVITE_ADMIN_ONLY_LINE };
+    }
+
+    // 20 Nov 2026 (D-97): Lead is back, for company workspaces only. The role must be one this workspace offers;
+    // anything else is refused here, whatever the browser sent.
+    const { invitableRoles } = await import("@/lib/member-roles-shared");
+    const { data: org } = await context.supabase
+      .from("orgs")
+      .select("has_firm_view, shows_admin_role")
+      .eq("id", profile.org_id)
+      .maybeSingle();
+    const offered = invitableRoles({ firmView: org?.has_firm_view === true, showsAdmin: org?.shows_admin_role === true });
+    if (!(offered as string[]).includes(data.role)) {
+      return { ok: false, reason: "not_permitted", message: ROLE_NOT_OFFERED_LINE };
     }
 
     const email = (data.email ?? "").trim();

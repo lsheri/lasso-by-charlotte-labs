@@ -81,7 +81,8 @@ export function ProposalsPage() {
         title={DESK_COPY.title}
         subtitle={DESK_COPY.subtitle}
         action={
-          <Button type="button" disabled={!profileId} onClick={() => setOpen(true)}>
+          // D-86: quiet, so the one filled button on the page is always the most urgent next step.
+          <Button type="button" variant="outline" disabled={!profileId} onClick={() => setOpen(true)}>
             {DESK_COPY.newProposal}
           </Button>
         }
@@ -173,6 +174,7 @@ export function ProposalsPage() {
         clients={clients.data}
         clientsLoading={clients.isLoading}
         canAddClient={desk.data?.canAddClient ?? false}
+        clientsOff={desk.data?.clientsOff ?? false}
         profileId={profileId}
         capture={(files) => captureWithResult(files, { channel: "upload" })}
         discard={async (ids) => {

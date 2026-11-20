@@ -288,7 +288,7 @@ describe("proposals on an admin's Home", () => {
     expect(screen.getByRole("button", { name: "Lost 1" })).toBeTruthy();
     expect(Array.from(document.querySelectorAll("[data-proposal-row]")).map((row) => row.getAttribute("data-proposal-row"))).toEqual(["old", "new"]);
     expect(within(document.querySelector('[data-proposal-row="old"]') as HTMLElement).getByText("67 hours left of 72")).toBeTruthy();
-    expect(within(document.querySelector('[data-proposal-row="new"]') as HTMLElement).getByText("Lead: Christy Johnson")).toBeTruthy();
+    expect(document.querySelector('[data-proposal-row="new"] [data-proposal-lead]')?.textContent).toContain("Lead: Christy Johnson");
     expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.open }).getAttribute("href")).toBe("/proposals");
     fireEvent.click(screen.getByRole("button", { name: "Won 1" }));
     expect(document.querySelector('[data-proposal-row="won"]')).toBeTruthy();
