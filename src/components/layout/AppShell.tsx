@@ -19,6 +19,7 @@ import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
 import { VerifyThreadReader } from "@/components/verify/VerifyThreadReader";
 import { JourneyView } from "@/components/journey/JourneyView";
 import { FirmStory } from "@/components/firm-story/FirmStory";
+import { ChatPillMount } from "@/components/pill/ChatPillMount";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { SettingsDialogProvider, useSettingsDialog } from "@/lib/settings-dialog-context";
@@ -94,7 +95,8 @@ function AppShellInner() {
             </div>
           </aside>
 
-          <div className="flex min-w-0 flex-1 flex-col">
+          {/* The page behind the chat pill's full screen chat goes soft (chat-pill.css); the menu stays sharp. */}
+          <div className="flex min-w-0 flex-1 flex-col" data-pill-behind="">
             <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
               <span className="flex min-w-0 items-center gap-2 truncate font-mono text-sm tracking-[0.24em] text-foreground">
                 <BrandLockup size="sm" />
@@ -131,6 +133,8 @@ function AppShellInner() {
           <VerifyThreadReader />
           <JourneyView />
           <FeedbackWidget />
+          {/* The chat pill (D-97): the one place to ask, on every signed-in page. */}
+          <ChatPillMount />
           {/* The Kestrel Bay demo story: renders nothing outside the demo firm (flag, then a server check). */}
           <FirmStory profile={profile} />
           <MobileTabBar />

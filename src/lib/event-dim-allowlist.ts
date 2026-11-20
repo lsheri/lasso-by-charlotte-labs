@@ -199,6 +199,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "tour.skipped": ["step", "register", "surface"],
   "tour.finished": ["register", "surface"],
   "home.connect_tools_opened": [],
+  "pill.opened": ["page"],
+  "pill.expanded": ["page"],
   "home.engagement_opened": [],
   "home.ideas_note_composed": [],
   "home.new_engagement_started": [],

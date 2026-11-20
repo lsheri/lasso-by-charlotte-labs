@@ -64,6 +64,10 @@ export type TelemetryEvent =
   | "demo.filter_changed"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
+  /** 20 Nov 2026, chat pill (D-97): the pill was opened. Dims: page (home | proposals | firm | board | work | other). Never the question. */
+  | "pill.opened"
+  /** 20 Nov 2026, chat pill: the chat was made full screen, by the button or a drag. Dims: page. */
+  | "pill.expanded"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */
   | "home.new_engagement_started"
   /** P4a: Past work was opened from Home. Content-free. */

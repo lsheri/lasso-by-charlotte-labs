@@ -557,3 +557,45 @@ describe("arriving from Home's question box (PR B)", () => {
     expect(screen.queryByTestId("firm-canvas-back")).toBeNull();
   });
 });
+
+// 20 Nov 2026, chat pill PR 1a (D-97): a question asked from the pill. From another page it arrives as a hand-off;
+// with Firm brain already open, the canvas hears it at once. Either way there is no Home button.
+describe("arriving from the chat pill", () => {
+  it("asks a question handed over from another page, with no Home button", async () => {
+    handOffQuestion("What went wrong last time?", null, "p-em", Date.now(), { fromHome: false });
+    m.getMap.mockResolvedValue(memberData());
+    m.ask.mockResolvedValue(answer(["b8"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId("firm-canvas-back")).toBeNull();
+  });
+
+  it("with Firm brain open, asks each question from the pill once, as it arrives", async () => {
+    m.getMap.mockResolvedValue(memberData());
+    m.ask.mockResolvedValue(answer(["b8"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    expect(m.ask).not.toHaveBeenCalled();
+    act(() => handOffQuestion("How did we launch other health service lines?", null, "p-em", Date.now(), { fromHome: false }));
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1));
+    expect(m.ask.mock.calls[0]![0].data.question).toBe("How did we launch other health service lines?");
+    m.ask.mockResolvedValue(answer(["b5"]));
+    act(() => handOffQuestion("And what went wrong?", null, "p-em", Date.now(), { fromHome: false }));
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getAllByTestId("canvas-answer")).toHaveLength(2));
+    // Someone else's hand-off is never asked here.
+    act(() => handOffQuestion("Not mine", null, "p-other", Date.now(), { fromHome: false }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(m.ask).toHaveBeenCalledTimes(2);
+  });
+
+  it("builds an answer the pill already has without asking again", async () => {
+    m.getMap.mockResolvedValue(memberData());
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    act(() => handOffQuestion("Which past engagements are most like Marrowfield?", answer(["b5"]), "p-em", Date.now(), { fromHome: false }));
+    await waitFor(() => expect(screen.getByTestId("canvas-answer").getAttribute("data-answer-status")).toBe("answered"));
+    expect(m.ask).not.toHaveBeenCalled();
+  });
+});

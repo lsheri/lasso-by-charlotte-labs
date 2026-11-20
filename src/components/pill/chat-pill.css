@@ -1,0 +1,298 @@
+/* 20 Nov 2026, chat pill PR 1a (D-97). One element on every signed-in page: a pill that morphs open into the helper
+   panel (a bottom sheet on a phone) and, dragged on, into a full screen chat. Shape and position are set by code
+   (chat-pill-shared.ts) so a drag can scrub them; everything else is here, from skin tokens only.
+   Layer: just above the phone tab bar, below every dialog and its backdrop. */
+
+.chat-pill {
+  position: fixed;
+  z-index: calc(var(--layer-tabbar) + 1);
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--foreground) 12%, transparent);
+  font-family: var(--font-sans);
+  transition:
+    left 600ms var(--chat-pill-ease),
+    top 600ms var(--chat-pill-ease),
+    width 600ms var(--chat-pill-ease),
+    height 600ms var(--chat-pill-ease),
+    border-radius 600ms var(--chat-pill-ease),
+    box-shadow 600ms var(--chat-pill-ease);
+  --chat-pill-ease: cubic-bezier(0.45, 0, 0.2, 1);
+}
+.chat-pill[data-instant] {
+  transition: none;
+}
+.chat-pill[data-mode="open"] {
+  box-shadow: 0 18px 50px color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+.chat-pill[data-mode="full"] {
+  box-shadow: 0 18px 60px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+.chat-pill[data-dragging],
+.chat-pill[data-dragging] .chat-pill__panel,
+.chat-pill[data-dragging] .chat-pill__shut {
+  transition: none;
+}
+.chat-pill[data-dragging] .chat-pill__panel {
+  pointer-events: none;
+}
+
+/* The shut pill: the mark, the Ask label, where you are. */
+.chat-pill__shut {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 9px;
+  white-space: nowrap;
+  font-size: var(--type-control);
+  font-weight: 600;
+  touch-action: none;
+  transition: opacity 300ms var(--chat-pill-ease);
+}
+.chat-pill__ctx {
+  font-weight: 500;
+  color: var(--muted-foreground);
+  font-size: var(--type-small);
+}
+.chat-pill[data-mode="open"] .chat-pill__shut,
+.chat-pill[data-mode="full"] .chat-pill__shut {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The panel sits in the corner the pill grows from, at its open size, and fades in after the shape. */
+.chat-pill__panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: max(var(--chat-pill-open-w, 420px), 100%);
+  height: max(var(--chat-pill-open-h, 600px), 100%);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms var(--chat-pill-ease);
+}
+.chat-pill[data-mode="open"] .chat-pill__panel,
+.chat-pill[data-mode="full"] .chat-pill__panel {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 180ms;
+}
+
+.chat-pill__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+  touch-action: none;
+  cursor: grab;
+}
+.chat-pill__grip {
+  position: absolute;
+  left: 50%;
+  top: 5px;
+  width: 38px;
+  height: 4px;
+  border-radius: var(--corner-pill);
+  background: var(--border);
+  transform: translateX(-50%);
+}
+.chat-pill__title {
+  font-size: var(--type-control);
+  font-weight: 600;
+}
+.chat-pill__where {
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-pill);
+  padding: 2px 9px;
+  white-space: nowrap;
+  transition: background 500ms var(--chat-pill-ease);
+}
+.chat-pill__where[data-flash] {
+  background: var(--skin-live-wash, var(--secondary));
+}
+.chat-pill__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--corner-panel);
+  display: grid;
+  place-items: center;
+  color: var(--muted-foreground);
+}
+.chat-pill__icon:hover {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+.chat-pill__icon--first {
+  margin-left: auto;
+}
+
+.chat-pill__msgs {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+.chat-pill__msg {
+  max-width: 100%;
+  font-size: var(--type-control);
+  line-height: 1.5;
+  animation: chat-pill-in 450ms var(--chat-pill-ease) both;
+}
+.chat-pill__msg--person {
+  align-self: flex-end;
+  max-width: 86%;
+  background: var(--background);
+  border-radius: var(--corner-float) var(--corner-float) var(--corner-mark) var(--corner-float);
+  padding: 8px 12px;
+}
+.chat-pill__msg--welcome {
+  color: var(--muted-foreground);
+}
+.chat-pill__msg--welcome b {
+  color: var(--foreground);
+}
+@keyframes chat-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.chat-pill__starters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 14px 8px;
+  flex: none;
+}
+.chat-pill__starter {
+  font-size: var(--type-body);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-pill);
+  padding: 5px 11px;
+  background: var(--card);
+  text-align: left;
+  transition: border-color 450ms var(--chat-pill-ease);
+}
+.chat-pill__starter:hover {
+  border-color: color-mix(in oklab, var(--foreground) 30%, var(--border));
+}
+
+.chat-pill__form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 12px 6px;
+  border-top: 1px solid var(--border);
+  flex: none;
+}
+.chat-pill__input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-float);
+  padding: 9px 12px;
+  resize: none;
+  min-height: 40px;
+  max-height: 110px;
+  background: var(--background);
+  outline: 0;
+  font-size: var(--type-control);
+  line-height: 1.4;
+  color: var(--foreground);
+}
+.chat-pill__input:focus {
+  border-color: color-mix(in oklab, var(--skin-action, var(--foreground)) 45%, var(--border));
+}
+.chat-pill__send {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--corner-float);
+  background: var(--skin-action, var(--primary));
+  color: var(--card);
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: opacity 450ms var(--chat-pill-ease);
+}
+.chat-pill__send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.chat-pill__foot {
+  font-size: var(--type-label);
+  color: var(--muted-foreground);
+  padding: 0 14px 9px;
+  flex: none;
+}
+.chat-pill__alert {
+  color: var(--destructive);
+}
+
+/* Full screen: the conversation keeps a readable measure in the middle. */
+.chat-pill[data-mode="full"] .chat-pill__msgs,
+.chat-pill[data-mode="full"] .chat-pill__starters,
+.chat-pill[data-mode="full"] .chat-pill__form,
+.chat-pill[data-mode="full"] .chat-pill__foot {
+  padding-left: max(14px, calc((100% - 720px) / 2));
+  padding-right: max(14px, calc((100% - 720px) / 2));
+}
+.chat-pill[data-mode="full"] .chat-pill__head {
+  padding-left: max(12px, calc((100% - 744px) / 2));
+  padding-right: max(12px, calc((100% - 744px) / 2));
+}
+
+/* The page behind the full screen chat: soft, faded and a touch smaller. A drag scrubs these through inline style. */
+[data-lasso="on"] [data-pill-behind] {
+  transition:
+    filter 600ms cubic-bezier(0.45, 0, 0.2, 1),
+    opacity 600ms cubic-bezier(0.45, 0, 0.2, 1),
+    transform 600ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+[data-lasso="on"][data-pill-full] [data-pill-behind] {
+  filter: blur(3px);
+  opacity: 0.5;
+  transform: scale(0.985);
+}
+[data-lasso="on"][data-pill-scrubbing] [data-pill-behind] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-pill,
+  .chat-pill__shut,
+  .chat-pill__panel,
+  .chat-pill__msg,
+  [data-lasso="on"] [data-pill-behind] {
+    transition-duration: 1ms;
+    transition-delay: 0s;
+    animation-duration: 1ms;
+  }
+}
+@media print {
+  .chat-pill {
+    display: none;
+  }
+}

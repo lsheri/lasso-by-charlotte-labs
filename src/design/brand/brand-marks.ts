@@ -72,6 +72,7 @@ export const PLACEMENTS = {
       "src/components/find-it/FindItLink.tsx",
       "src/components/layout/BrandLockup.tsx",
       "src/components/marketing/LandingBoard.tsx",
+      "src/components/pill/ChatPill.tsx",
       "src/components/proposals/MessageDevices.tsx",
       "src/components/reflect/AnswerTurnLinks.tsx",
       "src/components/reflect/AskSurface.tsx",
