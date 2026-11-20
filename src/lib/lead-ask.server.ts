@@ -300,16 +300,18 @@ async function safely(run: () => Promise<void>): Promise<void> {
 export async function practiceReply(store: AskStore, input: PracticeReplyInput): Promise<PracticeReplyResult> {
   const caller = await store.caller();
   if (!canManageRoster(caller.role) || !(await store.demo(caller.orgId))) return { ok: false, problem: ASK_COPY.practiceOnly };
-  // Practice ends the moment texting is switched on: a practice ask left over from before can no longer be answered.
-  if (await readyConfig(store)) return { ok: false, problem: ASK_COPY.practiceOnly };
+  // QA M1 of PR 287: a practice ask stays answerable while it waits, even after the sender's pause lifts, so a demo
+  // never strands one mid-flow. It ends only when a real ask is made after it (that ask is the one to answer).
   const row = await store.proposal(input.proposal_id);
   if (!row || row.org_id !== caller.orgId) return { ok: false, problem: ASK_COPY.practiceOnly };
   const reply = readReply(input.reply);
   if (!reply) return { ok: false, problem: ASK_COPY.practiceOnly };
   const asks = await store.asks(caller.orgId, row.id);
   const now = store.now();
-  const waiting = (asks ?? []).find((ask) => ask.status === "practice" && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now));
+  const waiting = (asks ?? []).find((ask) => ask.status === "practice" && ask.to_demo && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now));
   if (!waiting) return { ok: false, problem: ASK_COPY.practiceGone };
+  const realSince = (asks ?? []).some((ask) => ask.status !== "practice" && ask.to_demo && ask.created_at > waiting.created_at);
+  if (realSince) return { ok: false, problem: ASK_COPY.practiceGone };
   if (!(await store.setReply(caller.orgId, waiting.id, reply, now))) return { ok: false, problem: ASK_COPY.practiceGone };
   await safely(() => store.record(who(caller), "lead_ask.replied", { mode: "practice", reply }));
   return { ok: true };
@@ -335,9 +337,13 @@ export async function recordAnswer(store: AskStore, input: RecordAnswerInput): P
   const asks = await store.asks(caller.orgId, row.id);
   if (asks === null) return { ok: false, problem: ASK_COPY.notRecorded };
   const now = store.now();
-  const same = asks.find((ask) => ask.press_id === input.press_id && ask.contact_id === contactId);
+  // QA L2 of PR 287: one recorded answer per lead per proposal, held by the database too. Its press id is the lead's own
+  // roster id, so two recordings landing at once meet the unique index and only one is kept.
+  const pressId = contactId;
+  const same = asks.find((ask) => ask.press_id === pressId && ask.contact_id === contactId);
   // The same press again, already recorded: say it went through, write nothing more.
-  if (same && same.reply) return isRecordedAnswer(same) ? { ok: true } : { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
+  // The same answer again (a retry): it went through. A different answer is a second answer, and is refused.
+  if (same && same.reply) return isRecordedAnswer(same) && same.reply === input.reply ? { ok: true } : { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
   const toThisPerson = asks.filter((ask) => ask.contact_id === contactId && !ask.to_demo);
   if (toThisPerson.some((ask) => ask.reply)) return { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
   // A real text still waiting is answered by its reply, not by hand.
@@ -345,7 +351,8 @@ export async function recordAnswer(store: AskStore, input: RecordAnswerInput): P
   let rowId = same?.id ?? null;
   if (!rowId) {
     rowId = store.newId();
-    const made = await store.insert({ id: rowId, org_id: caller.orgId, proposal_id: row.id, contact_id: contactId, to_demo: false, press_id: input.press_id, sent_by: caller.profileId, status: "practice" });
+    const made = await store.insert({ id: rowId, org_id: caller.orgId, proposal_id: row.id, contact_id: contactId, to_demo: false, press_id: pressId, sent_by: caller.profileId, status: "practice" });
+    if (made === "exists") return { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
     if (made !== "made") return { ok: false, problem: ASK_COPY.notRecorded };
   }
   if (!(await store.setReply(caller.orgId, rowId, input.reply, now))) {

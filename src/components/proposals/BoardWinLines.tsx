@@ -39,7 +39,7 @@ export function BoardWinLines({
             <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.practiceTag}</span>
           ) : null}
           {win.ask.recorded ? (
-            <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedTag}</span>
+            <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedBy(win.ask.recordedBy ?? "")}</span>
           ) : null}
         </p>
       ) : null}

@@ -91,11 +91,13 @@ describe("a real workspace whose texts have not started", () => {
       reply: "yes",
       practice: false,
       recorded: true,
+      recordedBy: "Maren Hollis",
       waiting: false,
     };
     const { row } = desk({ demo: false, connected: false }, proposal({ ask: recorded }));
     expect(within(row).getByText("Christy Johnson said yes")).toBeTruthy();
-    expect(within(row).getByText(ASK_COPY.recordedTag)).toBeTruthy();
+    // QA L1 of PR 287: who recorded it, by name.
+    expect(within(row).getByText("Recorded by Maren Hollis")).toBeTruthy();
     expect(within(row).queryByText(ASK_COPY.recordPrompt)).toBeNull();
     expect(within(row).queryByText(ASK_COPY.practiceTag)).toBeNull();
   });

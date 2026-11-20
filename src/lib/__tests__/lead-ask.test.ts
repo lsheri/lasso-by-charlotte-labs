@@ -494,18 +494,26 @@ describe("the practice path, before the carriers approve the number", () => {
     // A demo workspace with texting on: the ask on the row is a real one, and a practice answer cannot touch it.
     const live = world({ demo: true, demoNumber: OTHER_PHONE });
     await askLead(live.store, press);
-    expect(await practiceReply(live.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
+    expect(await practiceReply(live.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceGone });
     expect(live.w.rows[0]?.reply).toBeNull();
 
-    // A practice ask made before texting was switched on cannot be answered once it is on.
+    // QA M1 of PR 287: a practice ask made while sending was paused can still be answered once the pause lifts.
     const before = practice();
     await askLead(before.store, press);
     expect(before.w.rows[0]?.status).toBe("practice");
     const after = world({ ...before.w, config: world({ demo: true, demoNumber: OTHER_PHONE }).w.config });
-    expect(await practiceReply(after.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
-    expect(after.w.rows[0]?.reply).toBeNull();
+    expect(await practiceReply(after.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: true });
+    expect(after.w.rows[0]?.reply).toBe("yes");
     // And it does not hold up the real ask.
     expect(await askLead(after.store, { ...press, press_id: "99999999-9999-4999-8999-999999999999" })).toEqual({ ok: true, practice: false });
+
+    // Once a real ask is made after it, the practice ask left behind is no longer the one to answer.
+    const stale = practice();
+    await askLead(stale.store, press);
+    stale.w.rows[0]!.created_at = hoursAgo(1);
+    const liveNow = world({ ...stale.w, config: world({ demo: true, demoNumber: OTHER_PHONE }).w.config });
+    expect(await askLead(liveNow.store, { ...press, press_id: "99999999-9999-4999-8999-999999999998" })).toEqual({ ok: true, practice: false });
+    expect(await practiceReply(liveNow.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceGone });
 
     const elsewhere = world({ demo: true, config: null, proposal: { id: PROPOSAL, org_id: ORG_B, status: "open", lead_contact_id: LEAD } });
     expect(await practiceReply(elsewhere.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
@@ -619,6 +627,15 @@ describe("recording a lead's answer heard another way", () => {
     half.store.setReply = async () => false;
     expect(await recordAnswer(half.store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.notRecorded });
     expect(half.w.rows).toHaveLength(0);
+  });
+
+  // QA L2 of PR 287: two recordings at the same moment keep one answer.
+  it("holds one recorded answer per lead in the database: two at once keep only the first", async () => {
+    const { store, w } = notStarted();
+    const [first, second] = await Promise.all([recordAnswer(store, answer("no")), recordAnswer(store, answer("yes", PRESS_2))]);
+    expect([first, second].filter((r) => r.ok)).toHaveLength(1);
+    expect(w.rows).toHaveLength(1);
+    expect(w.rows[0]).toMatchObject({ press_id: LEAD, contact_id: LEAD });
   });
 
   it("does not answer for a real text still waiting", async () => {

@@ -75,7 +75,7 @@ export type ProposalRow = {
 };
 
 /** The latest ask on a proposal, as stored. */
-export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string };
+export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string; sent_by?: string | null };
 
 export type DeskStore = {
   /** An active, non-guest member of a company workspace, or a thrown 403. */
@@ -146,7 +146,7 @@ export type DeskStore = {
 const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
 
 /** The latest ask per proposal, as the page draws it. */
-function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false): Map<string, AskView> {
+function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, recorders: Map<string, string> = new Map()): Map<string, AskView> {
   const views = new Map<string, AskView>();
   for (const ask of asks) {
     if (views.has(ask.proposal_id)) continue;
@@ -156,8 +156,11 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connec
       reply: (ask.reply as Reply | null) ?? null,
       practice: isPracticeAsk(ask),
       recorded: isRecordedAnswer(ask),
-      // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
-      waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
+      // QA L1 of PR 287: who recorded an answer heard another way, by name.
+      ...(isRecordedAnswer(ask) && ask.sent_by && recorders.get(ask.sent_by) ? { recordedBy: recorders.get(ask.sent_by) } : {}),
+      // QA M1 of PR 287: the latest ask on a proposal waits for its answer, practice or not. A practice ask is never
+      // stranded when the sender's pause lifts; a real ask made after it simply becomes the latest.
+      waiting: isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
     });
   }
   return views;
@@ -190,7 +193,9 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
     store.texts(caller.orgId),
     mayAddClient(store, caller),
   ]);
-  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected);
+  const recorderIds = [...new Set(asks.filter((ask) => isRecordedAnswer(ask) && ask.sent_by).map((ask) => ask.sent_by as string))];
+  const recorders = recorderIds.length ? await store.ownerNames(recorderIds) : new Map<string, string>();
+  const askByProposal = askViews(asks, leadNames, store.now(), recorders);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
   const proposals: DeskProposal[] = mine.map((row) => {
@@ -371,7 +376,8 @@ export async function boardWin(store: DeskStore, input: BoardInput): Promise<Boa
   const leadName = contactId ? (names.get(contactId) ?? null) : null;
   // An answer from the person named comes first. A text sent to a demo number is never shown as theirs.
   const answered = asks.find((ask) => ask.contact_id === contactId && (ask.reply === "yes" || ask.reply === "no"));
-  let ask = leadName && answered ? (askViews([answered], names, store.now()).get(row.id) ?? null) : null;
+  const recorder = answered && isRecordedAnswer(answered) && answered.sent_by ? await store.ownerNames([answered.sent_by]) : new Map<string, string>();
+  let ask = leadName && answered ? (askViews([answered], names, store.now(), recorder).get(row.id) ?? null) : null;
   // Otherwise, in a demo workspace while texting is not switched on, the latest practice answer, marked as practice
   // and not put in the lead's name. Never in a real workspace, and never once the sender settings are in place.
   if (leadName && !ask) {
@@ -610,7 +616,7 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];
-      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
+      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at, sent_by").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
       return error ? [] : ((data ?? []) as DeskAsk[]);
     },
     async texts(orgId) {

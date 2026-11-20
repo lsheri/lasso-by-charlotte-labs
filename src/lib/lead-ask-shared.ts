@@ -102,6 +102,8 @@ export type AskView = {
    * started (D-97). Nothing was sent; the answer is the lead's.
    */
   recorded?: boolean | undefined;
+  /** Who recorded it, by name (QA L1 of PR 287). Only on a recorded answer. */
+  recordedBy?: string | undefined;
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
 };
@@ -140,6 +142,7 @@ export const ASK_COPY = {
   recordYes: "They said yes",
   recordNo: "They said no",
   recordedTag: "Recorded",
+  recordedBy: (name: string) => (name ? `Recorded by ${name}` : "Recorded"),
   recordOnly: "Recording an answer is for a workspace whose texts have not started yet.",
   /* Why nothing was sent. */
   notAllowed: "Only an admin or a lead can ask by text.",

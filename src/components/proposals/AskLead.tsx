@@ -65,7 +65,7 @@ export function AskLine({
           </span>
         ) : null}
         {ask?.practice ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.practiceTag}</span> : null}
-        {ask?.recorded ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedTag}</span> : null}
+        {ask?.recorded ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedBy(ask.recordedBy ?? "")}</span> : null}
         {mayAsk ? (
           <button type="button" className="underline hover:text-foreground" onClick={onAsk}>
             {ask ? ASK_COPY.again : ASK_COPY.open(proposal.leadName ?? "")}
