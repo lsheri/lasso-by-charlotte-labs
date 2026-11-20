@@ -81,6 +81,8 @@ Every PR was checked against main with the full test suite, lint, and the design
 
 - **Skeleton frames for slow sections (20 Nov, demo speed PR).** New primitive `SkeletonFrame` in src/components/ui, made only of the existing `Skeleton` bar and token classes (border-border, corner-card); seven loading lines swapped for it. No literals added, health counts unchanged, no ceiling raised.
 
+- **The chat pill (20 Nov, D-97, PR 1a).** One fixed element on every signed-in page in the app shell: a pill that morphs into the helper panel, a phone bottom sheet and a full screen chat, with the page behind softened while full. Shape is set by code from the prototype's numbers (chat-pill-shared.ts); everything else is skin tokens in src/components/pill/chat-pill.css (card, border, foreground, muted, skin-action, skin-live-wash, corner and type roles), layer calc(--layer-tabbar + 1). Feedback moves to the bottom left beside the menu. No colour or font literals, no new `!important`, health counts unchanged, no ceiling raised.
+
 ## Health counts
 
 Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3, 18 after the skin contract (#197). The audit's target for a skin was about 20. A test keeps it at 20 or fewer.
