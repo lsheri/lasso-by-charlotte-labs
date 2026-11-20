@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { launchBrand } from "@/design/brand/brand";
 import { EVENT_DIM_KEYS, guardServerEventDims } from "@/lib/event-dim-allowlist";
-import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
+/** Any demo workspace: the server reads its marker, never this id. */
+const KESTREL_BAY_ORG_ID = "2fd479d1-64da-4971-993b-279bed821179";
 import { sendText, textConfig, textConfigGaps, type TextConfig, type TextSendResult } from "@/lib/text-sender.server";
 import { isE164, plainForSms, SMS_ONE_SEGMENT, WON_TEXT_COPY, WON_TEXT_DAILY_CAP, WON_TEXT_OUTCOMES, WON_TEXT_PROBLEMS, wonTextBoardInput, wonTextBody, wonTextSendInput } from "@/lib/won-text-shared";
 import { sendWonText, startOfUtcDay, wonTextStatus, type WonTextCaller, type WonTextDeps } from "@/lib/won-text.server";

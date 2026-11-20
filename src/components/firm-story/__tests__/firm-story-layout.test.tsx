@@ -19,7 +19,8 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: "Lasso" }) }));
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
-import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
+/** Any demo workspace: found by its settings marker now, never by this id. */
+const KESTREL_BAY_ORG_ID = "demo-org";
 
 // The page as the browser would lay it out: 1440 x 900, the card 416 x 340 at the bottom past the sidebar.
 const page = { askTop: 480, scrollY: 0, maxScroll: 2000 };
@@ -51,7 +52,7 @@ async function toBeatOne() {
   render(
     <QueryClientProvider client={client}>
       <div data-testid="ask-the-firm" />
-      <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID, demo_firm: true }} />
     </QueryClientProvider>,
   );
   await act(async () => {
@@ -67,7 +68,7 @@ const placement = () => screen.getByTestId("firm-story").getAttribute("data-stor
 beforeEach(() => {
   vi.useFakeTimers();
   window.sessionStorage.clear();
-  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
+  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner", boardId: "story-board" });
   m.navigate.mockReset();
   m.path = "/home";
   Object.assign(page, { askTop: 480, scrollY: 0, maxScroll: 2000 });
@@ -168,7 +169,7 @@ describe("the demo story keeps its target in sight", () => {
       <QueryClientProvider client={client}>
         <div data-testid="ask-the-firm" />
         <div data-testid="firm-brain-map" />
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID, demo_firm: true }} />
       </QueryClientProvider>,
     );
     await act(async () => {

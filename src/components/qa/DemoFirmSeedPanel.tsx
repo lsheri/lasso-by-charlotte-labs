@@ -61,7 +61,9 @@ export function DemoFirmSeedPanel({ profileId }: { profileId: string | undefined
         const result = await board({ data: { profile_id: profileId, board: key } });
         note(result.skipped ? `${key}: already there` : `${key}: ${result.items} items, ${result.showings} client marks`);
       }
-      await finish({ data: { profile_id: profileId } });
+      const done = await finish({ data: { profile_id: profileId } });
+      const added = done?.proposals;
+      if (added) note(`Proposals: ${added.won} won, ${added.lost} lost, ${added.open} open, ${added.people} people added (anything already there is kept)`);
       note("Done");
     } catch (error) {
       note(`Stopped: ${error instanceof Error ? error.message : String(error)}. Run it again to continue.`);

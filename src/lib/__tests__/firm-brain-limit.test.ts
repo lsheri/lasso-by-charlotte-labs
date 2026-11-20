@@ -4,7 +4,6 @@ import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { FIRM_BRAIN_LIMIT_COPY, FIRM_BRAIN_PERSON_DAILY_USD, FIRM_BRAIN_SURFACES, FIRM_BRAIN_WORKSPACE_DAILY_USD, firmBrainLimitReached, isFirmBrainLimit, isFirmBrainSurface, startOfUtcDay } from "@/lib/firm-brain-limit-shared";
 import { assertWithinFirmBrainLimit } from "@/lib/firm-brain-limit.server";
-import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
 
 const ORG = "org-a";
 const row = (profile_id: string | null, cost_usd: number | null) => ({ profile_id, cost_usd });
@@ -77,10 +76,21 @@ describe("the check before a model call", () => {
     expect(await error?.text()).toBe(FIRM_BRAIN_LIMIT_COPY.workspace);
   });
 
-  it("never limits the demo firm, and reads nothing there", async () => {
-    const d = deps([row("p1", 500)]);
-    await assertWithinFirmBrainLimit({ surface: "firm_ask", orgId: KESTREL_BAY_ORG_ID, profileId: "p1" }, d);
+  it("never limits the demo firm, found by its settings marker, and reads no spend there", async () => {
+    const d = { ...deps([row("p1", 500)]), isDemoFirm: vi.fn(async (orgId: string) => orgId === "any-demo-org") };
+    await assertWithinFirmBrainLimit({ surface: "firm_ask", orgId: "any-demo-org", profileId: "p1" }, d);
+    expect(d.isDemoFirm).toHaveBeenCalledWith("any-demo-org");
     expect(d.spendSince).not.toHaveBeenCalled();
+  });
+
+  it("treats a workspace as ordinary when its marker cannot be read, so the limit still holds", async () => {
+    const d = { ...deps([row("p1", 500)]), isDemoFirm: vi.fn(async () => { throw new Error("down"); }) };
+    const error = await refused(assertWithinFirmBrainLimit({ surface: "firm_ask", orgId: ORG, profileId: "p1" }, d));
+    expect(error?.status).toBe(429);
+  });
+
+  it("no longer knows the demo firm by a fixed id", () => {
+    expect(readFileSync("src/lib/firm-brain-limit.server.ts", "utf8")).not.toMatch(/2fd479d1|KESTREL_BAY_ORG_ID/);
   });
 
   it("lets the call through when the day's spend cannot be read", async () => {
