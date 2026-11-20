@@ -1,5 +1,6 @@
 // 20 Nov 2026, chat pill build Phase 2: the demo firm's proposals and people are part of the seed, and reset removes
 // proposals first. An in-memory stand-in for the database that filters, so scoping and order are really checked.
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import { DEMO_BOARDS } from "@/lib/demo-firm";
@@ -242,6 +243,24 @@ describe("resetDemoFirm", () => {
     expect(db.rows("roster_contacts").filter((row) => row["org_id"] === OTHER)).toHaveLength(1);
     const order = db.log.filter((line) => line.startsWith("delete:"));
     expect(order.indexOf("delete:proposals:41")).toBeLessThan(order.findIndex((line) => line.startsWith("delete:clients:")));
+  });
+
+  it("removes nothing when someone who is not a demo login is a member (QA of PR 291, L1)", async () => {
+    const db = seededFirm();
+    db.rows("profiles").push({ id: "p-real", org_id: ORG, user_id: "u-real" });
+    const result = await resetDemoFirm(db.admin);
+    expect(result.removed).toBe(false);
+    expect(result.problems.join(" ")).toMatch(/Nothing was removed/);
+    expect(db.rows("orgs").some((row) => row["id"] === ORG)).toBe(true);
+    expect(db.rows("profiles").filter((row) => row["org_id"] === ORG)).toHaveLength(DEMO_PEOPLE.length + 1);
+    expect(db.log.filter((line) => line.startsWith("delete:"))).toEqual([]);
+  });
+
+  it("takes the founder gate, not only the QA seed admin gate (QA of PR 291, M3)", () => {
+    const fns = readFileSync("src/lib/demo-firm.functions.ts", "utf8");
+    const reset = fns.slice(fns.indexOf("export const resetDemoFirmFn"));
+    const body = reset.slice(0, reset.indexOf("resetDemoFirm(admin)"));
+    expect(body).toMatch(/await requireFounder\(admin, context\.userId\)/);
   });
 
   it("then a reseed brings the proposals back", async () => {

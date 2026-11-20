@@ -1,4 +1,5 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { isDemoFirmSettings } from "@/lib/demo-firm-marker";
 import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -347,7 +348,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
       has_roster: orgs?.has_roster === true,
       shows_admin_role: orgs?.shows_admin_role === true,
       has_firm_view: orgs?.has_firm_view === true,
-      demo_firm: orgs?.settings?.["demo_firm"] === "kestrel-bay",
+      demo_firm: isDemoFirmSettings(orgs?.settings),
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

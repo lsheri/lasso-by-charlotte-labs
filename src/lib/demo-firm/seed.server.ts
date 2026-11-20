@@ -11,7 +11,8 @@ import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 type Db = SupabaseClient<Database>;
 
 /** The marker on the demo org, so a second run refuses and a reset can only ever touch this one workspace. */
-export const DEMO_FIRM_MARKER = "kestrel-bay";
+export { DEMO_FIRM_MARKER } from "../demo-firm-marker";
+import { DEMO_FIRM_MARKER } from "../demo-firm-marker";
 
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
@@ -692,6 +693,21 @@ export async function resetDemoFirm(admin: Db): Promise<{ removed: boolean; prob
     const { error } = await run();
     if (error) problems.push(`${what}: ${error.message}`);
   };
+
+  // Only demo logins may be in the demo workspace when it is removed (QA of PR 291, L1): a real person's profile there
+  // would lose its work. If anyone else is a member, nothing is removed and their addresses are listed.
+  {
+    const { data: members, error } = await admin.from("profiles").select("user_id").eq("org_id", orgId);
+    if (error) return { removed: false, problems: [`reading people: ${error.message}`] };
+    const outsiders: string[] = [];
+    for (const member of members ?? []) {
+      if (!member.user_id) continue;
+      const { data } = await admin.auth.admin.getUserById(member.user_id);
+      const email = data.user?.email?.toLowerCase() ?? "";
+      if (!email.endsWith("@kestrelbay.test")) outsiders.push(email || "a login with no email");
+    }
+    if (outsiders.length) return { removed: false, problems: [`Nothing was removed: these are members of the demo workspace and are not demo logins: ${outsiders.join(", ")}. Remove them from the workspace first.`] };
+  }
 
   const { data: boards } = await admin.from("engagements").select("id").eq("org_id", orgId);
   const boardIds = (boards ?? []).map((row) => row.id);

@@ -24,12 +24,7 @@ import { FIRM_VIEW_COPY } from "./role-screens-shared";
  * never by id, so a reseed that makes a new workspace keeps working). The story exists nowhere else; the server checks
  * the marker, the browser only mirrors it.
  */
-export const DEMO_FIRM_MARKER = "kestrel-bay";
-
-/** Whether a workspace's settings carry the demo firm's marker. */
-export function isDemoFirmSettings(settings: unknown): boolean {
-  return Boolean(settings) && typeof settings === "object" && !Array.isArray(settings) && (settings as Record<string, unknown>)["demo_firm"] === DEMO_FIRM_MARKER;
-}
+export { DEMO_FIRM_MARKER, isDemoFirmSettings } from "./demo-firm-marker";
 
 /** The proposal board the story is told on, found by its title in the demo workspace (the seed's b31, Marrowfield). */
 export const STORY_BOARD_TITLE = "Diabetes prevention service line (proposal)";
