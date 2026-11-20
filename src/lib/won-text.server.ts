@@ -121,8 +121,9 @@ export async function sendWonText(deps: WonTextDeps, input: WonTextSendInput): P
   if (state === "not_won") return { ok: false, problem: WON_TEXT_COPY.notWon };
   // An archived board, nobody to text, or no sender: one plain line, nothing sent and nothing recorded.
   const config = deps.config();
-  if (state && !state.to) return { ok: false, problem: state.blocked ?? WON_TEXT_COPY.noNumber };
-  if (!state || !state.to || !config) return { ok: false, problem: WON_TEXT_COPY.notConnected };
+  if (!state) return { ok: false, problem: WON_TEXT_COPY.archived };
+  if (!state.to) return { ok: false, problem: state.blocked ?? WON_TEXT_COPY.noNumber };
+  if (!config) return { ok: false, problem: WON_TEXT_COPY.notConnected };
   const to = state.to;
 
   await deps.recordPress(state.caller);

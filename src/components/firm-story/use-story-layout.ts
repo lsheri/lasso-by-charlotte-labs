@@ -42,7 +42,13 @@ function headerBottom(): number {
  *
  * Returns the card's place and the inline style that puts its frame there (empty in its usual place).
  */
-export function useStoryLayout(anchor: string | null, beat: number | null, cardWrap: RefObject<HTMLElement | null>): { placement: StoryPlacement; style: CSSProperties } {
+export function useStoryLayout(
+  anchor: string | null,
+  beat: number | null,
+  cardWrap: RefObject<HTMLElement | null>,
+  /** This beat wants the card at the top on a phone. */
+  phoneTop = false,
+): { placement: StoryPlacement; style: CSSProperties } {
   const [layout, setLayout] = useState<Layout>(USUAL);
   const current = useRef<Layout>(USUAL);
 
@@ -64,10 +70,9 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
       setLayout(next);
     };
 
-    if (!anchor) {
-      apply(USUAL);
-      return;
-    }
+    // Every beat is measured from the usual place, so a corner one beat chose is never carried into the next.
+    apply(USUAL);
+    if (!anchor) return;
 
     const tick = () => {
       const now = Date.now();
@@ -105,7 +110,7 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
         if (now - quietSince >= QUIET_MS || now - startedAt >= SETTLE_CAP_MS) settled = true;
         restedAt = target.top + window.scrollY;
       }
-      apply({ placement: storyCardPlacement(target, metrics), top: storyCardTop(metrics) });
+      apply({ placement: storyCardPlacement(target, metrics, phoneTop), top: storyCardTop(metrics) });
     };
 
     // The person's own scrolling wins from the first touch.
@@ -138,7 +143,7 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
       window.removeEventListener("keydown", key);
     };
     // A new beat lines the page up again, even when it points at the same surface as the one before.
-  }, [anchor, beat, cardWrap]);
+  }, [anchor, beat, cardWrap, phoneTop]);
 
   const { placement, top } = layout;
   const style: CSSProperties = {

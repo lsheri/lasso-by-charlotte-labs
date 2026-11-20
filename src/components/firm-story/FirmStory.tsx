@@ -36,8 +36,8 @@ import { useStoryLayout } from "./use-story-layout";
 type StoryProfile = { id: string; org_id: string } | null | undefined;
 
 /**
- * The Kestrel Bay demo story, mounted once in the signed-in shell so it sits over the real surfaces: Home, the firm
- * view and the proposal board. It can show only when the active profile is in the demo
+ * The Kestrel Bay demo story, mounted once in the signed-in shell so it sits over the real surfaces: Home, Firm brain
+ * and the proposal board. It can show only when the active profile is in the demo
  * firm's workspace, and the server agrees (firmStoryAccessFn). For everyone else it renders nothing and calls nothing.
  *
  * Even then the entry is opt-in: unless the address carries `?tour` or this person already started in this tab,
@@ -122,7 +122,7 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
   const goTo = useCallback(
     (place: StoryPlace | null) => {
       if (place === "home") void navigate({ to: "/home" });
-      else if (place === "firm") void navigate({ to: "/firm" });
+      else if (place === "firm") void navigate({ to: "/firm-brain" });
       else if (place === "board") void navigate({ to: "/engagements/$id/canvas-lab", params: { id: STORY_BOARD_ID } });
     },
     [navigate],
@@ -155,7 +155,12 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
   // a target is showing on its own page; otherwise the card stays in its usual place.
   const cardWrap = useRef<HTMLDivElement | null>(null);
   const pointing = view.kind === "beat" && view.beat.anchor && isAtPlace(view.beat.place, pathname) && !exploring && !dialogOpen;
-  const layout = useStoryLayout(pointing ? view.beat.anchor : null, view.kind === "beat" ? view.beat.n : null, cardWrap);
+  const layout = useStoryLayout(
+    pointing ? view.beat.anchor : null,
+    view.kind === "beat" ? view.beat.n : null,
+    cardWrap,
+    view.kind === "beat" && view.beat.phoneCardAtTop === true,
+  );
   // An open dialog wins: the card collapses, and the frame drops below the dialogs' layer, so every dialog and its
   // scrim sit over it wherever they are in the page. Otherwise it is above the board page, a full-screen layer.
   const layer = dialogOpen ? "z-(--layer-tabbar)" : "z-(--layer-ledger)";
