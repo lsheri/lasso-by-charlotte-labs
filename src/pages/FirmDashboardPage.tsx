@@ -18,6 +18,7 @@ import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { FIRM_VIEW_COPY, firmBrainAccess } from "@/lib/role-screens-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
@@ -82,8 +83,12 @@ export function FirmDashboardPage() {
         {error ? (
           <p className="text-sm text-destructive">That could not be loaded. Try again.</p>
         ) : null}
-        {isLoading || !data ? (
-          <p className="text-sm text-muted-foreground">Counting.</p>
+        {error && !data ? null : isLoading || !data ? (
+          // PERF-4: the shape of the headline row and the boards list, not a word, while the counts arrive.
+          <div className="space-y-8">
+            <SkeletonFrame shape="stats" count={4} label="Counting" />
+            <SkeletonFrame shape="rows" count={3} announce={false} testId="firm-view-rows-skeleton" />
+          </div>
         ) : (
           <>
             {/* The frame's headline row: four production numbers across the page. */}
