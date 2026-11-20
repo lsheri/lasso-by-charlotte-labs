@@ -293,7 +293,8 @@ function ProposalRow({
         </p>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
           {proposal.mine ? <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span> : proposal.ownerName ? <span>{DESK_COPY.owner(proposal.ownerName)}</span> : null}
-          <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
+          {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
+          {proposal.status === "open" || proposal.contextCount > 0 ? <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span> : null}
         </p>
         {lead && proposal.status === "open" ? <LeadLine lead={lead.person} picked={Boolean(proposal.leadContactId)} onPick={lead.onPick} /> : null}
         {/* The person who started it sees who the lead is, without the roster or the pick. */}
@@ -358,7 +359,7 @@ function ProposalRow({
           </>
         ) : (
           <>
-            <p className="text-foreground">{proposal.status === "won" ? DESK_COPY.wonOn(deskDate(proposal.decidedAt)) : DESK_COPY.lostOn(deskDate(proposal.decidedAt))}</p>
+            <p className="text-foreground">{proposal.status === "won" ? DESK_COPY.wonOn(deskDate(proposal.decidedAt, now)) : DESK_COPY.lostOn(deskDate(proposal.decidedAt, now))}</p>
             {/* The board is the owner's; nobody else is on it until they are added there. */}
             {onClose && proposal.canArchive ? (
               <p className="mt-1">

@@ -315,11 +315,17 @@ export function deskCounts(proposals: readonly DeskProposal[]): Record<DeskView,
   return { open: deskView(proposals, "open").length, mine: deskView(proposals, "mine").length, won: deskView(proposals, "won").length, lost: deskView(proposals, "lost").length };
 }
 
-/** A date as the desk shows it: "Fri 20 Nov". */
-export function deskDate(iso: string | null | undefined): string {
+/**
+ * A date as the desk shows it: "Fri 20 Nov". A date in another year says which ("Mon 4 Aug 2025"), so a list that
+ * runs across years still reads in order.
+ */
+export function deskDate(iso: string | null | undefined, now: Date = new Date()): string {
   const time = iso ? Date.parse(iso) : NaN;
   if (!Number.isFinite(time)) return "";
-  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(time));
+  const date = new Date(time);
+  // This year's dates read exactly as before; another year's has the year after it.
+  const day = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+  return date.getUTCFullYear() === now.getUTCFullYear() ? day : `${day} ${date.getUTCFullYear()}`;
 }
 
 /* ---------------------------------------------------------------------------

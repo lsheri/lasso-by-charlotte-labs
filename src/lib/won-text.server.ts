@@ -109,7 +109,10 @@ async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): 
 export async function wonTextStatus(deps: WonTextDeps, input: WonTextBoardInput): Promise<WonTextStatus> {
   const state = await ready(deps, input.engagement_id, false);
   if (!state || state === "not_won") return { show: false };
-  return { show: true, connected: deps.config() !== null && state.to !== null, needsNumber: state.demo && state.to === null, preview: state.preview, ...(state.blocked ? { blocked: state.blocked } : {}) };
+  // Nobody a press could reach (no lead, a lead who has not agreed, or a demo workspace with no number set): no
+  // button at all, rather than one that can only answer "nothing was sent".
+  if (state.to === null) return { show: false };
+  return { show: true, connected: deps.config() !== null, needsNumber: false, preview: state.preview };
 }
 
 /** One press of Send. */
