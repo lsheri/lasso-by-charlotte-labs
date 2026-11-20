@@ -20,7 +20,7 @@ type PreviewSummaryRow = {
 };
 
 /** One caller-scoped read for every chat card currently visible on the board. */
-export async function readWorkboardCardPreviews(db: Db, workItemIds: string[]): Promise<WorkboardCardPreview[]> {
+export async function readWorkboardCardPreviews(db: Db, workItemIds: string[], readsMoney = true): Promise<WorkboardCardPreview[]> {
   const ids = [...new Set(workItemIds.filter(Boolean))].slice(0, 100);
   if (ids.length === 0) return [];
   const [turnResult, summaryResult] = await Promise.all([
@@ -35,6 +35,15 @@ export async function readWorkboardCardPreviews(db: Db, workItemIds: string[]): 
     grouped.set(row.work_item_id, [...(grouped.get(row.work_item_id) ?? []), row]);
   }
   const summaries = new Map(((summaryResult.data ?? []) as PreviewSummaryRow[]).map((row) => [row.work_item_id, row.summary]));
+  // D-91: a SOW's summary reaches a Member with money removed, whatever ids the browser asks for.
+  if (!readsMoney && summaries.size > 0) {
+    const { isSowItem, moneyFreeText } = await import("./money-mask-shared");
+    const { data: items } = await db.from("work_items").select("id, type, title, meta").in("id", [...summaries.keys()]);
+    for (const item of items ?? []) {
+      const summary = summaries.get(item.id);
+      if (summary && isSowItem(item)) summaries.set(item.id, moneyFreeText(summary));
+    }
+  }
   return ids.map((workItemId) => {
     const all = grouped.get(workItemId) ?? [];
     const turns = all.filter((turn) => !isToolRole(turn.role));

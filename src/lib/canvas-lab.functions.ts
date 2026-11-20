@@ -70,7 +70,10 @@ export const getWorkboardCardPreviewsFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return [];
     const { readWorkboardCardPreviews } = await import("@/lib/workboard-card-preview.server");
-    return readWorkboardCardPreviews(supabase, data.work_item_ids);
+    const { data: board } = await supabase.from("engagements").select("org_id").eq("id", data.engagement_id).maybeSingle();
+    const inOrg = board?.org_id ? await resolveProfile(supabase, userId, null, board.org_id) : null;
+    const { seesMoney } = await import("@/lib/money-mask-shared");
+    return readWorkboardCardPreviews(supabase, data.work_item_ids, seesMoney(inOrg?.role));
   });
 
 /** Slice 2a unit 1: the caller's own highlights on one chat. */

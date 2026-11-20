@@ -10,6 +10,7 @@
 import type { FirmCorpus } from "./firm-corpus-shared";
 import type { FirmGraph } from "./firm-graph-shared";
 import { forMap, mapTotals, threadName, type MapTotals } from "./firm-map-shared";
+import { hasMoney, withoutMoney } from "./money-mask-shared";
 
 /* ---------------------------------------------------------------------------------------------------------------
  * What the server sends
@@ -23,48 +24,9 @@ export function canvasSeesFees(role: string | null | undefined): boolean {
   return role === "admin" || role === "lead";
 }
 
-// Money as people write it in titles and client names (QA M2, 21 Nov): a symbol, with or without a country prefix
-// ("$45k", "US$ 45,000", "A$80k", "¥5,000,000", "₹40 lakh"); a code before or after ("USD 45 000", "45,000 EUR");
-// a symbol after ("45 000 €", "45,000€", "45.000 €"); dot, comma or space thousands ("€1.200.000"); scale words
-// ("1.2 million", "3.5MM", "$1.5B"); a bare "120k". A bare "5m" is left alone: it is as often a count ("Top 5m
-// customers") as a sum.
-const SYMBOL = "(?:(?:\\b(?:US|AU|A|CA|C|NZ|HK|SG|S|NT|R|MX))?[$£€¥₹₩₽₪₦₺฿])";
-const CODES = "USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|JPY|INR|CNY|RMB|HKD|SEK|NOK|DKK|ZAR|BRL|MXN|AED|SAR";
-const WORDS = "dollars?|pounds?|euros?|yen|rupees?|francs?";
-const NUMBER =
-  "(?:(?<![\\d.,])\\d{1,3}(?:[,.\\u00A0\\u202F ]\\d{3})+(?:[.,]\\d+)?|(?<![\\d.,])\\d+(?:[.,]\\d+)?)";
-const SCALE = "(?:\\s?(?:k|m|mm|mn|bn|b|million|billion|thousand|lakhs?|crores?)\\b)";
-const SCALE_WORD = "(?:million|billion|thousand|lakhs?|crores?|mm|mn|bn)\\b";
-const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)?";
-const MONEY = new RegExp(
-  [
-    `${SYMBOL}\\s?${NUMBER}${SCALE}?${PER}`,
-    `\\b(?:${CODES})\\s?${NUMBER}${SCALE}?${PER}`,
-    `${NUMBER}${SCALE}?\\s?(?:${SYMBOL}|\\b(?:${CODES}|${WORDS})\\b)${PER}`,
-    `${NUMBER}\\s?${SCALE_WORD}${PER}`,
-    `${NUMBER}\\s?k\\b${PER}`,
-  ].join("|"),
-  "gi",
-);
-
-/** The text with every money figure taken out. Used on titles and client names sent to someone who does not see fees. */
-export function withoutMoney(text: string): string {
-  return text
-    .replace(MONEY, "")
-    .replace(/\(\s*\)/g, "")
-    .replace(/\s+([,.;:])/g, "$1")
-    .replace(/\s{2,}/g, " ")
-    .replace(/^[\s,;:·-]+|[\s,;:·-]+$/g, "")
-    .trim();
-}
-
-/** True when the text still holds a money figure. The test that guards the server output uses it. */
-export function hasMoney(text: string): boolean {
-  MONEY.lastIndex = 0;
-  const found = MONEY.test(text);
-  MONEY.lastIndex = 0;
-  return found;
-}
+// Money in titles and client names is read by the one shared pattern (D-91, money-mask-shared), so the canvas and
+// every other Member-facing surface agree on what a money figure is.
+export { hasMoney, withoutMoney };
 
 /**
  * The canvas data for one viewer, built on the server. Lesson text never leaves (as on the map). For someone who does

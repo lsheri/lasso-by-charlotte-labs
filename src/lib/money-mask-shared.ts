@@ -10,6 +10,7 @@
  */
 
 import { withoutFees } from "./firm-corpus-shared";
+import { isDeliverableType } from "./lineage-shared";
 
 /** Who reads money: admins and leads, as everywhere else. Members (stored as em) and coaches do not. */
 export function seesMoney(role: string | null | undefined): boolean {
@@ -78,4 +79,38 @@ export function moneyFreeText(text: string): string {
 export function textFor<T extends string | null | undefined>(text: T, role: string | null | undefined): T {
   if (typeof text !== "string" || seesMoney(role)) return text;
   return moneyFreeText(text) as T;
+}
+
+const SOW_TITLE = /\b(sow|statement of work|scope of work|engagement letter)\b/i;
+
+/**
+ * A statement of work, as the firm brain reads one: a deliverable with fee terms set, or whose title says it is one.
+ * Its summary and its document reach a Member with money removed.
+ */
+export function isSowItem(item: { type?: string | null; title?: string | null; meta?: unknown }): boolean {
+  if (!item.type || !isDeliverableType(item.type)) return false;
+  const meta = item.meta && typeof item.meta === "object" && !Array.isArray(item.meta) ? (item.meta as Record<string, unknown>) : {};
+  return Boolean(meta["sow_facts"] && typeof meta["sow_facts"] === "object") || SOW_TITLE.test(item.title ?? "");
+}
+
+/** Shown instead of the original file when a Member opens a SOW: they read its text, with figures withheld. */
+export const SOW_TEXT_ONLY = "This statement of work opens as text for you, with figures withheld.";
+
+type ExtractText = { summary?: string | null; decisions?: string | null; handoff?: string | null };
+type WithExtracts = { type?: string | null; title?: string | null; meta?: unknown; work_item_extracts?: ExtractText[] | ExtractText | null };
+
+/**
+ * A row as a Member may receive it: when it is a SOW, its extract's summary, decisions and handoff are money free.
+ * Every other row, and every row for admins and leads, comes back as it was.
+ */
+export function rowForReader<T extends WithExtracts>(row: T, reads: boolean): T {
+  if (reads || !isSowItem(row) || !row.work_item_extracts) return row;
+  const clean = (extract: ExtractText): ExtractText => ({
+    ...extract,
+    ...(typeof extract.summary === "string" ? { summary: moneyFreeText(extract.summary) } : {}),
+    ...(typeof extract.decisions === "string" ? { decisions: moneyFreeText(extract.decisions) } : {}),
+    ...(typeof extract.handoff === "string" ? { handoff: moneyFreeText(extract.handoff) } : {}),
+  });
+  const extracts = row.work_item_extracts;
+  return { ...row, work_item_extracts: Array.isArray(extracts) ? extracts.map(clean) : clean(extracts) };
 }

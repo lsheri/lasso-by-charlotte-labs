@@ -16,6 +16,7 @@ import { artifactPreviewKind } from "@/lib/workboard-file-preview";
 import { withPreviewCsp } from "@/lib/workboard-card-preview.shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
+import { SOW_TEXT_ONLY } from "@/lib/money-mask-shared";
 import { SUMMARY_ONLY_LINE, summaryOnlyLine } from "@/components/peek/summary-only";
 import {
   contentsUnread,
@@ -348,6 +349,15 @@ function StandardRenderedContent({
   // PDFs are shown as the extracted text Lasso read, not as a rendered page.
   if (shape.kind === "pdf") {
     return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
+  }
+  // D-91: a Member opening a SOW gets its text from the server with figures withheld, never the original file.
+  if (urlQuery.isError && (urlQuery.error as Error).message === SOW_TEXT_ONLY) {
+    return (
+      <div className="space-y-2">
+        <Notice>{SOW_TEXT_ONLY}</Notice>
+        <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />
+      </div>
+    );
   }
   if (urlQuery.isError) {
     return <Notice>Couldn&apos;t open this file.</Notice>;
