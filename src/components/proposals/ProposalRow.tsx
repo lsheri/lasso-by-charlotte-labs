@@ -2,47 +2,35 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { AskLine } from "@/components/proposals/AskLead";
-import { LeadLine } from "@/components/proposals/LeadPicker";
+import { LeadChip } from "@/components/proposals/LeadChip";
+import { isAtGoal, ProposalClock } from "@/components/proposals/ProposalClock";
+import { ProposalMore, type MoreAction } from "@/components/proposals/ProposalMore";
 import { Button } from "@/components/ui/button";
 import { tagVariants } from "@/components/ui/tag";
 import type { PracticeReplyResult, Reply } from "@/lib/lead-ask-shared";
 import {
+  askWord,
   CLOSE_COPY,
   DESK_COPY,
   deskDate,
-  LEAD_COPY,
+  nextStep,
   SENT_COPY,
+  SPACE_COPY,
   timeLeft,
-  timeLeftLine,
   WIN_COPY,
   type DeskProposal,
   type SentResult,
-  type TimeLeft,
 } from "@/lib/proposal-desk-shared";
 import type { RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
-const ROW_COPY = {
-  atGoal: (goal: number) => `At the ${goal} hour goal`,
-} as const;
-
-/** True at the exact moment the goal runs out. A date that cannot be read is never "at the goal". */
-export function isAtGoal(receivedAt: string, goalHours: number, now?: Date | undefined): boolean {
-  const received = Date.parse(receivedAt);
-  if (!Number.isFinite(received) || goalHours <= 0) return false;
-  return (now ?? new Date()).getTime() - received === goalHours * 3_600_000;
-}
-
-/** How much of the goal is used, 0 to 1. A proposal that has gone out, or run over, fills the bar. */
-export function clockShare(left: TimeLeft, goalHours: number): number {
-  if (left.state !== "running" || goalHours <= 0) return 1;
-  return Math.min(1, Math.max(0, 1 - left.hoursLeft / goalHours));
-}
+export { clockShare, isAtGoal } from "@/components/proposals/ProposalClock";
 
 /**
- * 20 Nov 2026 (design review): one proposal, read in one pass. Who it is for in bold with what they asked for
- * beneath, the clock as a bar with its one line, and one filled button for the next step; everything else is quiet.
- * Every control the row had is still here under the same name.
+ * 20 Nov 2026 (Liam, D-86, "the mix it starts on"): one proposal, read in one pass. Who it is for in bold with what
+ * they asked for beneath; the lead as a chip; the clock as a bar with its goal mark and one line; the next step as a
+ * button, filled only on the proposal that is Up next, so the page has one. Undo sent, Close as lost and Archive keep
+ * their names under More. Every control the row had is still here.
  */
 export function ProposalRow({
   proposal,
@@ -53,6 +41,7 @@ export function ProposalRow({
   lead,
   ask,
   onClose,
+  featured = false,
 }: {
   proposal: DeskProposal;
   goalHours: number;
@@ -64,6 +53,8 @@ export function ProposalRow({
     | { onAsk: () => void; onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult> }
     | undefined;
   onClose?: ((change: "lost" | "archived") => void) | undefined;
+  /** Up next: the one proposal on the page whose next step is the filled button. */
+  featured?: boolean | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -80,226 +71,155 @@ export function ProposalRow({
       setWorking(false);
     }
   }
-  const left = timeLeft({
-    receivedAt: proposal.receivedAt,
-    sentAt: proposal.sentAt,
-    goalHours,
-    now,
-  });
+
+  const titleBlock = (
+    <p data-proposal-title className="break-words [overflow-wrap:anywhere]">
+      {proposal.clientName ? (
+        <span className={cn("block font-semibold text-foreground", featured ? "text-(length:--type-title)" : "text-(length:--type-lead)")}>
+          {proposal.clientName}
+          <span className="sr-only">: </span>
+        </span>
+      ) : null}
+      <span
+        className={cn(
+          "block",
+          proposal.clientName ? "text-(length:--type-control) text-muted-foreground" : "text-(length:--type-lead) font-semibold text-foreground",
+        )}
+      >
+        {proposal.title}
+      </span>
+    </p>
+  );
+
+  if (proposal.status !== "open") {
+    return (
+      <li
+        data-proposal-row={proposal.id}
+        className={cn(
+          "flex flex-col gap-2 rounded-[var(--radius-card)] border border-border px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6",
+          proposal.status === "won" ? "bg-[var(--good-wash)]" : "bg-card",
+        )}
+      >
+        <div className="min-w-0">
+          {titleBlock}
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {proposal.mine ? (
+              <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span>
+            ) : proposal.ownerName ? (
+              <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
+            ) : null}
+            {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
+            {proposal.contextCount > 0 ? <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span> : null}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm sm:justify-end">
+          {proposal.status === "won" ? (
+            <span data-proposal-won className="inline-block rounded-full bg-[var(--good-tint)] px-2 py-0.5 text-foreground">
+              {DESK_COPY.wonOn(deskDate(proposal.decidedAt, now))}
+            </span>
+          ) : (
+            <span className="text-foreground">{DESK_COPY.lostOn(deskDate(proposal.decidedAt, now))}</span>
+          )}
+          {/* The board is the owner's; nobody else is on it until they are added there. */}
+          {proposal.engagementId && proposal.mine ? (
+            <Link to="/engagements/$id/canvas-lab" params={{ id: proposal.engagementId }} className="underline">
+              {DESK_COPY.openBoard}
+            </Link>
+          ) : null}
+          {onClose && proposal.canArchive ? (
+            <button type="button" className="text-muted-foreground underline hover:text-foreground" onClick={() => onClose("archived")}>
+              {CLOSE_COPY.archive}
+            </button>
+          ) : null}
+        </div>
+      </li>
+    );
+  }
+
+  const left = timeLeft({ receivedAt: proposal.receivedAt, sentAt: proposal.sentAt, goalHours, now });
   const titles = proposal.contextTitles ?? [];
   const maySend = Boolean(onSent && proposal.canAct);
   const mayWin = Boolean(onWin && proposal.mine);
-  // One filled button: sending it comes first, then recording the win.
-  const next = maySend && !proposal.sentAt ? "send" : mayWin ? "win" : null;
+  const step = nextStep(proposal, { send: Boolean(onSent), win: Boolean(onWin) });
   const undo = maySend && Boolean(proposal.sentAt);
-  const good = left.state === "sent" && left.withinGoal;
-  // Went out, but past the goal: finished and late. The bar must not read as a healthy full one.
-  const late = left.state === "sent" && !left.withinGoal;
-  // The very moment the goal runs out is "at the goal": not an hour to spare, and not over yet.
   const atGoal = !proposal.sentAt && left.state === "running" && isAtGoal(proposal.receivedAt, goalHours, now);
+  const more: MoreAction[] = [];
+  // Taking "sent" back sits with the other quiet changes, away from the line that says it went out.
+  if (undo) more.push({ id: "undo", label: working ? SENT_COPY.working : SENT_COPY.undo, disabled: working, onSelect: () => void press(false) });
+  // One thing at a time (D-86): until it has gone out, sending is the step; Record the win waits under More, by name.
+  const winInMore = mayWin && maySend && !proposal.sentAt;
+  if (winInMore && onWin) more.push({ id: "win", label: WIN_COPY.record, onSelect: onWin });
+  if (onClose && proposal.canClose) more.push({ id: "lost", label: CLOSE_COPY.lost, onSelect: () => onClose("lost") });
+  if (onClose && proposal.canArchive) more.push({ id: "archive", label: CLOSE_COPY.archive, onSelect: () => onClose("archived") });
+  const word = askWord(proposal.ask);
+  // Admins and leads read the name from the roster; the person who started it is sent the name alone.
+  const leadName = lead ? lead.person?.name : (proposal.leadName ?? undefined);
+
   return (
     <li
       data-proposal-row={proposal.id}
-      className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+      data-up-next={featured ? "" : undefined}
+      className={cn(
+        "rounded-[var(--radius-card)] border border-border bg-card",
+        featured ? "p-4 shadow-card sm:p-6" : "px-4 py-3.5",
+      )}
     >
-      <div className="min-w-0">
-        <p data-proposal-title className="break-words [overflow-wrap:anywhere]">
-          {proposal.clientName ? (
-            <span className="block text-(length:--type-lead) font-semibold text-foreground">
-              {proposal.clientName}
-              <span className="sr-only">: </span>
-            </span>
-          ) : null}
-          <span
-            className={cn(
-              "block",
-              proposal.clientName
-                ? "text-(length:--type-control) text-muted-foreground"
-                : "text-(length:--type-lead) font-semibold text-foreground",
-            )}
-          >
-            {proposal.title}
-          </span>
-        </p>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-          {proposal.mine ? (
-            <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span>
-          ) : proposal.ownerName ? (
-            <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
-          ) : null}
-          {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
-          {proposal.status === "open" || proposal.contextCount > 0 ? (
+      {featured ? <p data-up-next-label className="mb-1 text-(length:--type-small) font-semibold text-muted-foreground">{SPACE_COPY.upNext}</p> : null}
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,13rem)_auto] md:items-center md:gap-5">
+        <div className="min-w-0">
+          {titleBlock}
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {proposal.mine ? (
+              <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span>
+            ) : proposal.ownerName ? (
+              <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
+            ) : null}
             <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
-          ) : null}
-        </p>
-        {lead && proposal.status === "open" ? (
-          <LeadLine
-            lead={lead.person}
-            picked={Boolean(proposal.leadContactId)}
-            onPick={lead.onPick}
-          />
-        ) : null}
-        {/* The person who started it sees who the lead is, without the roster or the pick. */}
-        {!lead && proposal.status === "open" && proposal.leadName ? (
-          <p
-            data-proposal-lead
-            className="mt-1 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]"
-          >
-            {LEAD_COPY.lead(proposal.leadName)}
           </p>
-        ) : null}
-        {proposal.status === "open" ? (
-          <AskLine
-            proposal={proposal}
-            canAsk={Boolean(ask && proposal.leadContactId)}
-            onAsk={() => ask?.onAsk()}
-            onPracticeReply={ask?.onPracticeReply}
-          />
-        ) : null}
-        {titles.length > 0 ? (
-          <ul className="mt-1 text-sm text-muted-foreground" data-proposal-context-titles>
-            {titles.map((title, index) => (
-              <li key={`${index}-${title}`} className="break-words [overflow-wrap:anywhere]">
-                {title}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-      <div className="shrink-0 text-sm sm:w-56 sm:text-right">
-        {proposal.status === "open" ? (
-          <>
-            <div
-              aria-hidden="true"
-              data-proposal-clock-bar
-              className={cn(
-                "h-1.5 overflow-hidden rounded-full",
-                good ? "bg-[var(--good-tint)]" : "bg-[var(--action-wash)]",
-              )}
+          {/* D-86, one thing at a time: the titles open on Up next, and when the lead's yes lands (the row opens to
+              show what they will work from). Otherwise the count above says enough. */}
+          {titles.length > 0 && (featured || word === "yes") ? (
+            <ul
+              key={word === "yes" ? "yes" : "titles"}
+              className="mt-1.5 flex flex-wrap gap-1.5 text-(length:--type-small) text-foreground animate-in fade-in-0 slide-in-from-top-1 duration-500 motion-reduce:animate-none"
+              data-proposal-context-titles
             >
-              <div
-                className={cn(
-                  "h-full rounded-full",
-                  left.state === "over" || late
-                    ? "bg-destructive"
-                    : good
-                      ? "bg-[var(--good-mark)]"
-                      : "bg-[var(--action-fill)]",
-                )}
-                style={{ width: `${Math.round(clockShare(left, goalHours) * 100)}%` }}
-              />
-            </div>
-            <p
-              data-proposal-clock={left.state}
-              className={cn("mt-1", left.state === "over" ? "text-destructive" : "text-foreground")}
-            >
-              {atGoal ? ROW_COPY.atGoal(goalHours) : timeLeftLine(left, goalHours)}
-            </p>
-            {problem ? (
-              <p role="alert" className="mt-1 text-destructive">
-                {problem}
-              </p>
-            ) : null}
-            {(maySend && !proposal.sentAt) || mayWin ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2 sm:justify-end">
-                {maySend && !proposal.sentAt ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={next === "send" ? "default" : "outline"}
-                    disabled={working}
-                    onClick={() => void press(true)}
-                  >
-                    {working ? SENT_COPY.working : SENT_COPY.mark}
-                  </Button>
-                ) : null}
-                {mayWin ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={next === "win" ? "default" : "outline"}
-                    onClick={onWin}
-                  >
-                    {WIN_COPY.record}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-            {undo || (onClose && (proposal.canClose || proposal.canArchive)) ? (
-              <p
-                data-proposal-close
-                className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground sm:justify-end"
-              >
-                {/* Taking "sent" back sits with the other quiet changes, away from the line that says it went out. */}
-                {undo ? (
-                  <button
-                    type="button"
-                    className="underline hover:text-foreground disabled:opacity-50"
-                    disabled={working}
-                    onClick={() => void press(false)}
-                  >
-                    {working ? SENT_COPY.working : SENT_COPY.undo}
-                  </button>
-                ) : null}
-                {onClose && proposal.canClose ? (
-                  <button
-                    type="button"
-                    className="underline hover:text-foreground"
-                    onClick={() => onClose("lost")}
-                  >
-                    {CLOSE_COPY.lost}
-                  </button>
-                ) : null}
-                {onClose && proposal.canArchive ? (
-                  <button
-                    type="button"
-                    className="underline hover:text-foreground"
-                    onClick={() => onClose("archived")}
-                  >
-                    {CLOSE_COPY.archive}
-                  </button>
-                ) : null}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <p className="text-foreground">
-              {proposal.status === "won" ? (
-                <span
-                  data-proposal-won
-                  className="inline-block rounded-full bg-[var(--good-tint)] px-2 py-0.5"
-                >
-                  {DESK_COPY.wonOn(deskDate(proposal.decidedAt, now))}
-                </span>
-              ) : (
-                DESK_COPY.lostOn(deskDate(proposal.decidedAt, now))
-              )}
-            </p>
-            {/* The board is the owner's; nobody else is on it until they are added there. */}
-            {onClose && proposal.canArchive ? (
-              <p className="mt-1">
-                <button
-                  type="button"
-                  className="text-muted-foreground underline hover:text-foreground"
-                  onClick={() => onClose("archived")}
-                >
-                  {CLOSE_COPY.archive}
-                </button>
-              </p>
-            ) : null}
-            {proposal.engagementId && proposal.mine ? (
-              <Link
-                to="/engagements/$id/canvas-lab"
-                params={{ id: proposal.engagementId }}
-                className="mt-1 inline-block underline"
-              >
-                {DESK_COPY.openBoard}
-              </Link>
-            ) : null}
-          </>
-        )}
+              {titles.map((title, index) => (
+                <li key={`${index}-${title}`} className="max-w-full break-words rounded-[var(--radius-control)] border border-border bg-background px-2 py-0.5 [overflow-wrap:anywhere]">
+                  {title}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
+          {/* Admins and leads pick; the person who started it sees who the lead is, without the roster or the pick. */}
+          <LeadChip name={leadName} texts={lead?.person?.texts} ask={word} picked={Boolean(proposal.leadContactId)} onPick={lead?.onPick} />
+          {/* The line beneath the chip says the ask in full. When the answer changes it fades in fresh. */}
+          <div key={proposal.ask ? `${proposal.ask.status}-${proposal.ask.reply ?? ""}` : "none"} className="animate-in fade-in-0 duration-500 motion-reduce:animate-none">
+            <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} />
+          </div>
+        </div>
+        <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          {maySend && !proposal.sentAt ? (
+            <Button type="button" size="sm" variant={featured && step === "send" ? "default" : "outline"} disabled={working} onClick={() => void press(true)}>
+              {working ? SENT_COPY.working : SENT_COPY.mark}
+            </Button>
+          ) : null}
+          {mayWin && !winInMore ? (
+            <Button type="button" size="sm" variant={featured && step === "win" ? "default" : "outline"} onClick={onWin}>
+              {WIN_COPY.record}
+            </Button>
+          ) : null}
+          <ProposalMore label={SPACE_COPY.moreLabel(proposal.clientName, proposal.title)} actions={more} />
+        </div>
       </div>
+      {problem ? (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {problem}
+        </p>
+      ) : null}
     </li>
   );
 }
