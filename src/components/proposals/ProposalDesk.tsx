@@ -29,6 +29,7 @@ import {
   type SentResult,
   type WinResult,
 } from "@/lib/proposal-desk-shared";
+import { HOME_PROPOSALS_COPY } from "@/lib/role-screens-shared";
 import type { RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
@@ -47,9 +48,15 @@ export function ProposalDesk({
   onLead,
   ask,
   onClose,
+  limit,
+  initialView,
 }: {
   data: DeskList;
   now?: Date | undefined;
+  /** Home shows only the first few rows of a view, then a link to the Proposals page for the rest. */
+  limit?: number | undefined;
+  /** The view to open on, when a link from Home carried one. */
+  initialView?: DeskView | undefined;
   /** Marks a proposal as gone out, or takes that back. Left out, the rows are read only. */
   onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
   /** Records the win, which makes the team board. Offered only on the person's own open proposals. */
@@ -76,10 +83,11 @@ export function ProposalDesk({
   const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
-  const [view, setView] = useState<DeskView>("open");
+  const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
-  const rows = deskView(data.proposals, view);
+  const all = deskView(data.proposals, view);
+  const rows = limit ? all.slice(0, limit) : all;
 
   return (
     <section aria-label={DESK_COPY.title} data-testid="proposal-desk">
@@ -119,6 +127,13 @@ export function ProposalDesk({
           ))}
         </ul>
       )}
+      {all.length > rows.length ? (
+        <p data-desk-more className="mt-3 text-sm">
+          <Link to="/proposals" search={view === "open" ? {} : { view }} className="text-muted-foreground underline hover:text-foreground">
+            {HOME_PROPOSALS_COPY.seeAll(all.length)}
+          </Link>
+        </p>
+      ) : null}
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (

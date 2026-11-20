@@ -78,22 +78,24 @@ afterEach(cleanup);
 
 // NAV-2: Home and Create, then Boards; All work leads the headless rows below the tree.
 const LANDED = ["Home -> /home", "# Boards", "All work -> /work"];
+// 19 Nov, layout A: a company workspace has Firm brain and Proposals above Boards.
+const LANDED_FIRM = ["Home -> /home", "Firm brain -> /firm-brain", "Proposals -> /proposals", "# Boards", "All work -> /work"];
 
 describe("NAV-1 sidebar and the sources row", () => {
   it("NAV-4: navigation retains every destination and its event after removing the decorative loops", () => {
     const view = mount(<SidebarNav />);
-    expect(rows(view.container)).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Proposals -> /proposals", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(rows(view.container)).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
     expect(view.container.querySelector(".lasso-nav-catch")).toBeNull();
     fireEvent.click(screen.getByRole("link", { name: "Home" }));
     expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "home", surface: "sidebar" });
   });
   it("company admin with no work: Sources shows in the sidebar, not the menu", () => {
-    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Proposals -> /proposals", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["feedback", "sign-out"]);
   });
   it("company admin with five work items: Sources stays in the sidebar and is absent from the menu", () => {
     state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "Proposals -> /proposals", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
     expect(menuIds()).toEqual(["feedback", "sign-out"]);
     const view = mount(<WorkspaceMenu />);
     expect(within(openMenu()).queryByText("Sources")).toBeNull();
@@ -118,7 +120,7 @@ describe("NAV-1 sidebar and the sources row", () => {
   });
   it("People you coach sits after Your coach, above Sources", () => {
     state.role = "em"; state.review = true; state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED, "Look back -> /archive", "Your coach -> /one-on-one", "People you coach -> /coaching", "Proposals -> /proposals", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "People you coach -> /coaching", "Sources -> /connectors"]);
   });
   it("Your coach shows the unread note count only above zero", () => {
     state.unread = 2;

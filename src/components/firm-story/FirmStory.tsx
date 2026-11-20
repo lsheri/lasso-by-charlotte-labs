@@ -31,6 +31,7 @@ import { logEvent } from "@/lib/telemetry";
 import { FirmStoryCard, type StoryWords } from "./FirmStoryCard";
 import { FirmStorySpotlight } from "./FirmStorySpotlight";
 import { useDialogOpen } from "./use-dialog-open";
+import { useStoryLayout } from "./use-story-layout";
 
 type StoryProfile = { id: string; org_id: string } | null | undefined;
 
@@ -150,6 +151,11 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
   }, [profileId]);
 
   const view = storyView(storyWindow, beat);
+  // The beat's target is brought into sight, and the card steps aside when it would cover it. Only while a beat with
+  // a target is showing on its own page; otherwise the card stays in its usual place.
+  const cardWrap = useRef<HTMLDivElement | null>(null);
+  const pointing = view.kind === "beat" && view.beat.anchor && isAtPlace(view.beat.place, pathname) && !exploring && !dialogOpen;
+  const layout = useStoryLayout(pointing ? view.beat.anchor : null, view.kind === "beat" ? view.beat.n : null, cardWrap);
   // An open dialog wins: the card collapses, and the frame drops below the dialogs' layer, so every dialog and its
   // scrim sit over it wherever they are in the page. Otherwise it is above the board page, a full-screen layer.
   const layer = dialogOpen ? "z-(--layer-tabbar)" : "z-(--layer-ledger)";
@@ -210,8 +216,8 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
   return (
     <>
       {view.kind === "beat" && view.beat.anchor && atPlace ? <FirmStorySpotlight anchor={view.beat.anchor} /> : null}
-      <div className={frame} data-testid="firm-story">
-        <div className="pointer-events-none w-full max-w-[26rem]">
+      <div className={frame} style={layout.style} data-testid="firm-story" data-story-placement={layout.placement}>
+        <div ref={cardWrap} className="pointer-events-none w-full max-w-[26rem]">
           <FirmStoryCard
             view={view}
             words={words}
