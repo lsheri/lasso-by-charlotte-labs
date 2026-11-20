@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { chipVariants } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import {
   canAskTheFirm,
@@ -88,7 +89,7 @@ export function AskTheFirm({
       aria-labelledby="ask-the-firm-title"
       className={className ?? "mx-4 mt-4 rounded-[var(--radius)] border border-border bg-card p-4 shadow-card md:mx-6"}
     >
-      <h2 id="ask-the-firm-title" className="text-(length:--type-title) font-medium text-foreground">
+      <h2 id="ask-the-firm-title" className="text-(length:--type-lead) font-semibold text-foreground">
         {FIRM_ASK_COPY.title}
       </h2>
       <p className="mt-1 text-(length:--type-small) text-muted-foreground">{FIRM_ASK_COPY.hint}</p>
@@ -105,7 +106,8 @@ export function AskTheFirm({
           }}
           className="h-10 flex-1"
         />
-        <Button type="submit" variant="ink" className="h-10" disabled={pending || question.trim().length < 3}>
+        {/* The main thing on the page: the action colour, not grey. */}
+        <Button type="submit" className="h-10" disabled={pending || question.trim().length < 3}>
           {FIRM_ASK_COPY.submit}
         </Button>
       </form>
@@ -116,7 +118,8 @@ export function AskTheFirm({
             type="button"
             data-firm-starter={key}
             onClick={() => pickStarter(key)}
-            className="rounded-full border border-border px-3 py-1 text-(length:--type-small) text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+            aria-pressed={starter === key}
+            className={chipVariants({ tone: starter === key ? "accent" : "quiet" })}
           >
             {FIRM_ASK_STARTER_COPY[key].label}
           </button>

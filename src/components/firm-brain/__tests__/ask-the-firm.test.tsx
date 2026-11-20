@@ -23,6 +23,7 @@ vi.mock("@/lib/firm-ask.functions", () => ({
 }));
 
 import { AskTheFirm } from "@/components/firm-brain/AskTheFirm";
+import { buttonVariants } from "@/components/ui/button";
 
 const member = { id: "p1", role: "em", has_firm_view: true, org_type: "company" };
 
@@ -87,6 +88,20 @@ describe("asking", () => {
     expect(document.querySelector("[data-firm-facts]")!.textContent).toContain("16 weeks");
     expect(document.querySelector("[data-firm-coverage]")!.textContent).toContain("Some engagements are not shared.");
     expect(screen.getByText("This answer rests on one source.")).toBeTruthy();
+  });
+
+  it("20 Nov redraw: Ask is the filled action button, not the grey one, and a picked starter shows as picked", () => {
+    wrap(<AskTheFirm profile={member} />);
+    const askButton = screen.getByRole("button", { name: "Ask" });
+    expect(askButton.className).toContain(buttonVariants({ variant: "default" }).split(" ")[0]);
+    expect(askButton.className).not.toContain("bg-primary");
+    const starter = document.querySelector('[data-firm-starter="went_wrong"]') as HTMLElement;
+    expect(starter.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(starter);
+    expect(starter.getAttribute("aria-pressed")).toBe("true");
+    // Clearing the box clears the pick.
+    fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "" } });
+    expect(starter.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("records which starter began the question", async () => {
