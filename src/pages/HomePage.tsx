@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
-import { AskTheFirm } from "@/components/firm-brain/AskTheFirm";
-import { JuniorTools } from "@/components/firm-brain/JuniorTools";
+import { AdminHome } from "@/components/home/AdminHome";
 import { HomeAsk } from "@/components/home/HomeAsk";
 import { HomeBoard } from "@/components/home/HomeBoard";
-import { HomeProposals } from "@/components/home/HomeProposals";
 import { UsesHomeCard } from "@/components/person/UsesHomeCard";
 import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -15,6 +13,7 @@ import { FIRM_MAP_HOME_CACHE, type FirmCanvasData } from "@/lib/firm-canvas-shar
 import { getFirmMap } from "@/lib/firm-map.functions";
 import { homeAsksTheFirm } from "@/lib/home-ask-shared";
 import { orderHomeGrid } from "@/lib/home-grid";
+import { homeShowsProposals } from "@/lib/role-screens-shared";
 
 export function HomePage() {
   const { data: profile } = useProfile();
@@ -26,14 +25,12 @@ export function HomePage() {
         // 21 Nov, D-85 PR B: everyone in the firm who is not an admin gets a mini firm brain at the top of Home, with
         // their boards as cards below. Prepare me and How we do this live on Firm brain now.
         <HomeBoard hero={<MiniFirmBrain profile={profile!} />} />
+      ) : homeShowsProposals(profile) ? (
+        // 21 Nov, D-82: an admin's Home is only the operating picture: what waits on them, then earlier today. Ask the
+        // firm lives on Firm brain (one row away in the menu) and the boards sit in the menu's lower Boards section.
+        <AdminHome profile={profile} />
       ) : (
-        <>
-          {/* 19 Nov (Liam): an admin's Home leads with the proposals picture. */}
-          <HomeProposals profile={profile} />
-          <AskTheFirm profile={profile} />
-          <JuniorTools profile={profile} />
-          <HomeBoard />
-        </>
+        <HomeBoard />
       )}
     </>
   );

@@ -56,14 +56,20 @@ async function openProposalPanel(page: Page) {
 const ASK_STATUS = /"k":\["status","summary"[^\]]*\],"v":\[\{"t":1,"s":"(\w+)"/;
 
 /**
- * Asks from Home the way the person does. An admin's Home answers in place (`data-firm-answer`); for a lead or a
- * member, Home turns the orb and opens the answer on the Firm brain canvas (D-85, #279), so the status is read from
- * the server's reply and the words from the canvas answer card once they stop changing.
+ * Asks the way the person does. For a lead or a member, Home turns the orb and opens the answer on the Firm brain
+ * canvas (D-85, #279). An admin's Home is the operating picture (D-82), so an admin asks on the Firm brain canvas
+ * itself. Either way the status is read from the server's reply and the words from the canvas answer card once they
+ * stop changing.
  */
 async function ask(page: Page, question: string): Promise<{ status: string; text: string }> {
   await page.goto("/home", { waitUntil: "domcontentloaded" });
   const box = page.getByTestId("ask-the-firm");
-  await box.waitFor({ timeout: 30_000 });
+  const adminHome = page.getByTestId("admin-home");
+  await box.or(adminHome).first().waitFor({ timeout: 30_000 });
+  if (await adminHome.isVisible()) {
+    await page.goto("/firm-brain", { waitUntil: "domcontentloaded" });
+    await box.waitFor({ timeout: 30_000 });
+  }
   const reply = page.waitForResponse(async (res) => res.url().includes("_serverFn") && ASK_STATUS.test(await res.text().catch(() => "")), { timeout: 120_000 });
   await box.getByLabel("Question for the firm").fill(question);
   await box.getByRole("button", { name: "Ask" }).click();

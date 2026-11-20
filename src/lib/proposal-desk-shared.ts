@@ -123,6 +123,17 @@ export function deskViewFromSearch(value: unknown): Exclude<DeskView, "open"> | 
   return value === "mine" || value === "won" || value === "lost" ? value : null;
 }
 
+/** 21 Nov (D-82): what an admin's Home may ask the Proposals page to open. Ids are checked for shape only. */
+export type DeskLink = { proposal?: string; lead?: string; tab?: "people" };
+
+export function deskLinkFromSearch(search: Record<string, unknown> | URLSearchParams): DeskLink {
+  const read = (key: string): unknown => (search instanceof URLSearchParams ? search.get(key) : search[key]);
+  const id = (value: unknown) => (typeof value === "string" && UUID.test(value) ? value.toLowerCase() : undefined);
+  const proposal = id(read("proposal"));
+  const lead = id(read("lead"));
+  return { ...(proposal ? { proposal } : {}), ...(lead ? { lead } : {}), ...(read("tab") === "people" ? { tab: "people" as const } : {}) };
+}
+
 export const DESK_COPY = {
   nav: "Proposals",
   title: "Proposals",
@@ -348,6 +359,19 @@ export type DeskProfileInput = { profile_id: string | null };
 
 export function deskProfileInput(input: { profile_id?: string | null | undefined } | undefined): DeskProfileInput {
   return { profile_id: uuidOrNull((input as Loose)?.["profile_id"]) };
+}
+
+/**
+ * 21 Nov (D-82): the list read also takes the start of the reader's own day, so the server can flag an ask that
+ * changed today without sending its time. Anything that is not a time within the last two days is dropped.
+ */
+export type DeskListInput = DeskProfileInput & { day_start?: string };
+
+export function deskListInput(input: { profile_id?: string | null | undefined; day_start?: unknown } | undefined, now: Date = new Date()): DeskListInput {
+  const raw = (input as Loose)?.["day_start"];
+  const at = typeof raw === "string" && raw.length <= 40 ? Date.parse(raw) : NaN;
+  const fine = Number.isFinite(at) && at <= now.getTime() + 3_600_000 && at >= now.getTime() - 48 * 3_600_000;
+  return { ...deskProfileInput(input), ...(fine ? { day_start: new Date(at).toISOString() } : {}) };
 }
 
 export type SentInput = DeskProfileInput & { proposal_id: string; sent: boolean };

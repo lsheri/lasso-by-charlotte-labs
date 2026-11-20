@@ -133,8 +133,7 @@ describe("the Partner's window", () => {
     mount();
     await start();
     next();
-    expect(m.navigate).not.toHaveBeenCalled(); // beat 1 is on Home, where the person already is
-    next();
+    // 21 Nov (D-82): beat 1 is on Firm brain, where Ask the firm now lives for the Partner.
     expect(m.navigate).toHaveBeenLastCalledWith({ to: "/firm-brain" });
     expect(screen.getByRole("button", { name: "Open Firm brain" })).toBeTruthy(); // the mocked path is still /home
     fireEvent.click(screen.getByRole("button", { name: "Open Firm brain" }));
@@ -328,6 +327,7 @@ describe("what the story keeps and sends", () => {
 
 describe("the spotlight", () => {
   it("outlines the real surface a beat points at when it is on the page, and takes no clicks", async () => {
+    m.path = "/firm-brain";
     const surface = document.createElement("div");
     surface.setAttribute("data-testid", "ask-the-firm");
     surface.getBoundingClientRect = () => ({ top: 100, left: 50, width: 400, height: 200, right: 450, bottom: 300, x: 50, y: 100, toJSON: () => ({}) });
@@ -358,6 +358,7 @@ describe("the spotlight", () => {
 
 describe("layering", () => {
   it("sits above the full-screen board page and hides the outline while a dialog is open", async () => {
+    m.path = "/firm-brain";
     const surface = document.createElement("div");
     surface.setAttribute("data-testid", "ask-the-firm");
     surface.getBoundingClientRect = () => ({ top: 100, left: 50, width: 400, height: 200, right: 450, bottom: 300, x: 50, y: 100, toJSON: () => ({}) });

@@ -98,6 +98,12 @@ export type AskView = {
   practice: boolean;
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
+  /**
+   * 21 Nov (D-82): true when the ask last changed (its reply, else its delivery report, else when it was sent) since
+   * the start of the reader's day, so an admin's Home can list it under "earlier today". Only this flag leaves the
+   * server, never a time: nothing on the page can work out how long anyone took.
+   */
+  today?: true;
 };
 
 export const ASK_COPY = {

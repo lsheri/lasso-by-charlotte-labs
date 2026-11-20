@@ -903,7 +903,11 @@ export function FirmBrainCanvasView({
         </div>
 
         {!refused ? (
-          <div className="absolute bottom-4 left-1/2 flex w-[min(640px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2 md:bottom-5 md:w-[min(640px,calc(100%-160px))]">
+          <div
+            // 21 Nov (D-82): the tour's Ask beats point here. Ask the firm left an admin's Home for this canvas.
+            data-testid="ask-the-firm"
+            className="absolute bottom-4 left-1/2 flex w-[min(640px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2 md:bottom-5 md:w-[min(640px,calc(100%-160px))]"
+          >
             {!answers.length ? (
               <div className="flex flex-wrap justify-center gap-2">
                 {startersFor(profile.role).map((key) => (

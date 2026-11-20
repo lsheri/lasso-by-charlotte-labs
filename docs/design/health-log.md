@@ -80,6 +80,8 @@ Every PR was checked against main with the full test suite, lint, and the design
 
 - **Skeleton frames for slow sections (20 Nov, demo speed PR).** New primitive `SkeletonFrame` in src/components/ui, made only of the existing `Skeleton` bar and token classes (border-border, corner-card); seven loading lines swapped for it. No literals added, health counts unchanged, no ceiling raised.
 
+- **Admin Home "what changed" (21 Nov, D-82).** New AdminHome composition from existing primitives (SkeletonFrame, Skeleton, Button, RollDown) and token classes only; the arrival motion is a small `ah-*` block in 05-motion-and-public-pages.css using `--live-edge` and `--ease-flow`, with a reduced-motion block. The admin's Boards section reuses `nb-group-header` and `nb-roll-chevron`. No literals added, no ceiling raised.
+
 ## Health counts
 
 Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3, 18 after the skin contract (#197). The audit's target for a skin was about 20. A test keeps it at 20 or fewer.

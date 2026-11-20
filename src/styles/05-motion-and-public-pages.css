@@ -2085,3 +2085,23 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .home-morph { position: fixed; z-index: var(--layer-drag); overflow: hidden; pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 10%, transparent); }
 .home-morph-words { position: absolute; inset: 12px 14px; overflow: hidden; color: var(--foreground); font-size: var(--type-lead); line-height: 1.5; }
 .home-morph-row { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 12px; color: var(--foreground); font-weight: 500; white-space: nowrap; opacity: 0; background: color-mix(in srgb, var(--live-edge) 14%, var(--card)); }
+
+/* 21 Nov, D-82: an item that arrives on an admin's Home grows in from a skeleton row, its words fade in over it, and a
+   quiet lime mark (the live edge, as Firm brain's done dot) beside it fades away. Under reduced motion the item is simply there, with no mark. */
+.ah-arrive { display: grid; grid-template-rows: 0fr; animation: ah-grow .32s var(--ease-flow) forwards; }
+.ah-arrive > .ah-arrive-inner { min-height: 0; overflow: hidden; position: relative; }
+.ah-arrive .ah-skel { position: absolute; inset: 12px 0; pointer-events: none; animation: ah-out .3s var(--ease-flow) .28s forwards; }
+.ah-arrive .ah-words { opacity: 0; animation: fc-fade .4s var(--ease-flow) .32s forwards; }
+.ah-mark { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--live-edge); box-shadow: 0 0 0 3px color-mix(in srgb, var(--live-edge) 22%, transparent); flex: none; opacity: 0; }
+.ah-arrive .ah-mark { animation: ah-mark 3.2s var(--ease-flow) .3s forwards; }
+@keyframes ah-grow { to { grid-template-rows: 1fr; } }
+@keyframes ah-out { to { opacity: 0; visibility: hidden; } }
+@keyframes ah-mark { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ah-arrive { animation: none; grid-template-rows: 1fr; }
+  .ah-arrive .ah-skel { display: none; }
+  .ah-arrive .ah-words { animation: none; opacity: 1; }
+  .ah-arrive .ah-mark { animation: none; opacity: 0; }
+}
+/* The proposal an admin's Home linked to, marked for a moment once the Proposals page brings it into view. */
+[data-proposal-row][data-linked="true"] { background: color-mix(in srgb, var(--live-edge) 12%, transparent); transition: background-color .6s var(--ease-flow); }

@@ -38,6 +38,7 @@ import {
   seesAllProposals,
   type DeskClient,
   type DeskList,
+  type DeskListInput,
   type DeskProfileInput,
   type DeskProposal,
   type NewProposalInput,
@@ -74,7 +75,7 @@ export type ProposalRow = {
 };
 
 /** The latest ask on a proposal, as stored. */
-export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string };
+export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string; status_at?: string | null; replied_at?: string | null };
 
 export type DeskStore = {
   /** An active, non-guest member of a company workspace, or a thrown 403. */
@@ -144,8 +145,14 @@ export type DeskStore = {
 
 const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
 
+/** Whether the ask's latest change (reply, else delivery report, else sending) came at or after `dayStart`. */
+function changedSince(ask: DeskAsk, dayStart: number): boolean {
+  const at = Date.parse(ask.replied_at ?? ask.status_at ?? ask.created_at);
+  return Number.isFinite(at) && at >= dayStart;
+}
+
 /** The latest ask per proposal, as the page draws it. */
-function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false): Map<string, AskView> {
+function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false, dayStart: number | null = null): Map<string, AskView> {
   const views = new Map<string, AskView>();
   for (const ask of asks) {
     if (views.has(ask.proposal_id)) continue;
@@ -156,6 +163,7 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connec
       practice: ask.status === "practice",
       // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
       waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
+      ...(dayStart !== null && changedSince(ask, dayStart) ? { today: true as const } : {}),
     });
   }
   return views;
@@ -167,7 +175,7 @@ async function mayAddClient(store: DeskStore, caller: DeskCaller): Promise<boole
 }
 
 /** The dashboard's rows. */
-export async function listDesk(store: DeskStore): Promise<DeskList> {
+export async function listDesk(store: DeskStore, input: { day_start?: string | undefined } = {}): Promise<DeskList> {
   const caller = await store.caller();
   const all = seesAllProposals(caller.role);
   // The roster is for admins and leads, so only they are told who the lead is.
@@ -188,7 +196,8 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
     store.texts(caller.orgId),
     mayAddClient(store, caller),
   ]);
-  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected);
+  const dayStart = input.day_start ? Date.parse(input.day_start) : NaN;
+  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected, Number.isFinite(dayStart) ? dayStart : null);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
   const proposals: DeskProposal[] = mine.map((row) => {
@@ -599,7 +608,7 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];
-      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
+      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at, status_at, replied_at").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
       return error ? [] : ((data ?? []) as DeskAsk[]);
     },
     async texts(orgId) {
@@ -650,8 +659,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
 
 /** The server functions' handlers. The functions file only wires them up, so these are what the tests call. */
 export const deskHandlers = {
-  async list(context: DeskContext, data: DeskProfileInput): Promise<DeskList> {
-    return listDesk(await realStore(context, data.profile_id));
+  async list(context: DeskContext, data: DeskListInput): Promise<DeskList> {
+    return listDesk(await realStore(context, data.profile_id), data);
   },
   async clients(context: DeskContext, data: DeskProfileInput): Promise<DeskClient[]> {
     return listDeskClients(await realStore(context, data.profile_id));

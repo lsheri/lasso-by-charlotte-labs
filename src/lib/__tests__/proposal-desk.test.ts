@@ -34,6 +34,7 @@ import {
   LEAD_COPY,
   leadInput,
 } from "@/lib/proposal-desk-shared";
+import { deskLinkFromSearch, deskListInput } from "@/lib/proposal-desk-shared";
 import { boardWin, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
@@ -602,6 +603,29 @@ describe("20 Nov: the lead's name and the ask on the page", () => {
     expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|minutes|seconds|\d{4}-\d{2}/);
   });
 
+  it("21 Nov (D-82): flags an ask that changed since the reader's day began, and sends no time with it", async () => {
+    const timed = async () => [
+      { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "yes", created_at: hoursAgo(30), status_at: hoursAgo(29), replied_at: hoursAgo(2) },
+      { proposal_id: "p2", contact_id: LEAD, to_demo: false, status: "delivered", reply: null, created_at: hoursAgo(30), status_at: hoursAgo(20), replied_at: null },
+    ];
+    const dayStart = hoursAgo(6);
+    const list = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }), { day_start: dayStart });
+    expect(list.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ reply: "yes", today: true });
+    expect(list.proposals.find((p) => p.id === "p2")?.ask && "today" in (list.proposals.find((p) => p.id === "p2")?.ask ?? {})).toBe(false);
+    expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|status_at|minutes|seconds|\d{4}-\d{2}/);
+    // No day start, no flag: the Proposals page's read is exactly as it was.
+    const plain = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }));
+    expect(plain.proposals.some((p) => p.ask && "today" in p.ask)).toBe(false);
+  });
+
+  it("21 Nov (D-82): keeps a day start only when it is a time from the last two days", () => {
+    const now = new Date("2026-11-20T12:00:00Z");
+    expect(deskListInput({ profile_id: null, day_start: "2026-11-20T08:00:00.000Z" }, now)).toEqual({ profile_id: null, day_start: "2026-11-20T08:00:00.000Z" });
+    for (const junk of ["2026-11-10T00:00:00Z", "2026-11-22T00:00:00Z", "yesterday", "", 5, null, "x".repeat(80)]) {
+      expect(deskListInput({ profile_id: null, day_start: junk }, now), String(junk)).toEqual({ profile_id: null });
+    }
+  });
+
   it("a practice ask stops waiting once texting is switched on", async () => {
     const practice = async () => [{ proposal_id: "p1", contact_id: null, to_demo: true, status: "practice", reply: null, created_at: hoursAgo(1) }];
     const off = await listDesk(fakeStore({ rows, asks: practice, role: "admin", texts: async () => ({ demo: true, connected: false }) }));
@@ -808,5 +832,15 @@ describe("20 Nov: minutes are not an hour", () => {
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(2), goalHours: goal, now: NOW }), goal)).toBe("Went out in 1 hour");
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(1.5), goalHours: goal, now: NOW }), goal)).toBe("Went out in 2 hours");
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(1), sentAt: hoursAgo(1), goalHours: goal, now: NOW }), goal)).toBe("Went out in under an hour");
+  });
+});
+
+describe("21 Nov (D-82): links from an admin's Home into Proposals", () => {
+  const ID = "00000000-0000-4000-8000-0000000000a1";
+  it("keeps a proposal id, a lead sheet id and the People tab, and drops anything else", () => {
+    expect(deskLinkFromSearch({ proposal: ID })).toEqual({ proposal: ID });
+    expect(deskLinkFromSearch({ lead: ID.toUpperCase() })).toEqual({ lead: ID });
+    expect(deskLinkFromSearch(new URLSearchParams(`tab=people&proposal=${ID}`))).toEqual({ proposal: ID, tab: "people" });
+    for (const junk of [{ proposal: "1; drop" }, { lead: "<script>" }, { tab: "settings" }, { proposal: 5 }, {}]) expect(deskLinkFromSearch(junk)).toEqual({});
   });
 });

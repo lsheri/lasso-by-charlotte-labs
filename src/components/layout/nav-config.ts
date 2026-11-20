@@ -528,6 +528,8 @@ export type ResolvedNavGroup = {
   label: string;
   emptyState?: string;
   headless?: boolean;
+  /** 21 Nov, D-82: the Boards section sits low in the menu and starts closed (an admin of a company workspace). */
+  lower?: boolean;
   items: ResolvedNavItem[];
 };
 
@@ -576,8 +578,21 @@ export function navFor(ctx: NavCtx, l: Omit<NavLabelCtx, "type">): ResolvedNavGr
       });
     }
   }
+  // D-82: an admin's Home is the operating picture, so their boards move to a lower section that starts closed.
+  if (boardsBelow(ctx) && !guest) {
+    const at = placed.main.findIndex((group) => group.id === "engagements");
+    if (at >= 0) {
+      const [boards] = placed.main.splice(at, 1);
+      placed.main.push({ ...(boards as ResolvedNavGroup), lower: true });
+    }
+  }
   // NAV-2: order comes from NAV_GROUPS; main rows, then the pinned foot, then the switcher menu.
   return [...placed.main, ...placed.bottom, ...placed.workspace_menu];
+}
+
+/** 21 Nov, D-82: who gets Boards as a lower, closed menu section. Admins of a company workspace only. */
+export function boardsBelow(ctx: Pick<NavCtx, "type" | "role">): boolean {
+  return ctx.type === "company" && ctx.role === "admin";
 }
 
 /* ---- Legacy exports, derived from the manifest for existing importers. ---- */

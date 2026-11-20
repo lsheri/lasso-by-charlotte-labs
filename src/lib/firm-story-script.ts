@@ -18,6 +18,8 @@ export type StoryWindow = "partner" | "lead";
  * Partner. A board is always the Marrowfield proposal board.
  */
 export type StoryPlace = "home" | "firm" | "board";
+// 21 Nov (D-82): an admin's Home is the operating picture, so every Ask beat happens on Firm brain, where Ask the
+// firm floats on the map for the Partner, admin or lead alike.
 
 export type StoryBeat = {
   /** The beat's number in the script, 0 to 8. Stable: events and session storage carry it. */
@@ -49,7 +51,7 @@ export type StoryBeat = {
 const SAME_QUESTION = "Have we designed a new service line for a health system before?";
 
 export const FIRM_STORY_SCRIPT = {
-  version: 3,
+  version: 4,
   /** Shown on every card. */
   demoLine: "Kestrel Bay Advisory is a demo firm. Every client, person and figure in it is fictional.",
   /** The last thing the story says. After it, the story stops talking. */
@@ -85,7 +87,7 @@ export const FIRM_STORY_SCRIPT = {
       notes:
         "A health system wants a diabetes prevention service line. Type the question into Ask the firm. Point at the sources under each line and open What it read: every claim links to work the firm has shared.",
       question: "How would you find that out today?",
-      place: "home",
+      place: "firm",
       anchor: "ask-the-firm",
       ask: SAME_QUESTION,
     },
@@ -114,10 +116,10 @@ export const FIRM_STORY_SCRIPT = {
       title: "What we charged, how it ended",
       caption: "Past fees and how each engagement ended, without chasing whoever ran it.",
       notes:
-        "Use What we charged in Ask the firm. Fees are read from each statement of work and shown to partners only. The line under each engagement says how it ended and what it taught.",
+        "Press Fees on the map, or ask what the firm charged for work like this. Fees are read from each statement of work and shown to partners only. The line under each engagement says how it ended and what it taught.",
       question: "When you price a new piece of work, whose memory do you rely on?",
-      place: "home",
-      anchor: "ask-the-firm",
+      place: "firm",
+      anchor: "firm-canvas-fees",
       ask: null,
     },
     {
@@ -166,9 +168,9 @@ export const FIRM_STORY_SCRIPT = {
       title: "Next Monday",
       caption: "Next Monday, any partner asks the same question. The answer now includes this engagement, and the map has one more point.",
       notes:
-        "Ask the same question as before. The new engagement is among the sources. Open one of its sources and mark it as an exemplar: the next draft borrows from it. Then open Firm brain: the map has one more thread.",
+        "Ask the same question as before. The new engagement is among the sources. Open one of its sources and mark it as an exemplar: the next draft borrows from it. Then look at the map: it has one more thread.",
       question: "How long does it take today before a colleague can build on work you finished last week?",
-      place: "home",
+      place: "firm",
       anchor: "ask-the-firm",
       ask: SAME_QUESTION,
     },
@@ -180,7 +182,7 @@ export const FIRM_STORY_SCRIPT = {
       caption: "Your turn. Ask Kestrel Bay anything, then explore on your own.",
       notes: "Hand over the keyboard. Let them ask in their own words, then let them explore.",
       question: "What would you ask your own firm, if it could answer?",
-      place: "home",
+      place: "firm",
       anchor: "ask-the-firm",
       ask: null,
     },

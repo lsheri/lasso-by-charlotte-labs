@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
@@ -14,7 +14,7 @@ import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
-import { afterCreate, DESK_COPY, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
+import { afterCreate, DESK_COPY, deskLinkFromSearch, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
@@ -29,6 +29,21 @@ import { profileHasFirmView } from "@/lib/workspace-capabilities";
  * and the intake dialog. The People tab is the roster panel (its own files and server functions); it is for admins
  * and leads, so nobody else is shown the tab, and the roster's server functions refuse them in any case.
  */
+/** Brings the proposal a link named into view once the list is there, and marks it for a moment. */
+function useLinkedRow(id: string | undefined, ready: boolean) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (!id || !ready || done.current) return;
+    const row = document.querySelector<HTMLElement>(`[data-proposal-row="${id}"]`);
+    if (!row) return;
+    done.current = true;
+    row.setAttribute("data-linked", "true");
+    row.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    const timer = window.setTimeout(() => row.removeAttribute("data-linked"), 2400);
+    return () => window.clearTimeout(timer);
+  }, [id, ready]);
+}
+
 export function ProposalsPage() {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -37,6 +52,8 @@ export function ProposalsPage() {
   const [open, setOpen] = useState(false);
   // "See all" on Home carries the view chosen there. Read once from the address, so the chips stay in charge after.
   const [initialView] = useState(() => deskViewFromSearch(new URLSearchParams(globalThis.location?.search ?? "").get("view")) ?? undefined);
+  // 21 Nov (D-82): an admin's Home links here to one proposal, to its lead sheet, or to People. Read once, like the view.
+  const [link] = useState(() => deskLinkFromSearch(new URLSearchParams(globalThis.location?.search ?? "")));
   const allowed = profileHasFirmView(profile) && profile?.role !== "coach" && !profile?.is_guest;
   const profileId = allowed ? profile?.id : undefined;
   const showPeople = allowed && seesAllProposals(profile?.role);
@@ -59,13 +76,16 @@ export function ProposalsPage() {
     queryFn: () => listRosterFn({ data: { profile_id: profileId as string } }),
   });
   const brand = useBrandCopy();
-  const [startLead, setStartLead] = useState<string | null>(null);
+  const [startLead, setStartLead] = useState<string | null>(link.lead ?? null);
+  // The sheet a link opened is not a proposal just started, so it does not say so.
+  const [leadFromLink, setLeadFromLink] = useState(Boolean(link.lead));
   // A proposal that saved but is not in the list yet (QA M1). Cleared by itself once a read shows it.
   const [notShown, setNotShown] = useState<{ id: string; title: string } | null>(null);
   const lastTitle = useRef("");
   const missing = notShown !== null && !desk.data?.proposals.some((proposal) => proposal.id === notShown.id) ? notShown : null;
   // Who may pick a lead: the server says so for the desk, and the people list was readable.
   const mayPickLead = Boolean(desk.data?.canPickLead && roster.data?.allowed);
+  useLinkedRow(link.proposal, Boolean(desk.data));
 
   if (profile && !allowed) {
     return (
@@ -86,7 +106,7 @@ export function ProposalsPage() {
           </Button>
         }
       />
-      <Tabs defaultValue="proposals">
+      <Tabs defaultValue={link.tab === "people" && showPeople ? "people" : "proposals"}>
         <TabsList>
           <TabsTrigger value="proposals">{DESK_COPY.tabs.proposals}</TabsTrigger>
           {showPeople ? <TabsTrigger value="people">{DESK_COPY.tabs.people}</TabsTrigger> : null}
@@ -113,7 +133,11 @@ export function ProposalsPage() {
               data={desk.data}
               initialView={initialView}
               startLead={startLead}
-              onStartLeadDone={() => setStartLead(null)}
+              startLeadFresh={!leadFromLink}
+              onStartLeadDone={() => {
+                setStartLead(null);
+                setLeadFromLink(false);
+              }}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
               leadWords={wonTextBody({ brandName: brand("Lasso"), firmName: profile?.org_name ?? "" })}
               onLead={async (proposalId, contactId) => {
@@ -193,6 +217,7 @@ export function ProposalsPage() {
           const next = afterCreate(queryClient.getQueryData<DeskList>(["proposal-desk", profileId]), id, mayPickLead);
           // QA M1: if the new row is not in the list, say it was started, and open nothing by itself later.
           setStartLead(null);
+          setLeadFromLink(false);
           if (next === "notRefreshed") setNotShown({ id, title: lastTitle.current });
           else if (next === "sheet") await morph(() => { setOpen(false); setStartLead(id); });
         }}
