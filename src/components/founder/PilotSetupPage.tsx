@@ -2,13 +2,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState, type FormEvent } from "react";
 
-import { isRefusal } from "@/components/founder/AiCostsPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { tagVariants } from "@/components/ui/tag";
 import { cleanPilotInput, PILOT_COPY as C, PILOT_NAME_MAX, type PilotRow, type PilotSetupResult } from "@/lib/pilot-setup-shared";
 import { listPilotsFn, setUpPilotFn } from "@/lib/pilot-setup.functions";
+
+/** A 403 from the founder gate, or no session at all. */
+export function isRefusal(error: unknown): boolean {
+  if (error instanceof Response) return error.status === 403 || error.status === 401;
+  const message = error instanceof Error ? error.message : "";
+  return /^(Unauthorized|Forbidden)/.test(message);
+}
 
 const when = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 

@@ -10,7 +10,6 @@ import { PILOT_COPY as C, type PilotRow } from "@/lib/pilot-setup-shared";
 const m = vi.hoisted(() => ({ setUp: vi.fn(), list: vi.fn() }));
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-vi.mock("@/lib/ai-costs.functions", () => ({ getAiCostReport: vi.fn() }));
 vi.mock("@/lib/pilot-setup.functions", () => ({
   setUpPilotFn: (...a: unknown[]) => m.setUp(...a),
   listPilotsFn: (...a: unknown[]) => m.list(...a),
