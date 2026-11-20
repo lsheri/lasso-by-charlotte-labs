@@ -189,6 +189,10 @@ export const ORB_COPY = {
   opening: "Opening it on Firm brain",
   nothing: "Nothing shared with the firm matches yet. Opening Firm brain to show what was read.",
   empty: "Nothing is shared with the firm yet.",
+  /** 20 Nov 2026, chat pill PR 1b: the one next step, where the orb would be. */
+  emptyNext: "Share a finished board with the firm and it appears here.",
+  /** Under the orb (D-97 prototype): how much the firm can learn from. */
+  learnFrom: (n: number) => (n === 1 ? "1 past engagement the firm can learn from" : `${n} past engagements the firm can learn from`),
   failed: "That did not work. Try again.",
   tryAgain: "Try again",
 } as const;

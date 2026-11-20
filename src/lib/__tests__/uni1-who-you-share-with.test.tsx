@@ -23,6 +23,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ se
 vi.mock("@/hooks/use-members", () => ({
   useMembers: () => ({ data: { viewer_role: "admin", members: [{ id: "coach", display_name: "Alex Example", role: "coach", created_at: "2026-01-01", deactivated_at: null }], invites: [], entitlement: null }, isLoading: false, error: null }),
   useMemberAction: () => ({ mutate: vi.fn(), isPending: false }),
+  useChangeMemberRole: () => vi.fn(),
 }));
 vi.mock("@/components/invites/InviteDialog", () => ({ InviteDialog: ({ trigger }: { trigger: React.ReactNode }) => <>{trigger}</> }));
 vi.mock("@/components/settings/DataSection", () => ({ COPY: { membersLink: "The workspace data level is in Settings, under Your data." } }));

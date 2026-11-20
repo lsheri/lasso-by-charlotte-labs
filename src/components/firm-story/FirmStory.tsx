@@ -106,6 +106,14 @@ export function FirmStoryStage({
   // The stage is mounted only for a person who opted in, so the page is watched for dialogs only for them.
   const dialogOpen = useDialogOpen(true);
 
+  // 20 Nov 2026 (QA H1 of PR 289): while the story is on screen, its corner is the story's. The page says so, and the
+  // desktop Feedback button, which shares that corner, steps aside until the story ends.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-firm-story", "");
+    return () => root.removeAttribute("data-firm-story");
+  }, []);
+
   // Read in the first render, not in an effect: a reload mid-story must not paint the start button for a frame.
   const [beat, setBeatState] = useState<number | null>(() => readStoredBeat(profileId));
   const [exploring, setExploring] = useState(false);
@@ -177,7 +185,9 @@ export function FirmStoryStage({
   const layer = dialogOpen ? "z-(--layer-tabbar)" : "z-(--layer-ledger)";
   // Wide screens: bottom left, past the sidebar (or the board page's narrow rail), never over the sidebar's footer.
   const gutter = /\/canvas-lab(\/|$)/.test(pathname) ? PAST_BOARD_RAIL : PAST_SIDEBAR;
-  const frame = `pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] ${layer} flex justify-center px-4 md:bottom-4 md:justify-start ${gutter} print:hidden`;
+  // 20 Nov 2026 (QA H1 of PR 289): on a phone the chat pill sits just above the tab bar (44px plus a 16px gap), so the
+  // story frame starts above the pill rather than on it.
+  const frame = `pointer-events-none fixed inset-x-0 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] ${layer} flex justify-center px-4 md:bottom-4 md:justify-start ${gutter} print:hidden`;
 
   if (view.kind === "idle" || exploring || dialogOpen) {
     const resuming = view.kind !== "idle";

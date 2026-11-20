@@ -25,9 +25,13 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@/lib/firm-story.functions", () => ({ firmStoryAccessFn: (...a: unknown[]) => m.access(...a) }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }));
-vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: m.brand }) }));
+vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: m.brand, look: { icons: "lucide" } }) }));
+
+vi.mock("@/components/layout/BrandLockup", () => ({ BrandMark: () => <i data-mark="" /> }));
+vi.mock("@/components/firm-brain/CiteThis", () => ({ CiteThis: () => null }));
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
+import { ChatPill } from "@/components/pill/ChatPill";
 import { FIRM_STORY_SCRIPT } from "@/lib/firm-story-script";
 import { storyStorageKey } from "@/lib/firm-story-shared";
 /** Any demo workspace: found by its settings marker now, never by this id. */
@@ -379,5 +383,34 @@ describe("layering", () => {
       surface.remove();
       dialog.remove();
     }
+  });
+});
+
+// Live check of PR 290 (20 Nov 2026): with the chat pill on every page, the story opened no card, because the pill's
+// panel read as an open dialog. Shut, the pill is no dialog; open, it is one, and the story pauses under it.
+describe("with the chat pill on the page", () => {
+  it("opens its card while the pill is shut, and pauses while the pill is open", async () => {
+    render(
+      <ChatPill
+        brandName="Lasso"
+        askLabel="Ask Lasso"
+        firstName="Maren"
+        place="home"
+        canAsk
+        questionMax={500}
+        starters={[]}
+        onAsk={vi.fn()}
+        onOpenOnCanvas={vi.fn()}
+        onOpenSource={vi.fn()}
+        reduceMotion
+      />,
+    );
+    mount();
+    expect((await start()).textContent).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Open the Lasso helper" }));
+    await waitFor(() => expect(screen.queryByTestId("firm-story-card")).toBeNull(), { timeout: 2000 });
+    fireEvent.click(screen.getByRole("button", { name: "Tuck the chat away" }));
+    fireEvent.click(await launcher());
+    await waitFor(() => expect(screen.getByTestId("firm-story-card")).toBeTruthy(), { timeout: 2000 });
   });
 });

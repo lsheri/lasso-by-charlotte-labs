@@ -79,6 +79,8 @@ export type HandedQuestion = { question: string; result: FirmAskResult | null };
 export const HAND_OFF_MS = 2 * 60_000;
 
 let handed: (HandedQuestion & { profileId: string; at: number }) | null = null;
+/** An open Firm brain page listening for a question handed over while it is already on screen (the chat pill). */
+const listeners = new Set<() => void>();
 let fromHome = false;
 let returning: Rect | null = null;
 
@@ -88,9 +90,23 @@ export function handOffQuestion(
   result: FirmAskResult | null,
   profileId: string,
   now = Date.now(),
+  /** 20 Nov, chat pill: a question from the pill did not come from Home's box, so Firm brain shows no Home button. */
+  options: { fromHome?: boolean } = {},
 ): void {
   handed = { question, result, profileId, at: now };
-  fromHome = true;
+  fromHome = options.fromHome ?? true;
+  for (const listener of [...listeners]) listener();
+}
+
+/**
+ * 20 Nov, chat pill: a Firm brain page already on screen hears of a handed question at once, and takes it the usual
+ * way (once, only for the same person, only while fresh). Returns the way to stop listening.
+ */
+export function subscribeHandOff(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 /**

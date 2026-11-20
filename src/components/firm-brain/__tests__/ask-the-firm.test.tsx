@@ -56,14 +56,14 @@ afterEach(cleanup);
 describe("who sees the box", () => {
   it("shows for a member of a company workspace, with no flag asked", () => {
     wrap(<AskTheFirm profile={member} />);
-    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+    expect(screen.getByTestId("firm-view-ask")).toBeTruthy();
   });
 
   it("stays hidden outside company workspaces, and for coaches", () => {
     const { rerender } = wrap(<AskTheFirm profile={{ ...member, has_firm_view: false, org_type: "personal" }} />);
-    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
+    expect(screen.queryByTestId("firm-view-ask")).toBeNull();
     rerender(<QueryClientProvider client={new QueryClient()}><AskTheFirm profile={{ ...member, role: "coach" }} /></QueryClientProvider>);
-    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
+    expect(screen.queryByTestId("firm-view-ask")).toBeNull();
   });
 
   it("offers What we charged only to admins and leads", () => {
@@ -116,7 +116,7 @@ describe("asking", () => {
     wrap(<AskTheFirm profile={member} />);
     fireEvent.change(screen.getByLabelText("Question for the firm"), { target: { value: "Anything?" } });
     fireEvent.click(screen.getByRole("button", { name: "Ask" }));
-    await waitFor(() => expect(screen.queryByTestId("ask-the-firm")).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId("firm-view-ask")).toBeNull());
   });
 
   it("says the daily limit was reached, not try again, when the server refuses for spend", async () => {
@@ -127,7 +127,7 @@ describe("asking", () => {
     await waitFor(() => expect(screen.getByText("Today's limit for the firm brain has been reached. It resets at midnight UTC.")).toBeTruthy());
     expect(screen.queryByText("That did not work. Try again.")).toBeNull();
     // The box stays: tomorrow it works again.
-    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+    expect(screen.getByTestId("firm-view-ask")).toBeTruthy();
   });
 
   it("still says try again for any other failure", async () => {

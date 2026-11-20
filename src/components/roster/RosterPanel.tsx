@@ -21,13 +21,14 @@ import {
   ROSTER_COPY as COPY,
   ROSTER_SEARCH_FROM,
   type RosterChangeResult,
+  type RosterInviteResult,
   type RosterContact,
   type RosterList,
   type RosterProblem,
   type RosterSaveInput,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
-import { askNewNumberFn, listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
+import { askNewNumberFn, listRosterFn, saveRosterContactFn, sendRosterInviteFn } from "@/lib/roster.functions";
 
 /**
  * 19 Nov 2026, Proposal Desk: the roster, "People we work with". People a firm brings in on proposals who have no
@@ -45,12 +46,14 @@ export function RosterPanel({ profileId }: { profileId: string | null | undefine
   const load = useServerFn(listRosterFn);
   const save = useServerFn(saveRosterContactFn);
   const askNewNumber = useServerFn(askNewNumberFn);
+  const sendInvite = useServerFn(sendRosterInviteFn);
   return (
     <RosterView
       profileId={profileId ?? null}
       load={(id) => load({ data: { profile_id: id } })}
       save={(input) => save({ data: input })}
       askNewNumber={(id, contactId) => askNewNumber({ data: { profile_id: id, id: contactId } })}
+      sendInvite={(id, contactId) => sendInvite({ data: { profile_id: id, id: contactId } })}
       copyText={(text) => navigator.clipboard.writeText(text)}
       origin={typeof window === "undefined" ? "" : window.location.origin}
     />
@@ -63,6 +66,8 @@ export type RosterViewProps = {
   save: (input: RosterSaveInput) => Promise<RosterSaveResult>;
   /** Opens the window in which this person's link takes one new number. No number passes through here. */
   askNewNumber: (profileId: string | null, contactId: string) => Promise<RosterChangeResult>;
+  /** Emails this person their own agreement link. Optional so older callers keep working without the button. */
+  sendInvite?: ((profileId: string | null, contactId: string) => Promise<RosterInviteResult>) | undefined;
   copyText: (text: string) => Promise<void>;
   /** The site's address, put in front of each person's link. */
   origin: string;
@@ -85,6 +90,7 @@ export function RosterView({
   load,
   save,
   askNewNumber,
+  sendInvite,
   copyText,
   origin,
 }: RosterViewProps) {
@@ -93,6 +99,7 @@ export function RosterView({
   const [note, setNote] = useState<Note>(null);
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const live = useRef(true);
   useEffect(() => {
@@ -156,6 +163,27 @@ export function RosterView({
     } catch {
       setNote({ id: contact.id, tone: "alert", text: COPY.copyFailed, showLink: true });
     }
+  }
+
+  async function emailLink(contact: RosterContact) {
+    if (!sendInvite || emailing) return;
+    setEmailing(contact.id);
+    setNote(null);
+    const startedFor = profileId;
+    let result: RosterInviteResult | "error";
+    try {
+      result = await sendInvite(profileId, contact.id);
+    } catch {
+      result = "error";
+    }
+    if (!live.current || startedFor !== profileId) return;
+    setEmailing(null);
+    if (result === "error")
+      return setNote({ id: contact.id, tone: "alert", text: COPY.emailFailures.unavailable, showLink: false });
+    if (!result.ok)
+      return setNote({ id: contact.id, tone: "alert", text: COPY.emailFailures[result.reason], showLink: result.reason === "not_set_up" });
+    put(result.contact);
+    setNote({ id: contact.id, tone: "status", text: COPY.emailed(result.contact.email ?? contact.email ?? ""), showLink: false });
   }
 
   async function askForNewNumber(contact: RosterContact) {
@@ -340,6 +368,7 @@ export function RosterView({
                           ? COPY.stoppedOn(contact.stoppedOn)
                           : null,
                         contact.changeUntil ? COPY.changeOpen(contact.changeUntil) : null,
+                        contact.texts !== "agreed" && contact.invitedOn ? COPY.emailedOn(contact.invitedOn) : null,
                         contact.numberDiffers ? COPY.numberDiffers : null,
                       ]
                         .filter(Boolean)
@@ -357,6 +386,18 @@ export function RosterView({
                   >
                     {COPY.copy}
                   </Button>
+                  {sendInvite && contact.texts !== "agreed" && contact.email ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={emailing !== null}
+                      aria-label={COPY.emailLabel(contact.name)}
+                      onClick={() => void emailLink(contact)}
+                    >
+                      {emailing === contact.id ? COPY.emailing : COPY.email}
+                    </Button>
+                  ) : null}
                   {contact.texts === "agreed" ? (
                     <Button
                       type="button"

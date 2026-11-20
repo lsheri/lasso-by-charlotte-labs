@@ -155,10 +155,14 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   );
 }
 
-/** Floating desktop entry point. On phones the header button is the entry. */
+/**
+ * Floating desktop entry point. On phones the header button is the entry. 20 Nov 2026 (chat pill, D-97): the
+ * bottom right corner belongs to the chat pill, so Feedback sits at the bottom left of the page, beside the menu. In the
+ * demo firm's story (QA H1 of PR 289) that corner is the story card's, so Feedback steps aside while the story is open.
+ */
 export function FeedbackWidget() {
   return (
-    <div className="fixed bottom-4 right-4 z-40 hidden md:block print:hidden">
+    <div className="fixed bottom-4 left-[calc(var(--nav-width)+1rem)] z-40 hidden md:block print:hidden [html[data-firm-story]_&]:hidden">
       <FeedbackDialog
         trigger={
           <button

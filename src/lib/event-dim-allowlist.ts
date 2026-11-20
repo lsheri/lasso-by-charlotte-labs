@@ -199,6 +199,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "tour.skipped": ["step", "register", "surface"],
   "tour.finished": ["register", "surface"],
   "home.connect_tools_opened": [],
+  "pill.opened": ["page"],
+  "pill.expanded": ["page"],
   "home.engagement_opened": [],
   "home.ideas_note_composed": [],
   "home.new_engagement_started": [],
@@ -262,7 +264,8 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "mcp.push_options_requested": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
   "member.deactivated": [],
   "member.reactivated": [],
-  "member.role_changed": [],
+  // 20 Nov 2026: role names only (admin, lead, em), never who changed or whose role.
+  "member.role_changed": ["from", "to"],
   "model.used": ["length", "model_id", "model_raw", "model_switched", "role", "task_class", "turn_band", "vendor", "via"],
   "note.created": ["cites_count", "days_to_note_band", "entry"],
   "onboarding.tools_selected": ["count"],
