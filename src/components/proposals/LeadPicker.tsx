@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect } from "@/components/ui/native-select";
 import { tagVariants } from "@/components/ui/tag";
+import { useBackCloses } from "@/hooks/use-back-closes";
 import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
 import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
 
@@ -23,17 +24,20 @@ export function LeadLine({ lead, picked, onPick }: { lead: RosterContact | undef
 
 /**
  * 20 Nov 2026 (Liam): pick the lead for a proposal from "People we work with", and see the message as it will
- * read. Says plainly whether the person agreed to texts, and what is true today: saving the pick sends nothing, and
- * the send does not read the lead yet (demo workspaces send to their demo number).
+ * read. Says plainly whether the person agreed to texts, and where a text would go: saving the pick sends nothing; a real
+ * workspace texts the person picked once they have agreed, and a demo workspace texts its demo number.
  * No phone number is ever on this page.
  */
 export function LeadDialog({
   proposal,
   roster,
   words,
+  demo,
   onClose,
   onSave,
 }: {
+  /** A demo workspace: its texts go to the demo number, not to the person picked. */
+  demo?: boolean | undefined;
   proposal: DeskProposal | null;
   /** Undefined while the list loads or when it could not be read. */
   roster: RosterContact[] | undefined;
@@ -72,6 +76,9 @@ export function LeadDialog({
     }
   }
 
+  // On a phone, Back closes the dialog and stays on the page.
+  useBackCloses(proposal !== null, onClose);
+
   return (
     <Dialog
       open={proposal !== null}
@@ -103,7 +110,7 @@ export function LeadDialog({
           </p>
         ) : null}
         <p data-lead-today className="text-sm text-muted-foreground">
-          {copy.today}
+          {copy.where(Boolean(demo))}
         </p>
         <div className="space-y-2 text-(length:--type-small)">
           <p className="micro-label">{copy.preview}</p>

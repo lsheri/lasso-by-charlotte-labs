@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { MessageExamples } from "@/components/proposals/MessageExamples";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WON_TEXT_COPY, type WonTextStatus } from "@/lib/won-text-shared";
 import { sendWonText, wonTextStatus } from "@/lib/won-text.functions";
 
@@ -15,7 +16,16 @@ import { sendWonText, wonTextStatus } from "@/lib/won-text.functions";
  * is ever on this page. Beside the words sit two examples, email (later) and RCS (coming soon); they are pictures and
  * send nothing.
  */
-export function WonTextButton({ engagementId, profileId }: { engagementId: string; profileId: string | null | undefined }) {
+export function WonTextButton({
+  engagementId,
+  profileId,
+  variant = "inline",
+}: {
+  engagementId: string;
+  profileId: string | null | undefined;
+  /** "dialog" opens the words in a dialog, for a narrow place such as the strip at the top of a board. */
+  variant?: "inline" | "dialog" | undefined;
+}) {
   const load = useServerFn(wonTextStatus);
   const send = useServerFn(sendWonText);
   const [status, setStatus] = useState<WonTextStatus | null>(null);
@@ -85,18 +95,11 @@ export function WonTextButton({ engagementId, profileId }: { engagementId: strin
     }
   }
 
-  return (
-    <div data-won-text className="mt-1 flex flex-col gap-1 text-(length:--type-small)">
-      {sent ? (
-        <p data-won-text-sent role="status" className="text-foreground">
-          {WON_TEXT_COPY.sent}
-        </p>
-      ) : null}
-      {open ? (
+  const preview = (
         <div data-won-text-preview className="flex flex-col gap-2">
           <p className="text-muted-foreground">{WON_TEXT_COPY.title}</p>
           <MessageExamples words={status.preview} />
-          <p className="max-w-[40ch] text-muted-foreground">{status.connected ? WON_TEXT_COPY.helper : status.needsNumber ? WON_TEXT_COPY.noNumber : WON_TEXT_COPY.awaiting}</p>
+          <p className="max-w-[40ch] text-muted-foreground">{status.blocked ?? (status.connected ? WON_TEXT_COPY.helper : status.needsNumber ? WON_TEXT_COPY.noNumber : WON_TEXT_COPY.awaiting)}</p>
           {problem ? (
             <p role="alert" className="max-w-[40ch] text-destructive">
               {problem}
@@ -111,6 +114,32 @@ export function WonTextButton({ engagementId, profileId }: { engagementId: strin
             </Button>
           </div>
         </div>
+  );
+
+  return (
+    <div data-won-text className="mt-1 flex flex-col gap-1 text-(length:--type-small)">
+      {sent ? (
+        <p data-won-text-sent role="status" className="text-foreground">
+          {WON_TEXT_COPY.sent}
+        </p>
+      ) : null}
+      {variant === "dialog" ? (
+        <>
+          <Button type="button" size="sm" variant="outline" className="self-start" onClick={openPreview}>
+            {WON_TEXT_COPY.open}
+          </Button>
+          <Dialog open={open} onOpenChange={(next) => { if (!next && !busy) setOpen(false); }}>
+            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl" data-testid="won-text-dialog">
+              <DialogHeader>
+                <DialogTitle className="page-title">{WON_TEXT_COPY.open}</DialogTitle>
+                <DialogDescription>{WON_TEXT_COPY.title}</DialogDescription>
+              </DialogHeader>
+              {preview}
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : open ? (
+        preview
       ) : (
         <Button type="button" size="sm" variant="outline" className="self-start" onClick={openPreview}>
           {WON_TEXT_COPY.open}

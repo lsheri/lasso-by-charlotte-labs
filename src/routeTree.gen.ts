@@ -65,6 +65,7 @@ import { Route as JCodeRouteImport } from './routes/j.$code'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as MemoTokenRouteImport } from './routes/memo.$token'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
+import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
 import { Route as SupportGrantIdRouteImport } from './routes/support.$grantId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
@@ -79,6 +80,7 @@ import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiPublicAuthEmailHookRouteImport } from './routes/api/public/auth-email-hook'
 import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
+import { Route as ApiPublicTextEventsRouteImport } from './routes/api/public/text-events'
 import { Route as ApiReflectPrimeRouteImport } from './routes/api/reflect.prime'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as DotwellKnownOauthProtectedResourceApiMcpRouteImport } from './routes/[.]well-known/oauth-protected-resource.api.mcp'
@@ -372,6 +374,11 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
   id: '/shared-board/$token',
   path: '/shared-board/$token',
@@ -445,6 +452,11 @@ const ApiPublicAuthEmailHookRoute = ApiPublicAuthEmailHookRouteImport.update({
 const ApiPublicResendWebhookRoute = ApiPublicResendWebhookRouteImport.update({
   id: '/api/public/resend-webhook',
   path: '/api/public/resend-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTextEventsRoute = ApiPublicTextEventsRouteImport.update({
+  id: '/api/public/text-events',
+  path: '/api/public/text-events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReflectPrimeRoute = ApiReflectPrimeRouteImport.update({
@@ -543,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/join/edu': typeof JoinEduRoute
   '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$code': typeof RCodeRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
   '/demo/': typeof DemoIndexRoute
@@ -557,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
+  '/api/public/text-events': typeof ApiPublicTextEventsRoute
   '/api/reflect/prime': typeof ApiReflectPrimeRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
@@ -621,6 +635,7 @@ export interface FileRoutesByTo {
   '/join/edu': typeof JoinEduRoute
   '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$code': typeof RCodeRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
   '/demo': typeof DemoIndexRoute
@@ -635,6 +650,7 @@ export interface FileRoutesByTo {
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
+  '/api/public/text-events': typeof ApiPublicTextEventsRoute
   '/api/reflect/prime': typeof ApiReflectPrimeRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
@@ -701,6 +717,7 @@ export interface FileRoutesById {
   '/join_/edu': typeof JoinEduRoute
   '/memo/$token': typeof MemoTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$code': typeof RCodeRoute
   '/shared-board/$token': typeof SharedBoardTokenRoute
   '/support/$grantId': typeof SupportGrantIdRoute
   '/demo/': typeof DemoIndexRoute
@@ -715,6 +732,7 @@ export interface FileRoutesById {
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/public/auth-email-hook': typeof ApiPublicAuthEmailHookRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
+  '/api/public/text-events': typeof ApiPublicTextEventsRoute
   '/api/reflect/prime': typeof ApiReflectPrimeRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
@@ -781,6 +799,7 @@ export interface FileRouteTypes {
     | '/join/edu'
     | '/memo/$token'
     | '/oauth/consent'
+    | '/r/$code'
     | '/shared-board/$token'
     | '/support/$grantId'
     | '/demo/'
@@ -795,6 +814,7 @@ export interface FileRouteTypes {
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
     | '/api/public/resend-webhook'
+    | '/api/public/text-events'
     | '/api/reflect/prime'
     | '/api/reflect/stream'
     | '/coaching/'
@@ -859,6 +879,7 @@ export interface FileRouteTypes {
     | '/join/edu'
     | '/memo/$token'
     | '/oauth/consent'
+    | '/r/$code'
     | '/shared-board/$token'
     | '/support/$grantId'
     | '/demo'
@@ -873,6 +894,7 @@ export interface FileRouteTypes {
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
     | '/api/public/resend-webhook'
+    | '/api/public/text-events'
     | '/api/reflect/prime'
     | '/api/reflect/stream'
     | '/coaching'
@@ -938,6 +960,7 @@ export interface FileRouteTypes {
     | '/join_/edu'
     | '/memo/$token'
     | '/oauth/consent'
+    | '/r/$code'
     | '/shared-board/$token'
     | '/support/$grantId'
     | '/demo/'
@@ -952,6 +975,7 @@ export interface FileRouteTypes {
     | '/api/mcp/$token'
     | '/api/public/auth-email-hook'
     | '/api/public/resend-webhook'
+    | '/api/public/text-events'
     | '/api/reflect/prime'
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
@@ -994,6 +1018,7 @@ export interface RootRouteChildren {
   JoinEduRoute: typeof JoinEduRoute
   MemoTokenRoute: typeof MemoTokenRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  RCodeRoute: typeof RCodeRoute
   SharedBoardTokenRoute: typeof SharedBoardTokenRoute
   SupportGrantIdRoute: typeof SupportGrantIdRoute
   DemoIndexRoute: typeof DemoIndexRoute
@@ -1001,6 +1026,7 @@ export interface RootRouteChildren {
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiPublicAuthEmailHookRoute: typeof ApiPublicAuthEmailHookRoute
   ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
+  ApiPublicTextEventsRoute: typeof ApiPublicTextEventsRoute
   ApiReflectPrimeRoute: typeof ApiReflectPrimeRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
   ApiPublicHooksEgressSweepRoute: typeof ApiPublicHooksEgressSweepRoute
@@ -1401,6 +1427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shared-board/$token': {
       id: '/shared-board/$token'
       path: '/shared-board/$token'
@@ -1497,6 +1530,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/resend-webhook'
       fullPath: '/api/public/resend-webhook'
       preLoaderRoute: typeof ApiPublicResendWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/text-events': {
+      id: '/api/public/text-events'
+      path: '/api/public/text-events'
+      fullPath: '/api/public/text-events'
+      preLoaderRoute: typeof ApiPublicTextEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/reflect/prime': {
@@ -1687,6 +1727,7 @@ const rootRouteChildren: RootRouteChildren = {
   JoinEduRoute: JoinEduRoute,
   MemoTokenRoute: MemoTokenRoute,
   OauthConsentRoute: OauthConsentRoute,
+  RCodeRoute: RCodeRoute,
   SharedBoardTokenRoute: SharedBoardTokenRoute,
   SupportGrantIdRoute: SupportGrantIdRoute,
   DemoIndexRoute: DemoIndexRoute,
@@ -1694,6 +1735,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiPublicAuthEmailHookRoute: ApiPublicAuthEmailHookRoute,
   ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
+  ApiPublicTextEventsRoute: ApiPublicTextEventsRoute,
   ApiReflectPrimeRoute: ApiReflectPrimeRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
   ApiPublicHooksEgressSweepRoute: ApiPublicHooksEgressSweepRoute,

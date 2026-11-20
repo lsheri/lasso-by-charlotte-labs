@@ -7,6 +7,10 @@ import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { settingsChangedDims } from "@/lib/settings-events";
 import {
+  boardInput,
+  CLOSE_COPY,
+  closeInput,
+  goalInput,
   checkNewProposal,
   countBand,
   DEFAULT_GOAL_HOURS,
@@ -30,9 +34,10 @@ import {
   LEAD_COPY,
   leadInput,
 } from "@/lib/proposal-desk-shared";
-import { createProposal, listDesk, listDeskClients, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { boardWin, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
+const BOARD_ID = "99999999-9999-4999-8999-999999999999";
 const ME = "22222222-2222-4222-8222-222222222222";
 const OTHER = "33333333-3333-4333-8333-333333333333";
 const CLIENT = "44444444-4444-4444-8444-444444444444";
@@ -45,7 +50,7 @@ const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOStr
 
 const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
   id: "p", title: "Network redesign", clientName: "Marrowfield", ownerName: "Maren", mine: false, status: "open",
-  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, ...over,
+  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, canClose: false, canArchive: false, ...over,
 });
 
 describe("the turnaround goal", () => {
@@ -97,11 +102,11 @@ describe("the three views", () => {
     expect(deskView(rows, "open").map((p) => p.id)).toEqual(["b", "a", "c"]);
     expect(deskView(rows, "mine").map((p) => p.id)).toEqual(["b"]);
     expect(deskView(rows, "won").map((p) => p.id)).toEqual(["e", "d"]);
-    expect(deskCounts(rows)).toEqual({ open: 3, mine: 1, won: 2 });
+    expect(deskCounts(rows)).toEqual({ open: 3, mine: 1, won: 2, lost: 1 });
   });
 
   it("handles none at all, and does not reorder the list it was given", () => {
-    expect(deskCounts([])).toEqual({ open: 0, mine: 0, won: 0 });
+    expect(deskCounts([])).toEqual({ open: 0, mine: 0, won: 0, lost: 0 });
     const before = rows.map((p) => p.id);
     deskView(rows, "open");
     expect(rows.map((p) => p.id)).toEqual(before);
@@ -183,6 +188,15 @@ function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRo
     now: () => NOW,
     record: async (_c, e, dims) => { state.events.push(e === "proposal.created" ? dims : { event: e, ...dims }); },
     newId: () => `id-${++next}`,
+    leadNames: async (orgId, ids) => new Map(orgId === ORG ? ids.filter((id) => id === LEAD).map((id) => [id, "Christy Johnson"]) : []),
+    asks: async () => [],
+    texts: async () => ({ demo: false, connected: false }),
+    clientsOn: async () => true,
+    closeLost: async (id) => { state.steps.push(`lost:${id}`); return true; },
+    archive: async (id) => { state.steps.push(`archived:${id}`); return true; },
+    saveSetting: async (_org, key, value) => { state.steps.push(`setting:${key}=${value}`); return true; },
+    board: async (id) => (id === BOARD_ID ? { orgId: ORG } : null),
+    boardProposal: async (orgId, id) => (over.rows ?? []).find((r) => r.org_id === orgId && r.engagement_id === id) ?? null,
     ...over,
   };
 }
@@ -234,7 +248,7 @@ describe("starting a proposal", () => {
   });
 
   it("adds a new client, and reuses one that is already there under the same name", async () => {
-    const fresh = fakeStore();
+    const fresh = fakeStore({ role: "admin" });
     expect(await createProposal(fresh, newProposalInput({ title: "Audit", new_client_name: "Quillbrook" }))).toMatchObject({ ok: true });
     expect(fresh.state.proposals[0]).toMatchObject({ client_id: "new-client" });
     expect(fresh.state.events[0]).toEqual({ client: "new", documents: "0", notes: "no" });
@@ -254,17 +268,17 @@ describe("starting a proposal", () => {
 
   it("refuses a client from elsewhere, an archived client, and a refused new client", async () => {
     expect(await createProposal(fakeStore(), newProposalInput({ title: "x", client_id: OTHER }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.clientGone });
-    const refused = fakeStore({ createClient: async () => null });
+    const refused = fakeStore({ role: "admin", createClient: async () => null });
     expect(await createProposal(refused, newProposalInput({ title: "x", new_client_name: "Tarnhollow" }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.failed });
     expect(refused.state.proposals).toEqual([]);
   });
 
   it("leaves nothing behind when a write fails part way", async () => {
-    const noRow = fakeStore({ insertProposal: async () => false });
+    const noRow = fakeStore({ role: "admin", insertProposal: async () => false });
     expect(await createProposal(noRow, newProposalInput({ title: "x", new_client_name: "Tarnhollow" }))).toMatchObject({ ok: false });
     expect(noRow.state.removedClients).toEqual(["new-client"]);
 
-    const noDocs = fakeStore({ insertContext: async () => false });
+    const noDocs = fakeStore({ role: "admin", insertContext: async () => false });
     expect(await createProposal(noDocs, newProposalInput({ title: "x", new_client_name: "Tarnhollow", work_item_ids: [ITEM_A] }))).toMatchObject({ ok: false });
     expect(noDocs.state.proposals).toEqual([]);
     expect(noDocs.state.removedClients).toEqual(["new-client"]);
@@ -522,5 +536,220 @@ describe("the menu row and the records", () => {
     expect(sql).toMatch(/revoke all on table public\.proposals from anon, authenticated/);
     expect(sql).not.toMatch(/for (insert|update|delete|all) to/i);
     expect(sql).not.toContain("\u2014");
+  });
+});
+
+describe("20 Nov: who adds a client", () => {
+  it.each(["manager", "analyst", "lead"])("a %s is told plainly that an admin adds new clients, and nothing is written", async (role) => {
+    const store = fakeStore({ role, createClient: vi.fn(async () => "never") });
+    expect(await createProposal(store, newProposalInput({ title: "Audit", new_client_name: "Quillbrook", work_item_ids: [ITEM_A] }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.adminAddsClients });
+    expect(store.createClient).not.toHaveBeenCalled();
+    expect(store.state.proposals).toEqual([]);
+    expect(store.state.context).toEqual([]);
+    expect((await listDesk(store)).canAddClient).toBe(false);
+  });
+
+  it("a member still starts one for an existing client, by picking it or typing its name", async () => {
+    expect(await createProposal(fakeStore(), newProposalInput({ title: "Audit", client_id: CLIENT }))).toMatchObject({ ok: true });
+    expect(await createProposal(fakeStore(), newProposalInput({ title: "Audit", new_client_name: "marrowfield" }))).toMatchObject({ ok: true });
+  });
+
+  it("an admin may, unless clients are switched off for the workspace", async () => {
+    expect((await listDesk(fakeStore({ role: "admin" }))).canAddClient).toBe(true);
+    const off = fakeStore({ role: "admin", clientsOn: async () => false });
+    expect((await listDesk(off)).canAddClient).toBe(false);
+    expect(await createProposal(off, newProposalInput({ title: "Audit", new_client_name: "Quillbrook" }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.adminAddsClients });
+  });
+});
+
+describe("20 Nov: the lead's name and the ask on the page", () => {
+  const rows = [row({ lead_contact_id: LEAD }), row({ id: "p2", owner_id: OTHER, lead_contact_id: LEAD }), row({ id: "p3", lead_contact_id: STRANGER })];
+  const asks = async () => [
+    { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "yes", created_at: hoursAgo(1) },
+    { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "failed", reply: null, created_at: hoursAgo(3) },
+    { proposal_id: "p2", contact_id: LEAD, to_demo: false, status: "accepted", reply: null, created_at: hoursAgo(1) },
+  ];
+
+  it("the person who started a proposal sees its lead's name and answer, and never the roster id", async () => {
+    const list = await listDesk(fakeStore({ rows, asks }));
+    const mine = list.proposals.find((p) => p.id === "p1");
+    expect(mine).toMatchObject({ leadName: "Christy Johnson", ask: { name: "Christy Johnson", status: "delivered", reply: "yes", practice: false, waiting: false } });
+    expect(mine && "leadContactId" in mine).toBe(false);
+    // A lead id that is not on this workspace's list has no name.
+    expect(list.proposals.find((p) => p.id === "p3")).toMatchObject({ leadName: null, ask: null });
+    expect(list.proposals.map((p) => p.id)).not.toContain("p2");
+  });
+
+  it("admins and leads see every proposal's lead and its latest ask", async () => {
+    for (const role of ["admin", "lead"]) {
+      const list = await listDesk(fakeStore({ rows, asks, role }));
+      expect(list.proposals.find((p) => p.id === "p2")).toMatchObject({ leadName: "Christy Johnson", leadContactId: LEAD, ask: { status: "accepted", reply: null, waiting: true } });
+    }
+  });
+
+  it("nothing on the page times or counts a person", async () => {
+    const list = await listDesk(fakeStore({ rows, asks, role: "admin" }));
+    expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|minutes|seconds|\d{4}-\d{2}/);
+  });
+
+  it("says where the workspace's texts go", async () => {
+    expect((await listDesk(fakeStore({ texts: async () => ({ demo: true, connected: false }) }))).texts).toEqual({ demo: true, connected: false });
+  });
+});
+
+describe("20 Nov: closing as lost and archiving", () => {
+  const ID = "00000000-0000-4000-8000-0000000000a1";
+  const input = (change: "lost" | "archived") => closeInput({ proposal_id: ID, change });
+  const open = (over: Partial<ProposalRow> = {}) => [row({ id: ID, ...over })];
+
+  it("the person who started it closes it as lost, with no board, and it is recorded without a title", async () => {
+    const store = fakeStore({ rows: open() });
+    expect(await closeProposal(store, input("lost"))).toEqual({ ok: true });
+    expect(store.state.steps).toEqual([`lost:${ID}`]);
+    expect(store.state.boards).toEqual([]);
+    expect(store.state.events).toEqual([{ event: "proposal.closed", change: "lost" }]);
+  });
+
+  it.each(["admin", "lead"])("an %s closes someone else's as lost", async (role) => {
+    const store = fakeStore({ role, rows: open({ owner_id: OTHER }) });
+    expect(await closeProposal(store, input("lost"))).toEqual({ ok: true });
+  });
+
+  it("another member cannot, and it reads the same as a proposal that does not exist or is in another workspace", async () => {
+    const theirs = fakeStore({ rows: open({ owner_id: OTHER }) });
+    const missing = fakeStore({ rows: [] });
+    const elsewhere = fakeStore({ role: "admin", rows: open({ org_id: "another-org" }) });
+    for (const store of [theirs, missing, elsewhere]) {
+      expect(await closeProposal(store, input("lost"))).toEqual({ ok: false, problem: CLOSE_COPY.notYours });
+      expect(store.state.steps).toEqual([]);
+    }
+  });
+
+  it("only an admin archives, and only a proposal that is not won", async () => {
+    for (const role of ["manager", "lead"]) {
+      const store = fakeStore({ role, rows: open() });
+      expect(await closeProposal(store, input("archived"))).toEqual({ ok: false, problem: CLOSE_COPY.adminOnly });
+      expect(store.state.steps).toEqual([]);
+    }
+    for (const status of ["open", "lost"]) {
+      const store = fakeStore({ role: "admin", rows: open({ status, owner_id: OTHER }) });
+      expect(await closeProposal(store, input("archived"))).toEqual({ ok: true });
+      expect(store.state.steps).toEqual([`archived:${ID}`]);
+      expect(store.state.events).toEqual([{ event: "proposal.closed", change: "archived" }]);
+    }
+  });
+
+  it("a won proposal keeps its board and is never closed or archived; a decided one is not closed twice", async () => {
+    for (const change of ["lost", "archived"] as const) {
+      const won = fakeStore({ role: "admin", rows: open({ status: "won", engagement_id: BOARD_ID }) });
+      expect(await closeProposal(won, input(change))).toEqual({ ok: false, problem: CLOSE_COPY.won });
+      expect(won.state.steps).toEqual([]);
+    }
+    expect(await closeProposal(fakeStore({ rows: open({ status: "lost" }) }), input("lost"))).toEqual({ ok: false, problem: CLOSE_COPY.decided });
+    expect(await closeProposal(fakeStore({ role: "admin", rows: open({ archived_at: hoursAgo(1) }) }), input("archived"))).toEqual({ ok: false, problem: CLOSE_COPY.notYours });
+  });
+
+  it("says so when the write is refused or changed nothing, and a recording fault does not undo the change", async () => {
+    expect(await closeProposal(fakeStore({ rows: open(), closeLost: async () => false }), input("lost"))).toEqual({ ok: false, problem: CLOSE_COPY.failed });
+    expect(await closeProposal(fakeStore({ rows: open(), record: async () => { throw new Error("down"); } }), input("lost"))).toEqual({ ok: true });
+  });
+
+  it("an archived proposal leaves the page for everyone, and the page says who may close or archive", async () => {
+    const rows = [row({ id: "live" }), row({ id: "gone", archived_at: hoursAgo(1) }), row({ id: "won", status: "won" }), row({ id: "lost", status: "lost" })];
+    const member = await listDesk(fakeStore({ rows }));
+    expect(member.proposals.map((p) => [p.id, p.canClose, p.canArchive])).toEqual([["live", true, false], ["won", false, false], ["lost", false, false]]);
+    const admin = await listDesk(fakeStore({ rows, role: "admin" }));
+    expect(admin.proposals.map((p) => [p.id, p.canClose, p.canArchive])).toEqual([["live", true, true], ["won", false, false], ["lost", false, true]]);
+  });
+
+  it("refuses anything but the two changes and a real id", () => {
+    expect(() => closeInput({ proposal_id: ID, change: "won" })).toThrow();
+    expect(() => closeInput({ proposal_id: ID, change: "delete" })).toThrow();
+    expect(() => closeInput({ proposal_id: "p1", change: "lost" })).toThrow();
+  });
+
+  it("the lost view lists lost proposals, newest decision first", () => {
+    const list = [proposal({ id: "a", status: "lost", decidedAt: hoursAgo(5) }), proposal({ id: "b", status: "lost", decidedAt: hoursAgo(1) }), proposal({ id: "c" })];
+    expect(deskView(list, "lost").map((p) => p.id)).toEqual(["b", "a"]);
+    expect(deskCounts(list)).toMatchObject({ open: 1, lost: 2, won: 0 });
+  });
+
+  it("the real writes name the workspace and only move an open proposal to lost", () => {
+    const source = readFileSync("src/lib/proposal-desk.server.ts", "utf8");
+    expect(source).toMatch(/update\(\{ status: "lost", decided_at: decidedAt \}\)\.eq\("id", id\)\.eq\("org_id", caller\.orgId\)\.eq\("status", "open"\)/);
+    expect(source).toMatch(/update\(\{ archived_at: at \}\)\.eq\("id", id\)\.eq\("org_id", caller\.orgId\)\.neq\("status", "won"\)/);
+  });
+});
+
+describe("20 Nov: the goal is saved by the server, one setting at a time", () => {
+  it("an admin saves it and nobody else can", async () => {
+    const admin = fakeStore({ role: "admin" });
+    expect(await setGoal(admin, goalInput({ hours: 72 }))).toEqual({ ok: true });
+    expect(admin.state.steps).toEqual(["setting:proposal_goal_hours=72"]);
+    for (const role of ["lead", "manager", "analyst"]) {
+      const store = fakeStore({ role });
+      expect((await setGoal(store, goalInput({ hours: 72 }))).ok).toBe(false);
+      expect(store.state.steps).toEqual([]);
+    }
+  });
+
+  it("refuses a goal that is not a whole number of hours in range", () => {
+    for (const hours of [0, -1, 1.5, 100000, "abc" as never, null as never]) expect(() => goalInput({ hours })).toThrow();
+  });
+
+  it("the screen no longer writes the whole settings object from the browser", () => {
+    const card = readFileSync("src/components/settings/ProposalGoalCard.tsx", "utf8");
+    expect(card).toContain("setProposalGoalFn(");
+    expect(card).not.toMatch(/\.from\("orgs"\)\s*\.update|update\(\{ settings/);
+    const server = readFileSync("src/lib/proposal-desk.server.ts", "utf8");
+    expect(server).toMatch(/const merged = \{ \.\.\.\(\(current as Record<string, unknown> \| null\) \?\? \{\}\), \[key\]: value \}/);
+  });
+});
+
+describe("20 Nov: the strip at the top of a board made by a win", () => {
+  const won = (over: Partial<ProposalRow> = {}) => [row({ status: "won", decided_at: hoursAgo(2), engagement_id: BOARD_ID, lead_contact_id: LEAD, ...over })];
+  const board = boardInput({ engagement_id: BOARD_ID });
+
+  it.each(["admin", "lead", "manager", "analyst"])("tells a %s on the board that it was won, when, and who leads", async (role) => {
+    expect(await boardWin(fakeStore({ role, rows: won({ owner_id: OTHER }) }), board)).toEqual({ won: true, decidedAt: hoursAgo(2), leadName: "Christy Johnson", ask: null });
+  });
+
+  it("shows the lead's answer once there is one, and never a practice or demo answer as theirs", async () => {
+    const answered = async () => [{ proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "yes", created_at: hoursAgo(5) }];
+    expect(await boardWin(fakeStore({ rows: won(), asks: answered }), board)).toMatchObject({ ask: { name: "Christy Johnson", reply: "yes" } });
+    const waiting = async () => [{ proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "accepted", reply: null, created_at: hoursAgo(5) }];
+    expect(await boardWin(fakeStore({ rows: won(), asks: waiting }), board)).toMatchObject({ ask: null });
+    const practice = async () => [{ proposal_id: "p1", contact_id: null, to_demo: true, status: "practice", reply: "yes", created_at: hoursAgo(5) }];
+    expect(await boardWin(fakeStore({ rows: won(), asks: practice }), board)).toMatchObject({ leadName: "Christy Johnson", ask: null });
+  });
+
+  it("no lead, nothing about a lead", async () => {
+    expect(await boardWin(fakeStore({ rows: won({ lead_contact_id: null }) }), board)).toEqual({ won: true, decidedAt: hoursAgo(2), leadName: null, ask: null });
+    // A lead who is no longer on this workspace's list is not named.
+    expect(await boardWin(fakeStore({ rows: won({ lead_contact_id: STRANGER }) }), board)).toMatchObject({ leadName: null, ask: null });
+  });
+
+  it("says nothing for a board the person cannot open, another workspace's board, or a board not made by a win", async () => {
+    expect(await boardWin(fakeStore({ rows: won(), board: async () => null }), board)).toEqual({ won: false });
+    expect(await boardWin(fakeStore({ rows: won(), board: async () => ({ orgId: "another-org" }) }), board)).toEqual({ won: false });
+    expect(await boardWin(fakeStore({ rows: [] }), board)).toEqual({ won: false });
+    expect(await boardWin(fakeStore({ rows: won({ status: "open" }) }), board)).toEqual({ won: false });
+    expect(() => boardInput({ engagement_id: "board" })).toThrow();
+  });
+
+  it("the board is read as the signed-in person, so the database decides who may open it", () => {
+    const source = readFileSync("src/lib/proposal-desk.server.ts", "utf8");
+    expect(source).toMatch(/await own\.from\("engagements"\)\.select\("id, org_id"\)\.eq\("id", engagementId\)/);
+  });
+});
+
+describe("20 Nov: minutes are not an hour", () => {
+  const goal = 48;
+  it("something sent minutes after it started went out in under an hour", () => {
+    const sent = timeLeft({ receivedAt: hoursAgo(1), sentAt: new Date(NOW.getTime() - 3_600_000 + 4 * 60_000).toISOString(), goalHours: goal, now: NOW });
+    expect(timeLeftLine(sent, goal)).toBe("Went out in under an hour");
+    expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(2), goalHours: goal, now: NOW }), goal)).toBe("Went out in 1 hour");
+    expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(1.5), goalHours: goal, now: NOW }), goal)).toBe("Went out in 2 hours");
+    expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(1), sentAt: hoursAgo(1), goalHours: goal, now: NOW }), goal)).toBe("Went out in under an hour");
   });
 });

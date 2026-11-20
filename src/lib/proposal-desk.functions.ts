@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  boardInput,
+  closeInput,
   deskProfileInput,
+  goalInput,
+  type BoardWin,
+  type CloseResult,
+  type GoalResult,
   leadInput,
   newProposalInput,
   sentInput,
@@ -56,3 +62,21 @@ export const winProposalFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(winInput)
   .handler(async ({ data, context }): Promise<WinResult> => (await import("./proposal-desk.server")).deskHandlers.win(context, data));
+
+/** Closes an open proposal as lost, or archives one made by mistake. Makes no board and deletes nothing. */
+export const closeProposalFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(closeInput)
+  .handler(async ({ data, context }): Promise<CloseResult> => (await import("./proposal-desk.server")).deskHandlers.close(context, data));
+
+/** Saves the workspace's turnaround goal. An admin; touches that one setting and no other. */
+export const setProposalGoalFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(goalInput)
+  .handler(async ({ data, context }): Promise<GoalResult> => (await import("./proposal-desk.server")).deskHandlers.goal(context, data));
+
+/** What the strip at the top of a board made by a win says: won, when, the lead's name and their answer. */
+export const boardWinFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(boardInput)
+  .handler(async ({ data, context }): Promise<BoardWin> => (await import("./proposal-desk.server")).deskHandlers.boardWin(context, data));

@@ -1,12 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { AskDialog, AskLine } from "@/components/proposals/AskLead";
 import { LeadDialog, LeadLine } from "@/components/proposals/LeadPicker";
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { tagVariants } from "@/components/ui/tag";
+import type { AskPreview, AskResult, PracticeReplyResult, Reply } from "@/lib/lead-ask-shared";
 import {
+  CLOSE_COPY,
+  LEAD_COPY,
+  type CloseResult,
   SENT_COPY,
   DESK_COPY,
   DESK_VIEWS,
@@ -39,6 +44,8 @@ export function ProposalDesk({
   roster,
   leadWords,
   onLead,
+  ask,
+  onClose,
 }: {
   data: DeskList;
   now?: Date | undefined;
@@ -51,7 +58,19 @@ export function ProposalDesk({
   /** The won text as it is sent, shown when picking a lead. */
   leadWords?: string | undefined;
   onLead?: ((proposalId: string, contactId: string | null) => Promise<LeadResult>) | undefined;
+  /** Asking the lead by text: the words before a press, the press, and a practice answer. Admins and leads only. */
+  ask?:
+    | {
+        preview: (proposalId: string) => Promise<AskPreview>;
+        send: (proposalId: string, pressId: string) => Promise<AskResult>;
+        practiceReply: (proposalId: string, reply: Reply) => Promise<PracticeReplyResult>;
+      }
+    | undefined;
+  /** Closes an open proposal as lost, or archives one made by mistake. */
+  onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
 }) {
+  const [asking, setAsking] = useState<DeskProposal | null>(null);
+  const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
   const [view, setView] = useState<DeskView>("open");
@@ -76,7 +95,7 @@ export function ProposalDesk({
         ))}
       </div>
 
-      {view !== "won" && rows.length > 0 ? (
+      {(view === "open" || view === "mine") && rows.length > 0 ? (
         <p data-desk-no-board className="mb-3 text-sm text-muted-foreground">
           {DESK_COPY.noBoardYet}
         </p>
@@ -91,13 +110,77 @@ export function ProposalDesk({
           {rows.map((proposal) => (
             <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
               lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => setLeading(proposal) } : undefined}
+              ask={picks && ask ? { onAsk: () => setAsking(proposal), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
+              onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
             />
           ))}
         </ul>
       )}
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
-      {picks && onLead ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} onClose={() => setLeading(null)} onSave={onLead} /> : null}
+      {picks && onLead ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
+      {picks && ask ? <AskDialog proposal={asking} load={ask.preview} send={ask.send} onClose={() => setAsking(null)} /> : null}
+      {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>
+  );
+}
+
+/** Says what closing or archiving does before it happens, then does it once. */
+function CloseDialog({
+  target,
+  onDone,
+  onClose,
+}: {
+  target: { proposal: DeskProposal; change: "lost" | "archived" } | null;
+  onDone: () => void;
+  onClose: (proposalId: string, change: "lost" | "archived") => Promise<CloseResult>;
+}) {
+  const [working, setWorking] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const lost = target?.change === "lost";
+  async function confirm() {
+    if (!target || working) return;
+    setWorking(true);
+    setProblem(null);
+    try {
+      const result = await onClose(target.proposal.id, target.change);
+      if (result.ok) onDone();
+      else setProblem(result.problem);
+    } catch {
+      setProblem(CLOSE_COPY.failed);
+    } finally {
+      setWorking(false);
+    }
+  }
+  return (
+    <Dialog
+      open={target !== null}
+      onOpenChange={(next) => {
+        if (next || working) return;
+        setProblem(null);
+        onDone();
+      }}
+    >
+      <DialogContent className="sm:max-w-md" data-testid="close-proposal">
+        <DialogHeader>
+          <DialogTitle className="page-title">{lost ? CLOSE_COPY.lostTitle : CLOSE_COPY.archiveTitle}</DialogTitle>
+          <DialogDescription className="break-words [overflow-wrap:anywhere]">{target ? `${target.proposal.clientName ? `${target.proposal.clientName}: ` : ""}${target.proposal.title}` : ""}</DialogDescription>
+        </DialogHeader>
+        <p className="text-sm text-foreground">{lost ? CLOSE_COPY.lostBody : CLOSE_COPY.archiveBody}</p>
+        {problem ? (
+          <p role="alert" className="text-sm text-destructive">
+            {problem}
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" disabled={working} onClick={onDone}>
+            {CLOSE_COPY.cancel}
+          </Button>
+          <Button type="button" variant="outline" disabled={working} onClick={() => void confirm()}>
+            {working ? CLOSE_COPY.working : lost ? CLOSE_COPY.confirmLost : CLOSE_COPY.confirmArchive}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -131,7 +214,7 @@ function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null
       <DialogContent className="sm:max-w-md" data-testid="win-proposal">
         <DialogHeader>
           <DialogTitle className="page-title">{WIN_COPY.title}</DialogTitle>
-          <DialogDescription>{proposal ? `${proposal.clientName ? `${proposal.clientName}: ` : ""}${proposal.title}` : ""}</DialogDescription>
+          <DialogDescription className="break-words [overflow-wrap:anywhere]">{proposal ? `${proposal.clientName ? `${proposal.clientName}: ` : ""}${proposal.title}` : ""}</DialogDescription>
         </DialogHeader>
         <p className="text-sm text-foreground">{WIN_COPY.body(proposal?.contextCount ?? 0)}</p>
         <p className="text-sm text-muted-foreground">{WIN_COPY.sharing}</p>
@@ -160,6 +243,8 @@ function ProposalRow({
   onSent,
   onWin,
   lead,
+  ask,
+  onClose,
 }: {
   proposal: DeskProposal;
   goalHours: number;
@@ -167,6 +252,8 @@ function ProposalRow({
   onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
   onWin?: (() => void) | undefined;
   lead?: { person: RosterContact | undefined; onPick: () => void } | undefined;
+  ask?: { onAsk: () => void; onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult> } | undefined;
+  onClose?: ((change: "lost" | "archived") => void) | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -188,7 +275,7 @@ function ProposalRow({
   return (
     <li data-proposal-row={proposal.id} className="flex flex-col gap-1 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
       <div className="min-w-0">
-        <p className="text-(length:--type-body) font-medium text-foreground">
+        <p data-proposal-title className="break-words text-(length:--type-body) font-medium text-foreground [overflow-wrap:anywhere]">
           {proposal.clientName ? <span>{proposal.clientName}: </span> : null}
           {proposal.title}
         </p>
@@ -197,10 +284,17 @@ function ProposalRow({
           <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
         </p>
         {lead && proposal.status === "open" ? <LeadLine lead={lead.person} picked={Boolean(proposal.leadContactId)} onPick={lead.onPick} /> : null}
+        {/* The person who started it sees who the lead is, without the roster or the pick. */}
+        {!lead && proposal.status === "open" && proposal.leadName ? (
+          <p data-proposal-lead className="mt-1 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
+            {LEAD_COPY.lead(proposal.leadName)}
+          </p>
+        ) : null}
+        {proposal.status === "open" ? <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} /> : null}
         {titles.length > 0 ? (
           <ul className="mt-1 text-sm text-muted-foreground" data-proposal-context-titles>
             {titles.map((title, index) => (
-              <li key={`${index}-${title}`} className="truncate">
+              <li key={`${index}-${title}`} className="break-words [overflow-wrap:anywhere]">
                 {title}
               </li>
             ))}
@@ -235,11 +329,32 @@ function ProposalRow({
                 </Button>
               </div>
             ) : null}
+            {onClose && (proposal.canClose || proposal.canArchive) ? (
+              <p data-proposal-close className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground sm:justify-end">
+                {proposal.canClose ? (
+                  <button type="button" className="underline hover:text-foreground" onClick={() => onClose("lost")}>
+                    {CLOSE_COPY.lost}
+                  </button>
+                ) : null}
+                {proposal.canArchive ? (
+                  <button type="button" className="underline hover:text-foreground" onClick={() => onClose("archived")}>
+                    {CLOSE_COPY.archive}
+                  </button>
+                ) : null}
+              </p>
+            ) : null}
           </>
         ) : (
           <>
             <p className="text-foreground">{proposal.status === "won" ? DESK_COPY.wonOn(deskDate(proposal.decidedAt)) : DESK_COPY.lostOn(deskDate(proposal.decidedAt))}</p>
             {/* The board is the owner's; nobody else is on it until they are added there. */}
+            {onClose && proposal.canArchive ? (
+              <p className="mt-1">
+                <button type="button" className="text-muted-foreground underline hover:text-foreground" onClick={() => onClose("archived")}>
+                  {CLOSE_COPY.archive}
+                </button>
+              </p>
+            ) : null}
             {proposal.engagementId && proposal.mine ? (
               <Link to="/engagements/$id/canvas-lab" params={{ id: proposal.engagementId }} className="mt-1 inline-block underline">
                 {DESK_COPY.openBoard}

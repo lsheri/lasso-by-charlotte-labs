@@ -221,6 +221,7 @@ import { teammateMarkFor } from "@/lib/teammate-mark";
 import { canMarkShown } from "@/lib/client-showings-shared";
 import { useClientShowings } from "@/hooks/use-client-showings";
 import { ProposalStartPanel } from "@/components/firm-brain/ProposalStartPanel";
+import { BoardWinStrip } from "@/components/proposals/BoardWinStrip";
 import { RedPenPanel } from "@/components/canvas-lab/RedPenPanel";
 import { SowTermsDialog } from "@/components/canvas-lab/SowTermsDialog";
 import { ItemTagsDialog } from "@/components/canvas-lab/ItemTagsDialog";
@@ -4040,6 +4041,7 @@ export function CanvasLabPage({ engagementId, entryVia, openSticky }: { engageme
           <BoardFileDropOverlay show={fileDrop.over} />
           <div className="canvas-lab-board-status" onPointerDown={(event) => event.stopPropagation()}>
         <BoardOfflineBanner offline={offline} syncedAt={boardConnection.syncedAt} />
+        {firmBrainScope === "own" ? <BoardWinStrip engagementId={engagementId} profileId={profile?.id} /> : null}
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-(length:--type-body) text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-(length:--type-body) text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
           </div>

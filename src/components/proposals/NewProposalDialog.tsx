@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { useBackCloses } from "@/hooks/use-back-closes";
 import {
   checkNewProposal,
   INTAKE_COPY,
@@ -33,8 +34,10 @@ export function NewProposalDialog({
   onOpenChange,
   clients,
   clientsLoading,
+  canAddClient = true,
   profileId,
   capture,
+  discard,
   create,
   onCreated,
 }: {
@@ -43,8 +46,12 @@ export function NewProposalDialog({
   /** Undefined while the list is loading. */
   clients: DeskClient[] | undefined;
   clientsLoading: boolean;
+  /** False for someone who may not add a client: they choose an existing one, and are told so before anything is uploaded. */
+  canAddClient?: boolean | undefined;
   profileId: string | undefined;
   capture: CaptureFiles;
+  /** Removes documents uploaded here when the start is given up, so a proposal that was never made leaves nothing in the person's work. */
+  discard?: ((workItemIds: string[]) => Promise<void>) | undefined;
   create: (input: NewProposalRaw) => Promise<NewProposalResult>;
   onCreated: (id: string) => void;
 }) {
@@ -62,7 +69,9 @@ export function NewProposalDialog({
   const [problem, setProblem] = useState<string | null>(null);
 
   const noClients = clients !== undefined && clients.length === 0;
-  const effectiveMode = noClients ? "new" : mode;
+  const effectiveMode = !canAddClient ? "existing" : noClients ? "new" : mode;
+  /** Nobody to choose and no way to add one: the form is not offered, so nothing is uploaded for a start that cannot happen. */
+  const stuck = !canAddClient && noClients;
   const busy = pending || uploading !== null;
 
   function reset() {
@@ -75,6 +84,13 @@ export function NewProposalDialog({
     setUploading(null);
     setPending(false);
     setProblem(null);
+  }
+
+  /** Giving up: what was uploaded here for this proposal is removed again, then the form is cleared. */
+  function abandon() {
+    const ids = added.map((item) => item.id);
+    if (ids.length > 0 && discard) void discard(ids).catch(() => undefined);
+    reset();
   }
 
   async function addFiles(list: FileList | null) {
@@ -136,12 +152,15 @@ export function NewProposalDialog({
     }
   }
 
+  // On a phone, Back closes the dialog and stays on the page. What was typed is kept for the next time it opens.
+  useBackCloses(open, () => onOpenChange(false));
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
         if (busy && !next) return;
-        if (!next) reset();
+        if (!next) abandon();
         onOpenChange(next);
       }}
     >
@@ -154,7 +173,9 @@ export function NewProposalDialog({
         <form onSubmit={submit} className="space-y-4" noValidate>
           <fieldset className="space-y-2" disabled={busy}>
             <legend className="micro-label">{copy.clientLegend}</legend>
-            {noClients ? (
+            {!canAddClient ? (
+              <p data-new-proposal-clients-note className="text-sm text-muted-foreground">{stuck ? copy.noClientsForMember : copy.adminAddsClients}</p>
+            ) : noClients ? (
               <p className="text-sm text-muted-foreground">{copy.noClients}</p>
             ) : (
               <div role="group" aria-label={copy.clientLegend} className="flex flex-wrap gap-2">
@@ -213,7 +234,11 @@ export function NewProposalDialog({
                       className="shrink-0 text-muted-foreground underline hover:text-foreground"
                       disabled={busy}
                       aria-label={copy.remove(item.name)}
-                      onClick={() => setAdded((current) => current.filter((entry) => entry.id !== item.id))}
+                      onClick={() => {
+                        // It was uploaded here for this proposal, so taking it off the list removes the upload too.
+                        if (discard) void discard([item.id]).catch(() => undefined);
+                        setAdded((current) => current.filter((entry) => entry.id !== item.id));
+                      }}
                     >
                       Remove
                     </button>
@@ -222,7 +247,7 @@ export function NewProposalDialog({
               </ul>
             ) : null}
             <input ref={fileInput} type="file" multiple className="sr-only" aria-label={copy.addFiles} disabled={busy} onChange={(event) => void addFiles(event.target.files)} />
-            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => fileInput.current?.click()}>
+            <Button type="button" variant="outline" size="sm" disabled={busy || stuck} onClick={() => fileInput.current?.click()}>
               {uploading ? copy.uploading(uploading.done + 1, uploading.total) : copy.addFiles}
             </Button>
           </div>
@@ -241,10 +266,10 @@ export function NewProposalDialog({
           ) : null}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" disabled={busy} onClick={() => { reset(); onOpenChange(false); }}>
+            <Button type="button" variant="ghost" disabled={busy} onClick={() => { abandon(); onOpenChange(false); }}>
               {copy.cancel}
             </Button>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || stuck}>
               {pending ? copy.creating : copy.create}
             </Button>
           </div>

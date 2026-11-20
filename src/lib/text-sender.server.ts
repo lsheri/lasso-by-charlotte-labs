@@ -10,7 +10,8 @@
  */
 
 export type TextSendResult =
-  | { outcome: "accepted" }
+  /** `id` is the sender's own id for the message, used to match delivery reports. Absent when none came back. */
+  | { outcome: "accepted"; id?: string | undefined }
   /** The recipient has opted out with the provider (they replied STOP). Only they can reverse it. */
   | { outcome: "opted_out" }
   /** The provider would not take it: a sender not approved for that country, a country switched off, no credit. */
@@ -52,7 +53,8 @@ function codeOf(body: unknown): string | null {
 /** Sends one plain text to one person. Never throws. */
 export async function sendText(
   config: TextConfig,
-  message: { to: string; text: string; idempotencyKey: string },
+  /** `kind` labels the message for the sender's own reports; `ref` is our id for it, echoed back on delivery reports. */
+  message: { to: string; text: string; idempotencyKey: string; kind?: string | undefined; ref?: string | undefined },
   fetchImpl: typeof fetch = fetch,
 ): Promise<TextSendResult> {
   const controller = new AbortController();
@@ -72,10 +74,20 @@ export async function sendText(
         text: message.text,
         category: "transactional",
         options: { smart_encoding: true },
-        tags: [{ name: "kind", value: "won_text" }],
+        tags: [{ name: "kind", value: message.kind ?? "won_text" }],
+        ...(message.ref ? { metadata: { text_id: message.ref } } : {}),
       }),
     });
-    if (response.status === 202 || response.status === 200) return { outcome: "accepted" };
+    if (response.status === 202 || response.status === 200) {
+      let id: string | undefined;
+      try {
+        const body = (await response.json()) as { id?: unknown } | null;
+        if (typeof body?.id === "string" && /^[A-Za-z0-9_-]{6,80}$/.test(body.id)) id = body.id;
+      } catch {
+        /* accepted with no readable body: the text went, only the id is unknown */
+      }
+      return id ? { outcome: "accepted", id } : { outcome: "accepted" };
+    }
     let raw = "";
     try {
       raw = await response.text();

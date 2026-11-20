@@ -7,6 +7,8 @@
  * a row says about anyone.
  */
 
+import type { AskView, TextsState } from "./lead-ask-shared";
+
 /** The turnaround goal a workspace starts with, in hours, until an admin picks its own. */
 export const DEFAULT_GOAL_HOURS = 72;
 export const MIN_GOAL_HOURS = 1;
@@ -67,8 +69,11 @@ export const LEAD_COPY = {
   agreed: (name: string) => `${name} has agreed to texts.`,
   notAgreed: (name: string) => `${name} has not agreed to texts. Copy their link under the People tab and send it to them.`,
   unknown: (name: string) => `We could not check whether ${name} agreed to texts.`,
-  /** What is true today: the send does not read the lead yet. */
-  today: "Today, Text the lead works in demo workspaces only and goes to the demo number, not to the person picked here.",
+  /** Where a text goes, said before anyone presses anything. */
+  where: (demo: boolean) =>
+    demo
+      ? "This is a demo workspace: its texts go to the demo number, not to the person picked here."
+      : "Texts go to the person picked here, and only once they have agreed to texts.",
   preview: "The won text, as it reads",
   save: "Save lead",
   saving: "Saving",
@@ -107,25 +112,27 @@ export const MAX_CONTEXT_ITEMS = 20;
 export const PROPOSAL_STATUSES = ["open", "won", "lost"] as const;
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
 
-export const DESK_VIEWS = ["open", "mine", "won"] as const;
+export const DESK_VIEWS = ["open", "mine", "won", "lost"] as const;
 export type DeskView = (typeof DESK_VIEWS)[number];
 
 export const DESK_COPY = {
   nav: "Proposals",
   title: "Proposals",
   subtitle: "Every open proposal, how long it has left, and what was won.",
-  views: { open: "All open", mine: "Needs me", won: "Won" } as Record<DeskView, string>,
+  views: { open: "All open", mine: "Needs me", won: "Won", lost: "Lost" } as Record<DeskView, string>,
   empty: {
     open: "No open proposals. Start one when a brief comes in.",
     mine: "Nothing needs you.",
     won: "No proposal has been won yet.",
+    lost: "No proposal has been closed as lost.",
   } as Record<DeskView, string>,
   newProposal: "New proposal",
   tabs: { proposals: "Proposals", people: "People" },
   retry: "Try again",
   loading: "Loading proposals",
   loadFailed: "The proposals could not be loaded. Try again in a moment.",
-  notHere: "Proposals are for company workspaces.",
+  notHere: "Proposals are for the members of a company workspace.",
+  notHereCoach: "Proposals are for the firm's own team. As a coach you do not see them.",
   owner: (name: string) => `Started by ${name}`,
   yours: "Yours",
   context: (count: number) => (count === 0 ? "No documents yet" : count === 1 ? "1 document" : `${count} documents`),
@@ -133,6 +140,25 @@ export const DESK_COPY = {
   wonOn: (date: string) => `Won ${date}`,
   lostOn: (date: string) => `Lost ${date}`,
   openBoard: "Open the team board",
+} as const;
+
+/** 20 Nov: closing an open proposal as lost, and archiving one made by mistake. */
+export const CLOSE_COPY = {
+  lost: "Close as lost",
+  archive: "Archive",
+  lostTitle: "Close as lost",
+  lostBody: "This closes the proposal as lost. It moves to the Lost view and no team board is made. It cannot be reopened from here.",
+  archiveTitle: "Archive this proposal",
+  archiveBody: "Use this for a proposal made by mistake. It leaves the Proposals page for everyone. Its documents stay in their owner's work. Nothing is deleted.",
+  confirmLost: "Close as lost",
+  confirmArchive: "Archive",
+  working: "Saving",
+  cancel: "Not now",
+  notYours: "Only the person who started this proposal, an admin or a lead can close it.",
+  adminOnly: "Only an admin can archive a proposal.",
+  won: "A won proposal has a team board, so it cannot be closed or archived here.",
+  decided: "This proposal is already decided.",
+  failed: "That could not be saved. Nothing changed. Try again in a moment.",
 } as const;
 
 export const INTAKE_COPY = {
@@ -143,6 +169,9 @@ export const INTAKE_COPY = {
   newClient: "New client",
   pickClient: "Choose a client",
   noClients: "No clients yet. Add this one as a new client.",
+  /** Shown before anything is uploaded, to someone who may not add a client. */
+  adminAddsClients: "An admin adds new clients. Choose an existing client, or ask an admin to add this one first.",
+  noClientsForMember: "There are no clients yet, and only an admin can add one. Ask an admin to add this client first.",
   clientName: "Client name",
   titleLabel: "What they asked for",
   titleHint: "A short name, such as Network redesign.",
@@ -166,6 +195,7 @@ export const INTAKE_COPY = {
     tooMany: `Add up to ${MAX_CONTEXT_ITEMS} documents.`,
     notYours: "One of those documents is not yours to add.",
     clientGone: "That client is not in this workspace any more. Choose another.",
+    adminAddsClients: "Only an admin can add a new client. Choose an existing client, or ask an admin to add this one first.",
     failed: "The proposal could not be started. Nothing was saved. Try again in a moment.",
     upload: (name: string, reason: string) => `${name} could not be added: ${reason}`,
   },
@@ -191,6 +221,14 @@ export type DeskProposal = {
   canAct: boolean;
   /** The picked lead's roster id. Sent only to admins and leads, who are the only people who see the roster. */
   leadContactId?: string | null;
+  /** The picked lead's name. Sent to admins, leads and the person who started the proposal. */
+  leadName?: string | null;
+  /** The latest ask sent to the lead, and its answer. Sent to the same people as the lead's name. */
+  ask?: AskView | null;
+  /** May close it as lost: the person who started it, an admin or a lead, while it is open. */
+  canClose: boolean;
+  /** May archive it as made by mistake: an admin, while it is not won. */
+  canArchive: boolean;
 };
 
 export type DeskList = {
@@ -199,6 +237,10 @@ export type DeskList = {
   canSetGoal: boolean;
   /** May pick a proposal's lead from the roster: an admin or a lead. */
   canPickLead: boolean;
+  /** May add a new client while starting a proposal: an admin, in a workspace with clients switched on. */
+  canAddClient: boolean;
+  /** Where this workspace's texts go, and whether texting is switched on. */
+  texts: TextsState;
   proposals: DeskProposal[];
 };
 
@@ -226,7 +268,7 @@ export type TimeLeft =
   /** Still to go out, past the goal. */
   | { state: "over"; hoursOver: number }
   /** Gone out. */
-  | { state: "sent"; hoursTaken: number; withinGoal: boolean };
+  | { state: "sent"; hoursTaken: number; withinGoal: boolean; underAnHour?: boolean | undefined };
 
 const HOUR_MS = 3_600_000;
 
@@ -237,8 +279,9 @@ export function timeLeft(input: { receivedAt: string; sentAt: string | null; goa
   const received = Number.isFinite(parsed) ? Math.min(parsed, now) : now;
   if (input.sentAt) {
     const sent = Date.parse(input.sentAt);
-    const taken = Math.max(0, Math.ceil(((Number.isFinite(sent) ? sent : now) - received) / HOUR_MS));
-    return { state: "sent", hoursTaken: taken, withinGoal: taken <= input.goalHours };
+    const tookMs = Math.max(0, (Number.isFinite(sent) ? sent : now) - received);
+    const taken = Math.ceil(tookMs / HOUR_MS);
+    return { state: "sent", hoursTaken: taken, withinGoal: taken <= input.goalHours, ...(tookMs < HOUR_MS ? { underAnHour: true } : {}) };
   }
   const elapsedMs = now - received;
   const goalMs = input.goalHours * HOUR_MS;
@@ -252,13 +295,15 @@ const hours = (count: number) => (count === 1 ? "1 hour" : `${count} hours`);
 export function timeLeftLine(left: TimeLeft, goal: number): string {
   if (left.state === "running") return left.hoursLeft < 1 ? `Less than an hour left of ${goal}` : `${hours(left.hoursLeft)} left of ${goal}`;
   if (left.state === "over") return `Over the ${goal} hour goal by ${hours(left.hoursOver)}`;
-  return left.withinGoal ? `Went out in ${hours(left.hoursTaken)}` : `Went out in ${hours(left.hoursTaken)}, over the ${goal} hour goal`;
+  // Minutes after the brief is not "1 hour".
+  const took = left.underAnHour ? "under an hour" : hours(left.hoursTaken);
+  return left.withinGoal ? `Went out in ${took}` : `Went out in ${took}, over the ${goal} hour goal`;
 }
 
 /** The rows of one dashboard view, in the order a person reads them. */
 export function deskView(proposals: readonly DeskProposal[], view: DeskView): DeskProposal[] {
-  if (view === "won") {
-    return proposals.filter((p) => p.status === "won").sort((a, b) => (b.decidedAt ?? "").localeCompare(a.decidedAt ?? "") || a.id.localeCompare(b.id));
+  if (view === "won" || view === "lost") {
+    return proposals.filter((p) => p.status === view).sort((a, b) => (b.decidedAt ?? "").localeCompare(a.decidedAt ?? "") || a.id.localeCompare(b.id));
   }
   // The proposals closest to their goal come first: the oldest brief still to go out.
   const urgency = (a: DeskProposal, b: DeskProposal) => Number(Boolean(a.sentAt)) - Number(Boolean(b.sentAt)) || a.receivedAt.localeCompare(b.receivedAt) || a.id.localeCompare(b.id);
@@ -267,7 +312,7 @@ export function deskView(proposals: readonly DeskProposal[], view: DeskView): De
 }
 
 export function deskCounts(proposals: readonly DeskProposal[]): Record<DeskView, number> {
-  return { open: deskView(proposals, "open").length, mine: deskView(proposals, "mine").length, won: deskView(proposals, "won").length };
+  return { open: deskView(proposals, "open").length, mine: deskView(proposals, "mine").length, won: deskView(proposals, "won").length, lost: deskView(proposals, "lost").length };
 }
 
 /** A date as the desk shows it: "Fri 20 Nov". */
@@ -319,6 +364,48 @@ export function winInput(raw: { profile_id?: string | null | undefined; proposal
   const id = uuidOrNull(loose?.["proposal_id"]);
   if (!id) throw new Error(WIN_COPY.failed);
   return { profile_id: uuidOrNull(loose?.["profile_id"]), proposal_id: id };
+}
+
+export type CloseInput = DeskProfileInput & { proposal_id: string; change: "lost" | "archived" };
+
+export function closeInput(raw: { profile_id?: string | null | undefined; proposal_id: string; change: string }): CloseInput {
+  const loose = raw as Loose;
+  const id = uuidOrNull(loose?.["proposal_id"]);
+  const change = loose?.["change"];
+  if (!id || (change !== "lost" && change !== "archived")) throw new Error(CLOSE_COPY.failed);
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), proposal_id: id, change };
+}
+
+export type CloseResult = { ok: true } | { ok: false; problem: string };
+
+export type GoalInput = DeskProfileInput & { hours: number };
+
+export function goalInput(raw: { profile_id?: string | null | undefined; hours: number }): GoalInput {
+  const loose = raw as Loose;
+  const hours = goalToSave(loose?.["hours"]);
+  if (hours === null) throw new Error(GOAL_COPY.failed);
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), hours };
+}
+
+export type GoalResult = { ok: true } | { ok: false; problem: string };
+
+/** 20 Nov: a board made by a win, as the strip at its top reads. Never more about a person than the lead's name and their one-word answer. */
+export type BoardWin =
+  | { won: false }
+  | { won: true; decidedAt: string | null; leadName: string | null; ask: AskView | null };
+
+export const BOARD_WIN_COPY = {
+  won: (date: string) => (date ? `Proposal won ${date}` : "Proposal won"),
+  lead: (name: string) => `Lead: ${name}`,
+} as const;
+
+export type BoardInput = DeskProfileInput & { engagement_id: string };
+
+export function boardInput(raw: { profile_id?: string | null | undefined; engagement_id: string }): BoardInput {
+  const loose = raw as Loose;
+  const id = uuidOrNull(loose?.["engagement_id"]);
+  if (!id) throw new Error("Unknown board.");
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), engagement_id: id };
 }
 
 export type WinResult = { ok: true; engagementId: string } | { ok: false; problem: string };

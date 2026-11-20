@@ -13,7 +13,9 @@ import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
 import { DESK_COPY, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
-import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
+import { deleteWorkItem } from "@/lib/work-remove.functions";
+import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
+import { closeProposalFn, createProposalFn, listProposalClientsFn, listProposalsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -40,6 +42,8 @@ export function ProposalsPage() {
     staleTime: 30_000,
     retry: false,
     queryFn: (): Promise<DeskList> => listProposalsFn({ data: { profile_id: profileId as string } }),
+    // While an ask waits for its reply the page looks again every few seconds, so "said yes" shows without a reload.
+    refetchInterval: (query) => (query.state.data?.proposals.some((proposal) => proposal.ask?.waiting) ? 5000 : false),
   });
   const clients = useQuery({
     queryKey: ["proposal-desk-clients", profileId],
@@ -62,7 +66,7 @@ export function ProposalsPage() {
   if (profile && !allowed) {
     return (
       <div>
-        <PageHeader title={DESK_COPY.title} subtitle={DESK_COPY.notHere} />
+        <PageHeader title={DESK_COPY.title} subtitle={profile.role === "coach" && profileHasFirmView(profile) ? DESK_COPY.notHereCoach : DESK_COPY.notHere} />
       </div>
     );
   }
@@ -106,6 +110,24 @@ export function ProposalsPage() {
                 }
                 return result;
               }}
+              ask={{
+                preview: (proposalId) => askPreviewFn({ data: { profile_id: profileId as string, proposal_id: proposalId } }),
+                send: async (proposalId, pressId) => {
+                  const result = await askLeadFn({ data: { profile_id: profileId as string, proposal_id: proposalId, press_id: pressId } });
+                  await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                  return result;
+                },
+                practiceReply: async (proposalId, reply) => {
+                  const result = await practiceReplyFn({ data: { profile_id: profileId as string, proposal_id: proposalId, reply } });
+                  await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                  return result;
+                },
+              }}
+              onClose={async (proposalId, change) => {
+                const result = await closeProposalFn({ data: { profile_id: profileId as string, proposal_id: proposalId, change } });
+                if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                return result;
+              }}
               onSent={async (proposalId, sent) => {
                 const result = await setProposalSentFn({ data: { profile_id: profileId as string, proposal_id: proposalId, sent } });
                 if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
@@ -136,8 +158,12 @@ export function ProposalsPage() {
         onOpenChange={setOpen}
         clients={clients.data}
         clientsLoading={clients.isLoading}
+        canAddClient={desk.data?.canAddClient ?? false}
         profileId={profileId}
         capture={(files) => captureWithResult(files, { channel: "upload" })}
+        discard={async (ids) => {
+          await Promise.all(ids.map((id) => deleteWorkItem({ data: { work_item_id: id, profile_id: profileId ?? null } })));
+        }}
         create={(input) => createProposalFn({ data: input })}
         onCreated={() => {
           void queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
