@@ -506,20 +506,23 @@ export const SPACE_COPY = {
   /** The lead as a chip: who, and the state of the ask in a word or two. */
   leadLabel: "Lead:",
   /** The ask on the chip in a word or two. The full sentence stays on the line beneath it. */
-  ask: { asked: "Asked", yes: "Yes", no: "No", stopped: "Opted out", notArrived: "Not arrived", noReply: "No reply", practice: "Practice" },
+  ask: { asked: "Asked", yes: "Yes", no: "No", stopped: "Opted out", notSent: "Not sent", notArrived: "Not arrived", noReply: "No reply", practice: "Practice" },
 } as const;
 
-const NOT_ARRIVED_STATUSES = ["undelivered", "failed", "rejected", "expired"] as const;
+const NOT_ARRIVED_STATUSES = ["undelivered", "failed", "expired"] as const;
 export type AskWord = keyof typeof SPACE_COPY.ask;
 
 /** The ask in a word, for the lead's chip, in the same order of precedence as the line beneath it. */
 export function askWord(ask: AskView | null | undefined): AskWord | null {
   if (!ask) return null;
+  // QA M1: a practice answer is never a real yes or no. The chip keeps the practice look; the line says the answer.
+  if (ask.practice) return "practice";
   if (ask.reply === "yes") return "yes";
   if (ask.reply === "no") return "no";
   if (ask.reply === "stop" || ask.status === "opted_out") return "stopped";
+  // QA M2: a refused text was never sent, so the chip says so rather than that it got lost.
+  if (ask.status === "rejected") return "notSent";
   if ((NOT_ARRIVED_STATUSES as readonly string[]).includes(ask.status)) return "notArrived";
-  if (ask.practice) return "practice";
   if (!ask.waiting) return "noReply";
   return "asked";
 }

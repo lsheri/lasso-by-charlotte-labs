@@ -141,6 +141,9 @@ describe("the redrawn proposal row", () => {
     expect(clockShare({ state: "running", hoursLeft: 500 }, 72)).toBe(0);
     expect(clockShare({ state: "running", hoursLeft: 5 }, 0)).toBe(1);
     expect(clockShare({ state: "over", hoursOver: 3 }, 72)).toBe(1);
-    expect(clockShare({ state: "sent", hoursTaken: 3, withinGoal: true }, 72)).toBe(1);
+    // QA M3: gone out shows when, against the goal; late is full.
+    expect(clockShare({ state: "sent", hoursTaken: 36, withinGoal: true }, 72)).toBe(0.5);
+    expect(clockShare({ state: "sent", hoursTaken: 90, withinGoal: false }, 72)).toBe(1);
+    expect(clockShare({ state: "sent", hoursTaken: 1, withinGoal: true, underAnHour: true }, 72)).toBeLessThan(0.01);
   });
 });

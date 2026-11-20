@@ -2,6 +2,8 @@
 // 20 Nov 2026 (Liam, D-86, "the mix it starts on"): Up next with the page's one filled button, the clock with its
 // goal mark, the lead as a chip, the rare changes under More, and a skeleton first load.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useRef } from "react";
+import { useRowFlip } from "@/components/proposals/use-row-flip";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -61,8 +63,13 @@ describe("the next step rules", () => {
     expect(askWord(ask({ status: "undelivered", waiting: false }))).toBe("notArrived");
     expect(askWord(ask({ status: "practice", practice: true }))).toBe("practice");
     expect(askWord(ask({ waiting: false }))).toBe("noReply");
-    // A yes beats a practice flag, as the sentence does.
-    expect(askWord(ask({ practice: true, reply: "yes", waiting: false }))).toBe("yes");
+    // QA M1: a practice answer is never a real yes or no on the chip.
+    expect(askWord(ask({ status: "practice", practice: true, reply: "yes", waiting: false }))).toBe("practice");
+    expect(askWord(ask({ status: "practice", practice: true, reply: "no", waiting: false }))).toBe("practice");
+    // QA M2: a refused text was never sent.
+    expect(askWord(ask({ status: "rejected", waiting: false }))).toBe("notSent");
+    expect(askWord(ask({ status: "failed", waiting: false }))).toBe("notArrived");
+    expect(askWord(ask({ status: "expired", waiting: false }))).toBe("notArrived");
   });
 });
 
@@ -303,5 +310,72 @@ describe("past work beside each name (D-86)", () => {
       ],
     });
     expect(JSON.stringify(work)).not.toMatch(/\$|fee|value|score|rank/i);
+  });
+});
+
+describe("QA fixes on the rows", () => {
+  it("a practice yes keeps the practice look: hollow dot, no Yes pill, titles stay closed (M1)", () => {
+    render(
+      <ProposalDesk
+        now={NOW}
+        data={list([
+          proposal({ id: "x", receivedAt: hoursAgo(5) }),
+          proposal({ id: "p", mine: true, contextCount: 1, contextTitles: ["Series A notes"], leadName: "Ben Stanton", ask: ask({ name: "Ben Stanton", status: "practice", practice: true, reply: "yes", waiting: false }) }),
+        ])}
+      />,
+    );
+    const row = document.querySelector('[data-proposal-row="p"]') as HTMLElement;
+    expect(row.querySelector("[data-proposal-lead]")?.getAttribute("data-lead-ask")).toBe("practice");
+    expect(row.querySelector("[data-lead-pill]")).toBeNull();
+    expect(row.querySelector('[data-lead-dot="practice"]')).not.toBeNull();
+    expect(row.querySelector("[data-proposal-context-titles]")).toBeNull();
+  });
+
+  it("a refused ask says it was not sent, never that it did not arrive (M2)", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "r", mine: true, sentAt: hoursAgo(1), leadName: "Christy Johnson", ask: ask({ status: "rejected", waiting: false }) })])} />);
+    const row = document.querySelector('[data-proposal-row="r"]') as HTMLElement;
+    expect(row.querySelector("[data-lead-pill]")?.textContent).toBe("Not sent");
+    expect(row.textContent).toContain("The text was not accepted, so nothing was sent");
+    expect(row.textContent).not.toMatch(/did not arrive|Not arrived/);
+  });
+
+  it("a sent proposal's bar shows when it went out against the goal (M3)", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "s", receivedAt: hoursAgo(40), sentAt: hoursAgo(4) })])} />);
+    const fill = (document.querySelector('[data-proposal-row="s"] [data-proposal-clock-bar]')?.firstElementChild as HTMLElement).style.width;
+    expect(fill).toBe("50%");
+  });
+});
+
+describe("row glide after a scroll (H1)", () => {
+  function List({ tick }: { tick: number }) {
+    const ref = useRef<HTMLUListElement>(null);
+    useRowFlip(ref);
+    return (
+      <ul ref={ref} data-tick={tick}>
+        <li data-proposal-row="a">A</li>
+        <li data-proposal-row="b">B</li>
+      </ul>
+    );
+  }
+  it("does not move any row when only the page scrolled between renders, and still glides a row that really moved", () => {
+    let scroll = 0;
+    let bMoved = 0;
+    const rect = (top: number) => ({ top, left: 0, right: 100, bottom: top + 40, width: 100, height: 40, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    const spy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      const base = this.tagName === "UL" ? 100 : this.dataset["proposalRow"] === "a" ? 100 : 150 + bMoved;
+      return rect(base - scroll);
+    });
+    const animate = vi.fn();
+    (HTMLElement.prototype as unknown as { animate: unknown }).animate = animate;
+    const { rerender } = render(<List tick={0} />);
+    scroll = 1200;
+    rerender(<List tick={1} />);
+    expect(animate).not.toHaveBeenCalled();
+    bMoved = 60;
+    rerender(<List tick={2} />);
+    expect(animate).toHaveBeenCalledTimes(1);
+    expect(animate.mock.calls[0]?.[0]?.[0]).toEqual({ transform: "translate(0px, -60px)" });
+    spy.mockRestore();
+    delete (HTMLElement.prototype as unknown as { animate?: unknown }).animate;
   });
 });

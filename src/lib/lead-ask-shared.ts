@@ -121,6 +121,8 @@ export const ASK_COPY = {
   sentWaiting: "Asked by text. Waiting for a reply",
   deliveredWaiting: "Delivered. Waiting for a reply",
   notArrived: "The text did not arrive",
+  /** QA M2: the carrier refused it, so nothing went out. Short form of `refused`. */
+  notAccepted: "The text was not accepted, so nothing was sent",
   noReply: "Asked by text. No reply",
   practiceWaiting: "Practice ask. Nothing was sent",
   practiceTag: "Practice",
@@ -158,6 +160,7 @@ export function askLine(ask: AskView): string {
   if (ask.reply === "yes") return ASK_COPY.saidYes(ask.name);
   if (ask.reply === "no") return ASK_COPY.saidNo(ask.name);
   if (ask.reply === "stop" || ask.status === "opted_out") return ASK_COPY.stopped(ask.name);
+  if (ask.status === "rejected") return ASK_COPY.notAccepted;
   if ((NOT_ARRIVED as readonly string[]).includes(ask.status)) return ASK_COPY.notArrived;
   if (ask.practice) return ASK_COPY.practiceWaiting;
   if (!ask.waiting) return ASK_COPY.noReply;

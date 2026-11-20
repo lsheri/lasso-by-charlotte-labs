@@ -73,7 +73,9 @@ export const LIVE_PROPOSALS: DeskProposal[] = [
   {
     id: "series-a", title: "Series A readiness", clientName: "Lasso", ownerName: "Maren Hollis", mine: true,
     status: "open", receivedAt: "2026-11-20T08:02:52Z", sentAt: null, decidedAt: null, engagementId: null, contextCount: 0,
-    canAct: true, canClose: true, canArchive: true, leadContactId: "r12", leadName: "Ben Stanton", ask: null,
+    canAct: true, canClose: true, canArchive: true, leadContactId: "r12", leadName: "Ben Stanton",
+    // Live: the latest ask is a practice ask answered yes.
+    ask: { name: "Ben Stanton", status: "practice", reply: "yes", practice: true, waiting: false },
   },
   ...DECIDED,
 ];

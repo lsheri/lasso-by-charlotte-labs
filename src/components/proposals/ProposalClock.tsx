@@ -12,9 +12,13 @@ export function isAtGoal(receivedAt: string, goalHours: number, now?: Date | und
   return (now ?? new Date()).getTime() - received === goalHours * 3_600_000;
 }
 
-/** How much of the goal is used, 0 to 1. A proposal that has gone out, or run over, fills the bar. */
+/**
+ * How much of the goal is used, 0 to 1. Run over fills the bar. Gone out shows when it went out against the goal
+ * (QA M3): under an hour is a sliver, at hour 71 nearly full, late is full.
+ */
 export function clockShare(left: TimeLeft, goalHours: number): number {
-  if (left.state !== "running" || goalHours <= 0) return 1;
+  if (goalHours <= 0 || left.state === "over") return 1;
+  if (left.state === "sent") return left.underAnHour ? Math.min(1, 0.5 / goalHours) : Math.min(1, Math.max(0, left.hoursTaken / goalHours));
   return Math.min(1, Math.max(0, 1 - left.hoursLeft / goalHours));
 }
 
