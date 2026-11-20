@@ -46,7 +46,9 @@ describe("the redrawn proposal row", () => {
   it("fills one button only: sending first, then recording the win", () => {
     row({});
     expect(filled()).toEqual([SENT_COPY.mark]);
-    expect(screen.getByRole("button", { name: WIN_COPY.record })).toBeTruthy();
+    // D-86, one thing at a time: before it goes out, Record the win waits under More, by name.
+    expect(screen.queryByRole("button", { name: WIN_COPY.record })).toBeNull();
+    expect(within(openMore() as HTMLElement).getByRole("menuitem", { name: WIN_COPY.record })).toBeTruthy();
     cleanup();
     row({ sentAt: hoursAgo(2) });
     expect(filled()).toEqual([WIN_COPY.record]);

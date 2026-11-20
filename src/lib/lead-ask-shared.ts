@@ -179,6 +179,8 @@ export const SHEET_COPY = {
   pickLater: "Pick later",
   pickFirst: "Pick someone to see their text",
   ledBefore: "Led before:",
+  /** D-86 (Liam): said beside a person who has led nothing with us yet, so the partner is not left guessing. */
+  noPast: "No past work with us yet",
   /** Where it goes, said once on the confirm. */
   goes: (mode: "real" | "demo" | "practice", name: string) =>
     mode === "practice"

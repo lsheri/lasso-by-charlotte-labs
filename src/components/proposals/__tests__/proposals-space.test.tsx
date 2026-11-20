@@ -9,7 +9,7 @@ import { LeadChip } from "@/components/proposals/LeadChip";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import type { AskView } from "@/lib/lead-ask-shared";
-import { askWord, DESK_COPY, LEAD_COPY, nextStep, REVEAL_COPY, SENT_COPY, upNextId, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { askWord, DESK_COPY, LEAD_COPY, nextStep, pastWorkByLead, REVEAL_COPY, SENT_COPY, upNextId, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: ReactNode }) => <a href="/proposals">{children}</a>,
@@ -252,5 +252,56 @@ describe("the board building in, while Record the win works", () => {
     fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
     fireEvent.click(within(await screen.findByTestId("win-proposal")).getByRole("button", { name: WIN_COPY.confirm }));
     expect(document.querySelector("[data-board-reveal] img")).toBeNull();
+  });
+});
+
+describe("one thing at a time (D-86)", () => {
+  it("opens a row's document titles on Up next and when the lead's yes lands, and keeps them closed otherwise", () => {
+    const docs = { mine: true, canAct: true, contextCount: 2, contextTitles: ["Larkspur brief.docx", "Board memo"] };
+    render(
+      <ProposalDesk
+        now={NOW}
+        data={list([
+          proposal({ id: "next", receivedAt: hoursAgo(60), ...docs }),
+          proposal({ id: "quiet", receivedAt: hoursAgo(20), ...docs }),
+          proposal({ id: "yes", receivedAt: hoursAgo(10), ...docs, leadName: "Christy Johnson", ask: ask({ reply: "yes", waiting: false }) }),
+        ])}
+        onSent={sent}
+        onWin={() => win()}
+      />,
+    );
+    const row = (id: string) => document.querySelector(`[data-proposal-row="${id}"]`) as HTMLElement;
+    expect(row("next").hasAttribute("data-up-next")).toBe(true);
+    expect(within(row("next")).getByText("Larkspur brief.docx")).toBeTruthy();
+    expect(row("quiet").querySelector("[data-proposal-context-titles]")).toBeNull();
+    expect(within(row("quiet")).getByText("2 documents")).toBeTruthy();
+    expect(within(row("yes")).getByText("Board memo")).toBeTruthy();
+  });
+
+  it("draws Up next's clock as a bolder shape, with the same words", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canAct: true, receivedAt: hoursAgo(69) }), proposal({ id: "b", receivedAt: hoursAgo(2) })])} onSent={sent} />);
+    const bar = (id: string) => document.querySelector(`[data-proposal-row="${id}"] [data-proposal-clock-bar]`) as HTMLElement;
+    expect(bar("a").className).toMatch(/h-2\.5/);
+    expect(bar("b").className).toMatch(/h-1\.5/);
+    expect(within(document.querySelector('[data-proposal-row="a"]') as HTMLElement).getByText("3 hours left of 72")).toBeTruthy();
+  });
+});
+
+describe("past work beside each name (D-86)", () => {
+  it("lists the won proposals each person led, newest first, and nothing from open, lost or unled ones", () => {
+    const work = pastWorkByLead([
+      proposal({ id: "1", status: "won", decidedAt: "2026-10-01T00:00:00Z", leadContactId: "christy", clientName: "Harrow Water District", title: "Rate study" }),
+      proposal({ id: "2", status: "won", decidedAt: "2026-11-01T00:00:00Z", leadContactId: "christy", clientName: "Larkspur Senior Living", title: "Operations review" }),
+      proposal({ id: "3", status: "lost", decidedAt: "2026-11-02T00:00:00Z", leadContactId: "adaeze" }),
+      proposal({ id: "4", status: "open", leadContactId: "adaeze" }),
+      proposal({ id: "5", status: "won", decidedAt: "2026-11-03T00:00:00Z", leadContactId: null }),
+    ]);
+    expect(work).toEqual({
+      christy: [
+        { client: "Larkspur Senior Living", title: "Operations review" },
+        { client: "Harrow Water District", title: "Rate study" },
+      ],
+    });
+    expect(JSON.stringify(work)).not.toMatch(/\$|fee|value|score|rank/i);
   });
 });

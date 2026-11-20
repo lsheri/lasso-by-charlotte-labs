@@ -146,6 +146,9 @@ export function ProposalRow({
   const more: MoreAction[] = [];
   // Taking "sent" back sits with the other quiet changes, away from the line that says it went out.
   if (undo) more.push({ id: "undo", label: working ? SENT_COPY.working : SENT_COPY.undo, disabled: working, onSelect: () => void press(false) });
+  // One thing at a time (D-86): until it has gone out, sending is the step; Record the win waits under More, by name.
+  const winInMore = mayWin && maySend && !proposal.sentAt;
+  if (winInMore && onWin) more.push({ id: "win", label: WIN_COPY.record, onSelect: onWin });
   if (onClose && proposal.canClose) more.push({ id: "lost", label: CLOSE_COPY.lost, onSelect: () => onClose("lost") });
   if (onClose && proposal.canArchive) more.push({ id: "archive", label: CLOSE_COPY.archive, onSelect: () => onClose("archived") });
   const word = askWord(proposal.ask);
@@ -173,8 +176,14 @@ export function ProposalRow({
             ) : null}
             <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
           </p>
-          {titles.length > 0 ? (
-            <ul className="mt-1.5 flex flex-wrap gap-1.5 text-(length:--type-small) text-foreground" data-proposal-context-titles>
+          {/* D-86, one thing at a time: the titles open on Up next, and when the lead's yes lands (the row opens to
+              show what they will work from). Otherwise the count above says enough. */}
+          {titles.length > 0 && (featured || word === "yes") ? (
+            <ul
+              key={word === "yes" ? "yes" : "titles"}
+              className="mt-1.5 flex flex-wrap gap-1.5 text-(length:--type-small) text-foreground animate-in fade-in-0 slide-in-from-top-1 duration-500 motion-reduce:animate-none"
+              data-proposal-context-titles
+            >
               {titles.map((title, index) => (
                 <li key={`${index}-${title}`} className="max-w-full break-words rounded-[var(--radius-control)] border border-border bg-background px-2 py-0.5 [overflow-wrap:anywhere]">
                   {title}
@@ -191,14 +200,14 @@ export function ProposalRow({
             <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} />
           </div>
         </div>
-        <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} />
+        <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           {maySend && !proposal.sentAt ? (
             <Button type="button" size="sm" variant={featured && step === "send" ? "default" : "outline"} disabled={working} onClick={() => void press(true)}>
               {working ? SENT_COPY.working : SENT_COPY.mark}
             </Button>
           ) : null}
-          {mayWin ? (
+          {mayWin && !winInMore ? (
             <Button type="button" size="sm" variant={featured && step === "win" ? "default" : "outline"} onClick={onWin}>
               {WIN_COPY.record}
             </Button>

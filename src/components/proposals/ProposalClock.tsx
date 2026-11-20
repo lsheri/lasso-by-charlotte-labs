@@ -27,12 +27,15 @@ export function ProposalClock({
   left,
   goalHours,
   atGoal,
+  large = false,
   className,
 }: {
   left: TimeLeft;
   goalHours: number;
   /** The very moment the goal runs out: not an hour to spare, and not over yet. */
   atGoal?: boolean | undefined;
+  /** Up next: time as a bolder shape, so the one proposal that matters reads from across the room. */
+  large?: boolean | undefined;
   className?: string | undefined;
 }) {
   const good = left.state === "sent" && left.withinGoal;
@@ -43,7 +46,7 @@ export function ProposalClock({
         <div
           aria-hidden="true"
           data-proposal-clock-bar
-          className={cn("h-1.5 overflow-hidden rounded-full", good ? "bg-[var(--good-tint)]" : "bg-[var(--action-wash)]")}
+          className={cn("overflow-hidden rounded-full", large ? "h-2.5" : "h-1.5", good ? "bg-[var(--good-tint)]" : "bg-[var(--action-wash)]")}
         >
           <div
             className={cn(
@@ -54,7 +57,7 @@ export function ProposalClock({
           />
         </div>
         {/* The goal itself: a short upright mark at the end of the bar. */}
-        <span aria-hidden="true" data-proposal-goal-mark className="absolute right-0 top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full bg-foreground" />
+        <span aria-hidden="true" data-proposal-goal-mark className={cn("absolute right-0 top-1/2 w-0.5 -translate-y-1/2 rounded-full bg-foreground", large ? "h-5" : "h-3.5")} />
       </div>
       <p
         data-proposal-clock={left.state}

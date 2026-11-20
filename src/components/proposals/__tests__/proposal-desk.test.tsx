@@ -43,7 +43,8 @@ describe("the Proposals dashboard", () => {
     expect(within(mine).getByText("14 hours left of 24")).toBeTruthy();
     expect(within(mine).getByText("Yours")).toBeTruthy();
     expect(within(mine).getByText("2 documents")).toBeTruthy();
-    expect(within(mine).getByText("Call notes")).toBeTruthy();
+    // D-86, one thing at a time: titles open only on Up next or once the lead says yes; the count says enough here.
+    expect(mine.querySelector("[data-proposal-context-titles]")).toBeNull();
     // D-86: the standing line about boards is gone; Record the win says when the board is made.
     expect(screen.queryByText(DESK_COPY.noBoardYet)).toBeNull();
     const theirs = document.querySelector('[data-proposal-row="b"]') as HTMLElement;

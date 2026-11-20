@@ -23,6 +23,7 @@ import {
   deskView,
   timeLeft,
   timeLeftLine,
+  pastWorkByLead,
   upNextId,
   WIN_COPY,
   type DeskList,
@@ -151,7 +152,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
+        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>

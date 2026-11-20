@@ -567,6 +567,23 @@ export const REVEAL_COPY = {
 } as const;
 
 /**
+ * D-86 (Liam: "No past work with us yet" beside a person with none). The work each person on the roster has led with
+ * this firm: the won proposals that name them as lead, newest first. Read from the list the page already has, so it
+ * adds no request. Only the client and the title: never a count, a fee, a value or how fast anyone answered.
+ */
+export function pastWorkByLead(proposals: readonly DeskProposal[]): Record<string, { client: string; title: string }[]> {
+  const out: Record<string, { client: string; title: string }[]> = {};
+  const won = proposals
+    .filter((proposal) => proposal.status === "won" && proposal.leadContactId)
+    .sort((a, b) => (b.decidedAt ?? "").localeCompare(a.decidedAt ?? "") || a.id.localeCompare(b.id));
+  for (const proposal of won) {
+    const id = proposal.leadContactId as string;
+    (out[id] ??= []).push({ client: proposal.clientName, title: proposal.title });
+  }
+  return out;
+}
+
+/**
  * After New proposal saves, what the page does next. The list has just been read again: when the new proposal is in
  * it, someone who may pick a lead goes straight to the lead sheet and everyone else to the rows. When it is not (the
  * read failed, or has not caught up), the page says the proposal was started and opens nothing by itself later.

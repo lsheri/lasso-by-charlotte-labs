@@ -10,9 +10,10 @@ import type { DeskProposal } from "@/lib/proposal-desk-shared";
 import { morph } from "@/lib/view-morph";
 
 import { AsShipped } from "./as-shipped";
-import { ASK_COPY } from "@/lib/lead-ask-shared";
+import { ASK_COPY, leadAskBody } from "@/lib/lead-ask-shared";
 
-import { askPreview, desk, NOW, PEOPLE, WON_WORDS } from "./kestrel-bay";
+import { askPreview, desk, FIRM, NOW, PEOPLE, WON_WORDS } from "./kestrel-bay";
+import { LIVE_NOW, LIVE_PEOPLE, liveDesk } from "./kestrel-bay-live";
 
 /** The rows link to boards, so they need a router around them. It has one page: the story. */
 function InRouter({ children }: { children: ReactNode }) {
@@ -118,3 +119,40 @@ function StartThenPickInner({ role }: { role: "admin" | "analyst" }) {
 }
 export const StartThenPickAdmin: Story = { render: () => <StartThenPick role="admin" /> };
 export const StartThenPickAnalyst: Story = { render: () => <StartThenPick role="analyst" /> };
+
+/**
+ * D-86, the live Kestrel Bay shapes: Pellham with no lead, Larkspur with Christy Johnson and her refused test ask,
+ * and past work beside each name in the lead sheet. Stand-ins only: nothing is saved or sent.
+ */
+function LiveDesk({ role, sheet = false, winning = false }: { role: "admin" | "manager" | "analyst"; sheet?: boolean; winning?: boolean }) {
+  const picks = role !== "analyst";
+  const preview = async (_proposalId: string, contactId?: string) => {
+    const person = LIVE_PEOPLE.find((p) => p.id === contactId);
+    return { ...askPreview("demo"), name: person?.name ?? "", words: leadAskBody({ brandName: "Lasso", firmName: FIRM, leadName: person?.name ?? "", askerName: "Maren Hollis" }) };
+  };
+  return (
+    <AsShipped>
+      <InRouter>
+        <div className="mx-auto max-w-5xl p-4 sm:p-8">
+          <ProposalDesk
+            data={liveDesk(role)}
+            now={LIVE_NOW}
+            onSent={ok}
+            onWin={winning ? () => new Promise<never>(() => {}) : async () => ({ ok: true, engagementId: "e0" }) as never}
+            onClose={ok}
+            roster={picks ? LIVE_PEOPLE : undefined}
+            leadWords={WON_WORDS}
+            onLead={picks ? ok : undefined}
+            ask={picks ? { preview, send: async () => ({ ok: true, practice: false }), practiceReply: ok } : undefined}
+            startLead={sheet ? "pellham" : null}
+          />
+        </div>
+      </InRouter>
+    </AsShipped>
+  );
+}
+export const LiveAdmin: Story = { render: () => <LiveDesk role="admin" /> };
+export const LiveLead: Story = { render: () => <LiveDesk role="manager" /> };
+export const LiveMember: Story = { render: () => <LiveDesk role="analyst" /> };
+export const LiveAdminLeadSheet: Story = { render: () => <LiveDesk role="admin" sheet /> };
+export const LiveAdminWinning: Story = { render: () => <LiveDesk role="admin" winning /> };
