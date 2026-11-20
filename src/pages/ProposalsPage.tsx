@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
-import { DESK_COPY, deskViewFromSearch, seesAllProposals, type DeskClient } from "@/lib/proposal-desk-shared";
+import { afterCreate, DESK_COPY, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
@@ -59,6 +59,10 @@ export function ProposalsPage() {
   });
   const brand = useBrandCopy();
   const [startLead, setStartLead] = useState<string | null>(null);
+  // A proposal that saved but is not in the list yet (QA M1). Cleared by itself once a read shows it.
+  const [notShown, setNotShown] = useState<{ id: string; title: string } | null>(null);
+  const lastTitle = useRef("");
+  const missing = notShown !== null && !desk.data?.proposals.some((proposal) => proposal.id === notShown.id) ? notShown : null;
   // Who may pick a lead: the server says so for the desk, and the people list was readable.
   const mayPickLead = Boolean(desk.data?.canPickLead && roster.data?.allowed);
 
@@ -87,7 +91,14 @@ export function ProposalsPage() {
           {showPeople ? <TabsTrigger value="people">{DESK_COPY.tabs.people}</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="proposals" className="pt-4">
-          {desk.error ? (
+          {missing ? (
+            <p role="alert" data-proposal-started-not-shown className="text-sm text-foreground">
+              {DESK_COPY.startedNotRefreshed}{" "}
+              <button type="button" className="underline" onClick={() => void desk.refetch()}>
+                {DESK_COPY.retry}
+              </button>
+            </p>
+          ) : desk.error ? (
             <p role="alert" className="text-sm text-destructive">
               {DESK_COPY.loadFailed}{" "}
               <button type="button" className="underline" onClick={() => void desk.refetch()}>
@@ -166,14 +177,23 @@ export function ProposalsPage() {
         discard={async (ids) => {
           await Promise.all(ids.map((id) => deleteWorkItem({ data: { work_item_id: id, profile_id: profileId ?? null } })));
         }}
-        create={(input) => createProposalFn({ data: input })}
+        create={async (input) => {
+          const result = await createProposalFn({ data: input });
+          if (result.ok) lastTitle.current = input.title;
+          return result;
+        }}
+        recent={missing ? missing.title : undefined}
         onCreated={async (id) => {
           void queryClient.invalidateQueries({ queryKey: ["proposal-desk-clients"] });
           void queryClient.invalidateQueries({ queryKey: ["clients"] });
           // 21 Nov 2026 (Liam): making a proposal begins lead picking. The desk is read again first, so the new
           // row is there for the sheet; then the form morphs into the sheet. Only for people who may pick a lead.
           await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
-          if (mayPickLead) await morph(() => { setOpen(false); setStartLead(id); });
+          const next = afterCreate(queryClient.getQueryData<DeskList>(["proposal-desk", profileId]), id, mayPickLead);
+          // QA M1: if the new row is not in the list, say it was started, and open nothing by itself later.
+          setStartLead(null);
+          if (next === "notRefreshed") setNotShown({ id, title: lastTitle.current });
+          else if (next === "sheet") await morph(() => { setOpen(false); setStartLead(id); });
         }}
       />
     </div>

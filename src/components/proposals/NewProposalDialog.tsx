@@ -44,6 +44,7 @@ export function NewProposalDialog({
   discard,
   create,
   onCreated,
+  recent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,6 +60,8 @@ export function NewProposalDialog({
   create: (input: NewProposalRaw) => Promise<NewProposalResult>;
   /** Told the new proposal's id. It may return a promise; the form waits for it, so a hand-over to the lead sheet is seamless. */
   onCreated: (id: string) => void | Promise<void>;
+  /** The title of a proposal just started that the list does not show yet. Said on the form, so a second press is never a silent duplicate. */
+  recent?: string | undefined;
 }) {
   const copy = INTAKE_COPY;
   const ids = useId();
@@ -189,6 +192,11 @@ export function NewProposalDialog({
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
           <DialogDescription>{copy.intro}</DialogDescription>
         </DialogHeader>
+        {recent !== undefined ? (
+          <p role="status" data-new-proposal-recent className="text-sm text-foreground [overflow-wrap:anywhere]">
+            {copy.justStarted(recent)}
+          </p>
+        ) : null}
 
         <form onSubmit={submit} className="space-y-4" noValidate>
           <fieldset className="space-y-2" disabled={busy}>
