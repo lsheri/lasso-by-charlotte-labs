@@ -76,6 +76,30 @@ export const resetDemoFirmFn = createServerFn({ method: "POST" })
   });
 
 /**
+ * 19 Nov, demo tour: creates the two tour logins, or gives existing ones new passwords. Founder only. The passwords
+ * are shown once on the seed page and never stored by us.
+ */
+export const seedTourLoginsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: Input) => input)
+  .handler(async ({ data, context }): Promise<{ logins: import("./demo-firm/tour.server").TourLogin[] }> => {
+    const admin = await founderOnly(context, data.profile_id);
+    const { newQaPassword } = await import("./qa-seed.functions");
+    const { seedTourLogins } = await import("./demo-firm/tour.server");
+    return seedTourLogins(admin, newQaPassword);
+  });
+
+/** 19 Nov, demo tour: puts the Marrowfield board back after a session. Founder only. Refuses when a kept row is missing. */
+export const resetTourFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: Input) => input)
+  .handler(async ({ data, context }): Promise<import("./demo-firm/tour.server").TourResetResult> => {
+    const admin = await founderOnly(context, data.profile_id);
+    const { resetTour } = await import("./demo-firm/tour.server");
+    return resetTour(admin);
+  });
+
+/**
  * Firm brain step 5, the check on real model output: runs the card call twice on one seeded item, as it is today and
  * with the tags asked for, and returns what the model wrote, what would be stored and the tokens of both. The seed's
  * own labels are the hand labels (tag-check-shared.ts). One item per call so none outlives the server's time limit.

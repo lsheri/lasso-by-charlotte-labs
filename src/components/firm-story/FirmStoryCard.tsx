@@ -18,6 +18,17 @@ export type StoryWords = {
   ask: string | null;
 };
 
+/** A recorded answer as the card shows it. The words come from the server; see firm-story-recordings.server.ts. */
+export type StoryRecordedAnswer = {
+  recordedOn: string;
+  partial: boolean;
+  paragraphs: readonly string[];
+  sources: readonly { board: string; document: string; kind: string; dated: string }[];
+};
+
+/** Where the recorded answer for this beat stands: none exists, not asked for, loading, shown, or failed. */
+export type StoryRecordedState = { kind: "none" } | { kind: "offered" } | { kind: "loading" } | { kind: "failed" } | { kind: "shown"; answer: StoryRecordedAnswer };
+
 export type FirmStoryCardProps = {
   view: StoryView;
   words: StoryWords;
@@ -36,6 +47,9 @@ export type FirmStoryCardProps = {
   onResumeHere: () => void;
   onReact: (reaction: StoryReaction) => void;
   onRolePick: (pick: StoryRolePick) => void;
+  recorded: StoryRecordedState;
+  onShowRecorded: () => void;
+  onHideRecorded: () => void;
   /** Ends the story in this tab: the beat is forgotten and the start button returns. */
   onEnd: () => void;
 };
@@ -49,6 +63,63 @@ function DemoLine({ text }: { text: string }) {
     <p data-story-demo-line className="border-t border-border pt-2 text-(length:--type-small) text-muted-foreground">
       {text}
     </p>
+  );
+}
+
+/** The way out when a live answer fails or is slow: a real answer recorded earlier, always labelled as recorded. */
+function Recorded({ state, onShow, onHide }: { state: StoryRecordedState; onShow: () => void; onHide: () => void }) {
+  if (state.kind === "none") return null;
+  if (state.kind === "offered") {
+    return (
+      <div>
+        <Button type="button" variant="ghost" size="sm" data-story-recorded-show onClick={onShow}>
+          {FIRM_STORY_COPY.recordedShow}
+        </Button>
+      </div>
+    );
+  }
+  if (state.kind === "loading") {
+    return (
+      <p role="status" className="text-(length:--type-small) text-muted-foreground">
+        {FIRM_STORY_COPY.recordedLoading}
+      </p>
+    );
+  }
+  if (state.kind === "failed") {
+    return (
+      <p role="alert" data-story-recorded-failed className="text-(length:--type-small) text-muted-foreground">
+        {FIRM_STORY_COPY.recordedMissing}
+      </p>
+    );
+  }
+  const { answer } = state;
+  return (
+    <section data-story-recorded aria-label={FIRM_STORY_COPY.recordedLabel(answer.recordedOn)} className="flex flex-col gap-2 rounded-[var(--radius)] border border-border bg-muted p-3">
+      <p className={eyebrow}>{FIRM_STORY_COPY.recordedLabel(answer.recordedOn)}</p>
+      {answer.paragraphs.map((paragraph) => (
+        <p key={paragraph} className="text-(length:--type-small) text-foreground">
+          {paragraph}
+        </p>
+      ))}
+      {answer.sources.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          <p className={eyebrow}>{FIRM_STORY_COPY.recordedSources}</p>
+          <ul className="flex flex-col gap-1">
+            {answer.sources.map((source) => (
+              <li key={`${source.board}/${source.document}`} className="text-(length:--type-small) text-muted-foreground">
+                {`${source.document} (${source.kind}, ${source.dated}), ${source.board}`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {answer.partial ? <p className="text-(length:--type-small) text-muted-foreground">{FIRM_STORY_COPY.recordedPartial}</p> : null}
+      <div>
+        <Button type="button" variant="ghost" size="sm" data-story-recorded-hide onClick={onHide}>
+          {FIRM_STORY_COPY.recordedHide}
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -161,6 +232,8 @@ export function FirmStoryCard(props: FirmStoryCardProps) {
           <span className="text-foreground">{words.ask}</span>
         </p>
       ) : null}
+
+      <Recorded state={props.recorded} onShow={props.onShowRecorded} onHide={props.onHideRecorded} />
 
       {beat.n === 0 ? (
         <fieldset className="flex flex-col gap-2">

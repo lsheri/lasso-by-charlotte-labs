@@ -35,6 +35,14 @@ export const FIRM_STORY_COPY = {
   resume: "Resume tour",
   explore: "Explore on my own",
   end: "End tour",
+  /** Recorded answers: the way out when a live answer fails or is slow. */
+  recordedShow: "Answer not loading? Show a recorded one",
+  recordedHide: "Hide the recorded answer",
+  recordedLoading: "Getting the recorded answer",
+  recordedMissing: "The recorded answer could not be loaded. Ask again in the product.",
+  recordedLabel: (on: string) => `Recorded answer, ${on}. Not live.`,
+  recordedPartial: "This is the opening of the answer. The live answer goes on, with a source under each line.",
+  recordedSources: "Sources it named",
   close: "Close",
   next: "Next",
   back: "Back",
@@ -151,6 +159,16 @@ export function isAtPlace(place: StoryPlace | null, pathname: string): boolean {
 /** The script's words with the product's name filled in from the current brand. */
 export function withProduct(text: string, product: string): string {
   return text.replaceAll("{product}", product);
+}
+
+/**
+ * The beats that have a recorded answer, and the window that plays each. The recordings themselves stay on the
+ * server (firm-story-recordings.server.ts); a test holds this list equal to what is there.
+ */
+export const STORY_RECORDED_BEATS: Readonly<Record<number, StoryWindow>> = { 1: "partner" };
+
+export function hasRecording(beat: number, window: StoryWindow): boolean {
+  return STORY_RECORDED_BEATS[beat] === window;
 }
 
 /** The tour link: the address carries `?tour`, with any value or none. Nothing else in the address counts. */

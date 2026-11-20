@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
   access: vi.fn(),
+  recording: vi.fn(),
   navigate: vi.fn(),
   log: vi.fn(),
   path: "/home",
@@ -23,7 +24,10 @@ vi.mock("@tanstack/react-router", () => ({
   useRouterState: ({ select }: { select: (state: { location: { pathname: string; searchStr: string } }) => unknown }) =>
     select({ location: { pathname: m.path, searchStr: m.search } }),
 }));
-vi.mock("@/lib/firm-story.functions", () => ({ firmStoryAccessFn: (...a: unknown[]) => m.access(...a) }));
+vi.mock("@/lib/firm-story.functions", () => ({
+  firmStoryAccessFn: (...a: unknown[]) => m.access(...a),
+  firmStoryRecordingFn: (...a: unknown[]) => m.recording(...a),
+}));
 vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }));
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: m.brand }) }));
 
@@ -61,6 +65,7 @@ beforeEach(() => {
   m.brand = "Charlotte";
   m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
   m.navigate.mockReset();
+  m.recording.mockReset().mockResolvedValue(null);
   m.log.mockReset();
   window.sessionStorage.clear();
   window.localStorage.clear();
@@ -377,5 +382,112 @@ describe("layering", () => {
       surface.remove();
       dialog.remove();
     }
+  });
+});
+
+describe("recorded answers", () => {
+  const answer = {
+    beat: 1,
+    window: "partner",
+    question: "q",
+    recordedOn: "19 Nov 2026",
+    build: "270ca0b2",
+    seconds: 20,
+    partial: true,
+    paragraphs: ["Yes, we have designed service lines for two health systems."],
+    sources: [{ board: "Integrated behavioral health service line", document: "Final readout", kind: "Deck", dated: "6 Aug 2024" }],
+  };
+  const show = () => fireEvent.click(screen.getByRole("button", { name: "Answer not loading? Show a recorded one" }));
+  const shown = () => waitFor(() => expect(card().querySelector("[data-story-recorded]")).not.toBeNull());
+
+  it("offers one only on a beat that has one, and asks the server for nothing until it is pressed", async () => {
+    mount();
+    await start();
+    expect(card().querySelector("[data-story-recorded-show]")).toBeNull();
+    next();
+    expect(card().getAttribute("data-story-beat")).toBe("1");
+    expect(card().querySelector("[data-story-recorded-show]")).not.toBeNull();
+    expect(m.recording).not.toHaveBeenCalled();
+    next();
+    expect(card().querySelector("[data-story-recorded-show]")).toBeNull();
+  });
+
+  it("does not offer the Partner's recording in the Engagement lead window", async () => {
+    m.access.mockResolvedValue({ allowed: true, window: "lead" });
+    mount();
+    await start();
+    expect(card().querySelector("[data-story-recorded-show]")).toBeNull();
+  });
+
+  it("shows the answer labelled as recorded and not live, with its date, source and the note that it is the opening", async () => {
+    m.recording.mockResolvedValue(answer);
+    mount();
+    await start();
+    next();
+    show();
+    await shown();
+    const block = card().querySelector("[data-story-recorded]")!;
+    expect(m.recording).toHaveBeenCalledWith({ data: { profile_id: "p1", beat: 1 } });
+    expect(block.getAttribute("aria-label")).toBe("Recorded answer, 19 Nov 2026. Not live.");
+    expect(block.textContent).toContain("Yes, we have designed service lines for two health systems.");
+    expect(block.textContent).toContain("Final readout (Deck, 6 Aug 2024), Integrated behavioral health service line");
+    expect(block.textContent).toContain("This is the opening of the answer.");
+  });
+
+  it("records that a recorded answer was shown, with the beat, the mode and the script version only", async () => {
+    m.recording.mockResolvedValue(answer);
+    mount();
+    await start();
+    next();
+    show();
+    await waitFor(() => expect(m.log.mock.calls.some((call) => call[0] === "firm_story.fallback_shown")).toBe(true));
+    const call = m.log.mock.calls.find((entry) => entry[0] === "firm_story.fallback_shown");
+    expect(call?.[2]).toEqual({ beat: 1, mode: "self", script_version: FIRM_STORY_SCRIPT.version });
+  });
+
+  it("hides it again, and forgets it on End tour", async () => {
+    m.recording.mockResolvedValue(answer);
+    mount();
+    await start();
+    next();
+    show();
+    await shown();
+    fireEvent.click(screen.getByRole("button", { name: "Hide the recorded answer" }));
+    expect(card().querySelector("[data-story-recorded]")).toBeNull();
+    expect(card().querySelector("[data-story-recorded-show]")).not.toBeNull();
+    show();
+    await shown();
+    fireEvent.click(screen.getByRole("button", { name: "End tour" }));
+    await start();
+    next();
+    expect(card().querySelector("[data-story-recorded]")).toBeNull();
+  });
+
+  it("says so plainly when the server gives none or the read fails, and records nothing", async () => {
+    mount();
+    await start();
+    next();
+    show();
+    await waitFor(() => expect(card().querySelector("[data-story-recorded-failed]")).not.toBeNull());
+    expect(card().querySelector("[data-story-recorded-failed]")?.getAttribute("role")).toBe("alert");
+    cleanup();
+    m.recording.mockRejectedValue(new Error("offline"));
+    window.sessionStorage.clear();
+    mount();
+    await start();
+    next();
+    show();
+    await waitFor(() => expect(card().querySelector("[data-story-recorded-failed]")).not.toBeNull());
+    expect(m.log.mock.calls.some((call) => call[0] === "firm_story.fallback_shown")).toBe(false);
+  });
+
+  it("keeps nothing of the answer in the browser's storage", async () => {
+    m.recording.mockResolvedValue(answer);
+    mount();
+    await start();
+    next();
+    show();
+    await shown();
+    expect(JSON.stringify({ ...window.sessionStorage, ...window.localStorage })).not.toContain("service lines");
   });
 });

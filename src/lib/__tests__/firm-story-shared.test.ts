@@ -320,9 +320,11 @@ describe("where the story's events and storage live", () => {
     }
   });
 
-  it("makes no Supabase write and uses no admin client anywhere in the story", () => {
+  it("makes no Supabase write anywhere in the story, and uses the admin client only to read for the spend cap", () => {
     for (const file of files.filter((entry) => entry.path.includes("firm-story"))) {
-      expect(file.text, file.path).not.toMatch(/\.(insert|update|upsert|delete)\(|supabaseAdmin|\.rpc\(/);
+      expect(file.text, file.path).not.toMatch(/\.(insert|update|upsert|delete)\(|\.rpc\(/);
+      // Part 2: the tour logins' cap reads a sign-in email and the usage ledger, which only the admin client can.
+      if (!file.path.endsWith("firm-story-cap.server.ts")) expect(file.text, file.path).not.toMatch(/supabaseAdmin/);
     }
   });
 });
