@@ -221,3 +221,22 @@ describe("the live hand-off to a Firm brain page already open", () => {
     clearHandOff();
   });
 });
+
+// QA H1 of PR 289: the demo story and the pill never share a corner. The story only renders on a deployed build, so
+// these read the wiring itself.
+describe("the demo story and the pill", () => {
+  it("on a phone, the story frame starts above the pill (tab bar 4.5rem plus the pill's 3.75rem)", () => {
+    expect(readFileSync("src/components/firm-story/FirmStory.tsx", "utf8")).toContain(
+      "bottom-[calc(8.25rem+env(safe-area-inset-bottom))]",
+    );
+  });
+
+  it("on a laptop, Feedback steps aside while the story is on screen", () => {
+    expect(readFileSync("src/components/firm-story/FirmStory.tsx", "utf8")).toContain(
+      'root.setAttribute("data-firm-story", "")',
+    );
+    expect(readFileSync("src/components/feedback/FeedbackWidget.tsx", "utf8")).toContain(
+      "[html[data-firm-story]_&]:hidden",
+    );
+  });
+});

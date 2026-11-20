@@ -110,7 +110,10 @@ describe("asking", () => {
     await waitFor(() => expect(onAsk).toHaveBeenCalledWith("How did we run staffing reviews?"));
     expect(await screen.findByText(PILL_COPY.toCanvas)).toBeTruthy();
     expect(screen.getByText("How did we run staffing reviews?")).toBeTruthy();
-    await waitFor(() => expect(el.getAttribute("data-mode")).toBe("shut"));
+    // The line is held long enough to read before the chat tucks itself away (QA M1 of PR 289).
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(el.getAttribute("data-mode")).toBe("open");
+    await waitFor(() => expect(el.getAttribute("data-mode")).toBe("shut"), { timeout: 3000 });
   });
 
   it("asks a starter with one press", async () => {
@@ -168,6 +171,37 @@ describe("asking", () => {
     fireEvent.click(shut());
     expect(screen.queryByLabelText(PILL_COPY.label)).toBeNull();
     expect(screen.getByText(PILL_COPY.welcomeNone)).toBeTruthy();
+  });
+});
+
+describe("QA of PR 289", () => {
+  it("leaves Escape to a dialog open over the pill", () => {
+    const { el, shut } = pill();
+    fireEvent.click(shut());
+    const handler = (event: KeyboardEvent) => event.preventDefault();
+    window.addEventListener("keydown", handler, { capture: true });
+    fireEvent.keyDown(window, { key: "Escape" });
+    window.removeEventListener("keydown", handler, { capture: true });
+    expect(el.getAttribute("data-mode")).toBe("open");
+  });
+
+  it("on a phone, gives focus to the panel itself so a screen reader says what opened", async () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+    const { shut } = pill();
+    fireEvent.click(shut());
+    const panel = screen.getByRole("dialog", { name: PILL_COPY.panel("Lasso") });
+    await waitFor(() => expect(document.activeElement).toBe(panel));
+    expect(document.activeElement).not.toBe(screen.getByLabelText(PILL_COPY.label));
+  });
+
+  it("is a modal dialog only when full screen", () => {
+    const { shut } = pill();
+    fireEvent.click(shut());
+    const panel = screen.getByRole("dialog", { name: PILL_COPY.panel("Lasso") });
+    expect(panel.getAttribute("aria-modal")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: PILL_COPY.grow }));
+    expect(panel.getAttribute("aria-modal")).toBe("true");
   });
 });
 

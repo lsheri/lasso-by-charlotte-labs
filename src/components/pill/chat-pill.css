@@ -88,6 +88,10 @@
   transition-delay: 180ms;
 }
 
+/* The panel takes focus on a phone so it is announced; the focus ring belongs to its controls. */
+.chat-pill__panel:focus {
+  outline: none;
+}
 .chat-pill__head {
   position: relative;
   display: flex;

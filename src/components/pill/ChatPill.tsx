@@ -19,6 +19,7 @@ import {
   PILL_DRAG_SLOP,
   PILL_MODES,
   PILL_MORPH_MS,
+  PILL_NOTE_HOLD_MS,
   pillGeometry,
   pillQuestion,
   progressForHeight,
@@ -171,7 +172,10 @@ export function ChatPill({
         onOpened?.(place);
         window.setTimeout(
           () => {
+            // A laptop gets the question box. A phone gets the panel itself, so a screen reader says what opened
+            // without the keyboard rising over the sheet (QA M2 of PR 289).
             if (window.innerWidth > 767) input.current?.focus();
+            else panel.current?.focus({ preventScroll: true });
             if (msgs.current) msgs.current.scrollTop = msgs.current.scrollHeight;
           },
           reduceMotion ? 0 : PILL_MORPH_MS + 20,
@@ -213,7 +217,13 @@ export function ChatPill({
   useEffect(() => {
     if (mode === "shut") return;
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setMode("shut");
+      // A dialog over the pill takes its own Escape first (QA L1 of PR 289).
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const other = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')].some(
+        (node) => !el.current?.contains(node) && (node as HTMLElement).offsetParent !== null,
+      );
+      if (other) return;
+      setMode("shut");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -353,8 +363,9 @@ export function ChatPill({
           ...list,
           { id: nextId.current++, kind: "note", text: PILL_COPY.toCanvas },
         ]);
-        // The answer opens on the canvas: the chat tucks itself away so the threads can be seen.
-        window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250);
+        // The answer opens on the canvas: the line is held long enough to read (QA M1 of PR 289), then the chat tucks
+        // itself away so the threads can be seen.
+        window.setTimeout(() => setMode("shut"), PILL_NOTE_HOLD_MS);
       } else {
         setMessages((list) => [
           ...list,
@@ -416,6 +427,8 @@ export function ChatPill({
         ref={panel}
         className="chat-pill__panel ph-no-autocapture"
         role="dialog"
+        tabIndex={-1}
+        aria-modal={mode === "full" || undefined}
         aria-label={PILL_COPY.panel(brandName)}
         aria-hidden={!open}
         inert={!open || undefined}

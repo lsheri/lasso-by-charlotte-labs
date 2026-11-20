@@ -17,6 +17,8 @@ export type PillMode = (typeof PILL_MODES)[number];
 export const PILL_MORPH_MS = 600;
 /** The panel's own fade follows the morph by this much, so the shape leads and the words follow. */
 export const PILL_PANEL_DELAY_MS = 180;
+/** A line the chat says before it tucks itself away is held this long, so it can be read (Liam: captions 1.5 to 1.8s). */
+export const PILL_NOTE_HOLD_MS = 1500;
 /** A drag starts after this many pixels, so a tap is still a tap. */
 export const PILL_DRAG_SLOP = 7;
 /** How far a flick carries: velocity (progress per ms) times this many ms. */
