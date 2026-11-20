@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
-import { DESK_COPY, seesAllProposals, type DeskClient } from "@/lib/proposal-desk-shared";
+import { DESK_COPY, deskViewFromSearch, seesAllProposals, type DeskClient } from "@/lib/proposal-desk-shared";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
@@ -33,6 +33,8 @@ export function ProposalsPage() {
   const navigate = useNavigate();
   const { captureWithResult } = useCaptureFiles();
   const [open, setOpen] = useState(false);
+  // "See all" on Home carries the view chosen there. Read once from the address, so the chips stay in charge after.
+  const [initialView] = useState(() => deskViewFromSearch(new URLSearchParams(globalThis.location?.search ?? "").get("view")) ?? undefined);
   const allowed = profileHasFirmView(profile) && profile?.role !== "coach" && !profile?.is_guest;
   const profileId = allowed ? profile?.id : undefined;
   const showPeople = allowed && seesAllProposals(profile?.role);
@@ -93,6 +95,7 @@ export function ProposalsPage() {
           {desk.data ? (
             <ProposalDesk
               data={desk.data}
+              initialView={initialView}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
               leadWords={wonTextBody({ brandName: brand("Lasso"), firmName: profile?.org_name ?? "" })}
               onLead={async (proposalId, contactId) => {

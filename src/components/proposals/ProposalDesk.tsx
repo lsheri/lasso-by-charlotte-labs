@@ -48,11 +48,14 @@ export function ProposalDesk({
   ask,
   onClose,
   limit,
+  initialView,
 }: {
   data: DeskList;
   now?: Date | undefined;
   /** Home shows only the first few rows of a view, then a link to the Proposals page for the rest. */
   limit?: number | undefined;
+  /** The view to open on, when a link from Home carried one. */
+  initialView?: DeskView | undefined;
   /** Marks a proposal as gone out, or takes that back. Left out, the rows are read only. */
   onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
   /** Records the win, which makes the team board. Offered only on the person's own open proposals. */
@@ -77,7 +80,7 @@ export function ProposalDesk({
   const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
-  const [view, setView] = useState<DeskView>("open");
+  const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
   const all = deskView(data.proposals, view);
@@ -123,7 +126,7 @@ export function ProposalDesk({
       )}
       {all.length > rows.length ? (
         <p data-desk-more className="mt-3 text-sm">
-          <Link to="/proposals" className="text-muted-foreground underline hover:text-foreground">
+          <Link to="/proposals" search={view === "open" ? {} : { view }} className="text-muted-foreground underline hover:text-foreground">
             {HOME_PROPOSALS_COPY.seeAll(all.length)}
           </Link>
         </p>
@@ -292,7 +295,7 @@ function ProposalRow({
           {proposal.title}
         </p>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-          {proposal.mine ? <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span> : proposal.ownerName ? <span>{DESK_COPY.owner(proposal.ownerName)}</span> : null}
+          {proposal.mine ? <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span> : proposal.ownerName ? <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span> : null}
           {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
           {proposal.status === "open" || proposal.contextCount > 0 ? <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span> : null}
         </p>

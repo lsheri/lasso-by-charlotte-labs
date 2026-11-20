@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { navFor, type NavCtx } from "@/components/layout/nav-config";
 import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
-import { DESK_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { DESK_COPY, deskViewFromSearch, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 import { FIRM_BRAIN_COPY, FIRM_VIEW_COPY, HOME_PROPOSALS_COPY, HOME_PROPOSAL_ROWS, firmBrainAccess, homeShowsProposals } from "@/lib/role-screens-shared";
 
 /**
@@ -24,8 +24,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, className }: { children: ReactNode; to: string; className?: string }) => (
-    <a href={to} className={className}>{children}</a>
+  Link: ({ children, to, className, search }: { children: ReactNode; to: string; className?: string; search?: Record<string, string> }) => (
+    <a href={search && Object.keys(search).length ? `${to}?${new URLSearchParams(search)}` : to} className={className}>{children}</a>
   ),
   useNavigate: () => () => {},
 }));
@@ -312,6 +312,23 @@ describe("proposals on an admin's Home", () => {
     expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.seeAll(many.length) }).getAttribute("href")).toBe("/proposals");
   });
 
+  it("carries the view chosen on Home to the Proposals page (QA finding 4)", async () => {
+    const won = Array.from({ length: HOME_PROPOSAL_ROWS + 1 }, (_, index) => proposal({ id: `w${index}`, status: "won", decidedAt: "2026-11-20T09:00:00Z" }));
+    mocks.list.mockResolvedValue(desk(won));
+    mount(<HomeProposals profile={admin} />);
+    fireEvent.click(await screen.findByRole("button", { name: `Won ${won.length}` }));
+    expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.seeAll(won.length) }).getAttribute("href")).toBe("/proposals?view=won");
+  });
+
+  it("lets a long unbroken starter name wrap inside the row (QA finding 6)", async () => {
+    mocks.list.mockResolvedValue(desk([proposal({ id: "a", ownerName: "N".repeat(270) })]));
+    mount(<HomeProposals profile={admin} />);
+    await waitFor(() => expect(document.querySelector("[data-proposal-owner]")).toBeTruthy());
+    const owner = document.querySelector("[data-proposal-owner]") as HTMLElement;
+    expect(owner.className).toContain("[overflow-wrap:anywhere]");
+    expect(owner.className).toContain("min-w-0");
+  });
+
   it("says so plainly when there are no proposals, with no empty table and no link to more", async () => {
     mocks.list.mockResolvedValue(desk([]));
     mount(<HomeProposals profile={admin} />);
@@ -348,5 +365,15 @@ describe("proposals on an admin's Home", () => {
     render(<ProposalDesk data={desk(many)} />);
     expect(document.querySelectorAll("[data-proposal-row]")).toHaveLength(6);
     expect(document.querySelector("[data-desk-more]")).toBeNull();
+  });
+
+  it("opens the Proposals page's list on the view a Home link named, and on All open for anything else", () => {
+    const rows = [proposal({ id: "o" }), proposal({ id: "w", status: "won", decidedAt: "2026-11-20T09:00:00Z" })];
+    render(<ProposalDesk data={desk(rows)} initialView="won" />);
+    expect(screen.getByRole("button", { name: "Won 1" }).getAttribute("aria-pressed")).toBe("true");
+    expect(document.querySelector('[data-proposal-row="w"]')).toBeTruthy();
+    expect(deskViewFromSearch("won")).toBe("won");
+    expect(deskViewFromSearch("mine")).toBe("mine");
+    for (const junk of ["open", "everything", "", null, undefined, 3, { view: "won" }]) expect(deskViewFromSearch(junk)).toBeNull();
   });
 });
