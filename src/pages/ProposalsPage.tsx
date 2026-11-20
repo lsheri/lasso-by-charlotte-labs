@@ -11,6 +11,7 @@ import { RosterPanel } from "@/components/roster/RosterPanel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
 import { afterCreate, DESK_COPY, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
@@ -106,7 +107,7 @@ export function ProposalsPage() {
               </button>
             </p>
           ) : null}
-          {desk.isLoading ? <p className="text-sm text-muted-foreground">{DESK_COPY.loading}</p> : null}
+          {desk.isLoading ? <SkeletonFrame shape="rows" count={6} label={DESK_COPY.loading} testId="proposals-skeleton" /> : null}
           {desk.data ? (
             <ProposalDesk
               data={desk.data}

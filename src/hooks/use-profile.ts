@@ -391,7 +391,11 @@ function useReconcileActiveProfile(
     // flight) is not evidence. Wait for a fresh row instead of writing back.
     if (rowFetching || rowUpdatedAt < lastLocalChangeAt) {
       if (!rowFetching) {
-        void sharedQueryClient?.refetchQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+        // PERF-4: every useProfile consumer runs this effect in the same commit, each with the same stale
+        // snapshot, so the default cancelRefetch turned one refetch into one request per consumer (35 on Home),
+        // each cancelling the last. Joining the in-flight request keeps it to one; it started after the local
+        // change, so it is still fresh evidence.
+        void sharedQueryClient?.refetchQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY }, { cancelRefetch: false });
       }
       return;
     }

@@ -28,12 +28,33 @@ export function isStalePreview(entry: CachedFilePreview, now: number): boolean {
 }
 
 const sessionCache = new Map<string, CachedFilePreview>();
-let queue = Promise.resolve();
+/**
+ * PERF-4: previews used to load strictly one at a time, so a board with three deliverables waited for three server
+ * round trips in a row before the last card filled. Up to three now run at once; the rest wait their turn, so a
+ * large board still never fires every preview together.
+ */
+export const PREVIEW_CONCURRENCY = 3;
+let active = 0;
+const waiting: (() => void)[] = [];
 
-function enqueue<T>(work: () => Promise<T>): Promise<T> {
-  const next = queue.then(work, work);
-  queue = next.then(() => undefined, () => undefined);
-  return next;
+export function enqueue<T>(work: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const run = () => {
+      active += 1;
+      let running: Promise<T>;
+      try {
+        running = Promise.resolve(work());
+      } catch (error) {
+        running = Promise.reject(error);
+      }
+      running.then(resolve, reject).finally(() => {
+        active -= 1;
+        waiting.shift()?.();
+      });
+    };
+    if (active < PREVIEW_CONCURRENCY) run();
+    else waiting.push(run);
+  });
 }
 
 function freshPreviews(now: number): WorkboardFilePreviewMap {

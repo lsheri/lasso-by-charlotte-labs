@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { useProposalDesk } from "@/components/proposals/use-proposal-desk";
 import { DESK_COPY } from "@/lib/proposal-desk-shared";
@@ -36,7 +37,7 @@ export function HomeProposals({ profile }: { profile: HomeProfile | null | undef
           </button>
         </p>
       ) : null}
-      {desk.isLoading ? <p className="text-sm text-muted-foreground">{DESK_COPY.loading}</p> : null}
+      {desk.isLoading ? <SkeletonFrame shape="rows" count={3} label={DESK_COPY.loading} /> : null}
       {desk.data ? <ProposalDesk data={desk.data} limit={HOME_PROPOSAL_ROWS} /> : null}
     </section>
   );
