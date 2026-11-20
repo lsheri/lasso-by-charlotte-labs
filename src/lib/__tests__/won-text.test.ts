@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { launchBrand } from "@/design/brand/brand";
 import { EVENT_DIM_KEYS, guardServerEventDims } from "@/lib/event-dim-allowlist";
 import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
-import { sendText, textConfig, type TextConfig, type TextSendResult } from "@/lib/text-sender.server";
+import { sendText, textConfig, textConfigGaps, type TextConfig, type TextSendResult } from "@/lib/text-sender.server";
 import { isE164, plainForSms, SMS_ONE_SEGMENT, WON_TEXT_COPY, WON_TEXT_DAILY_CAP, WON_TEXT_OUTCOMES, WON_TEXT_PROBLEMS, wonTextBoardInput, wonTextBody, wonTextSendInput } from "@/lib/won-text-shared";
 import { sendWonText, startOfUtcDay, wonTextStatus, type WonTextCaller, type WonTextDeps } from "@/lib/won-text.server";
 
@@ -222,7 +222,7 @@ describe("a press", () => {
 
   it.each([
     ["not won", { board: { archived: false, won: false } }, WON_TEXT_COPY.notWon],
-    ["archived", { board: { archived: true, won: true } }, WON_TEXT_COPY.notConnected],
+    ["archived", { board: { archived: true, won: true } }, WON_TEXT_COPY.archived],
     ["nobody to text", { recipient: null }, WON_TEXT_COPY.noNumber],
     ["a recipient that is not a full number", { recipient: "4155550100" }, WON_TEXT_COPY.noNumber],
     ["neither set", { config: null, recipient: null }, WON_TEXT_COPY.noNumber],
@@ -291,6 +291,20 @@ describe("the one sender function", () => {
     expect(textConfig({ BIRD_API_KEY: "sk_live_something", BIRD_SMS_FROM: "+15005550001" })).toBeNull();
     expect(textConfig({ BIRD_API_KEY: "bk_xx9_testkey12345", BIRD_SMS_FROM: "+15005550001" })).toBeNull();
     expect(textConfig({ BIRD_API_KEY: "bk_us1_testkey12345", BIRD_SMS_FROM: "https://evil.example" })).toBeNull();
+  });
+
+  it("names what is missing or misshapen, never a value, and says so once in the server log", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(textConfigGaps({})).toEqual(["BIRD_API_KEY missing", "BIRD_SMS_FROM missing"]);
+    expect(textConfigGaps({ BIRD_API_KEY: "sk_live_secretvalue", BIRD_SMS_FROM: "+15005550001" })).toEqual(["BIRD_API_KEY wrong shape"]);
+    expect(textConfigGaps({ BIRD_API_KEY: "bk_us1_testkey12345", BIRD_SMS_FROM: "https://evil.example" })).toEqual(["BIRD_SMS_FROM wrong shape"]);
+    expect(textConfigGaps({ BIRD_API_KEY: "bk_us1_testkey12345", BIRD_SMS_FROM: "+15005550001" })).toEqual([]);
+    const env = { BIRD_API_KEY: "sk_live_secretvalue", BIRD_SMS_FROM: "  " };
+    textConfig(env);
+    textConfig(env);
+    const lines = warn.mock.calls.map((call) => String(call[0])).filter((line) => line.includes("BIRD_API_KEY wrong shape; BIRD_SMS_FROM missing"));
+    expect(lines).toHaveLength(1);
+    expect(warn.mock.calls.flat().join(" ")).not.toContain("secretvalue");
   });
 
   it("takes the region from the key and nothing else", () => {
