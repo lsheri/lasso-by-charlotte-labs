@@ -22,6 +22,17 @@ import {
 import type { RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
+const ROW_COPY = {
+  atGoal: (goal: number) => `At the ${goal} hour goal`,
+} as const;
+
+/** True at the exact moment the goal runs out. A date that cannot be read is never "at the goal". */
+export function isAtGoal(receivedAt: string, goalHours: number, now?: Date | undefined): boolean {
+  const received = Date.parse(receivedAt);
+  if (!Number.isFinite(received) || goalHours <= 0) return false;
+  return (now ?? new Date()).getTime() - received === goalHours * 3_600_000;
+}
+
 /** How much of the goal is used, 0 to 1. A proposal that has gone out, or run over, fills the bar. */
 export function clockShare(left: TimeLeft, goalHours: number): number {
   if (left.state !== "running" || goalHours <= 0) return 1;
@@ -82,6 +93,10 @@ export function ProposalRow({
   const next = maySend && !proposal.sentAt ? "send" : mayWin ? "win" : null;
   const undo = maySend && Boolean(proposal.sentAt);
   const good = left.state === "sent" && left.withinGoal;
+  // Went out, but past the goal: finished and late. The bar must not read as a healthy full one.
+  const late = left.state === "sent" && !left.withinGoal;
+  // The very moment the goal runs out is "at the goal": not an hour to spare, and not over yet.
+  const atGoal = !proposal.sentAt && left.state === "running" && isAtGoal(proposal.receivedAt, goalHours, now);
   return (
     <li
       data-proposal-row={proposal.id}
@@ -165,7 +180,7 @@ export function ProposalRow({
               <div
                 className={cn(
                   "h-full rounded-full",
-                  left.state === "over"
+                  left.state === "over" || late
                     ? "bg-destructive"
                     : good
                       ? "bg-[var(--good-mark)]"
@@ -178,7 +193,7 @@ export function ProposalRow({
               data-proposal-clock={left.state}
               className={cn("mt-1", left.state === "over" ? "text-destructive" : "text-foreground")}
             >
-              {timeLeftLine(left, goalHours)}
+              {atGoal ? ROW_COPY.atGoal(goalHours) : timeLeftLine(left, goalHours)}
             </p>
             {problem ? (
               <p role="alert" className="mt-1 text-destructive">

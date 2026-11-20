@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { clockShare, ProposalRow } from "@/components/proposals/ProposalRow";
+import { clockShare, isAtGoal, ProposalRow } from "@/components/proposals/ProposalRow";
 import { CLOSE_COPY, DESK_COPY, SENT_COPY, WIN_COPY, type DeskProposal } from "@/lib/proposal-desk-shared";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -84,6 +84,30 @@ describe("the redrawn proposal row", () => {
     cleanup();
     row({ receivedAt: hoursAgo(10), sentAt: hoursAgo(4) });
     expect((document.querySelector("[data-proposal-clock-bar]") as HTMLElement).className).toContain("--good-tint");
+  });
+
+  // 20 Nov 2026, QA lows on #263.
+  it("a proposal that went out late is not drawn as a healthy full bar, and its words still say by how much", () => {
+    row({ receivedAt: hoursAgo(110), sentAt: hoursAgo(10) });
+    const fill = document.querySelector("[data-proposal-clock-bar]")?.firstElementChild as HTMLElement;
+    expect(fill.className).toMatch(/bg-destructive/);
+    expect(fill.className).not.toMatch(/action-fill|good-mark/);
+    expect(document.querySelector('[data-proposal-clock="sent"]')?.textContent).toBe("Went out in 100 hours, over the 72 hour goal");
+    cleanup();
+    row({ receivedAt: hoursAgo(40), sentAt: hoursAgo(10) });
+    expect((document.querySelector("[data-proposal-clock-bar]")?.firstElementChild as HTMLElement).className).toMatch(/good-mark/);
+  });
+
+  it("exactly at the goal reads as at the goal, an hour either side reads as before", () => {
+    row({ receivedAt: hoursAgo(72) });
+    expect(document.querySelector("[data-proposal-clock]")?.textContent).toBe("At the 72 hour goal");
+    cleanup();
+    row({ receivedAt: hoursAgo(71.5) });
+    expect(document.querySelector("[data-proposal-clock]")?.textContent).toBe("Less than an hour left of 72");
+    cleanup();
+    row({ receivedAt: hoursAgo(73) });
+    expect(document.querySelector("[data-proposal-clock]")?.textContent).toBe("Over the 72 hour goal by 1 hour");
+    expect(isAtGoal("nonsense", 72, NOW)).toBe(false);
   });
 
   it("clockShare stays between nothing and all of it", () => {
