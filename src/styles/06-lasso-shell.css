@@ -1748,3 +1748,14 @@ button.lift-trail-item:hover, button.lift-trail-item:focus-visible { background:
 @keyframes lift-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lift-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel, .lift-panel > .lift-head, .lift-panel > .lift-main { transition: none; } }
+
+/* 20 Nov 2026 (design review, D-74): inside the app, a small label is plain Archivo in sentence case. Mono capitals
+   are for numbers and times only. Scoped to the app shell and its overlays, so the public pages keep their voice.
+   Size is left alone so a label that sets its own size keeps it. */
+[data-lasso="on"] .micro-label,
+body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]) .micro-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
