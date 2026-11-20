@@ -37,9 +37,25 @@ describe("money figures", () => {
     ["Budget: 90,000 dollars", "Budget"],
     ["€380k", ""],
     ["CAD 2.5 million, two sites", "two sites"],
+    // QA M2, 21 Nov: the formats the first pattern missed.
+    ["45 000 € audit", "audit"],
+    ["45,000€ audit", "audit"],
+    ["45.000 € audit", "audit"],
+    ["Fee 1.2 million", "Fee"],
+    ["¥5,000,000 study", "study"],
+    ["₹40 lakh", ""],
+    ["3.5MM budget", "budget"],
+    ["€1.200.000 programme", "programme"],
+    ["USD 45 000", ""],
+    ["$1.5B deal", "deal"],
+    ["US$ 45,000", ""],
+    ["A$80k", ""],
+    ["2019 450 000 €", "2019"],
+    ["Acme (GBP 1.2m)", "Acme"],
+    ["Pilot 120k", "Pilot"],
   ])("takes the money out of %s", (input, output) => {
+    // Checked against the written-out answer, not against the pattern itself.
     expect(withoutMoney(input)).toBe(output);
-    expect(hasMoney(withoutMoney(input))).toBe(false);
   });
 
   it.each([
@@ -49,6 +65,10 @@ describe("money figures", () => {
     "5 methods",
     "B2B pricing",
     "Diabetes prevention service line",
+    "Top 5m customers",
+    "Top 3 000 users",
+    "Phase 2 of 3",
+    "Series A raise",
   ])("leaves %s alone", (text) => {
     expect(withoutMoney(text)).toBe(text);
     expect(hasMoney(text)).toBe(false);

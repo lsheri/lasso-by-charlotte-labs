@@ -41,13 +41,15 @@ export type StoryBeat = {
   ask: string | null;
   /** On a phone, the card sits at the top of the screen for this beat instead of the bottom. */
   phoneCardAtTop?: true;
+  /** On a wide screen, the card sits in this corner for this beat (its target fills the page). */
+  wideCardAt?: "top-end";
 };
 
 /** The one question beats 1 and 7 share, so the second answer can be compared with the first. */
 const SAME_QUESTION = "Have we designed a new service line for a health system before?";
 
 export const FIRM_STORY_SCRIPT = {
-  version: 2,
+  version: 3,
   /** Shown on every card. */
   demoLine: "Kestrel Bay Advisory is a demo firm. Every client, person and figure in it is fictional.",
   /** The last thing the story says. After it, the story stops talking. */
@@ -94,13 +96,16 @@ export const FIRM_STORY_SCRIPT = {
       title: "What the firm knows",
       caption: "Firm brain: what the firm knows, not what each partner remembers.",
       notes:
-        "Each thread is one engagement, tied to the kind of problem it answered and how the team worked. Pick a problem to see every engagement that met it.",
+        "Each thread is one engagement, tied to the kind of problem it answered and how the team worked. Pick an engagement to fly to it, or ask a question and watch the engagements behind the answer pull in beside it.",
       question: "If your most senior partner left tomorrow, which of this would leave with them?",
       place: "firm",
       anchor: "firm-brain-map",
       ask: null,
       // The map is taller than a phone screen, so the card at the bottom would sit over its threads.
       phoneCardAtTop: true,
+      // 21 Nov: the map fills the page on a wide screen too, with the question box at the bottom middle. Top right is
+      // clear of the box, the zoom buttons (bottom right) and the title (top left).
+      wideCardAt: "top-end",
     },
     {
       n: 3,

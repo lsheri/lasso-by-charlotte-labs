@@ -60,12 +60,21 @@ function seen(target: StoryRect, metrics: StoryLayoutMetrics): StoryRect {
 
 /**
  * The card's place for this target: its usual place unless that covers the target and another corner covers none.
+ * A beat can also name its corner on a wide screen (`wideAt`): the Firm brain canvas fills the page and floats its
+ * question box at the bottom middle, so no corner clears the target and the usual one would sit on the box.
  * A beat can ask for the top on a phone (`phoneTop`): the firm map is taller than the screen, so no place clears it,
  * and its threads are drawn below the ask box, where the card at the bottom would sit.
  */
-export function storyCardPlacement(target: StoryRect | null, metrics: StoryLayoutMetrics, phoneTop = false): StoryPlacement {
+export function storyCardPlacement(
+  target: StoryRect | null,
+  metrics: StoryLayoutMetrics,
+  phoneTop = false,
+  /** A beat whose target fills the screen can name its corner on a wide screen (21 Nov: the Firm brain canvas). */
+  wideAt: StoryPlacement | null = null,
+): StoryPlacement {
   if (!target) return STORY_DEFAULT_PLACEMENT;
   if (phoneTop && !metrics.wide) return "top-start";
+  if (wideAt && metrics.wide) return wideAt;
   const visible = seen(target, metrics);
   if (overlap(visible, storyPlacementRect(STORY_DEFAULT_PLACEMENT, metrics)) === 0) return STORY_DEFAULT_PLACEMENT;
   const others: StoryPlacement[] = metrics.wide ? ["bottom-end", "top-end", "top-start"] : ["top-start"];

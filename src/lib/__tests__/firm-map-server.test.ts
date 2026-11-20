@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEMO_BOARDS } from "@/lib/demo-firm";
-import { hasMoney, type FirmCanvasData } from "@/lib/firm-canvas-shared";
+import type { FirmCanvasData } from "@/lib/firm-canvas-shared";
 import { corpusOf, demoRows } from "@/lib/__tests__/helpers/demo-firm-rows";
 
 const h = vi.hoisted(() => ({
@@ -32,6 +32,20 @@ import { firmMapFor } from "@/lib/firm-map.server";
 
 const call = (): Promise<FirmCanvasData> =>
   firmMapFor({ supabase: {} as never, userId: "u-1" }, { profile_id: "p-1" });
+
+/**
+ * Money spotted without the code under test (QA M2): any currency sign, a currency code or word beside a number, or a
+ * number with a k, m, bn or million after it. Plainer and wider than the pattern withoutMoney uses, on purpose.
+ */
+function looksLikeMoney(text: string): boolean {
+  return (
+    /[$£€¥₹₩₽₪₦₺฿]/.test(text) ||
+    /\b(USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|JPY|INR)\b\s*\d|\d\s*\b(USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|JPY|INR|dollars?|pounds?|euros?)\b/i.test(
+      text,
+    ) ||
+    /\d\s?(k|bn|million|billion|lakh|crore)\b/i.test(text)
+  );
+}
 
 /** Every string anywhere in a value, keys included. */
 function strings(value: unknown, out: string[] = []): string[] {
@@ -71,7 +85,7 @@ describe("getFirmMap for someone who does not see fees", () => {
           text.some((entry) => entry.includes(fee)),
           `${who}: ${fee}`,
         ).toBe(false);
-      expect(text.filter(hasMoney), who).toEqual([]);
+      expect(text.filter(looksLikeMoney), who).toEqual([]);
       expect(JSON.stringify(data), who).not.toMatch(/fee_text|sow_facts|"\$/);
     }
   });
@@ -88,7 +102,33 @@ describe("getFirmMap for someone who does not see fees", () => {
     const thread = data.threads.find((entry) => entry.id === corpus.boards[0]!.id)!;
     expect(thread.title).toBe("Retainer at for growth");
     expect(thread.client).toBe("Acme");
-    expect(strings(data).filter(hasMoney)).toEqual([]);
+    expect(strings(data).filter(looksLikeMoney)).toEqual([]);
+  });
+
+  it("takes out money written the ways QA found the first pattern missed", async () => {
+    const corpus = corpusOf(demoRows());
+    const titles = [
+      "Study at 45 000 € a month",
+      "Programme €1.200.000",
+      "Deal of $1.5B",
+      "Fee 1.2 million",
+      "Budget ₹40 lakh",
+    ];
+    titles.forEach(
+      (title, i) =>
+        (corpus.boards[i] = {
+          ...corpus.boards[i]!,
+          title,
+          client: i === 0 ? "Pellham (US$ 45,000)" : corpus.boards[i]!.client,
+        }),
+    );
+    h.corpus = corpus;
+    const data = await call();
+    const sent = titles.map(
+      (_, i) => data.threads.find((thread) => thread.id === corpus.boards[i]!.id)!.title,
+    );
+    expect(sent).toEqual(["Study at", "Programme", "Deal of", "Fee", "Budget"]);
+    expect(strings(data).filter(looksLikeMoney)).toEqual([]);
   });
 
   it("never sends lesson text, to anyone", async () => {

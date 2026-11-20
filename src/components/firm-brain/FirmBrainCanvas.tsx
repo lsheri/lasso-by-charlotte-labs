@@ -88,6 +88,12 @@ export function resetFirmCanvasMemory(): void {
 let nextId = 0;
 
 /**
+ * Where answers land when the map is still loading or could not be read: a plain column at the place they would
+ * take beside an empty map. Ask the firm never waits on the map (QA M1).
+ */
+const NO_MAP = layoutCanvas({ situations: [], methods: [], threads: [] });
+
+/**
  * Answers without anything from a board that is no longer on the map. A line from such a board goes, with its source
  * and facts; an answer with no lines left goes. Pending and failed answers stay as they are.
  */
@@ -444,7 +450,7 @@ export function FirmBrainCanvasView({
   );
 
   async function run(text: string, chosen: FirmAskStarter | null, reuse?: CanvasAnswer) {
-    if (!layout) return;
+    const place = layout ?? NO_MAP;
     const el = stage.current;
     const centre = el
       ? camera.toWorld(
@@ -455,9 +461,7 @@ export function FirmBrainCanvasView({
     const others = answersRef.current
       .filter((answer) => answer.id !== reuse?.id)
       .map((answer) => ({ id: answer.id, x: answer.x, y: answer.y, h: answer.h || 300 }));
-    const spot = reuse
-      ? { x: reuse.x, y: reuse.y }
-      : placeAnswer(layout, others, 260, [], centre.y);
+    const spot = reuse ? { x: reuse.x, y: reuse.y } : placeAnswer(place, others, 260, [], centre.y);
     const id = reuse?.id ?? `answer-${(nextId += 1)}`;
     const entry: CanvasAnswer = {
       id,
@@ -482,7 +486,7 @@ export function FirmBrainCanvasView({
       const boards = answerBoards(result.claims);
       const height = answersRef.current.find((answer) => answer.id === id)?.h ?? 300;
       const landed = boards.length
-        ? placeAnswer(layout, others, height + 120, boards, spot.y)
+        ? placeAnswer(layout ?? NO_MAP, others, height + 120, boards, spot.y)
         : spot;
       setAnswers((list) =>
         list.map((answer) =>
@@ -516,7 +520,7 @@ export function FirmBrainCanvasView({
   function submit(event?: FormEvent) {
     event?.preventDefault();
     const text = question.trim();
-    if (text.length < 3 || pending || !layout) return;
+    if (text.length < 3 || pending) return;
     setQuestion("");
     const chosen = starter;
     setStarter(null);
@@ -570,6 +574,8 @@ export function FirmBrainCanvasView({
   return (
     <div ref={anchor} data-testid="firm-brain-canvas" className="h-0">
       <div
+        // The tour's beat 2 points here (its anchor is the map, as it was on the old page).
+        data-testid="firm-brain-map"
         className="fixed bottom-[calc(56px+env(safe-area-inset-bottom))] right-0 overflow-hidden bg-background md:bottom-0"
         style={
           bleed ? { left: bleed.left, top: bleed.top } : { left: 0, top: 0, visibility: "hidden" }
@@ -678,6 +684,21 @@ export function FirmBrainCanvasView({
                           type="button"
                           data-canvas-node={node.threadId}
                           onClick={() => flyToThread(node.threadId!)}
+                          // Tabbing to an engagement off screen brings it into view (QA L1).
+                          onFocus={() => {
+                            const v = camera.view;
+                            const inView =
+                              place.x >= v.x &&
+                              place.x + node.w <= v.x + v.w &&
+                              place.y >= v.y &&
+                              place.y <= v.y + v.h;
+                            if (!inView)
+                              void camera.flyTo(
+                                place.x + node.w / 2,
+                                place.y,
+                                Math.max(camera.cam.current.k, 0.85),
+                              );
+                          }}
                           className={cn(
                             "fc-node absolute flex items-center gap-2 rounded-[var(--radius-control)] border bg-card px-2.5 text-left text-(length:--type-small) text-foreground",
                             hot.has(node.id) && focused
@@ -732,22 +753,20 @@ export function FirmBrainCanvasView({
                   })}
               </>
             ) : null}
-            {layout
-              ? answers.map((answer) => (
-                  <CanvasAnswerCard
-                    key={answer.id}
-                    answer={answer}
-                    focused={answer.id === focusId}
-                    dimmed={Boolean(focusId) && answer.id !== focusId}
-                    reduceMotion={reduceMotion}
-                    profileId={profile.id}
-                    onOpenSource={setOpenItem}
-                    onRetry={(failed) => void run(failed.question, failed.starter, failed)}
-                    onMeasured={onMeasured}
-                    onBuilt={onBuilt}
-                  />
-                ))
-              : null}
+            {answers.map((answer) => (
+              <CanvasAnswerCard
+                key={answer.id}
+                answer={answer}
+                focused={answer.id === focusId}
+                dimmed={Boolean(focusId) && answer.id !== focusId}
+                reduceMotion={reduceMotion}
+                profileId={profile.id}
+                onOpenSource={setOpenItem}
+                onRetry={(failed) => void run(failed.question, failed.starter, failed)}
+                onMeasured={onMeasured}
+                onBuilt={onBuilt}
+              />
+            ))}
           </div>
           {layout && !layout.threads.length ? (
             <p className="absolute left-1/2 top-1/2 w-[min(420px,calc(100%-32px))] -translate-x-1/2 -translate-y-1/2 text-center text-(length:--type-body) text-muted-foreground">
@@ -757,7 +776,8 @@ export function FirmBrainCanvasView({
           {map.failed ? (
             <div
               role="alert"
-              className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 text-(length:--type-body) text-muted-foreground"
+              // Under the title, so an answer asked meanwhile is never hidden behind it (QA M1).
+              className="absolute left-1/2 top-24 flex w-[min(420px,calc(100%-32px))] -translate-x-1/2 flex-col items-center gap-2 text-center text-(length:--type-small) text-muted-foreground md:top-32"
             >
               <p>{FIRM_CANVAS_COPY.mapLoadFailed}</p>
               <Button type="button" variant="outline" size="sm" onClick={map.retry}>
@@ -908,7 +928,6 @@ export function FirmBrainCanvasView({
                 maxLength={FIRM_ASK_QUESTION_MAX}
                 placeholder={FIRM_CANVAS_COPY.ask}
                 aria-label={FIRM_CANVAS_COPY.askLabel}
-                disabled={!layout}
                 onKeyDown={onKey}
                 onChange={(event) => {
                   setQuestion(event.target.value);
@@ -921,7 +940,7 @@ export function FirmBrainCanvasView({
                 variant="ink"
                 size="icon"
                 aria-label={FIRM_CANVAS_COPY.send}
-                disabled={pending || question.trim().length < 3 || !layout}
+                disabled={pending || question.trim().length < 3}
               >
                 <ArrowUp aria-hidden className="size-4" />
               </Button>
@@ -950,7 +969,7 @@ export function FirmBrainCanvasView({
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
           <SheetHeader>
             <SheetTitle>{FIRM_CANVAS_COPY.listTitle}</SheetTitle>
-            <SheetDescription className="sr-only">{FIRM_CANVAS_COPY.canvasLabel}</SheetDescription>
+            <SheetDescription>{FIRM_CANVAS_COPY.listHint}</SheetDescription>
           </SheetHeader>
           {listLayout ? (
             <div className="mt-4">
