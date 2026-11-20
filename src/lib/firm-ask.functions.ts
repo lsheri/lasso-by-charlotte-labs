@@ -111,7 +111,11 @@ export const previewFirmSource = createServerFn({ method: "POST" })
 
     const canSeeFees = profile.role === "admin" || profile.role === "lead";
     const body = item.grade === "full" ? await readFirmItemText(supabaseAdmin, corpus, item.id) : null;
-    const text = body !== null ? (canSeeFees ? body : withoutFees(body)) : [item.summary, item.decisions].filter(Boolean).join("\n\n");
+    // F2: a Member gets no fee figure from a source, in full text or in its summary and decisions ("Fixed fee of
+    // $290k"); the full text's Fees section and every money amount are withheld, as the draft packer does.
+    const { maskFees } = await import("./firm-ask-shared");
+    const raw = body !== null ? body : [item.summary, item.decisions].filter(Boolean).join("\n\n");
+    const text = canSeeFees ? raw : maskFees(withoutFees(raw));
     const grade = body !== null ? "full" : "summary";
 
     const { recordEvent } = await import("./telemetry.server");

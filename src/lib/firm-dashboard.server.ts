@@ -50,12 +50,47 @@ function toLabelled(counts: Map<string, number>, label: (key: string) => string)
     .sort((a, b) => b.count - a.count);
 }
 
+/** How many panels the Firm view shows; also the one dim on its view event. */
+export const FIRM_DASHBOARD_PANELS = 6;
+
+/** The longest the Firm view counts wait for their view event, as the ledger does (LEDGER_WAIT_MS). */
+export const FIRM_VIEW_EVENT_WAIT_MS = 1_500;
+
+/**
+ * PERF-4 (QA F1): the counts with their view event written alongside them. The event used to run after the counts,
+ * so the answer waited for its reads and insert in series. It now starts at once and the answer waits for it only up
+ * to a cap. It is awaited rather than left to runAfterResponse alone, because this host can drop that work for
+ * server functions; past the cap the host keeps it as a backstop. The event carries the same one dim as before.
+ */
+export async function buildFirmDashboardRecorded(
+  supabaseAdmin: SupabaseClient<Database>,
+  orgId: string,
+  userId: string,
+  build: typeof buildFirmDashboard = buildFirmDashboard,
+): Promise<FirmDashboard> {
+  const { recordEvent } = await import("./telemetry.server");
+  const { runAlongside } = await import("./background");
+  const event = runAlongside(
+    () =>
+      recordEvent(supabaseAdmin, {
+        eventType: "admin.dashboard_viewed",
+        orgId,
+        userId,
+        dims: { panels_shown: FIRM_DASHBOARD_PANELS },
+      }),
+    FIRM_VIEW_EVENT_WAIT_MS,
+  );
+  const [dashboard] = await Promise.all([build(supabaseAdmin, orgId), event]);
+  return dashboard;
+}
+
 /**
  * Every read here is pinned to one org. `events` and `connector_accounts`
  * carry no org column, so they are pinned by a server-computed tenant hash and
  * by the org's own profile ids. No content column is ever selected, and no
  * person identifier leaves this function.
  */
+
 export async function buildFirmDashboard(
   supabaseAdmin: SupabaseClient<Database>,
   orgId: string,
@@ -311,7 +346,7 @@ export async function buildFirmDashboard(
       errors_by_kind: errorsByKind,
       connector_errors: connectorErrors,
     },
-    panels_shown: 6,
+    panels_shown: FIRM_DASHBOARD_PANELS,
   };
 }
 

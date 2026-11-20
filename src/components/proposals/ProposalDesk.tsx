@@ -50,6 +50,8 @@ export function ProposalDesk({
   onClose,
   limit,
   initialView,
+  startLead,
+  onStartLeadDone,
 }: {
   data: DeskList;
   now?: Date | undefined;
@@ -77,12 +79,19 @@ export function ProposalDesk({
     | undefined;
   /** Closes an open proposal as lost, or archives one made by mistake. */
   onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
+  /** A proposal just made by New proposal: the lead sheet opens on it at once, for people who may pick a lead. */
+  startLead?: string | null | undefined;
+  /** The sheet opened for a new proposal has closed, saved or not. */
+  onStartLeadDone?: (() => void) | undefined;
 }) {
   // With asking available, picking and asking are one sheet; it opens on the list, or on the confirm for a saved lead.
   const [sheet, setSheet] = useState<{ proposal: DeskProposal; start: LeadSheetStart } | null>(null);
   const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
+  // Worked out from the props, not set in an effect, so the sheet is there in the same render as the form leaves.
+  const startProposal = startLead && picks && ask ? data.proposals.find((proposal) => proposal.id === startLead && proposal.status === "open") : undefined;
+  const sheetTarget = sheet ?? (startProposal ? { proposal: startProposal, start: "pick" as const, fresh: true } : null);
   const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
@@ -137,7 +146,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheet} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => setSheet(null)} />
+        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>
