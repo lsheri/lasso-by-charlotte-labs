@@ -1,10 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUp, List, Maximize2, Minus, Plus } from "@/design/brand/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -45,7 +60,13 @@ import { FirmSourcePreview } from "./FirmSourcePreview";
 import { JuniorTools } from "./JuniorTools";
 import { useCanvasCamera, type Insets } from "./use-canvas-camera";
 
-type CanvasProfile = { id?: string | null; role?: string | null; has_firm_view?: boolean | null; org_type?: string | null; is_guest?: boolean | null };
+type CanvasProfile = {
+  id?: string | null;
+  role?: string | null;
+  has_firm_view?: boolean | null;
+  org_type?: string | null;
+  is_guest?: boolean | null;
+};
 
 /**
  * Answers stay where they landed while the tab is open, and go when it closes. Memory only: no storage, no server,
@@ -62,6 +83,44 @@ export function resetFirmCanvasMemory(): void {
 }
 
 let nextId = 0;
+
+/**
+ * Answers without anything from a board that is no longer on the map. A line from such a board goes, with its source
+ * and facts; an answer with no lines left goes. Pending and failed answers stay as they are.
+ */
+export function pruneAnswers(list: CanvasAnswer[], shared: ReadonlySet<string>): CanvasAnswer[] {
+  let changed = false;
+  const next = list.flatMap((answer) => {
+    const result = answer.result;
+    if (answer.status !== "answered" || !result) return [answer];
+    const claims = result.claims.filter((claim) => shared.has(claim.boardId));
+    const facts = result.facts.filter((fact) => shared.has(fact.boardId));
+    const sources = Object.fromEntries(
+      Object.entries(result.sources).filter(([, source]) => shared.has(source.boardId)),
+    );
+    if (
+      claims.length === result.claims.length &&
+      facts.length === result.facts.length &&
+      Object.keys(sources).length === Object.keys(result.sources).length
+    )
+      return [answer];
+    changed = true;
+    if (result.status === "answered" && claims.length === 0) return [];
+    return [
+      {
+        ...answer,
+        result: {
+          ...result,
+          claims,
+          facts,
+          sources,
+          summary: claims.length === result.claims.length ? result.summary : null,
+        },
+      },
+    ];
+  });
+  return changed ? next : list;
+}
 
 /** The frame fills the page's content area, below the phone header and above the phone tab bar. */
 function useFullBleed(anchor: React.RefObject<HTMLDivElement | null>) {
@@ -92,7 +151,9 @@ function usePull(layout: CanvasLayout | null, targets: Map<string, Placed>, redu
   const [bend, setBend] = useState(1);
   const atRef = useRef(at);
   atRef.current = at;
-  const key = [...targets].map(([id, p]) => `${id}:${Math.round(p.x)},${Math.round(p.y)}`).join("|");
+  const key = [...targets]
+    .map(([id, p]) => `${id}:${Math.round(p.x)},${Math.round(p.y)}`)
+    .join("|");
   useEffect(() => {
     if (!layout) return;
     const from = new Map(atRef.current);
@@ -144,41 +205,86 @@ function usePull(layout: CanvasLayout | null, targets: Map<string, Placed>, redu
  * leads only.
  */
 export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
-  const profileKey = profile.id ?? "me";
-  const reduceMotion = useReducedMotion();
-  const mobile = useIsMobile();
   const ask = useServerFn(askTheFirm);
-  const anchor = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
-  const world = useRef<HTMLDivElement>(null);
-  const bleed = useFullBleed(anchor);
-
+  // Read fresh every time the page opens, so a board with sharing turned off is gone at the next load.
   const query = useQuery({
     queryKey: ["firm-map", profile.id ?? null],
     staleTime: 0,
     retry: (count, error) => !(error instanceof Response) && count < 1,
-    queryFn: (): Promise<FirmCanvasData> => getFirmMap({ data: { profile_id: profile.id ?? null } }),
+    queryFn: (): Promise<FirmCanvasData> =>
+      getFirmMap({ data: { profile_id: profile.id ?? null } }),
   });
-  const data = query.data ?? null;
+  return (
+    <FirmBrainCanvasView
+      profile={profile}
+      map={{
+        data: query.data ?? null,
+        pending: query.isPending,
+        failed: query.isError && !(query.error instanceof Response && query.error.status === 403),
+        refused: query.error instanceof Response && query.error.status === 403,
+        retry: () => void query.refetch(),
+      }}
+      ask={(question, starter) =>
+        ask({ data: { question, starter, profile_id: profile.id ?? null } })
+      }
+    />
+  );
+}
+
+/** The map as the page receives it: plain values, so a test or a story can draw the canvas without a server. */
+export type CanvasMap = {
+  data: FirmCanvasData | null;
+  pending: boolean;
+  failed: boolean;
+  refused: boolean;
+  retry: () => void;
+};
+
+/** The canvas itself. Data and the ask come in as props; everything it does with them lives here. */
+export function FirmBrainCanvasView({
+  profile,
+  map,
+  ask,
+}: {
+  profile: CanvasProfile;
+  map: CanvasMap;
+  ask: (question: string, starter: FirmAskStarter | null) => Promise<FirmAskResult>;
+}) {
+  const profileKey = profile.id ?? "me";
+  const reduceMotion = useReducedMotion();
+  const mobile = useIsMobile();
+  const anchor = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const world = useRef<HTMLDivElement>(null);
+  const bleed = useFullBleed(anchor);
+  const data = map.data;
   const layout = useMemo(() => (data ? layoutCanvas(data) : null), [data]);
   const seesFees = Boolean(data?.fees);
 
-  const insets: Insets = mobile ? { top: 64, bottom: 150, left: 0, right: 0 } : { top: 120, bottom: 150, left: 0, right: 0 };
+  const insets: Insets = mobile
+    ? { top: 64, bottom: 150, left: 0, right: 0 }
+    : { top: 120, bottom: 150, left: 0, right: 0 };
   const camera = useCanvasCamera({ stage, world, insets, reduceMotion });
 
   const [answers, setAnswersState] = useState<CanvasAnswer[]>(() => kept.get(profileKey) ?? []);
   const answersRef = useRef(answers);
   answersRef.current = answers;
+  // The kept list is the source of truth, so an answer that arrives after the page was left still lands, and is there
+  // (not stuck pending) when the page opens again.
   const setAnswers = useCallback(
     (update: (list: CanvasAnswer[]) => CanvasAnswer[]) => {
-      setAnswersState((list) => {
-        const next = update(list);
-        kept.set(profileKey, next);
-        return next;
-      });
+      const next = update(kept.get(profileKey) ?? []);
+      kept.set(profileKey, next);
+      setAnswersState(next);
     },
     [profileKey],
   );
+  // Sharing turned off since an answer landed: its lines from that board go at the next read of the map. Delete,
+  // never hide: an answer left with no lines goes too.
+  useEffect(() => {
+    if (!data) return;
+    setAnswers((list) => pruneAnswers(list, new Set(data.threads.map((thread) => thread.id))));
+  }, [data, setAnswers]);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [lineCentres, setLineCentres] = useState<Record<string, number[]>>({});
   const [feesOn, setFeesOn] = useState(false);
@@ -196,7 +302,10 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   const contentBox = useCallback(() => {
     if (!layout) return null;
     const b = layout.bounds;
-    let x0 = b.x, y0 = b.y, x1 = b.x + b.w, y1 = b.y + b.h;
+    const x0 = b.x;
+    let y0 = b.y,
+      x1 = b.x + b.w,
+      y1 = b.y + b.h;
     for (const answer of answersRef.current) {
       x1 = Math.max(x1, answer.x + CANVAS_SIZES.answerW);
       y0 = Math.min(y0, answer.y);
@@ -210,23 +319,25 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     if (!box) return;
     fitted.current = true;
     void camera.fit(box, 1, true);
-    if (!drawnOnce.has(profileKey) && !reduceMotion && layout.threads.length) {
-      drawnOnce.add(profileKey);
+    if (!drawnOnce.has(profileKey) && !reduceMotion && layout.threads.length)
       setDrawing("building");
-      const a = window.setTimeout(() => setDrawing("done"), 2200);
-      const b = window.setTimeout(() => setDrawing("no"), 3800);
-      return () => {
-        window.clearTimeout(a);
-        window.clearTimeout(b);
-      };
-    }
     drawnOnce.add(profileKey);
-    return undefined;
   }, [layout, bleed, contentBox, camera, profileKey, reduceMotion]);
+  // The first draw's caption: what is being drawn, then the counts, then it goes. Its own timer, so a re-render
+  // of the camera never cuts it short.
+  useEffect(() => {
+    if (drawing === "no") return;
+    const timer = window.setTimeout(
+      () => setDrawing(drawing === "building" ? "done" : "no"),
+      drawing === "building" ? 2200 : 1600,
+    );
+    return () => window.clearTimeout(timer);
+  }, [drawing]);
 
   const focused = answers.find((answer) => answer.id === focusId) ?? null;
   const targets = useMemo(() => {
-    if (!layout || !focused?.result || focused.status !== "answered") return new Map<string, Placed>();
+    if (!layout || !focused?.result || focused.status !== "answered")
+      return new Map<string, Placed>();
     const centres = lineCentres[focused.id] ?? [];
     return pullTargets(focused, focused.result.claims, centres);
   }, [layout, focused, lineCentres]);
@@ -255,7 +366,12 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     (id: string, height: number, centres: number[]) => {
       setLineCentres((map) => {
         const old = map[id];
-        if (old && old.length === centres.length && old.every((value, index) => Math.abs(value - centres[index]!) < 1)) return map;
+        if (
+          old &&
+          old.length === centres.length &&
+          old.every((value, index) => Math.abs(value - centres[index]!) < 1)
+        )
+          return map;
         return { ...map, [id]: centres };
       });
       setAnswers((list) => {
@@ -267,7 +383,12 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     [setAnswers],
   );
   const onBuilt = useCallback(
-    (id: string) => setAnswers((list) => (list.some((a) => a.id === id && !a.built) ? list.map((a) => (a.id === id ? { ...a, built: true } : a)) : list)),
+    (id: string) =>
+      setAnswers((list) =>
+        list.some((a) => a.id === id && !a.built)
+          ? list.map((a) => (a.id === id ? { ...a, built: true } : a))
+          : list,
+      ),
     [setAnswers],
   );
 
@@ -275,10 +396,19 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   const frameAnswer = useCallback(
     (answer: Pick<CanvasAnswer, "x" | "y" | "h">) => {
       const h = answer.h || 320;
-      const wide = { x: answer.x - CANVAS_SIZES.pullGap - CANVAS_SIZES.nodeW - 60, y: answer.y - 24, w: CANVAS_SIZES.answerW + CANVAS_SIZES.pullGap + CANVAS_SIZES.nodeW + 100, h: h + 48 };
+      const wide = {
+        x: answer.x - CANVAS_SIZES.pullGap - CANVAS_SIZES.nodeW - 60,
+        y: answer.y - 24,
+        w: CANVAS_SIZES.answerW + CANVAS_SIZES.pullGap + CANVAS_SIZES.nodeW + 100,
+        h: h + 48,
+      };
       if (camera.fitZoom(wide) >= 0.6) return camera.fit(wide, 1);
       const card = { x: answer.x - 8, y: answer.y - 16, w: CANVAS_SIZES.answerW + 16, h: h + 32 };
-      return camera.flyTo(card.x + card.w / 2, card.y + Math.min(card.h, 360) / 2, camera.fitZoom({ ...card, h: Math.min(card.h, 360) }, 1));
+      return camera.flyTo(
+        card.x + card.w / 2,
+        card.y + Math.min(card.h, 360) / 2,
+        camera.fitZoom({ ...card, h: Math.min(card.h, 360) }, 1),
+      );
     },
     [camera],
   );
@@ -286,24 +416,61 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   async function run(text: string, chosen: FirmAskStarter | null, reuse?: CanvasAnswer) {
     if (!layout) return;
     const el = stage.current;
-    const centre = el ? camera.toWorld(el.clientWidth / 2, insets.top + (el.clientHeight - insets.top - insets.bottom) / 2) : { x: 0, y: 0 };
-    const others = answersRef.current.filter((answer) => answer.id !== reuse?.id).map((answer) => ({ id: answer.id, x: answer.x, y: answer.y, h: answer.h || 300 }));
-    const spot = reuse ? { x: reuse.x, y: reuse.y } : placeAnswer(layout, others, 260, [], centre.y);
+    const centre = el
+      ? camera.toWorld(
+          el.clientWidth / 2,
+          insets.top + (el.clientHeight - insets.top - insets.bottom) / 2,
+        )
+      : { x: 0, y: 0 };
+    const others = answersRef.current
+      .filter((answer) => answer.id !== reuse?.id)
+      .map((answer) => ({ id: answer.id, x: answer.x, y: answer.y, h: answer.h || 300 }));
+    const spot = reuse
+      ? { x: reuse.x, y: reuse.y }
+      : placeAnswer(layout, others, 260, [], centre.y);
     const id = reuse?.id ?? `answer-${(nextId += 1)}`;
-    const entry: CanvasAnswer = { id, question: text, starter: chosen, status: "pending", result: null, limited: false, x: spot.x, y: spot.y, h: reuse?.h ?? 260, startedAt: Date.now(), built: false };
-    setAnswers((list) => (reuse ? list.map((answer) => (answer.id === id ? entry : answer)) : [...list, entry]));
+    const entry: CanvasAnswer = {
+      id,
+      question: text,
+      starter: chosen,
+      status: "pending",
+      result: null,
+      limited: false,
+      x: spot.x,
+      y: spot.y,
+      h: reuse?.h ?? 260,
+      startedAt: Date.now(),
+      built: false,
+    };
+    setAnswers((list) =>
+      reuse ? list.map((answer) => (answer.id === id ? entry : answer)) : [...list, entry],
+    );
     setFocusId(null);
     void frameAnswer(entry);
     try {
-      const result: FirmAskResult = await ask({ data: { question: text, starter: chosen, profile_id: profile.id ?? null } });
+      const result: FirmAskResult = await ask(text, chosen);
       const boards = answerBoards(result.claims);
       const height = answersRef.current.find((answer) => answer.id === id)?.h ?? 300;
-      const landed = boards.length ? placeAnswer(layout, others, height + 120, boards, spot.y) : spot;
-      setAnswers((list) => list.map((answer) => (answer.id === id ? { ...answer, status: "answered", result, x: landed.x, y: landed.y } : answer)));
+      const landed = boards.length
+        ? placeAnswer(layout, others, height + 120, boards, spot.y)
+        : spot;
+      setAnswers((list) =>
+        list.map((answer) =>
+          answer.id === id
+            ? { ...answer, status: "answered", result, x: landed.x, y: landed.y }
+            : answer,
+        ),
+      );
       setFocusId(id);
       void frameAnswer({ x: landed.x, y: landed.y, h: height + 120 });
     } catch (error) {
-      setAnswers((list) => list.map((answer) => (answer.id === id ? { ...answer, status: "failed", limited: isFirmBrainLimit(error) } : answer)));
+      setAnswers((list) =>
+        list.map((answer) =>
+          answer.id === id
+            ? { ...answer, status: "failed", limited: isFirmBrainLimit(error) }
+            : answer,
+        ),
+      );
     }
   }
 
@@ -339,7 +506,9 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     const node = layout?.byId.get(canvasThreadId(boardId));
     if (!node) return;
     const place = at.get(node.id) ?? node;
-    const cited = answersRef.current.find((answer) => answer.result?.claims.some((claim) => claim.boardId === boardId));
+    const cited = answersRef.current.find((answer) =>
+      answer.result?.claims.some((claim) => claim.boardId === boardId),
+    );
     if (cited) setFocusId(cited.id);
     void camera.flyTo(place.x + node.w / 2, place.y, Math.max(camera.cam.current.k, 0.85));
   }
@@ -355,7 +524,7 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     field.style.height = `${Math.min(field.scrollHeight, 112)}px`;
   }, [question]);
 
-  const refused = query.error instanceof Response && query.error.status === 403;
+  const refused = map.refused;
   const lit = (id: string) => (focused ? hot.has(id) : true);
   const listLayout = useMemo(() => (data ? layoutFirmMap(data) : null), [data]);
 
@@ -363,7 +532,9 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
     <div ref={anchor} data-testid="firm-brain-canvas" className="h-0">
       <div
         className="fixed bottom-[calc(56px+env(safe-area-inset-bottom))] right-0 overflow-hidden bg-background md:bottom-0"
-        style={bleed ? { left: bleed.left, top: bleed.top } : { left: 0, top: 0, visibility: "hidden" }}
+        style={
+          bleed ? { left: bleed.left, top: bleed.top } : { left: 0, top: 0, visibility: "hidden" }
+        }
       >
         <div
           ref={stage}
@@ -380,10 +551,14 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
             setFocusId(null);
           }}
         >
-          {query.isPending ? (
+          {map.pending ? (
             <div aria-hidden data-testid="firm-canvas-skeleton" className="absolute inset-0">
               {[0, 1, 2, 3, 4, 5].map((row) => (
-                <div key={row} className="absolute flex gap-6" style={{ left: "8%", top: `${22 + row * 11}%`, right: "18%" }}>
+                <div
+                  key={row}
+                  className="absolute flex gap-6"
+                  style={{ left: "8%", top: `${22 + row * 11}%`, right: "18%" }}
+                >
                   <Skeleton className="h-3 w-[18%]" />
                   <Skeleton className="h-8 w-[24%]" />
                   <Skeleton className="h-8 w-[24%]" />
@@ -392,20 +567,37 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
               ))}
             </div>
           ) : null}
-          <div ref={world} className={cn("fc-world absolute left-0 top-0 origin-top-left", focused && "fc-focus", drawing === "building" && "fc-drawing")}>
+          <div
+            ref={world}
+            className={cn(
+              "fc-world absolute left-0 top-0 origin-top-left",
+              focused && "fc-focus",
+              drawing === "building" && "fc-drawing",
+            )}
+          >
             {layout && visible ? (
               <>
-                <svg aria-hidden className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1}>
+                <svg
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 top-0 overflow-visible"
+                  width={1}
+                  height={1}
+                >
                   {visible.edges.map((edge, index) => {
                     const ends = edgeEnds(layout, edge, at);
                     if (!ends) return null;
-                    const isHot = hot.has(edge.from) && hot.has(edge.to) && (focused ? true : false);
+                    const isHot =
+                      hot.has(edge.from) && hot.has(edge.to) && (focused ? true : false);
                     return (
                       <path
                         key={edge.id}
                         d={threadPath(ends[0], ends[1], isHot ? bend : 1)}
                         className={cn("fc-edge", isHot && "fc-edge-hot")}
-                        style={drawing === "building" ? { animationDelay: `${Math.min(index * 6, 900) + 700}ms` } : undefined}
+                        style={
+                          drawing === "building"
+                            ? { animationDelay: `${Math.min(index * 6, 900) + 700}ms` }
+                            : undefined
+                        }
                       />
                     );
                   })}
@@ -418,7 +610,11 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
                         return (
                           <path
                             key={`src-${index}`}
-                            d={threadPath({ x: place.x + node.w, y: place.y }, { x: focused.x, y: focused.y + centre }, 0.7)}
+                            d={threadPath(
+                              { x: place.x + node.w, y: place.y },
+                              { x: focused.x, y: focused.y + centre },
+                              0.7,
+                            )}
                             className="fc-source-link"
                           />
                         );
@@ -429,7 +625,12 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
                   .filter((node) => visible.nodes.has(node.id))
                   .map((node, index) => {
                     const place = at.get(node.id) ?? node;
-                    const delay = drawing === "building" ? { animationDelay: `${node.kind === "situation" ? 0 : node.kind === "thread" ? 400 + Math.min(index * 18, 900) : 1300}ms` } : {};
+                    const delay =
+                      drawing === "building"
+                        ? {
+                            animationDelay: `${node.kind === "situation" ? 0 : node.kind === "thread" ? 400 + Math.min(index * 18, 900) : 1300}ms`,
+                          }
+                        : {};
                     if (node.kind === "thread") {
                       const fee = feesOn && data?.fees ? data.fees[node.threadId!] : undefined;
                       return (
@@ -440,13 +641,25 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
                           onClick={() => flyToThread(node.threadId!)}
                           className={cn(
                             "fc-node absolute flex items-center gap-2 rounded-[var(--radius-control)] border bg-card px-2.5 text-left text-(length:--type-small) text-foreground",
-                            hot.has(node.id) && focused ? "fc-node-hot border-(--live-edge)" : "border-border",
+                            hot.has(node.id) && focused
+                              ? "fc-node-hot border-(--live-edge)"
+                              : "border-border",
                             !lit(node.id) && "fc-dim",
                           )}
-                          style={{ left: place.x, top: place.y - node.h / 2, width: node.w, height: node.h, ...delay }}
+                          style={{
+                            left: place.x,
+                            top: place.y - node.h / 2,
+                            width: node.w,
+                            height: node.h,
+                            ...delay,
+                          }}
                         >
                           <span className="min-w-0 flex-1 truncate">{node.label}</span>
-                          {fee ? <span className="rounded-[var(--radius-control)] bg-muted px-1.5 font-mono text-(length:--type-label) text-muted-foreground">{fee}</span> : null}
+                          {fee ? (
+                            <span className="rounded-[var(--radius-control)] bg-muted px-1.5 font-mono text-(length:--type-label) text-muted-foreground">
+                              {fee}
+                            </span>
+                          ) : null}
                         </button>
                       );
                     }
@@ -455,14 +668,26 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
                         key={node.id}
                         className={cn(
                           "fc-label absolute flex items-center gap-2 whitespace-nowrap text-(length:--type-small)",
-                          node.kind === "situation" ? "justify-end font-semibold text-foreground" : "text-muted-foreground",
+                          node.kind === "situation"
+                            ? "justify-end font-semibold text-foreground"
+                            : "text-muted-foreground",
                           !lit(node.id) && "fc-dim",
                         )}
-                        style={{ left: node.x, top: node.y - node.h / 2, width: node.w, height: node.h, ...delay }}
+                        style={{
+                          left: node.x,
+                          top: node.y - node.h / 2,
+                          width: node.w,
+                          height: node.h,
+                          ...delay,
+                        }}
                       >
-                        {node.kind === "method" ? <span aria-hidden className="fc-method-dot" /> : null}
+                        {node.kind === "method" ? (
+                          <span aria-hidden className="fc-method-dot" />
+                        ) : null}
                         <span className="truncate">{node.label}</span>
-                        {node.kind === "situation" ? <span aria-hidden className="fc-situation-dot" /> : null}
+                        {node.kind === "situation" ? (
+                          <span aria-hidden className="fc-situation-dot" />
+                        ) : null}
                       </span>
                     );
                   })}
@@ -490,10 +715,13 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
               {FIRM_CANVAS_COPY.empty}
             </p>
           ) : null}
-          {query.isError && !refused ? (
-            <div role="alert" className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 text-(length:--type-body) text-muted-foreground">
+          {map.failed ? (
+            <div
+              role="alert"
+              className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 text-(length:--type-body) text-muted-foreground"
+            >
               <p>{FIRM_CANVAS_COPY.mapLoadFailed}</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void query.refetch()}>
+              <Button type="button" variant="outline" size="sm" onClick={map.retry}>
                 {FIRM_CANVAS_COPY.retry}
               </Button>
             </div>
@@ -501,29 +729,54 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
         </div>
 
         {/* The one title, and the quiet numbers under it. On a phone the menu already names the page. */}
-        <div className="pointer-events-none absolute left-4 top-4 flex max-w-[calc(100%-32px)] flex-col gap-1 md:left-6 md:top-5">
-          <h1 className="sr-only text-(length:--type-display) font-semibold text-foreground md:not-sr-only">{FIRM_BRAIN_COPY.title}</h1>
+        <div className="pointer-events-none absolute left-4 top-4 flex max-w-[calc(100%-150px)] flex-col gap-1 md:left-6 md:top-5 md:max-w-[calc(100%-48px)]">
+          <h1 className="sr-only text-(length:--type-display) font-semibold text-foreground md:not-sr-only">
+            {FIRM_BRAIN_COPY.title}
+          </h1>
           {layout ? (
-            <p data-testid="firm-canvas-counts" className="hidden text-(length:--type-small) text-muted-foreground md:block">
+            <p
+              data-testid="firm-canvas-counts"
+              className="hidden text-(length:--type-small) text-muted-foreground md:block"
+            >
               {(["engagements", "situations", "methods", "lessons"] as const).map((key, index) => (
                 <span key={key}>
                   {index ? " · " : ""}
-                  <span className="font-mono tabular-nums text-foreground">{layout.totals[key]}</span> {FIRM_CANVAS_COPY.counts[key]}
+                  <span className="font-mono tabular-nums text-foreground">
+                    {layout.totals[key]}
+                  </span>{" "}
+                  {FIRM_CANVAS_COPY.counts[key]}
                 </span>
               ))}
             </p>
           ) : null}
           <div className="pointer-events-auto mt-1 flex flex-wrap gap-2 md:mt-2">
             {seesFees ? (
-              <button type="button" aria-pressed={feesOn} data-testid="firm-canvas-fees" onClick={() => setFeesOn((on) => !on)} className={cn(chipVariants({ tone: feesOn ? "accent" : "quiet" }), "bg-card")}>
+              <button
+                type="button"
+                aria-pressed={feesOn}
+                data-testid="firm-canvas-fees"
+                onClick={() => setFeesOn((on) => !on)}
+                className={cn(chipVariants({ tone: feesOn ? "accent" : "quiet" }), "bg-card")}
+              >
                 {feesOn ? FIRM_CANVAS_COPY.feesOn : FIRM_CANVAS_COPY.fees}
               </button>
             ) : null}
-            <button type="button" onClick={() => setToolsOpen(true)} className={cn(chipVariants({ tone: "quiet" }), "bg-card")}>
+            <button
+              type="button"
+              onClick={() => setToolsOpen(true)}
+              className={cn(chipVariants({ tone: "quiet" }), "bg-card")}
+            >
               {FIRM_CANVAS_COPY.tools}
             </button>
             {listLayout && listLayout.threads.length ? (
-              <button type="button" onClick={() => setListOpen(true)} className={cn(chipVariants({ tone: "quiet" }), "inline-flex items-center gap-1.5 bg-card")}>
+              <button
+                type="button"
+                onClick={() => setListOpen(true)}
+                className={cn(
+                  chipVariants({ tone: "quiet" }),
+                  "inline-flex items-center gap-1.5 bg-card",
+                )}
+              >
                 <List aria-hidden className="size-3.5" />
                 {FIRM_CANVAS_COPY.list}
               </button>
@@ -532,17 +785,32 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
         </div>
 
         {drawing !== "no" && layout ? (
-          <p role="status" className="fc-mapcap pointer-events-none absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-2 rounded-[var(--radius-pill)] border border-border bg-card px-3 py-1 text-(length:--type-small) text-muted-foreground">
+          <p
+            role="status"
+            className="fc-mapcap pointer-events-none absolute left-1/2 top-16 flex whitespace-nowrap md:top-4 -translate-x-1/2 items-center gap-2 rounded-[var(--radius-pill)] border border-border bg-card px-3 py-1 text-(length:--type-small) text-muted-foreground"
+          >
             <span aria-hidden className={cn("fc-dot", drawing === "done" && "fc-dot-done")} />
-            {drawing === "building" ? FIRM_CANVAS_COPY.drawing : FIRM_CANVAS_COPY.drawn(layout.totals)}
+            {drawing === "building"
+              ? FIRM_CANVAS_COPY.drawing
+              : FIRM_CANVAS_COPY.drawn(layout.totals)}
           </p>
         ) : null}
 
         <div className="absolute right-4 top-4 flex overflow-hidden rounded-[var(--radius-control)] border border-border bg-card md:bottom-5 md:right-5 md:top-auto md:flex-col">
-          <button type="button" aria-label={FIRM_CANVAS_COPY.zoomIn} onClick={() => camera.zoomAt(1.25)} className="grid size-9 place-items-center text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            aria-label={FIRM_CANVAS_COPY.zoomIn}
+            onClick={() => camera.zoomAt(1.25)}
+            className="grid size-9 place-items-center text-muted-foreground hover:text-foreground"
+          >
             <Plus aria-hidden className="size-4" />
           </button>
-          <button type="button" aria-label={FIRM_CANVAS_COPY.zoomOut} onClick={() => camera.zoomAt(0.8)} className="grid size-9 place-items-center border-border text-muted-foreground hover:text-foreground max-md:border-l md:border-t">
+          <button
+            type="button"
+            aria-label={FIRM_CANVAS_COPY.zoomOut}
+            onClick={() => camera.zoomAt(0.8)}
+            className="grid size-9 place-items-center border-border text-muted-foreground hover:text-foreground max-md:border-l md:border-t"
+          >
             <Minus aria-hidden className="size-4" />
           </button>
           <button
@@ -563,13 +831,23 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
             {!answers.length ? (
               <div className="flex flex-wrap justify-center gap-2">
                 {startersFor(profile.role).map((key) => (
-                  <button key={key} type="button" data-firm-starter={key} onClick={() => pickStarter(key)} className={cn(chipVariants({ tone: "quiet" }), "bg-card")}>
+                  <button
+                    key={key}
+                    type="button"
+                    data-firm-starter={key}
+                    onClick={() => pickStarter(key)}
+                    className={cn(chipVariants({ tone: "quiet" }), "bg-card")}
+                  >
                     {FIRM_ASK_STARTER_COPY[key].label}
                   </button>
                 ))}
               </div>
             ) : null}
-            <form onSubmit={submit} className="ph-no-autocapture flex items-end gap-2 rounded-[var(--radius-card)] border border-border bg-card p-2 pl-4 shadow-card" data-ph-no-autocapture="">
+            <form
+              onSubmit={submit}
+              className="ph-no-autocapture flex items-end gap-2 rounded-[var(--radius-card)] border border-border bg-card p-2 pl-4 shadow-card"
+              data-ph-no-autocapture=""
+            >
               <textarea
                 ref={input}
                 rows={1}
@@ -585,7 +863,13 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
                 }}
                 className="min-h-9 flex-1 resize-none bg-transparent py-1.5 text-(length:--type-body) text-foreground outline-none placeholder:text-muted-foreground"
               />
-              <Button type="submit" variant="ink" size="icon" aria-label={FIRM_CANVAS_COPY.send} disabled={pending || question.trim().length < 3 || !layout}>
+              <Button
+                type="submit"
+                variant="ink"
+                size="icon"
+                aria-label={FIRM_CANVAS_COPY.send}
+                disabled={pending || question.trim().length < 3 || !layout}
+              >
                 <ArrowUp aria-hidden className="size-4" />
               </Button>
             </form>
@@ -593,7 +877,11 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
         ) : null}
       </div>
 
-      <FirmSourcePreview itemId={openItem} profileId={profile.id} onClose={() => setOpenItem(null)} />
+      <FirmSourcePreview
+        itemId={openItem}
+        profileId={profile.id}
+        onClose={() => setOpenItem(null)}
+      />
 
       <Sheet open={toolsOpen} onOpenChange={setToolsOpen}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">

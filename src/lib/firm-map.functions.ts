@@ -25,15 +25,4 @@ function validate(input: MapInput): MapInput {
 export const getFirmMap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validate)
-  .handler(async ({ data, context }): Promise<FirmCanvasData> => {
-    const { requireFirmMember, readFirmCorpus } = await import("./firm-corpus.server");
-    const { assembleFirmGraph } = await import("./firm-graph-shared");
-    const { canvasDataFor, canvasSeesFees } = await import("./firm-canvas-shared");
-    const { profile, supabaseAdmin } = await requireFirmMember(
-      context.supabase,
-      context.userId,
-      data.profile_id,
-    );
-    const corpus = await readFirmCorpus(supabaseAdmin, profile);
-    return canvasDataFor(assembleFirmGraph(corpus), corpus, canvasSeesFees(profile.role));
-  });
+  .handler(async ({ data, context }): Promise<FirmCanvasData> => (await import("./firm-map.server")).firmMapFor(context, data));

@@ -72,12 +72,18 @@ export function useCanvasCamera({
         apply();
         return Promise.resolve();
       }
-      const ms = moveDuration(Math.hypot(tx - from.x, ty - from.y) + Math.abs(target - from.k) * 600);
+      const ms = moveDuration(
+        Math.hypot(tx - from.x, ty - from.y) + Math.abs(target - from.k) * 600,
+      );
       const start = performance.now();
       return new Promise((resolve) => {
         const step = (now: number) => {
           const t = easeFlow(Math.min(1, (now - start) / ms));
-          cam.current = { x: from.x + (tx - from.x) * t, y: from.y + (ty - from.y) * t, k: from.k + (target - from.k) * t };
+          cam.current = {
+            x: from.x + (tx - from.x) * t,
+            y: from.y + (ty - from.y) * t,
+            k: from.k + (target - from.k) * t,
+          };
           apply();
           if (t < 1) move.current = requestAnimationFrame(step);
           else {
@@ -114,7 +120,11 @@ export function useCanvasCamera({
       if (!el) return Promise.resolve();
       const i = insetsRef.current;
       stop();
-      cam.current = { k, x: i.left + (el.clientWidth - i.left - i.right) / 2 - cx * k, y: i.top + (el.clientHeight - i.top - i.bottom) / 2 - cy * k };
+      cam.current = {
+        k,
+        x: i.left + (el.clientWidth - i.left - i.right) / 2 - cx * k,
+        y: i.top + (el.clientHeight - i.top - i.bottom) / 2 - cy * k,
+      };
       apply();
       return Promise.resolve();
     },
@@ -156,15 +166,25 @@ export function useCanvasCamera({
       return { x: p.x - r.left, y: p.y - r.top };
     };
     const down = (event: PointerEvent) => {
-      if ((event.target as HTMLElement).closest("button, a, input, textarea, [data-canvas-no-pan]")) return;
+      if ((event.target as HTMLElement).closest("button, a, input, textarea, [data-canvas-no-pan]"))
+        return;
       el.setPointerCapture?.(event.pointerId);
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       stop();
-      if (pointers.size === 1) pan = { x: event.clientX, y: event.clientY, cx: cam.current.x, cy: cam.current.y };
+      if (pointers.size === 1)
+        pan = { x: event.clientX, y: event.clientY, cx: cam.current.x, cy: cam.current.y };
       else if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+        const [a, b] = [...pointers.values()] as [
+          { x: number; y: number },
+          { x: number; y: number },
+        ];
         const mid = local({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: cam.current.k, wx: (mid.x - cam.current.x) / cam.current.k, wy: (mid.y - cam.current.y) / cam.current.k };
+        pinch = {
+          d: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+          k: cam.current.k,
+          wx: (mid.x - cam.current.x) / cam.current.k,
+          wy: (mid.y - cam.current.y) / cam.current.k,
+        };
         pan = null;
       }
       el.dataset["dragging"] = "true";
@@ -173,13 +193,20 @@ export function useCanvasCamera({
       if (!pointers.has(event.pointerId)) return;
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (pinch && pointers.size === 2) {
-        const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+        const [a, b] = [...pointers.values()] as [
+          { x: number; y: number },
+          { x: number; y: number },
+        ];
         const mid = local({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
         const k = clampK((pinch.k * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d);
         cam.current = { k, x: mid.x - pinch.wx * k, y: mid.y - pinch.wy * k };
         apply();
       } else if (pan) {
-        cam.current = { ...cam.current, x: pan.cx + event.clientX - pan.x, y: pan.cy + event.clientY - pan.y };
+        cam.current = {
+          ...cam.current,
+          x: pan.cx + event.clientX - pan.x,
+          y: pan.cy + event.clientY - pan.y,
+        };
         apply();
       }
     };
@@ -203,7 +230,11 @@ export function useCanvasCamera({
         zoomAt(Math.exp(-event.deltaY * 0.01), p.x, p.y);
       } else {
         stop();
-        cam.current = { ...cam.current, x: cam.current.x - event.deltaX, y: cam.current.y - event.deltaY };
+        cam.current = {
+          ...cam.current,
+          x: cam.current.x - event.deltaX,
+          y: cam.current.y - event.deltaY,
+        };
         apply();
       }
     };

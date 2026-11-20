@@ -63,7 +63,11 @@ export function hasMoney(text: string): boolean {
  * nothing in the response can carry a fee. For admins and leads, each engagement's fee comes from its SOW facts, written
  * by code from data, never by a model.
  */
-export function canvasDataFor(graph: FirmGraph, corpus: FirmCorpus, seesFees: boolean): FirmCanvasData {
+export function canvasDataFor(
+  graph: FirmGraph,
+  corpus: FirmCorpus,
+  seesFees: boolean,
+): FirmCanvasData {
   const base = forMap(graph);
   if (!seesFees) {
     return {
@@ -79,7 +83,9 @@ export function canvasDataFor(graph: FirmGraph, corpus: FirmCorpus, seesFees: bo
   }
   const fees: Record<string, string> = {};
   for (const thread of base.threads) {
-    const facts = corpus.items.find((item) => item.boardId === thread.id && item.sowFacts)?.sowFacts;
+    const facts = corpus.items.find(
+      (item) => item.boardId === thread.id && item.sowFacts,
+    )?.sowFacts;
     const fee = facts?.["fee_text"];
     if (typeof fee === "string" && fee.trim()) fees[thread.id] = fee.trim();
   }
@@ -161,10 +167,20 @@ export function layoutCanvas(graph: FirmGraph): CanvasLayout {
   const byThread = new Map(graph.threads.map((thread) => [thread.id, thread]));
   let y = 0;
   for (const situation of graph.situations) {
-    const members = situation.threadIds.map((id) => byThread.get(id)).filter((thread) => thread !== undefined);
+    const members = situation.threadIds
+      .map((id) => byThread.get(id))
+      .filter((thread) => thread !== undefined);
     const rows = Math.max(1, Math.ceil(members.length / cols));
     const bandH = rows * S.rowH + S.bandPad * 2;
-    situations.push({ id: `situation:${situation.id}`, kind: "situation", label: situation.label, x: S.situationX, y: y + bandH / 2, w: S.situationW, h: S.nodeH });
+    situations.push({
+      id: `situation:${situation.id}`,
+      kind: "situation",
+      label: situation.label,
+      x: S.situationX,
+      y: y + bandH / 2,
+      w: S.situationW,
+      h: S.nodeH,
+    });
     members.forEach((thread, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
@@ -183,7 +199,10 @@ export function layoutCanvas(graph: FirmGraph): CanvasLayout {
   }
   const height = Math.max(y - S.bandGap, S.rowH);
   const methodX = S.threadX + cols * S.colGap + 24 + S.methodGap;
-  const step = graph.methods.length > 1 ? Math.max(S.methodMinGap, (height - S.rowH) / (graph.methods.length - 1)) : 0;
+  const step =
+    graph.methods.length > 1
+      ? Math.max(S.methodMinGap, (height - S.rowH) / (graph.methods.length - 1))
+      : 0;
   const methods: CanvasNode[] = graph.methods.map((method, index) => ({
     id: `method:${method.id}`,
     kind: "method",
@@ -197,12 +216,19 @@ export function layoutCanvas(graph: FirmGraph): CanvasLayout {
   const edges: CanvasEdge[] = [];
   for (const thread of graph.threads) {
     const node = canvasThreadId(thread.id);
-    edges.push({ id: `${thread.situation}>${thread.id}`, from: `situation:${thread.situation}`, to: node });
+    edges.push({
+      id: `${thread.situation}>${thread.id}`,
+      from: `situation:${thread.situation}`,
+      to: node,
+    });
     for (const stop of thread.stops) {
-      if (stop.kind === "method") edges.push({ id: `${thread.id}>${stop.method}`, from: node, to: `method:${stop.method}` });
+      if (stop.kind === "method")
+        edges.push({ id: `${thread.id}>${stop.method}`, from: node, to: `method:${stop.method}` });
     }
   }
-  const byId = new Map<string, CanvasNode>([...situations, ...threads, ...methods].map((node) => [node.id, node]));
+  const byId = new Map<string, CanvasNode>(
+    [...situations, ...threads, ...methods].map((node) => [node.id, node]),
+  );
   // An edge whose ends are not both drawn (a situation with no node, say) is dropped rather than drawn to nowhere.
   const drawn = edges.filter((edge) => byId.has(edge.from) && byId.has(edge.to));
   const methodsBottom = methods.length ? methods[methods.length - 1]!.y + S.nodeH : 0;
@@ -249,10 +275,16 @@ export function visibleIn(
   options: { margin?: number; keep?: ReadonlySet<string>; at?: ReadonlyMap<string, Placed> } = {},
 ): { nodes: Set<string>; edges: CanvasEdge[] } {
   const margin = options.margin ?? 160;
-  const area = { x: view.x - margin, y: view.y - margin, w: view.w + margin * 2, h: view.h + margin * 2 };
+  const area = {
+    x: view.x - margin,
+    y: view.y - margin,
+    w: view.w + margin * 2,
+    h: view.h + margin * 2,
+  };
   const nodes = new Set<string>();
   for (const node of layout.byId.values()) {
-    if (options.keep?.has(node.id) || overlaps(boxOf(node, options.at?.get(node.id)), area)) nodes.add(node.id);
+    if (options.keep?.has(node.id) || overlaps(boxOf(node, options.at?.get(node.id)), area))
+      nodes.add(node.id);
   }
   const span = (edge: CanvasEdge): CanvasRect | null => {
     const a = layout.byId.get(edge.from);
@@ -301,7 +333,9 @@ export function placeAnswer(
   boardIds: readonly string[],
   fallbackY: number,
 ): { x: number; y: number } {
-  const ys = boardIds.map((id) => layout.byId.get(canvasThreadId(id))?.y).filter((value): value is number => typeof value === "number");
+  const ys = boardIds
+    .map((id) => layout.byId.get(canvasThreadId(id))?.y)
+    .filter((value): value is number => typeof value === "number");
   const centre = ys.length ? ys.reduce((sum, value) => sum + value, 0) / ys.length : fallbackY;
   let y = Math.max(layout.bounds.y, centre - height / 2);
   const x = layout.answerX;
@@ -346,7 +380,11 @@ export function threadPath(from: Placed, to: Placed, bend: number): string {
 }
 
 /** The two ends of an edge at the nodes' current places: right side of the left node, left side of the right node. */
-export function edgeEnds(layout: CanvasLayout, edge: CanvasEdge, at?: ReadonlyMap<string, Placed>): [Placed, Placed] | null {
+export function edgeEnds(
+  layout: CanvasLayout,
+  edge: CanvasEdge,
+  at?: ReadonlyMap<string, Placed>,
+): [Placed, Placed] | null {
   const a = layout.byId.get(edge.from);
   const b = layout.byId.get(edge.to);
   if (!a || !b) return null;
@@ -367,9 +405,16 @@ export function edgeEnds(layout: CanvasLayout, edge: CanvasEdge, at?: ReadonlyMa
 
 /** Liam's one easing curve, cubic-bezier(.45,0,.2,1), as a function of progress 0..1. */
 export function easeFlow(t: number): number {
-  const p1x = 0.45, p1y = 0, p2x = 0.2, p2y = 1;
-  const cx = 3 * p1x, bx = 3 * (p2x - p1x) - cx, ax = 1 - cx - bx;
-  const cy = 3 * p1y, by = 3 * (p2y - p1y) - cy, ay = 1 - cy - by;
+  const p1x = 0.45,
+    p1y = 0,
+    p2x = 0.2,
+    p2y = 1;
+  const cx = 3 * p1x,
+    bx = 3 * (p2x - p1x) - cx,
+    ax = 1 - cx - bx;
+  const cy = 3 * p1y,
+    by = 3 * (p2y - p1y) - cy,
+    ay = 1 - cy - by;
   const x = (u: number) => ((ax * u + bx) * u + cx) * u;
   const dx = (u: number) => (3 * ax * u + 2 * bx) * u + cx;
   const clamped = Math.max(0, Math.min(1, t));
@@ -415,7 +460,12 @@ export function pendingPercent(elapsedMs: number): number {
 export const LINE_REVEAL_MS = 700;
 
 export const FIRM_CANVAS_COPY = {
-  counts: { engagements: "engagements", situations: "situations", methods: "methods", lessons: "lessons" },
+  counts: {
+    engagements: "engagements",
+    situations: "situations",
+    methods: "methods",
+    lessons: "lessons",
+  },
   ask: "Ask the firm",
   askLabel: "Question for the firm",
   send: "Ask",
@@ -437,7 +487,8 @@ export const FIRM_CANVAS_COPY = {
   retry: "Try again",
   empty: "Nothing is shared with the firm yet. Answers come only from boards shared with the firm.",
   drawing: "Drawing the firm map",
-  drawn: (totals: MapTotals) => `${totals.engagements} engagements, ${totals.situations} situations, ${totals.methods} methods`,
+  drawn: (totals: MapTotals) =>
+    `${totals.engagements} engagements, ${totals.situations} situations, ${totals.methods} methods`,
   canvasLabel: "The firm map. Drag to move, pinch or use the buttons to zoom.",
   source: "Open the source",
 } as const;
