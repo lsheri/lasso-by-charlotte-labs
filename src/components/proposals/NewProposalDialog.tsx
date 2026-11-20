@@ -16,10 +16,23 @@ import {
   type NewProposalRaw,
   type NewProposalResult,
 } from "@/lib/proposal-desk-shared";
+import { cn } from "@/lib/utils";
 
 export type CaptureFiles = (files: File[]) => Promise<{ ids: string[]; failures: { name: string; reason: string }[] }>;
 
 type Added = { id: string; name: string };
+
+/** A plain field label: sentence case in the reading face, quieter than what is typed into the field. */
+const LABEL = "text-sm font-medium text-foreground";
+
+export const DROP_COPY = {
+  orDrop: "or drop them here",
+} as const;
+
+/** True when what is being dragged is files from the computer, not text or a link from the page. */
+function hasFiles(transfer: DataTransfer | null): boolean {
+  return Boolean(transfer && Array.from(transfer.types ?? []).includes("Files"));
+}
 
 /**
  * 20 Nov 2026, the Proposal Desk: "New proposal". Who it is for (a client we have, or a new one), what they asked
@@ -67,6 +80,7 @@ export function NewProposalDialog({
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [over, setOver] = useState(false);
 
   const noClients = clients !== undefined && clients.length === 0;
   const effectiveMode = !canAddClient ? "existing" : noClients ? "new" : mode;
@@ -84,6 +98,7 @@ export function NewProposalDialog({
     setUploading(null);
     setPending(false);
     setProblem(null);
+    setOver(false);
   }
 
   /** Giving up: what was uploaded here for this proposal is removed again, then the form is cleared. */
@@ -164,15 +179,71 @@ export function NewProposalDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-lg" data-testid="new-proposal">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] overflow-x-hidden sm:max-w-lg" data-testid="new-proposal">
         <DialogHeader>
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
           <DialogDescription>{copy.intro}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4" noValidate>
+          {/* 20 Nov 2026, redraw step 8: the documents are the point of this dialog, so they come first and are the
+              biggest thing in it. Files can be dropped on the zone or chosen; both go through the same addFiles. */}
+          <div className="space-y-1.5">
+            <p className={LABEL}>{copy.documents}</p>
+            <div
+              data-new-proposal-drop={over ? "over" : "idle"}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-[var(--radius)] border border-dashed px-4 py-6 text-center",
+                over ? "border-foreground bg-muted" : "border-border",
+              )}
+              onDragOver={(event) => {
+                if (!hasFiles(event.dataTransfer)) return;
+                // Always claimed, so a file dropped while busy is not opened by the browser in place of the page.
+                event.preventDefault();
+                if (!busy && !stuck) setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(event) => {
+                if (!hasFiles(event.dataTransfer)) return;
+                event.preventDefault();
+                setOver(false);
+                if (busy || stuck) return;
+                void addFiles(event.dataTransfer.files);
+              }}
+            >
+              <input ref={fileInput} type="file" multiple className="sr-only" aria-label={copy.addFiles} disabled={busy} onChange={(event) => void addFiles(event.target.files)} />
+              <Button type="button" variant="outline" disabled={busy || stuck} onClick={() => fileInput.current?.click()}>
+                {uploading ? copy.uploading(uploading.done + 1, uploading.total) : copy.addFiles}
+              </Button>
+              <p data-new-proposal-drop-hint className="text-sm text-muted-foreground">{DROP_COPY.orDrop}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">{copy.documentsHint}</p>
+            {added.length > 0 ? (
+              <ul className="space-y-1" data-testid="new-proposal-documents">
+                {added.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate">{item.name}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-muted-foreground underline hover:text-foreground"
+                      disabled={busy}
+                      aria-label={copy.remove(item.name)}
+                      onClick={() => {
+                        // It was uploaded here for this proposal, so taking it off the list removes the upload too.
+                        if (discard) void discard([item.id]).catch(() => undefined);
+                        setAdded((current) => current.filter((entry) => entry.id !== item.id));
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
           <fieldset className="space-y-2" disabled={busy}>
-            <legend className="micro-label">{copy.clientLegend}</legend>
+            <legend className={LABEL}>{copy.clientLegend}</legend>
             {!canAddClient ? (
               <p data-new-proposal-clients-note className="text-sm text-muted-foreground">{stuck ? copy.noClientsForMember : copy.adminAddsClients}</p>
             ) : noClients ? (
@@ -215,45 +286,14 @@ export function NewProposalDialog({
           </fieldset>
 
           <div className="space-y-1.5">
-            <Label htmlFor={`${ids}-title`} className="micro-label">
+            <Label htmlFor={`${ids}-title`} className={LABEL}>
               {copy.titleLabel}
             </Label>
             <Input id={`${ids}-title`} value={title} disabled={busy} placeholder={copy.titleHint} onChange={(event) => setTitle(event.target.value)} />
           </div>
 
           <div className="space-y-1.5">
-            <p className="micro-label">{copy.documents}</p>
-            <p className="text-sm text-muted-foreground">{copy.documentsHint}</p>
-            {added.length > 0 ? (
-              <ul className="space-y-1" data-testid="new-proposal-documents">
-                {added.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="min-w-0 truncate">{item.name}</span>
-                    <button
-                      type="button"
-                      className="shrink-0 text-muted-foreground underline hover:text-foreground"
-                      disabled={busy}
-                      aria-label={copy.remove(item.name)}
-                      onClick={() => {
-                        // It was uploaded here for this proposal, so taking it off the list removes the upload too.
-                        if (discard) void discard([item.id]).catch(() => undefined);
-                        setAdded((current) => current.filter((entry) => entry.id !== item.id));
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <input ref={fileInput} type="file" multiple className="sr-only" aria-label={copy.addFiles} disabled={busy} onChange={(event) => void addFiles(event.target.files)} />
-            <Button type="button" variant="outline" size="sm" disabled={busy || stuck} onClick={() => fileInput.current?.click()}>
-              {uploading ? copy.uploading(uploading.done + 1, uploading.total) : copy.addFiles}
-            </Button>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={`${ids}-notes`} className="micro-label">
+            <Label htmlFor={`${ids}-notes`} className={LABEL}>
               {copy.notes}
             </Label>
             <Textarea id={`${ids}-notes`} rows={3} value={notes} disabled={busy} placeholder={copy.notesHint} onChange={(event) => setNotes(event.target.value)} />
