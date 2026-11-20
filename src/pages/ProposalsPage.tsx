@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
+import { ProposalDeskSkeleton } from "@/components/proposals/ProposalDeskSkeleton";
 import { useProposalDesk } from "@/components/proposals/use-proposal-desk";
 import { RosterPanel } from "@/components/roster/RosterPanel";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,8 @@ export function ProposalsPage() {
         title={DESK_COPY.title}
         subtitle={DESK_COPY.subtitle}
         action={
-          <Button type="button" disabled={!profileId} onClick={() => setOpen(true)}>
+          // D-86: quiet, so the one filled button on the page is always the most urgent next step.
+          <Button type="button" variant="outline" disabled={!profileId} onClick={() => setOpen(true)}>
             {DESK_COPY.newProposal}
           </Button>
         }
@@ -91,7 +93,7 @@ export function ProposalsPage() {
               </button>
             </p>
           ) : null}
-          {desk.isLoading ? <p className="text-sm text-muted-foreground">{DESK_COPY.loading}</p> : null}
+          {desk.isLoading ? <ProposalDeskSkeleton /> : null}
           {desk.data ? (
             <ProposalDesk
               data={desk.data}

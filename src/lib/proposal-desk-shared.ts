@@ -489,3 +489,73 @@ export function countBand(count: number): "0" | "1" | "2-5" | "6+" {
   if (count === 1) return "1";
   return count <= 5 ? "2-5" : "6+";
 }
+
+/**
+ * 20 Nov 2026 (Liam, D-86: "the mix it starts on"). The Proposals space: one proposal is Up next, with the page's
+ * one filled button; the rare changes sit under More. Nothing here rates or ranks a person: Up next is the proposal
+ * closest to its goal that this person can move, in the same reading order the list already uses.
+ */
+export const SPACE_COPY = {
+  upNext: "Up next",
+  more: "More",
+  moreLabel: (client: string, title: string) => `More for ${client ? `${client}: ` : ""}${title}`,
+  /** The lead as a chip: who, and the state of the ask in a word or two. */
+  leadLabel: "Lead:",
+  /** The ask on the chip in a word or two. The full sentence stays on the line beneath it. */
+  ask: { asked: "Asked", yes: "Yes", no: "No", stopped: "Opted out", notArrived: "Not arrived", noReply: "No reply", practice: "Practice" },
+} as const;
+
+const NOT_ARRIVED_STATUSES = ["undelivered", "failed", "rejected", "expired"] as const;
+export type AskWord = keyof typeof SPACE_COPY.ask;
+
+/** The ask in a word, for the lead's chip, in the same order of precedence as the line beneath it. */
+export function askWord(ask: AskView | null | undefined): AskWord | null {
+  if (!ask) return null;
+  if (ask.reply === "yes") return "yes";
+  if (ask.reply === "no") return "no";
+  if (ask.reply === "stop" || ask.status === "opted_out") return "stopped";
+  if ((NOT_ARRIVED_STATUSES as readonly string[]).includes(ask.status)) return "notArrived";
+  if (ask.practice) return "practice";
+  if (!ask.waiting) return "noReply";
+  return "asked";
+}
+
+export type NextStep = "send" | "win";
+
+/** The next step this person can take on a proposal: getting it out first, then recording the win. */
+export function nextStep(proposal: DeskProposal, can: { send: boolean; win: boolean }): NextStep | null {
+  if (proposal.status !== "open") return null;
+  if (can.send && proposal.canAct && !proposal.sentAt) return "send";
+  if (can.win && proposal.mine) return "win";
+  return null;
+}
+
+/**
+ * The proposal that is Up next: the first row, in the order the person reads the list, that has a step they can take.
+ * None when nothing can be moved here (Home, which is read only, or a view of decided proposals).
+ */
+export function upNextId(rows: readonly DeskProposal[], can: { send: boolean; win: boolean }): string | null {
+  return rows.find((row) => nextStep(row, can) !== null)?.id ?? null;
+}
+
+/**
+ * 20 Nov 2026 (Liam: "the board reveal ... should look more like the figjam boards that are really created"). While
+ * Record the win makes the board, the dialog draws that board building in: the brief from the notes, the documents as
+ * small pictures, the lead. Each caption names what the server is really doing, in the order it does it.
+ */
+export const REVEAL_COPY = {
+  stages: (client: string, documents: number, lead: string) =>
+    [
+      `Making the team board${client ? ` for ${client}` : ""}`,
+      "Turning your notes into its brief",
+      ...(documents > 0 ? [documents === 1 ? "Putting your context document on it" : `Putting your ${documents} context documents on it`] : []),
+      ...(lead ? [`Naming ${lead} as the lead`] : []),
+      "Opening the board",
+    ] as string[],
+  brief: "The brief",
+  briefLine: "From your notes",
+  board: "Team board",
+  label: "The team board, being made",
+  /** Each stage stays readable: about 1.4 seconds apiece. */
+  stageMs: 1400,
+} as const;

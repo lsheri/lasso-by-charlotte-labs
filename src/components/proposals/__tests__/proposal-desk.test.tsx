@@ -20,6 +20,14 @@ vi.mock("@tanstack/react-router", () => ({
 
 afterEach(cleanup);
 
+/** D-86: Undo sent, Close as lost and Archive live under More. Opens it and returns the menu, or null when there is none. */
+const openMore = (scope: ParentNode = document) => {
+  const trigger = scope.querySelector("[data-proposal-more]") as HTMLElement | null;
+  if (!trigger) return null;
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+  return document.querySelector("[data-proposal-close]") as HTMLElement | null;
+};
+
 const NOW = new Date("2026-11-20T12:00:00Z");
 const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOString();
 const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
@@ -36,8 +44,8 @@ describe("the Proposals dashboard", () => {
     expect(within(mine).getByText("Yours")).toBeTruthy();
     expect(within(mine).getByText("2 documents")).toBeTruthy();
     expect(within(mine).getByText("Call notes")).toBeTruthy();
-    // Said once above the list, not on every row.
-    expect(screen.getAllByText(DESK_COPY.noBoardYet)).toHaveLength(1);
+    // D-86: the standing line about boards is gone; Record the win says when the board is made.
+    expect(screen.queryByText(DESK_COPY.noBoardYet)).toBeNull();
     const theirs = document.querySelector('[data-proposal-row="b"]') as HTMLElement;
     expect(within(theirs).getByText("Over the 24 hour goal by 6 hours")).toBeTruthy();
     expect(within(theirs).getByText("Started by Maren Hollis")).toBeTruthy();
@@ -147,7 +155,7 @@ describe("Mark as sent", () => {
     const { unmount } = render(<ProposalDesk now={NOW} data={list(rows)} onSent={async () => ({ ok: true })} />);
     expect(within(document.querySelector('[data-proposal-row="a"]') as HTMLElement).getByRole("button", { name: SENT_COPY.mark })).toBeTruthy();
     expect(within(document.querySelector('[data-proposal-row="b"]') as HTMLElement).queryByRole("button")).toBeNull();
-    expect(within(document.querySelector('[data-proposal-row="c"]') as HTMLElement).getByRole("button", { name: SENT_COPY.undo })).toBeTruthy();
+    expect(within(openMore(document.querySelector('[data-proposal-row="c"]') as HTMLElement) as HTMLElement).getByRole("menuitem", { name: SENT_COPY.undo })).toBeTruthy();
     unmount();
     render(<ProposalDesk now={NOW} data={list(rows)} />);
     expect(screen.queryByRole("button", { name: SENT_COPY.mark })).toBeNull();
@@ -382,11 +390,11 @@ describe("picking the lead", () => {
   it("names the lead with their text agreement on open rows only", () => {
     render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "c1" }), proposal({ id: "b", leadContactId: null }), proposal({ id: "w", status: "won", decidedAt: hoursAgo(1), leadContactId: "c1" })])} roster={roster} leadWords={WORDS} onLead={vi.fn()} />);
     const a = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
-    expect(within(a).getByText(LEAD_COPY.lead("Tom Reyes"))).toBeTruthy();
+    expect(within(a).getByText("Tom Reyes")).toBeTruthy();
+    expect(a.querySelector("[data-proposal-lead]")?.textContent).toContain(LEAD_COPY.lead("Tom Reyes"));
     expect(within(a).getByText(ROSTER_COPY.texts.agreed)).toBeTruthy();
     expect(within(a).getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
     const b = document.querySelector('[data-proposal-row="b"]') as HTMLElement;
-    expect(within(b).getByText(LEAD_COPY.none)).toBeTruthy();
     expect(within(b).getByRole("button", { name: LEAD_COPY.pick })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Won/ }));
     expect(document.querySelector("[data-proposal-lead]")).toBeNull();
@@ -552,7 +560,7 @@ describe("20 Nov: asking the lead, on the page", () => {
   it("the person who started a proposal sees the lead's name and answer, with no button to ask or pick", () => {
     render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, leadName: "Christy Johnson", ask: view({ reply: "yes", waiting: false }) })])} />);
     const row = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
-    expect(within(row).getByText(LEAD_COPY.lead("Christy Johnson"))).toBeTruthy();
+    expect(row.querySelector("[data-proposal-lead]")?.textContent).toContain(LEAD_COPY.lead("Christy Johnson"));
     expect(within(row).getByText("Christy Johnson said yes")).toBeTruthy();
     expect(within(row).queryByRole("button", { name: /Ask|Pick|Change/ })).toBeNull();
   });
@@ -570,9 +578,10 @@ describe("20 Nov: closing as lost and archiving, on the page", () => {
     const onClose = vi.fn(async () => ({ ok: true as const }));
     render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, canClose: true, canArchive: true }), proposal({ id: "b", canClose: true }), proposal({ id: "c" })])} onClose={onClose} />);
     const row = (id: string) => document.querySelector(`[data-proposal-row="${id}"]`) as HTMLElement;
-    expect(within(row("b")).queryByRole("button", { name: CLOSE_COPY.archive })).toBeNull();
-    expect(within(row("c")).queryByRole("button", { name: CLOSE_COPY.lost })).toBeNull();
-    fireEvent.click(within(row("a")).getByRole("button", { name: CLOSE_COPY.lost }));
+    expect(within(openMore(row("b")) as HTMLElement).queryByRole("menuitem", { name: CLOSE_COPY.archive })).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(openMore(row("c"))).toBeNull();
+    fireEvent.click(within(openMore(row("a")) as HTMLElement).getByRole("menuitem", { name: CLOSE_COPY.lost }));
     const dialog = await screen.findByTestId("close-proposal");
     expect(within(dialog).getByText(CLOSE_COPY.lostBody)).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
@@ -587,7 +596,7 @@ describe("20 Nov: closing as lost and archiving, on the page", () => {
   it("archive says nothing is deleted, and a refusal keeps the dialog open with the plain line", async () => {
     const onClose = vi.fn(async () => ({ ok: false as const, problem: CLOSE_COPY.adminOnly }));
     render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canArchive: true })])} onClose={onClose} />);
-    fireEvent.click(screen.getByRole("button", { name: CLOSE_COPY.archive }));
+    fireEvent.click(within(openMore() as HTMLElement).getByRole("menuitem", { name: CLOSE_COPY.archive }));
     const dialog = await screen.findByTestId("close-proposal");
     expect(within(dialog).getByText(CLOSE_COPY.archiveBody).textContent).toContain("Nothing is deleted");
     fireEvent.click(within(dialog).getByRole("button", { name: CLOSE_COPY.confirmArchive }));
@@ -596,7 +605,7 @@ describe("20 Nov: closing as lost and archiving, on the page", () => {
 
   it("without a handler the rows offer neither, and lost proposals have their own view", () => {
     render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canClose: true, canArchive: true }), proposal({ id: "l", status: "lost", decidedAt: hoursAgo(3) })])} />);
-    expect(screen.queryByRole("button", { name: CLOSE_COPY.lost })).toBeNull();
+    expect(document.querySelector("[data-proposal-more]")).toBeNull();
     fireEvent.click(document.querySelector('[data-desk-view="lost"]') as HTMLElement);
     expect(document.querySelector('[data-proposal-row="l"]')).toBeTruthy();
     expect(document.querySelector('[data-proposal-row="a"]')).toBeNull();
