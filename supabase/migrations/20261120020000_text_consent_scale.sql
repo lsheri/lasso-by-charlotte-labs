@@ -1,8 +1,8 @@
 -- 19 Nov 2026, Proposal Desk: text agreements at five firms' size (Liam: "durably built for scaling pilots to 5
--- total firms"). Four changes to message_consents and roster_contacts, and one function.
+-- total firms"). Four changes to message_consents and roster_contacts, one function, and one trigger.
 --
--- Safe to run twice: every statement is "if not exists", "if exists", "or replace", or a grant or revoke that changes
--- nothing the second time.
+-- Safe to run twice: every statement is "if not exists", "if exists", "or replace", a trigger dropped if it exists
+-- and then made, or a grant or revoke that changes nothing the second time.
 --
 -- This file does not only add. It replaces one index: "one live agreement per number" becomes "one live agreement
 -- per number in each workspace". The new index is made first and the old one dropped after, so there is never a
@@ -35,7 +35,7 @@ alter table public.roster_contacts
 -- and the window closed. If any step fails, none of them happened. Called by the server only, after it has checked
 -- every field; the browser roles cannot run it.
 -- Answers: 'none' (no such person here, or nothing to replace), 'same' (that is already their number),
--- 'closed' (no window is open), 'replaced'.
+-- 'closed' (no window is open), 'replaced'. 'same' and 'replaced' both close the window.
 create or replace function public.replace_text_consent(
   p_org uuid,
   p_contact uuid,
@@ -71,6 +71,9 @@ begin
     return 'none';
   end if;
   if v_old_phone = p_phone then
+    -- They used their link again with the number already on file. That uses up any open window too.
+    update public.roster_contacts set number_change_until = null
+      where id = p_contact and number_change_until is not null;
     return 'same';
   end if;
   if v_until is null or v_until < now() then
@@ -99,3 +102,34 @@ $$;
 
 revoke all on function public.replace_text_consent(uuid, uuid, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.replace_text_consent(uuid, uuid, text, text, text, text) to service_role;
+
+-- 6. A window never outlives the agreement it was opened for. Whenever a roster person's agreement is stored, tied
+-- to them, or ended (the stop form, a STOP reply, a number change, or anything later), any window open on that
+-- person is closed in the same transaction. So after a stop, a link in the wrong hands cannot use a left-over window,
+-- and a window is good for one accepted submission. Done in the database so no code path can forget it.
+create or replace function public.message_consents_close_window()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+begin
+  if new.roster_contact_id is null then
+    return new;
+  end if;
+  if tg_op = 'INSERT'
+     or (new.revoked_at is not null and old.revoked_at is null)
+     or new.roster_contact_id is distinct from old.roster_contact_id then
+    update public.roster_contacts set number_change_until = null
+      where id = new.roster_contact_id and number_change_until is not null;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists message_consents_t_close_window on public.message_consents;
+create trigger message_consents_t_close_window
+  after insert or update on public.message_consents
+  for each row execute function public.message_consents_close_window();
+
+revoke all on function public.message_consents_close_window() from public, anon, authenticated;

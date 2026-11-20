@@ -53,6 +53,8 @@ function fakeStore(over: Partial<ConsentStore> = {}) {
       )
         return "already";
       rows.push({ ...row });
+      // The database trigger: a stored, tied or ended agreement closes that person's window.
+      if (row.roster_contact_id) windows.delete(row.roster_contact_id);
       return "stored";
     },
     attach: async (phone, workspaceId, contactId) => {
@@ -63,13 +65,18 @@ function fakeStore(over: Partial<ConsentStore> = {}) {
           !r.roster_contact_id &&
           (r.org_id === null || r.org_id === workspaceId),
       );
-      if (row) Object.assign(row, { org_id: workspaceId, roster_contact_id: contactId });
+      if (!row) return;
+      Object.assign(row, { org_id: workspaceId, roster_contact_id: contactId });
+      windows.delete(contactId);
     },
     replace: async (row) => {
       const old = live().find(
         (r) => r.roster_contact_id === row.roster_contact_id && r.org_id === row.org_id,
       );
-      if (!old || old.phone_e164 === row.phone_e164 || !windows.has(row.roster_contact_id)) return;
+      if (!old) return;
+      // The same number again uses up the window as well.
+      if (old.phone_e164 === row.phone_e164) return void windows.delete(row.roster_contact_id);
+      if (!windows.has(row.roster_contact_id)) return;
       if (
         live().some(
           (r) => r.phone_e164 === row.phone_e164 && r.org_id === row.org_id && r.roster_contact_id,
@@ -85,6 +92,7 @@ function fakeStore(over: Partial<ConsentStore> = {}) {
       for (const r of live())
         if (r.phone_e164 === phone && r.org_id === workspaceId && r.roster_contact_id === contactId)
           r.revoked = "stop_link";
+      if (!live().some((r) => r.roster_contact_id === contactId)) windows.delete(contactId);
       return true;
     },
     ...over,
@@ -572,6 +580,78 @@ describe("changing a number", () => {
   });
 });
 
+describe("a window never outlives its agreement", () => {
+  const NEW = "(206) 555-0142";
+  const viaLink = (kit: ReturnType<typeof fakeStore>, phone: string) =>
+    recordTextConsent({ ...GOOD, phone, workspace: ORG, contact: PERSON }, deps(kit.store));
+
+  it("a stop closes an open window, so the next number through the link is an ordinary first agreement and no more", async () => {
+    const kit = fakeStore();
+    await viaLink(kit, GOOD.phone);
+    kit.windows.add(PERSON);
+    await stopTextConsent({ phone: GOOD.phone, workspace: ORG, contact: PERSON }, deps(kit.store));
+    expect(kit.windows.has(PERSON)).toBe(false);
+    await viaLink(kit, NEW);
+    // The left-over window is gone: a further number cannot replace the one just stored.
+    await viaLink(kit, "(206) 555-0199");
+    expect(kit.live().map((r) => r.phone_e164)).toEqual(["+12065550142"]);
+  });
+
+  it("sending the same number again in an open window uses the window up", async () => {
+    const kit = fakeStore();
+    await viaLink(kit, GOOD.phone);
+    kit.windows.add(PERSON);
+    expect(await viaLink(kit, GOOD.phone)).toEqual({ ok: true });
+    expect(kit.windows.has(PERSON)).toBe(false);
+    await viaLink(kit, NEW);
+    expect(kit.live().map((r) => r.phone_e164)).toEqual(["+12068675309"]);
+  });
+
+  it("a fresh agreement and a tied one each close the window", async () => {
+    const fresh = fakeStore();
+    fresh.windows.add(PERSON);
+    await viaLink(fresh, GOOD.phone);
+    expect(fresh.windows.has(PERSON)).toBe(false);
+    const tied = fakeStore();
+    await recordTextConsent({ ...GOOD, workspace: ORG }, deps(tied.store));
+    tied.windows.add(PERSON);
+    await viaLink(tied, GOOD.phone);
+    expect(tied.rows[0]).toMatchObject({ roster_contact_id: PERSON });
+    expect(tied.windows.has(PERSON)).toBe(false);
+  });
+
+  it("is enforced in the database, on every way an agreement can be stored, tied or ended", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20261120020000_text_consent_scale.sql",
+      "utf8",
+    ).replace(/--.*$/gm, "");
+    const trigger = sql.slice(
+      sql.indexOf("create or replace function public.message_consents_close_window()"),
+    );
+    expect(trigger).toMatch(
+      /after insert or update on public\.message_consents\s+for each row execute function public\.message_consents_close_window\(\)/,
+    );
+    expect(trigger).toMatch(/if new\.roster_contact_id is null then\s+return new;/);
+    expect(trigger).toMatch(
+      /tg_op = 'INSERT'\s+or \(new\.revoked_at is not null and old\.revoked_at is null\)\s+or new\.roster_contact_id is distinct from old\.roster_contact_id/,
+    );
+    expect(trigger).toMatch(
+      /update public\.roster_contacts set number_change_until = null\s+where id = new\.roster_contact_id and number_change_until is not null/,
+    );
+    expect(trigger).toMatch(
+      /revoke all on function public\.message_consents_close_window\(\) from public, anon, authenticated/,
+    );
+    // The same number again: the window is closed before the function answers 'same'.
+    const same = sql.slice(
+      sql.indexOf("if v_old_phone = p_phone then"),
+      sql.indexOf("if v_until is null"),
+    );
+    expect(same).toMatch(
+      /set number_change_until = null\s+where id = p_contact and number_change_until is not null;\s+return 'same';/,
+    );
+  });
+});
+
 describe("stopping from the link", () => {
   const stopInput = { phone: GOOD.phone, workspace: ORG, contact: PERSON };
 
@@ -787,7 +867,11 @@ describe("the migration for five firms", () => {
   });
 
   it("drops nothing but that one index, and removes no table, column, row or policy", () => {
-    expect(bare.match(/\bdrop\b/gi)).toHaveLength(1);
+    // The index it replaces, and its own trigger, dropped only so the file can run twice.
+    expect(bare.match(/\bdrop\b/gi)).toHaveLength(2);
+    expect(bare).toMatch(
+      /drop trigger if exists message_consents_t_close_window on public\.message_consents;\s*create trigger message_consents_t_close_window/,
+    );
     expect(bare).not.toMatch(
       /\b(truncate|delete from|drop table|drop column|drop policy|alter column|rename)\b/i,
     );
@@ -802,9 +886,9 @@ describe("the migration for five firms", () => {
       .map((part) => part.trim().replace(/\s+/g, " "))
       .filter(Boolean);
     const repeatable =
-      /^(create unique index if not exists|drop index if exists|alter table public\.(message_consents|roster_contacts) add column if not exists|create or replace function|revoke all on function|grant execute on function)( |$)/;
+      /^(create unique index if not exists|drop index if exists|alter table public\.(message_consents|roster_contacts) add column if not exists|create or replace function|drop trigger if exists|create trigger message_consents_t_close_window|revoke all on function|grant execute on function)( |$)/;
     for (const statement of statements) expect(statement).toMatch(repeatable);
-    expect(statements).toHaveLength(8);
+    expect(statements).toHaveLength(12);
   });
 
   it("lets only the server run the number swap, which checks the workspace, the window and the old number", () => {
