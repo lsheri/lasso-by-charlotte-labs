@@ -210,7 +210,12 @@ export async function changeMemberRole(
     if (from === "admin") {
       const left = await deps.activeAdmins(caller.orgId);
       if (left === null || left < 1) {
-        await deps.write(caller.orgId, target!.id, to, "admin");
+        // Put back. If even that fails, say so plainly (QA of PR 288, L1): never claim the admin is still there.
+        const restored = await deps.write(caller.orgId, target!.id, to, "admin").catch(() => false);
+        if (!restored) {
+          console.error("[members] role change left no admin and could not be put back", { org: caller.orgId });
+          return { ok: false, reason: "no_admin_left" };
+        }
         return { ok: false, reason: "last_admin" };
       }
     }

@@ -65,6 +65,7 @@ describe("roleChangeRefusal", () => {
     ["an unknown role", { next: "owner" }, "role"],
     ["no role", { next: undefined }, "role"],
     ["Lead outside a company workspace", { workspace: partner }, "lead_needs_firm"],
+    ["Admin where the workspace shows no admins", { workspace: personal, next: "admin" }, "role"],
     ["the role they have", { next: "em" }, "same"],
     ["the last admin", { target: { id: "t", orgId: "org", role: "admin", active: true, isGuest: false }, next: "em", activeAdmins: 1 }, "last_admin"],
   ])("refuses %s", (_label, over, reason) => {
@@ -144,6 +145,19 @@ describe("changeMemberRole", () => {
     expect(await changeMemberRole(d, { member_id: "a2", role: "em" })).toEqual({ ok: false, reason: "last_admin" });
     expect(d.rows.get("a2")!.role).toBe("admin");
     expect(d.record).not.toHaveBeenCalled();
+  });
+
+  it("says no admin may be left when even the put-back fails, never that the admin is still there (QA L1)", async () => {
+    const d = deps();
+    let reads = 0;
+    d.activeAdmins = vi.fn(async () => (reads++ === 0 ? 2 : 0));
+    const write = d.write;
+    let calls = 0;
+    d.write = vi.fn(async (...a: Parameters<RoleChangeDeps["write"]>) => (calls++ === 0 ? write(...a) : false));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await changeMemberRole(d, { member_id: "a2", role: "em" })).toEqual({ ok: false, reason: "no_admin_left" });
+    expect(JSON.stringify(error.mock.calls)).not.toMatch(/a2|me@/);
+    error.mockRestore();
   });
 
   it("does not overwrite a change someone else made meanwhile", async () => {

@@ -63,13 +63,14 @@ export function roleChangeRefusal(c: RoleChangeCase): RoleChangeRefusal | null {
   if (c.target.role === "coach" || c.next === "coach") return "coach";
   if (!isMemberRole(c.next) || !CHANGEABLE_ROLES.includes(c.next) || !isMemberRole(c.target.role)) return "role";
   if (c.next === "lead" && !c.workspace.firmView) return "lead_needs_firm";
+  if (c.next === "admin" && !c.workspace.showsAdmin) return "role";
   if (c.next === c.target.role) return "same";
   if (c.target.role === "admin" && c.activeAdmins <= 1) return "last_admin";
   return null;
 }
 
 export type RoleChangeInput = { profile_id?: string | null | undefined; member_id: string; role: string };
-export type RoleChangeResult = { ok: true; role: MemberRole } | { ok: false; reason: RoleChangeRefusal | "unavailable" };
+export type RoleChangeResult = { ok: true; role: MemberRole } | { ok: false; reason: RoleChangeRefusal | "unavailable" | "no_admin_left" };
 
 export const ROLE_COPY = {
   change: "Change role",
@@ -81,7 +82,7 @@ export const ROLE_COPY = {
   done: (name: string, role: MemberRole) => `${name} is now ${role === "admin" ? "an" : "a"} ${MEMBER_ROLE_LABELS[role]}.`,
   hints: {
     admin: "Manages people, invites, clients and settings, alongside their own work.",
-    lead: "Runs proposals: sees every proposal and its fees, and manages the people the firm works with.",
+    lead: "Runs proposals: sees every proposal and its fees, the Firm view and what people ask the firm, can turn firm sharing off on any board, and manages the people the firm works with.",
     em: "Builds their own record in this workspace. Sees only their own work.",
     coach: "Reviews the work you choose to share with them. Cannot see anything you have not shared.",
   } satisfies Record<MemberRole, string>,
@@ -97,5 +98,6 @@ export const ROLE_COPY = {
     same: "They already have that role.",
     last_admin: "This is the last admin. Make someone else an admin first.",
     unavailable: "That did not go through. Nothing was changed. Try again in a moment.",
-  } satisfies Record<RoleChangeRefusal | "unavailable", string>,
+    no_admin_left: "This workspace may have no admin left. Contact Charlotte Labs now so we can put one back.",
+  } satisfies Record<RoleChangeRefusal | "unavailable" | "no_admin_left", string>,
 } as const;

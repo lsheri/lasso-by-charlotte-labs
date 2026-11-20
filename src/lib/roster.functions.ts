@@ -47,7 +47,8 @@ export const askNewNumberFn = createServerFn({ method: "POST" })
 
 /**
  * 20 Nov 2026: emails one person their own text agreement link. Admins and leads only, at most once every ten minutes
- * per person. The email asks; it agrees to nothing. Takes an id and nothing else; no address is typed or returned.
+ * per person. The email asks; it agrees to nothing. Takes an id and nothing else; no address is typed here. It returns
+ * the person's row, which already carries their email for the admins and leads who may call this.
  */
 export const sendRosterInviteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -1129,7 +1129,7 @@ describe("sendRosterInvite, with a stand-in sender that sends nothing", () => {
     expect(readFileSync("src/lib/roster.functions.ts", "utf8")).toMatch(/rosterHandlers\.invite\(/);
   });
 
-  it("writes a plain email: who asks, the link, that nothing is sent unless they agree, and typed text made safe", () => {
+  it("writes a branded email: who asks, the link, that nothing is sent unless they agree, and typed text made safe", () => {
     const mail = rosterInviteEmail({
       name: "Dana <b>W</b>",
       workspace: "Kestrel & Bay\nBcc: x@example.test",
@@ -1138,9 +1138,16 @@ describe("sendRosterInvite, with a stand-in sender that sends nothing", () => {
     expect(mail.subject).not.toMatch(/[\r\n]/);
     expect(mail.text).toContain("https://lasso.example/texts?w=a&c=b");
     expect(mail.text).toMatch(/No text is sent unless you agree\./);
-    expect(mail.html).toContain('<a href="https://lasso.example/texts?w=a&amp;c=b">');
+    expect(mail.html).toContain('href="https://lasso.example/texts?w=a&amp;c=b"');
     expect(mail.html).not.toMatch(/<b>/);
-    expect(mail.subject + mail.text + mail.html).not.toMatch(/[—–!]/);
+    expect(mail.subject + mail.text + mail.html.replace("<!DOCTYPE html>", "")).not.toMatch(/[—–!]/);
+    // QA of PR 288 M1: the same lockup and rule as the workspace invite, and the service never named.
+    expect(mail.html).toContain("lockup-clear.gif");
+    expect(mail.html).toContain("nb-rule-frontdoor.png");
+    expect(mail.html).toContain('alt="Lasso by Charlotte Labs"');
+    expect(mail.subject + mail.text + mail.html).not.toMatch(/resend|bird/i);
+    expect(mail.subject).toBe("Kestrel & Bay Bcc: x@example.test: agree to texts about proposals you help with");
+    expect(mail.html).toContain("Kestrel &amp; Bay");
   });
 });
 

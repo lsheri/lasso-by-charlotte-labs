@@ -16,7 +16,9 @@ export async function sendRosterInviteMail(mail: RosterInviteMail): Promise<Rost
   const { rosterInviteEmail } = await import("./roster.server");
   const words = rosterInviteEmail({ name: mail.name, workspace: mail.workspace, link: mail.link });
   try {
-    const result = await sendViaResend(key, { from: inviteSenderAddress(), to: mail.to, subject: words.subject, html: words.html, text: words.text });
+    // Replies go where the workspace invite's replies go, when that address is set here; never to the no-reply sender.
+    const replyTo = process.env["RESEND_REPLY_TO"] || undefined;
+    const result = await sendViaResend(key, { from: inviteSenderAddress(), to: mail.to, subject: words.subject, html: words.html, text: words.text, replyTo });
     return result.ok ? "sent" : "failed";
   } catch {
     return "failed";
