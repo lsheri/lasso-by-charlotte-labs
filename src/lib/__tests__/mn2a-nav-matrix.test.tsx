@@ -121,10 +121,9 @@ function combos(): Combo[] {
 function withProposals(layout: string, shown: boolean): string {
   if (!shown) return layout;
   const lines = layout.split("\n");
-  const firm = lines.indexOf("Firm view -> /firm");
-  const at = firm >= 0 ? firm : lines.indexOf("Sources -> /connectors");
-  if (at < 0) throw new Error("No place for the Proposals row in this layout");
-  lines.splice(at, 0, "Proposals -> /proposals");
+  const at = lines.indexOf("# Boards");
+  if (at < 0) throw new Error("No place for the Firm brain and Proposals rows in this layout");
+  lines.splice(at, 0, "Firm brain -> /firm-brain", "Proposals -> /proposals");
   return lines.join("\n");
 }
 
@@ -493,8 +492,8 @@ describe("MN-2a navigation matrix", () => {
       const expected = EXPECTED[keyOf(c)];
       if (!expected) throw new Error("Missing matrix row");
       const [sidebarId] = expected;
-      // 20 Nov, Proposal Desk (D-34, D-38): every member of a company workspace has a Proposals row, above Firm
-      // view where there is one and above Sources where there is not. No other workspace type has it.
+      // 19 Nov, layout A: every member of a company workspace has a Firm brain row and a Proposals row, above
+      // Boards. No other workspace type has either.
       const layout = withProposals(SIDEBAR_LAYOUTS[sidebarId] ?? "", c.type === "company" && c.role !== "coach");
       expect(sidebarFor(c)).toBe(layout);
       // NAV-3: the phone More sheet is a decided flat list for workers: no

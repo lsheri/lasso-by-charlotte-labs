@@ -16,7 +16,9 @@ import { FirmBrainMap } from "@/components/firm-brain/FirmBrainMap";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
+import { FIRM_VIEW_COPY, firmBrainAccess } from "@/lib/role-screens-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 export function FirmDashboardPage() {
@@ -31,12 +33,17 @@ export function FirmDashboardPage() {
   }, []);
 
   if (profile && !canSee) {
+    // Someone in the firm who is not an admin or a lead is told so, and shown the way to what they can use.
+    const access = firmBrainAccess(profile);
+    const inFirm = profileHasFirmView(profile);
     return (
-      <div>
-        <PageHeader title="Firm view" subtitle="This view is for firm workspaces." />
-        <p className="text-sm text-muted-foreground">
-          Your workspace does not have a firm view.
-        </p>
+      <div data-testid="firm-view-not-here">
+        <PageHeader title={FIRM_VIEW_COPY.title} subtitle={inFirm ? FIRM_VIEW_COPY.adminsAndLeads : FIRM_VIEW_COPY.noFirmView} />
+        {access !== "none" ? (
+          <Button asChild type="button" variant="outline">
+            <Link to="/firm-brain">{FIRM_VIEW_COPY.openFirmBrain}</Link>
+          </Button>
+        ) : null}
       </div>
     );
   }

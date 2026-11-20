@@ -18,9 +18,9 @@ type JuniorProfile = {
  * 18 Nov, Firm Brain Build Spec step 7: the junior tools on Home, next to Ask the firm, with the same rule for who
  * sees them: a company workspace, not a coach. The server checks again and refuses guests, and then
  * this goes away. It loads the one list both tools pick from (tag keys and counts, read fresh each time Home opens).
- * Only on signed-in Home: never on shared, demo, tour, firm or rollup surfaces.
+ * Only on signed-in Home and the Firm brain page: never on shared, demo, tour, firm or rollup surfaces.
  */
-export function JuniorTools({ profile }: { profile: JuniorProfile | null | undefined }) {
+export function JuniorTools({ profile, className }: { profile: JuniorProfile | null | undefined; className?: string }) {
   const allowed = canAskTheFirm(profile);
   const load = useServerFn(getFirmJuniorTags);
   const query = useQuery({
@@ -36,7 +36,7 @@ export function JuniorTools({ profile }: { profile: JuniorProfile | null | undef
   if (query.error instanceof Response && query.error.status === 403) return null;
 
   return (
-    <div data-testid="junior-tools" className="mx-4 mt-4 grid gap-4 md:mx-6 lg:grid-cols-2">
+    <div data-testid="junior-tools" className={className ?? "mx-4 mt-4 grid gap-4 md:mx-6 lg:grid-cols-2"}>
       <HowWeDoThis
         tags={query.data}
         loading={query.isLoading}

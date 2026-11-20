@@ -6,16 +6,17 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
+import { useProposalDesk } from "@/components/proposals/use-proposal-desk";
 import { RosterPanel } from "@/components/roster/RosterPanel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
-import { DESK_COPY, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
+import { DESK_COPY, seesAllProposals, type DeskClient } from "@/lib/proposal-desk-shared";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
-import { closeProposalFn, createProposalFn, listProposalClientsFn, listProposalsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
+import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -36,15 +37,7 @@ export function ProposalsPage() {
   const profileId = allowed ? profile?.id : undefined;
   const showPeople = allowed && seesAllProposals(profile?.role);
 
-  const desk = useQuery({
-    queryKey: ["proposal-desk", profileId],
-    enabled: Boolean(profileId),
-    staleTime: 30_000,
-    retry: false,
-    queryFn: (): Promise<DeskList> => listProposalsFn({ data: { profile_id: profileId as string } }),
-    // While an ask waits for its reply the page looks again every few seconds, so "said yes" shows without a reload.
-    refetchInterval: (query) => (query.state.data?.proposals.some((proposal) => proposal.ask?.waiting) ? 5000 : false),
-  });
+  const desk = useProposalDesk(profileId);
   const clients = useQuery({
     queryKey: ["proposal-desk-clients", profileId],
     enabled: Boolean(profileId) && open,
