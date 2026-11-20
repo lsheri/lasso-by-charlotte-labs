@@ -105,7 +105,7 @@ export const ASK_COPY = {
   again: "Ask again",
   title: "Ask them to lead",
   helper: "One text, sent once you press Send. They answer by replying YES or NO, and can reply STOP at any time.",
-  practiceHelper: "Texting is not switched on yet, so this is a practice ask. Nothing is sent. You can then answer it here as the lead would.",
+  practiceHelper: "Texting is not connected in this app yet, so this is a practice ask. Nothing is sent to any phone. You can then answer it here as the lead would.",
   demoHelper: "This is a demo workspace, so the text goes to the demo number, not to the person picked.",
   send: "Send",
   sendPractice: "Start practice ask",
@@ -138,8 +138,8 @@ export const ASK_COPY = {
   notAgreedYet: (name: string) => `${name} has not agreed to texts, so nothing will be sent. Copy their link under the People tab and send it to them.`,
   noDemoNumber: "No number is set for this demo workspace, so nothing was sent. An admin sets one under the People tab.",
   noDemoNumberYet: "No number is set for this demo workspace, so nothing will be sent. An admin sets one under the People tab.",
-  notConnected: "Texting is not switched on yet, so nothing was sent. The number is awaiting carrier approval.",
-  notConnectedYet: "Texting is not switched on yet, so nothing will be sent. The number is awaiting carrier approval.",
+  notConnected: "Texting is not connected in this app yet, so nothing was sent.",
+  notConnectedYet: "Texting is not connected in this app yet, so nothing will be sent.",
   alreadyWaiting: "They have already been asked and have not replied yet. Nothing was sent.",
   alreadyAnswered: (name: string) => `${name} has already answered. Nothing was sent.`,
   busy: "A text to this person is still waiting for an answer, so nothing was sent. Try again later.",
@@ -189,8 +189,8 @@ export const SHEET_COPY = {
    */
   off: (demo: boolean) =>
     demo
-      ? "Texting is not switched on yet, so this is a practice ask. Nothing is sent."
-      : "Texting is not switched on yet. Nothing is sent.",
+      ? "Texting is not connected in this app yet, so this is a practice ask. Nothing is sent to any phone."
+      : "Texting is not connected in this app yet. Nothing is sent.",
   /** The words for this person did not arrive. Said before anyone can press Send, and it is not a failed text. */
   wordsFailed: "The text for this person could not be loaded, so nothing can be sent yet. Pick them again, or close this and try again.",
   /** The lead was not saved, so nothing was sent either. */
