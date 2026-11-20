@@ -107,7 +107,7 @@ export function ProposalsPage() {
                 return result;
               }}
               ask={{
-                preview: (proposalId) => askPreviewFn({ data: { profile_id: profileId as string, proposal_id: proposalId } }),
+                preview: (proposalId, contactId) => askPreviewFn({ data: { profile_id: profileId as string, proposal_id: proposalId, lead_contact_id: contactId ?? null } }),
                 send: async (proposalId, pressId) => {
                   const result = await askLeadFn({ data: { profile_id: profileId as string, proposal_id: proposalId, press_id: pressId } });
                   await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });

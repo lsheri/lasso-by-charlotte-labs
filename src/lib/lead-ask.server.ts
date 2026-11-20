@@ -114,23 +114,25 @@ type Target = {
 };
 
 /** The checks a preview and a press share. */
-async function target(store: AskStore, proposalId: string): Promise<Target | { problem: string }> {
+async function target(store: AskStore, proposalId: string, candidate?: string | null): Promise<Target | { problem: string }> {
   const caller = await store.caller();
   if (!canManageRoster(caller.role)) return { problem: ASK_COPY.notAllowed };
   const row = await store.proposal(proposalId);
   // Another workspace's proposal and one that does not exist read the same.
   if (!row || row.org_id !== caller.orgId) return { problem: ASK_COPY.notAllowed };
   if (row.status !== "open") return { problem: ASK_COPY.closed };
-  if (!row.lead_contact_id) return { problem: ASK_COPY.noLead };
-  const name = await store.leadName(caller.orgId, row.lead_contact_id);
+  // A preview may look at a person before they are saved as the lead. A press never does: it asks the saved lead.
+  const contactId = candidate ?? row.lead_contact_id;
+  if (!contactId) return { problem: ASK_COPY.noLead };
+  const name = await store.leadName(caller.orgId, contactId);
   if (!name) return { problem: ASK_COPY.missing };
   const words = leadAskBody({ brandName: store.brandName(), firmName: await store.firmName(caller.orgId), leadName: name, askerName: caller.name });
-  return { caller, proposalId: row.id, contactId: row.lead_contact_id, name, words, demo: await store.demo(caller.orgId), config: store.config() };
+  return { caller, proposalId: row.id, contactId, name, words, demo: await store.demo(caller.orgId), config: store.config() };
 }
 
 /** The exact words, and anything that would stop the text, before a press. Writes nothing and sends nothing. */
-export async function askPreview(store: AskStore, input: AskProposalInput): Promise<AskPreview> {
-  const state = await target(store, input.proposal_id);
+export async function askPreview(store: AskStore, input: AskProposalInput & { lead_contact_id?: string | null }): Promise<AskPreview> {
+  const state = await target(store, input.proposal_id, input.lead_contact_id ?? null);
   if ("problem" in state) return { ok: false, problem: state.problem };
   const { caller, name, words } = state;
   if (state.demo && !state.config) return { ok: true, words, name, mode: "practice", warning: null };
@@ -164,7 +166,9 @@ export async function askLead(store: AskStore, input: AskSendInput): Promise<Ask
   const now = store.now();
   const asks = await store.asks(caller.orgId, state.proposalId);
   if (asks === null) return { ok: false, problem: ASK_COPY.notReady };
-  const same = asks.find((ask) => ask.press_id === input.press_id);
+  // The same press means the same press id at the same person. An id that comes back for someone else is not a
+  // repeat: it falls through to the insert, which refuses it, so one person's row never answers for another.
+  const same = asks.find((ask) => ask.press_id === input.press_id && (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
   let rowId = same?.id ?? null;
   if (same && same.status !== "queued") {
     // The same press again: say what it came to, send nothing more.
@@ -519,7 +523,7 @@ export async function realInboundStore(): Promise<InboundStore> {
 
 /** The server functions' handlers. The functions file only wires them up, so these are what the tests call. */
 export const askHandlers = {
-  async preview(context: AskContext, data: AskProposalInput): Promise<AskPreview> {
+  async preview(context: AskContext, data: AskProposalInput & { lead_contact_id?: string | null }): Promise<AskPreview> {
     return askPreview(await realAskStore(context, data.profile_id), data);
   },
   async send(context: AskContext, data: AskSendInput): Promise<AskResult> {
