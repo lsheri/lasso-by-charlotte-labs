@@ -8,6 +8,7 @@ import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { AskDialog } from "@/components/proposals/AskLead";
 import { BoardWinLines } from "@/components/proposals/BoardWinStrip";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
+import { WIN_PICTURE_COPY } from "@/components/proposals/WinPicture";
 import { ASK_COPY, type AskView } from "@/lib/lead-ask-shared";
 import { ProposalGoalForm } from "@/components/settings/ProposalGoalCard";
 import { BOARD_WIN_COPY, CLOSE_COPY, DESK_COPY, GOAL_COPY, INTAKE_COPY, LEAD_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
@@ -184,8 +185,10 @@ describe("Record the win", () => {
     render(<ProposalDesk now={NOW} data={list([mine])} onWin={onWin} />);
     fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
     const dialog = screen.getByTestId("win-proposal");
-    expect(within(dialog).getByText(WIN_COPY.body(2))).toBeTruthy();
-    expect(within(dialog).getByText(WIN_COPY.sharing)).toBeTruthy();
+    // The full sentence is still read out; the eye gets the small board and a short caption.
+    expect(within(dialog).getByText(WIN_COPY.body(2)).className).toBe("sr-only");
+    expect(within(dialog).getByText(WIN_PICTURE_COPY.caption(2))).toBeTruthy();
+    expect(dialog.querySelector("[data-win-private]")?.textContent).toBe(`${WIN_PICTURE_COPY.private} ${WIN_PICTURE_COPY.privateLine}`);
     expect(within(dialog).getByText("Marrowfield: Network redesign")).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button", { name: WIN_COPY.cancel }));
     expect(onWin).not.toHaveBeenCalled();
