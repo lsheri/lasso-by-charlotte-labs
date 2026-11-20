@@ -11,9 +11,20 @@ describe("app Button matches src/design/reference/Button.tsx", () => {
     }
   });
 
-  it("keeps the primary flat: its shadow is --btn-shadow, never an inner shadow", () => {
+  // 20 Nov 2026 (QA M3): the flat primary carried shadow-[var(--btn-shadow)], whose value "none" cancelled the
+  // keyboard focus ring (a ring is a box shadow). Flat now means no shadow class at all.
+  it("keeps the primary flat: no shadow class of any kind, never an inner shadow", () => {
     const classes = buttonVariants({ variant: "default" });
-    expect(classes).toContain("shadow-[var(--btn-shadow)]");
+    expect(classes.split(/\s+/).filter((name) => /^shadow(-|$)/.test(name))).toEqual([]);
     expect(classes).not.toContain("inset");
+  });
+
+  it("every variant keeps the same keyboard focus ring, and none carries a shadow that could cancel it", () => {
+    for (const variant of ["default", "ink", "destructive", "outline", "secondary", "ghost", "link"] as const) {
+      const classes = buttonVariants({ variant });
+      expect(classes, variant).toContain("focus-visible:ring-2");
+      expect(classes, variant).toContain("focus-visible:ring-ring");
+      expect(classes, variant).not.toContain("--btn-shadow");
+    }
   });
 });
