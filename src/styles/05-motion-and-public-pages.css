@@ -2080,3 +2080,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .fc-answer, .fc-line, .fc-edge, .fc-node, .fc-label { transition: none; }
   .fc-scan { display: none; }
 }
+
+/* 21 Nov, D-85 PR B: the stand-in for Home's question box while it morphs into the Firm brain menu row and back. */
+.home-morph { position: fixed; z-index: var(--layer-drag); overflow: hidden; pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 10%, transparent); }
+.home-morph-words { position: absolute; inset: 12px 14px; overflow: hidden; color: var(--foreground); font-size: var(--type-lead); line-height: 1.5; }
+.home-morph-row { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 12px; color: var(--foreground); font-weight: 500; white-space: nowrap; opacity: 0; background: color-mix(in srgb, var(--live-edge) 14%, var(--card)); }

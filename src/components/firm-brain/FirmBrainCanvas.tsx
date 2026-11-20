@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   useCallback,
@@ -21,7 +22,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp, List, Maximize2, Minus, Plus } from "@/design/brand/icons";
+import { ArrowLeft, ArrowUp, List, Maximize2, Minus, Plus } from "@/design/brand/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useReducedMotion } from "@/hooks/use-motion";
 import {
@@ -51,11 +52,13 @@ import {
 } from "@/lib/firm-canvas-shared";
 import { layoutFirmMap } from "@/lib/firm-map-shared";
 import { getFirmMap } from "@/lib/firm-map.functions";
+import { startReturn, takeHandedQuestion } from "@/lib/home-ask-shared";
 import { FIRM_BRAIN_COPY } from "@/lib/role-screens-shared";
 import { cn } from "@/lib/utils";
 
 import { CanvasAnswerCard, type CanvasAnswer } from "./CanvasAnswerCard";
 import { FirmMapList } from "./FirmMapList";
+import { firmBrainRow, rectOf, topMiddle } from "../home/morph-ghost";
 import { FirmSourcePreview } from "./FirmSourcePreview";
 import { JuniorTools } from "./JuniorTools";
 import { useCanvasCamera, type Insets } from "./use-canvas-camera";
@@ -212,6 +215,11 @@ function usePull(layout: CanvasLayout | null, targets: Map<string, Placed>, redu
  */
 export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   const ask = useServerFn(askTheFirm);
+  const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
+  // A question handed over from Home's box (PR B), taken once, in memory only.
+  const [handed] = useState(() => takeHandedQuestion(profile.id));
+  const handedResult = useRef(handed?.result ?? null);
   // Read fresh every time the page opens, so a board with sharing turned off is gone at the next load.
   const query = useQuery({
     queryKey: ["firm-map", profile.id ?? null],
@@ -230,8 +238,24 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
         refused: query.error instanceof Response && query.error.status === 403,
         retry: () => void query.refetch(),
       }}
-      ask={(question, starter) =>
-        ask({ data: { question, starter, profile_id: profile.id ?? null } })
+      ask={(question, starter) => {
+        // The answer Home already has (the orb turned to it) builds here without asking twice; once only.
+        const ready = handedResult.current;
+        if (ready && question === handed?.question) {
+          handedResult.current = null;
+          return Promise.resolve(ready);
+        }
+        return ask({ data: { question, starter, profile_id: profile.id ?? null } });
+      }}
+      initialQuestion={handed?.question ?? null}
+      onBack={
+        handed
+          ? () => {
+              // Back the same way: Home's box grows out of the menu row the question went into.
+              startReturn(reduceMotion ? null : (rectOf(firmBrainRow()) ?? topMiddle()));
+              void navigate({ to: "/home" });
+            }
+          : undefined
       }
     />
   );
@@ -251,10 +275,16 @@ export function FirmBrainCanvasView({
   profile,
   map,
   ask,
+  initialQuestion = null,
+  onBack,
 }: {
   profile: CanvasProfile;
   map: CanvasMap;
   ask: (question: string, starter: FirmAskStarter | null) => Promise<FirmAskResult>;
+  /** Asked as soon as the map is ready: the question handed over from Home. */
+  initialQuestion?: string | null;
+  /** Shown as a Home button when the page was opened from Home's question box. */
+  onBack?: (() => void) | undefined;
 }) {
   const profileKey = profile.id ?? "me";
   const reduceMotion = useReducedMotion();
@@ -477,6 +507,18 @@ export function FirmBrainCanvasView({
       );
     }
   }
+
+  // The question handed over from Home is asked once, as soon as the map is ready to take the answer.
+  // It waits only while the map is on its way, so the answer can land beside its threads; when the map failed it is
+  // asked anyway and lands in the plain column, never lost (QA M4). A refused person cannot ask at all.
+  const askedHanded = useRef(false);
+  useEffect(() => {
+    if (!initialQuestion || askedHanded.current || map.refused) return;
+    if (!layout && map.pending) return;
+    askedHanded.current = true;
+    void run(initialQuestion, null);
+    // run reads the latest state through refs; only the map settling should trigger this.
+  }, [layout, initialQuestion, map.pending, map.refused]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function submit(event?: FormEvent) {
     event?.preventDefault();
@@ -770,6 +812,20 @@ export function FirmBrainCanvasView({
             </p>
           ) : null}
           <div className="pointer-events-auto mt-1 flex flex-wrap gap-2 md:mt-2">
+            {onBack ? (
+              <button
+                type="button"
+                data-testid="firm-canvas-back"
+                onClick={onBack}
+                className={cn(
+                  chipVariants({ tone: "quiet" }),
+                  "inline-flex items-center gap-1 bg-card",
+                )}
+              >
+                <ArrowLeft aria-hidden className="size-3.5" />
+                {FIRM_CANVAS_COPY.backHome}
+              </button>
+            ) : null}
             {seesFees ? (
               <button
                 type="button"
