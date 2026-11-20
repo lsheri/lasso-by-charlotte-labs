@@ -312,8 +312,12 @@ describe("beat 2 matches the menu (20 Nov)", () => {
     expect(STORY_BEATS.filter((beat) => beat.phoneCardAtTop).map((beat) => beat.n)).toEqual([2]);
   });
 
+  it("names the top right corner on a wide screen for beat 2 only, where the canvas fills the page", () => {
+    expect(STORY_BEATS.filter((beat) => beat.wideCardAt).map((beat) => [beat.n, beat.wideCardAt])).toEqual([[2, "top-end"]]);
+  });
+
   it("is a new version of the script", () => {
-    expect(FIRM_STORY_SCRIPT.version).toBe(2);
+    expect(FIRM_STORY_SCRIPT.version).toBe(3);
   });
 });
 

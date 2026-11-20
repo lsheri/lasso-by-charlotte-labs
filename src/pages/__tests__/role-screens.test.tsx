@@ -36,6 +36,7 @@ vi.mock("@/hooks/use-firm-dashboard", () => ({ useFirmDashboard: mocks.firmDashb
 vi.mock("@/components/firm-brain/AskTheFirm", () => ({ AskTheFirm: ({ profile }: { profile: { role?: string } }) => <div data-testid="ask-the-firm" data-role={profile?.role} /> }));
 vi.mock("@/components/firm-brain/JuniorTools", () => ({ JuniorTools: () => <div data-testid="junior-tools" /> }));
 vi.mock("@/components/firm-brain/FirmBrainMap", () => ({ FirmBrainMap: () => <div data-testid="firm-brain-map" /> }));
+vi.mock("@/components/firm-brain/FirmBrainCanvas", () => ({ FirmBrainCanvas: ({ profile }: { profile: { role?: string } }) => <div data-testid="firm-brain-canvas" data-role={profile?.role} /> }));
 vi.mock("@/components/firm-brain/CommonQuestionsCard", () => ({ CommonQuestionsCard: () => null }));
 vi.mock("@/components/home/HomeBoard", () => ({ HomeBoard: () => <div data-testid="home-board" /> }));
 vi.mock("@/components/person/UsesHomeCard", () => ({ UsesHomeCard: () => null }));
@@ -126,7 +127,8 @@ describe("who gets what", () => {
   it("gives the map to admins and leads, the tools to everyone else in the firm, and nothing to a coach, a guest or another kind of workspace", () => {
     expect(firmBrainAccess(person("admin"))).toBe("map");
     expect(firmBrainAccess(person("lead"))).toBe("map");
-    for (const role of ["em", "manager", "analyst"]) expect(firmBrainAccess(person(role))).toBe("tools");
+    // D-85: members see the map too. Fees are kept from them on the server.
+    expect(firmBrainAccess(person("em"))).toBe("map");
     expect(firmBrainAccess(person("coach"))).toBe("none");
     expect(firmBrainAccess(person("admin", { is_guest: true }))).toBe("none");
     expect(firmBrainAccess(person("admin", { org_type: "personal", has_firm_view: false }))).toBe("none");
@@ -148,26 +150,15 @@ describe("who gets what", () => {
 });
 
 describe("the Firm brain page", () => {
-  it("shows an admin and a lead the map, then the tools", () => {
-    for (const role of ["admin", "lead"]) {
+  it("shows everyone in the firm the canvas, the one place the map, the question and the tools live (D-85)", () => {
+    for (const role of ["admin", "lead", "em"]) {
       mocks.profile = person(role);
       mount(<FirmBrainPage />);
-      expect(screen.getByRole("heading", { name: FIRM_BRAIN_COPY.title })).toBeTruthy();
-      expect(screen.getByText(FIRM_BRAIN_COPY.subtitle)).toBeTruthy();
-      const [map, tools] = order("firm-brain-map", "junior-tools");
-      expect(map).toBeGreaterThanOrEqual(0);
-      expect(tools).toBeGreaterThan(map as number);
-      cleanup();
-    }
-  });
-
-  it("shows a manager and an analyst Ask the firm and the tools, and never the map", () => {
-    for (const role of ["em", "manager", "analyst"]) {
-      mocks.profile = person(role);
-      mount(<FirmBrainPage />);
-      expect(screen.getByTestId("ask-the-firm").getAttribute("data-role")).toBe(role);
-      expect(screen.getByTestId("junior-tools")).toBeTruthy();
+      expect(screen.getByTestId("firm-brain-canvas").getAttribute("data-role")).toBe(role);
+      // One title only, drawn by the canvas: the page adds no header or card of its own.
+      expect(screen.queryByText(FIRM_BRAIN_COPY.subtitle)).toBeNull();
       expect(screen.queryByTestId("firm-brain-map")).toBeNull();
+      expect(screen.queryByTestId("ask-the-firm")).toBeNull();
       expect(screen.queryByTestId("firm-brain-not-here")).toBeNull();
       cleanup();
     }
@@ -183,7 +174,7 @@ describe("the Firm brain page", () => {
       mocks.profile = profile;
       mount(<FirmBrainPage />);
       expect(screen.getByText(line)).toBeTruthy();
-      for (const id of ["firm-brain-map", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
+      for (const id of ["firm-brain-canvas", "firm-brain-map", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
       cleanup();
     }
   });
@@ -192,7 +183,7 @@ describe("the Firm brain page", () => {
     mocks.profile = undefined;
     mount(<FirmBrainPage />);
     expect(screen.queryByTestId("firm-brain-not-here")).toBeNull();
-    for (const id of ["firm-brain-map", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
+    for (const id of ["firm-brain-canvas", "firm-brain-map", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
   });
 });
 

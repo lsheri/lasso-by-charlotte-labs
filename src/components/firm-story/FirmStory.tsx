@@ -89,7 +89,7 @@ const hasOptedIn = (profileId: string, search: string) => invitedBySearch(search
 const PAST_SIDEBAR = "md:pl-[calc(var(--nav-width)+0.875rem)]";
 const PAST_BOARD_RAIL = "md:pl-[calc(52px+1rem)]";
 
-function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: string; orgId: string; window: "partner" | "lead" }) {
+export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: string; orgId: string; window: "partner" | "lead" }) {
   const brand = useBrand();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -160,6 +160,7 @@ function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: 
     view.kind === "beat" ? view.beat.n : null,
     cardWrap,
     view.kind === "beat" && view.beat.phoneCardAtTop === true,
+    view.kind === "beat" ? (view.beat.wideCardAt ?? null) : null,
   );
   // An open dialog wins: the card collapses, and the frame drops below the dialogs' layer, so every dialog and its
   // scrim sit over it wherever they are in the page. Otherwise it is above the board page, a full-screen layer.

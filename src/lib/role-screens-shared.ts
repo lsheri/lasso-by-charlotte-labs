@@ -9,16 +9,14 @@ import { canAskTheFirm } from "./firm-ask-shared";
 
 type RoleProfile = { role?: string | null; has_firm_view?: boolean | null; org_type?: string | null; is_guest?: boolean | null } | null | undefined;
 
-const seesFirmNumbers = (role: string | null | undefined) => role === "admin" || role === "lead";
-
 /**
- * What the Firm brain page shows this person. "map": the firm map with Ask the firm, then the two tools (admins and
- * leads). "tools": Ask the firm and the two tools, no map (everyone else in the firm). "none": a coach, a guest, or a
- * workspace that is not a company.
+ * What the Firm brain page shows this person. "map": the firm map as the page, with Ask the firm floating on it, for
+ * everyone in the firm (20 Nov, D-85: members see the map too; fees stay with admins and leads, and the
+ * server leaves them out for everyone else). "none": a coach, a guest, or a workspace that is not a company.
  */
-export function firmBrainAccess(profile: RoleProfile): "map" | "tools" | "none" {
+export function firmBrainAccess(profile: RoleProfile): "map" | "none" {
   if (!canAskTheFirm(profile) || profile?.is_guest === true) return "none";
-  return seesFirmNumbers(profile?.role) ? "map" : "tools";
+  return "map";
 }
 
 /** Home leads with the proposals picture for an admin of a company workspace. Everyone else keeps Home as it was. */
