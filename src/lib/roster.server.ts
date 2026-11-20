@@ -17,7 +17,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { EMAIL_PALETTE } from "@/design/brand/email-palette";
+import { EMAIL_PALETTE } from "@/design/email-palette";
 
 import {
   canManageRoster,
