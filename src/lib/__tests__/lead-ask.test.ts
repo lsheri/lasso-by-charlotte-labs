@@ -196,6 +196,86 @@ function world(over: Partial<World> = {}) {
 
 const press = { proposal_id: PROPOSAL, profile_id: null, press_id: PRESS };
 
+// 20 Nov 2026, QA S1: what a press id may and may not stand for.
+describe("a press id belongs to one press at one person", () => {
+  const LEAD_B = "00000002-0000-4000-8000-000000000002";
+  const PHONE_B = "+12065550143";
+  const two = (over: Partial<World> = {}) =>
+    world({
+      roster: { [`${ORG_A}/${LEAD}`]: "Christy Johnson", [`${ORG_A}/${LEAD_B}`]: "Tomasz Wieczorek" },
+      agreed: { [`${ORG_A}/${LEAD}`]: PHONE, [`${ORG_A}/${LEAD_B}`]: PHONE_B },
+      ...over,
+    });
+  const toB = (w: World) => (w.proposal = { id: PROPOSAL, org_id: ORG_A, status: "open", lead_contact_id: LEAD_B });
+
+  it("plain retry: the same id after a failed send replays the failure and sends nothing; a new id tries again", async () => {
+    const { w, store, sends } = two({ send: { outcome: "failed", status: null } });
+    expect(await askLead(store, press)).toEqual({ ok: false, problem: ASK_COPY.failed });
+    w.send = { outcome: "accepted", id: "sms_2" };
+    // This is what the live dialog does today: one id for the whole open dialog.
+    expect(await askLead(store, press)).toEqual({ ok: false, problem: ASK_COPY.failed });
+    expect(sends).toHaveLength(1);
+    expect(await askLead(store, { ...press, press_id: PRESS_2 })).toEqual({ ok: true, practice: false });
+    expect(sends).toHaveLength(2);
+    expect(sends[1]!.to).toBe(PHONE);
+  });
+
+  it("the first send to A fails, then B is picked: a new id sends to B, B's words, on B's own row", async () => {
+    const { w, store, sends } = two({ send: { outcome: "failed", status: null } });
+    expect((await askLead(store, press)).ok).toBe(false);
+    toB(w);
+    w.send = { outcome: "accepted", id: "sms_2" };
+    expect(await askLead(store, { ...press, press_id: PRESS_2 })).toEqual({ ok: true, practice: false });
+    expect(sends[1]).toMatchObject({ to: PHONE_B });
+    expect(sends[1]!.text).toContain("hi Tomasz,");
+    expect(w.rows.find((row) => row.press_id === PRESS_2)).toMatchObject({ contact_id: LEAD_B, status: "accepted" });
+    expect(w.rows.find((row) => row.press_id === PRESS)).toMatchObject({ contact_id: LEAD, status: "failed" });
+  });
+
+  it("A's send went through and the answer was lost, then B is picked: a new id sends to B", async () => {
+    const { w, store, sends } = two();
+    expect(await askLead(store, press)).toEqual({ ok: true, practice: false });
+    toB(w);
+    expect(await askLead(store, { ...press, press_id: PRESS_2 })).toEqual({ ok: true, practice: false });
+    expect(sends.map((sent) => sent.to)).toEqual([PHONE, PHONE_B]);
+    expect(w.rows.find((row) => row.press_id === PRESS_2)).toMatchObject({ contact_id: LEAD_B });
+  });
+
+  it("a queued row left over for A, then B is picked: a new id sends to B on B's row, and A's row is untouched", async () => {
+    const { w, store, sends } = two();
+    w.rows.push({ id: "left", org_id: ORG_A, proposal_id: PROPOSAL, contact_id: LEAD, to_demo: false, press_id: PRESS, sent_by: "p1", status: "queued", reply: null, created_at: NOW.toISOString() } as never);
+    toB(w);
+    expect(await askLead(store, { ...press, press_id: PRESS_2 })).toEqual({ ok: true, practice: false });
+    expect(sends).toHaveLength(1);
+    expect(sends[0]).toMatchObject({ to: PHONE_B });
+    expect(sends[0]!.ref).not.toBe("left");
+    expect(w.rows.find((row) => row.id === "left")).toMatchObject({ contact_id: LEAD, status: "queued" });
+  });
+
+  it.each([
+    ["failed", { outcome: "failed", status: null }],
+    ["accepted", { outcome: "accepted", id: "sms_1" }],
+  ] as const)("an old sheet that reuses A's id (%s) for B is refused: B is not texted and A's row never answers for B", async (_name, first) => {
+    const { w, store, sends } = two({ send: first as TextSendResult });
+    await askLead(store, press);
+    toB(w);
+    w.send = { outcome: "accepted", id: "sms_2" };
+    const again = await askLead(store, press);
+    expect(again.ok).toBe(false);
+    expect(sends).toHaveLength(1);
+    expect(sends.some((sent) => sent.to === PHONE_B)).toBe(false);
+    expect(w.rows).toHaveLength(1);
+  });
+
+  it("a queued row for A is never used to text B under the same id", async () => {
+    const { w, store, sends } = two();
+    w.rows.push({ id: "left", org_id: ORG_A, proposal_id: PROPOSAL, contact_id: LEAD, to_demo: false, press_id: PRESS, sent_by: "p1", status: "queued", reply: null, created_at: NOW.toISOString() } as never);
+    toB(w);
+    expect((await askLead(store, press)).ok).toBe(false);
+    expect(sends).toHaveLength(0);
+  });
+});
+
 describe("a press in a real workspace", () => {
   it.each(["admin", "lead"])("an %s sends the filed words to the picked lead's agreed number, once", async (role) => {
     const { w, store, sends, events } = world({ role });

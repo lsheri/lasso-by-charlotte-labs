@@ -191,6 +191,10 @@ export const SHEET_COPY = {
     demo
       ? "Texting is not switched on yet, so this is a practice ask. Nothing is sent."
       : "Texting is not switched on yet. Nothing is sent.",
+  /** The words for this person did not arrive. Said before anyone can press Send, and it is not a failed text. */
+  wordsFailed: "The text for this person could not be loaded, so nothing can be sent yet. Pick them again, or close this and try again.",
+  /** The lead was not saved, so nothing was sent either. */
+  notSaved: (problem: string) => `${problem} Nothing was sent.`,
   savedNotSent: (name: string, problem: string) => `${name || "The lead"} is saved as the lead. ${problem}`,
 } as const;
 

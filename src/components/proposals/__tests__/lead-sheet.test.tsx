@@ -231,7 +231,7 @@ describe("the one sheet: pick, see their text, confirm", () => {
     await screen.findByText(words("Christy Johnson"));
     press(SHEET_COPY.ask("Christy"));
     press(ASK_COPY.send);
-    expect((await within(sheet()).findByRole("alert")).textContent).toBe(LEAD_COPY.missing);
+    expect((await within(sheet()).findByRole("alert")).textContent).toBe(SHEET_COPY.notSaved(LEAD_COPY.missing));
     expect(h.send).not.toHaveBeenCalled();
     h.send.mockResolvedValueOnce({ ok: false, problem: ASK_COPY.capped } as never);
     press(ASK_COPY.send);
@@ -241,6 +241,191 @@ describe("the one sheet: pick, see their text, confirm", () => {
       ),
     );
     expect(h.onClose).not.toHaveBeenCalled();
+  });
+});
+
+// 20 Nov 2026, QA of #265 (S1, M1, M3 and the lows).
+describe("one press id per person, and a new one after a failed send", () => {
+  const ids = (h: ReturnType<typeof open>) => h.send.mock.calls.map((call) => call[1]);
+
+  it("a second person picked after a failed send is sent under a new id, so they are really asked", async () => {
+    const h = open();
+    h.send.mockResolvedValueOnce({ ok: false, problem: ASK_COPY.failed } as never);
+    pick("c1");
+    await screen.findByText(words("Christy Johnson"));
+    press(SHEET_COPY.ask("Christy"));
+    press(ASK_COPY.send);
+    await within(sheet()).findByRole("alert");
+    press(SHEET_COPY.back);
+    cleanup();
+    // A second sheet with two people who have both agreed, so the second can be sent to.
+    const both = [person("c1", "Christy Johnson", "agreed"), person("c3", "Tomasz Wieczorek", "agreed")];
+    const sent: [string, string][] = [];
+    const saved: (string | null)[] = [];
+    let fail = true;
+    render(
+      <LeadSheet
+        target={{ proposal: proposal(), start: "pick" }}
+        roster={both}
+        wonWords="won"
+        preview={async (_id, contactId) => ({ ok: true, words: words(both.find((p) => p.id === contactId)!.name), name: both.find((p) => p.id === contactId)!.name, mode: "real", warning: null })}
+        send={async (_id, pressId) => {
+          sent.push([saved.at(-1) ?? "", pressId]);
+          if (fail) {
+            fail = false;
+            return { ok: false, problem: ASK_COPY.failed };
+          }
+          return { ok: true, practice: false };
+        }}
+        onSave={async (_id, contact) => {
+          saved.push(contact);
+          return { ok: true };
+        }}
+        onClose={() => {}}
+      />,
+    );
+    pick("c1");
+    await screen.findByText(words("Christy Johnson"));
+    press(SHEET_COPY.ask("Christy"));
+    press(ASK_COPY.send);
+    await within(sheet()).findByRole("alert");
+    press(SHEET_COPY.back);
+    pick("c3");
+    await screen.findByText(words("Tomasz Wieczorek"));
+    press(SHEET_COPY.ask("Tomasz"));
+    press(ASK_COPY.send);
+    await waitFor(() => expect(sent).toHaveLength(2));
+    expect(saved).toEqual(["c1", "c3"]);
+    expect(sent[0]![0]).toBe("c1");
+    expect(sent[1]![0]).toBe("c3");
+    expect(sent[1]![1]).not.toBe(sent[0]![1]);
+    expect(ids(h)).toHaveLength(1);
+  });
+
+  it("changing the pick alone, with no send in between, also changes the id", async () => {
+    const both = [person("c1", "Christy Johnson", "agreed"), person("c3", "Tomasz Wieczorek", "agreed")];
+    const sent: string[] = [];
+    const view = (lead: string | null) => (
+      <LeadSheet
+        target={{ proposal: proposal({ leadContactId: lead }), start: "pick" }}
+        roster={both}
+        wonWords="won"
+        preview={async (_id, contactId) => ({ ok: true, words: words(both.find((p) => p.id === contactId)!.name), name: "x", mode: "real", warning: null })}
+        send={async (_id, pressId) => {
+          sent.push(pressId);
+          return { ok: false, problem: ASK_COPY.busy };
+        }}
+        onSave={async () => ({ ok: true })}
+        onClose={() => {}}
+      />
+    );
+    render(view(null));
+    for (const [id, name] of [["c1", "Christy Johnson"], ["c3", "Tomasz Wieczorek"], ["c1", "Christy Johnson"]] as const) {
+      pick(id);
+      await screen.findByText(words(name));
+      press(SHEET_COPY.ask(name.split(" ")[0] as string));
+      const before = sent.length;
+      press(ASK_COPY.send);
+      await waitFor(() => expect(sent).toHaveLength(before + 1));
+      await waitFor(() => expect((within(sheet()).getByRole("button", { name: SHEET_COPY.back }) as HTMLButtonElement).disabled).toBe(false));
+      press(SHEET_COPY.back);
+    }
+    expect(new Set(sent).size).toBe(3);
+  });
+
+  it("a plain retry to the same person after a failed send uses a new id; a double press uses one", async () => {
+    const h = open({ lead: "c1", start: "confirm" });
+    await screen.findByText(words("Christy Johnson"));
+    h.send.mockResolvedValueOnce({ ok: false, problem: ASK_COPY.failed } as never);
+    const button = within(sheet()).getByRole("button", { name: ASK_COPY.send });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect((await within(sheet()).findByRole("alert")).textContent).toBe(ASK_COPY.failed);
+    expect(ids(h)).toHaveLength(1);
+    press(ASK_COPY.send);
+    await waitFor(() => expect(h.onClose).toHaveBeenCalled());
+    expect(ids(h)).toHaveLength(2);
+    expect(ids(h)[1]).not.toBe(ids(h)[0]);
+    expect(h.onSave).not.toHaveBeenCalled();
+  });
+
+  it("a send that throws is treated the same: the next press is a new one", async () => {
+    const h = open({ lead: "c1", start: "confirm" });
+    await screen.findByText(words("Christy Johnson"));
+    h.send.mockRejectedValueOnce(new Error("lost"));
+    press(ASK_COPY.send);
+    expect((await within(sheet()).findByRole("alert")).textContent).toBe(ASK_COPY.failed);
+    press(ASK_COPY.send);
+    await waitFor(() => expect(ids(h)).toHaveLength(2));
+    expect(ids(h)[1]).not.toBe(ids(h)[0]);
+  });
+});
+
+describe("each failure names the step that failed", () => {
+  it("the save throws: not saved, nothing sent, and it does not say a text failed", async () => {
+    const h = open();
+    h.onSave.mockRejectedValueOnce(new Error("down"));
+    pick("c1");
+    await screen.findByText(words("Christy Johnson"));
+    press(SHEET_COPY.ask("Christy"));
+    press(ASK_COPY.send);
+    const line = (await within(sheet()).findByRole("alert")).textContent ?? "";
+    expect(line).toBe(SHEET_COPY.notSaved(LEAD_COPY.failed));
+    expect(line).toMatch(/Nothing was sent/);
+    expect(line).not.toContain(ASK_COPY.failed);
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("the save works and the send throws: it says the lead is saved", async () => {
+    const h = open();
+    h.send.mockRejectedValueOnce(new Error("lost"));
+    pick("c1");
+    await screen.findByText(words("Christy Johnson"));
+    press(SHEET_COPY.ask("Christy"));
+    press(ASK_COPY.send);
+    expect((await within(sheet()).findByRole("alert")).textContent).toBe(SHEET_COPY.savedNotSent("Christy Johnson", ASK_COPY.failed));
+    expect(h.calls).toEqual(["save"]);
+  });
+
+  it("the words do not load: it says that, on the list, and never that a text could not be sent", async () => {
+    const h = open();
+    h.preview.mockRejectedValueOnce(new Error("down"));
+    pick("c1");
+    const line = (await within(sheet()).findByRole("alert")).textContent ?? "";
+    expect(line).toBe(SHEET_COPY.wordsFailed);
+    expect(line).not.toContain(ASK_COPY.failed);
+    press(SHEET_COPY.ask("Christy"));
+    expect((within(sheet()).getByRole("button", { name: ASK_COPY.send }) as HTMLButtonElement).disabled).toBe(true);
+    expect(h.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("a lead who is no longer on the list, the agreement line, and the phone layout", () => {
+  it("a saved lead who left the list is never named \"Removed\": the sheet opens on the list and asks for a pick", () => {
+    const h = open({ lead: "gone", start: "confirm" });
+    expect(sheet().getAttribute("data-lead-sheet")).toBe("pick");
+    expect(sheet().textContent).not.toMatch(/Removed/);
+    expect((sheet().querySelector("[data-lead-gone]") as HTMLElement).textContent).toBe(ASK_COPY.missing);
+    expect((within(sheet()).getByRole("button", { name: SHEET_COPY.ask("") }) as HTMLButtonElement).disabled).toBe(true);
+    expect(within(sheet()).queryByRole("button", { name: ASK_COPY.send })).toBeNull();
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("with no agreement the list says it once, not in two nearly identical lines", async () => {
+    open();
+    pick("c2");
+    await waitFor(() => expect(sheet().querySelector("[data-ask-warning]")).not.toBeNull());
+    expect(sheet().querySelector("[data-lead-texts]")).toBeNull();
+    expect((sheet().textContent ?? "").split("has not agreed to texts").length - 1).toBe(1);
+  });
+
+  it("the actions sit in a footer that stays put, and a long first name wraps in the title", async () => {
+    open();
+    const foot = sheet().querySelector("[data-lead-actions]") as HTMLElement;
+    expect(foot.className).toMatch(/\bsticky\b/);
+    expect(within(foot).getByRole("button", { name: SHEET_COPY.ask("") })).toBeTruthy();
+    expect(sheet().className).toMatch(/overflow-x-hidden/);
+    expect((within(sheet()).getByRole("heading") as HTMLElement).className).toMatch(/overflow-wrap:anywhere/);
   });
 });
 

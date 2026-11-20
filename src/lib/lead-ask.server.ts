@@ -166,7 +166,9 @@ export async function askLead(store: AskStore, input: AskSendInput): Promise<Ask
   const now = store.now();
   const asks = await store.asks(caller.orgId, state.proposalId);
   if (asks === null) return { ok: false, problem: ASK_COPY.notReady };
-  const same = asks.find((ask) => ask.press_id === input.press_id);
+  // The same press means the same press id at the same person. An id that comes back for someone else is not a
+  // repeat: it falls through to the insert, which refuses it, so one person's row never answers for another.
+  const same = asks.find((ask) => ask.press_id === input.press_id && (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
   let rowId = same?.id ?? null;
   if (same && same.status !== "queued") {
     // The same press again: say what it came to, send nothing more.

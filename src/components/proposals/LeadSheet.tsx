@@ -93,18 +93,30 @@ export function LeadSheet({
   const [shown, setShown] = useState<{ contactId: string; preview: AskPreview } | null>(null);
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  // One id per opened sheet: a second click, or a retry after a lost reply, is the same press and sends once.
+  // One id per press at one person. A double click is the same press and sends once. A new pick, or a send that
+  // failed, gets a new id: the server answers a repeated id from its first row, so reusing one would leave the
+  // second person unasked (QA S1) and make "try again" replay the failure instead of trying.
   const pressId = useRef("");
+  const box = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setChoice(current);
     setStep(target?.start === "confirm" && current ? "confirm" : "pick");
     setProblem(null);
     setShown(null);
-    if (proposalId) pressId.current = crypto.randomUUID();
     // The sheet resets when it opens on a proposal, not each time the page refreshes that proposal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId, target?.start]);
+
+  useEffect(() => {
+    pressId.current = crypto.randomUUID();
+  }, [proposalId, target?.start, choice]);
+
+  // Each step opens at its top, so the title, the name and the action are not left scrolled out of view on a short
+  // screen (a phone with its keyboard up, or on its side).
+  useEffect(() => {
+    if (box.current) box.current.scrollTop = 0;
+  }, [step, proposalId]);
 
   useEffect(() => {
     let live = true;
@@ -115,7 +127,7 @@ export function LeadSheet({
         if (live) setShown({ contactId: choice, preview: next });
       })
       .catch(() => {
-        if (live) setShown({ contactId: choice, preview: { ok: false, problem: ASK_COPY.failed } });
+        if (live) setShown({ contactId: choice, preview: { ok: false, problem: SHEET_COPY.wordsFailed } });
       });
     return () => {
       live = false;
@@ -128,10 +140,13 @@ export function LeadSheet({
   const chosen = people.find((person) => person.id === choice);
   const loaded = shown && shown.contactId === choice ? shown.preview : null;
   const ready = loaded?.ok ? loaded : null;
-  const name = chosen?.name ?? ready?.name ?? proposal?.leadName ?? "";
+  // The person picked is no longer on the list (they left it, or the saved lead was removed). Nobody can be asked
+  // until someone on the list is picked, so the sheet stays on the list and says so.
+  const gone = roster !== undefined && choice !== "" && !chosen;
+  const name = gone ? "" : (chosen?.name ?? ready?.name ?? proposal?.leadName ?? "");
   const first = name.trim().split(/\s+/)[0] ?? "";
-  const confirm = step === "confirm";
-  const blocked = !ready || Boolean(ready.warning);
+  const confirm = step === "confirm" && !gone;
+  const blocked = !ready || Boolean(ready.warning) || gone;
 
   async function save(contactId: string | null) {
     if (!proposal || working) return;
@@ -153,19 +168,28 @@ export function LeadSheet({
     if (!proposal || working || blocked || !choice) return;
     setWorking(true);
     setProblem(null);
-    try {
-      if (choice !== current) {
+    // Each failure names the step that failed: not saved (so nothing sent), or saved but not sent.
+    const saving = choice !== current;
+    if (saving) {
+      try {
         const saved = await onSave(proposal.id, choice);
-        if (!saved.ok) return setProblem(saved.problem);
+        if (!saved.ok) {
+          setWorking(false);
+          return setProblem(SHEET_COPY.notSaved(saved.problem));
+        }
+      } catch {
+        setWorking(false);
+        return setProblem(SHEET_COPY.notSaved(LEAD_COPY.failed));
       }
+    }
+    try {
       const result = await send(proposal.id, pressId.current);
-      if (result.ok) onClose();
-      else
-        setProblem(
-          choice !== current ? SHEET_COPY.savedNotSent(name, result.problem) : result.problem,
-        );
+      if (result.ok) return onClose();
+      pressId.current = crypto.randomUUID();
+      setProblem(saving ? SHEET_COPY.savedNotSent(name, result.problem) : result.problem);
     } catch {
-      setProblem(ASK_COPY.failed);
+      pressId.current = crypto.randomUUID();
+      setProblem(saving ? SHEET_COPY.savedNotSent(name, ASK_COPY.failed) : ASK_COPY.failed);
     } finally {
       setWorking(false);
     }
@@ -180,12 +204,13 @@ export function LeadSheet({
       }}
     >
       <DialogContent
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+        ref={box}
+        className="max-h-[90dvh] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
         data-testid={confirm ? "ask-lead" : "pick-lead"}
-        data-lead-sheet={step}
+        data-lead-sheet={confirm ? "confirm" : "pick"}
       >
         <DialogHeader>
-          <DialogTitle className="page-title">
+          <DialogTitle className="page-title break-words [overflow-wrap:anywhere]">
             {confirm
               ? SHEET_COPY.confirmTitle(first)
               : SHEET_COPY.title(proposal?.clientName ?? "")}
@@ -290,7 +315,7 @@ export function LeadSheet({
                 </p>
               </div>
             </div>
-            {chosen && !confirm ? (
+            {chosen && !confirm && !ready?.warning ? (
               <p data-lead-texts={chosen.texts} className="mt-3 text-sm text-foreground">
                 {chosen.texts === "agreed"
                   ? LEAD_COPY.agreed(chosen.name)
@@ -304,12 +329,17 @@ export function LeadSheet({
                 {connected === false ? SHEET_COPY.off(Boolean(demo)) : LEAD_COPY.where(Boolean(demo))}
               </p>
             ) : null}
-            {ready?.warning ? (
+            {gone ? (
+              <p data-lead-gone role="status" className="mt-3 text-sm text-foreground">
+                {ASK_COPY.missing}
+              </p>
+            ) : null}
+            {ready?.warning && !gone ? (
               <p data-ask-warning className="mt-3 text-sm text-foreground">
                 {ready.warning}
               </p>
             ) : null}
-            {loaded && !loaded.ok ? (
+            {loaded && !loaded.ok && !gone ? (
               <p role="alert" className="mt-3 text-sm text-destructive">
                 {loaded.problem}
               </p>
@@ -340,7 +370,11 @@ export function LeadSheet({
             </div>
           </details>
         ) : null}
-        <div className="flex flex-wrap justify-end gap-2">
+        {/* The actions stay in view at the foot of the sheet however long the list or the phone above them is. */}
+        <div
+          data-lead-actions
+          className="sticky -bottom-4 z-10 -mx-4 -mb-4 sm:-bottom-6 flex flex-wrap justify-end gap-2 border-t border-border bg-background px-4 py-3 sm:-mx-6 sm:-mb-6 sm:px-6"
+        >
           {confirm ? (
             <>
               <Button
@@ -383,14 +417,14 @@ export function LeadSheet({
               <Button
                 type="button"
                 variant="outline"
-                disabled={working || !choice || choice === current}
+                disabled={working || !choice || choice === current || gone}
                 onClick={() => void save(choice)}
               >
                 {working ? LEAD_COPY.saving : LEAD_COPY.save}
               </Button>
               <Button
                 type="button"
-                disabled={working || !choice}
+                disabled={working || !choice || gone}
                 onClick={() => {
                   setStep("confirm");
                   setProblem(null);
