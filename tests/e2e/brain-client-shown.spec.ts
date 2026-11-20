@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { firstBoardCanvasHref } from "./board-link";
 
 /**
  * Firm brain phase 1, Shown to client (16 Nov). Walks the mark as the QA company admin, in a company
@@ -22,9 +23,8 @@ async function signIn(page: Page, email: string): Promise<void> {
 
 async function openFirstBoard(page: Page): Promise<void> {
   await page.goto("/home", { waitUntil: "domcontentloaded" });
-  const board = page.locator('a[href*="/canvas-lab"]').first();
-  await board.waitFor({ state: "attached", timeout: 30_000 });
-  await page.goto((await board.getAttribute("href")) ?? "/home", { waitUntil: "domcontentloaded" });
+  const href = await firstBoardCanvasHref(page);
+  await page.goto(href, { waitUntil: "domcontentloaded" });
   await page.getByRole("toolbar", { name: "Board controls" }).waitFor({ timeout: 60_000 });
 }
 
