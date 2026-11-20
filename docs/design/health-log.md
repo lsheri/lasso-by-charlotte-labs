@@ -76,6 +76,8 @@ Every PR was checked against main with the full test suite, lint, and the design
 
 - **Slate / Spool script becomes a whole brand named Lasso (19 Nov, preview only).** Name, wordmark, Ask label, mark, icon files and browser colour come from one function, `brandFor(skin, variant)`; the server default reads the same variant constant. The page body is the Slate token scope, so no second token block was written. New test `slate-lasso-everywhere` fails if a product name is typed into the app outside a short listed set. Health counts unchanged; no ceiling raised.
 
+- **Skeleton frames for slow sections (20 Nov, demo speed PR).** New primitive `SkeletonFrame` in src/components/ui, made only of the existing `Skeleton` bar and token classes (border-border, corner-card); seven loading lines swapped for it. No literals added, health counts unchanged, no ceiling raised.
+
 ## Health counts
 
 Charlotte skin size (custom properties it declares): 230 on 17 Nov, 160 after G2 part 2, 110 after G2 part 3, 18 after the skin contract (#197). The audit's target for a skin was about 20. A test keeps it at 20 or fewer.

@@ -17,14 +17,19 @@ export function useFirmDashboard(profileId: string | undefined) {
   });
 }
 
-export function useFirmCheckLibrary(profileId: string | undefined) {
-  return useQuery({
-    queryKey: ["firm-check-library", profileId],
+/** PERF-4: one definition, so the Firm view warmup and the cards share a cache entry. */
+export function firmCheckLibraryQuery(profileId: string | undefined) {
+  return {
+    queryKey: ["firm-check-library", profileId] as const,
     enabled: Boolean(profileId),
     staleTime: 60_000,
     queryFn: (): Promise<FirmCheckLibraryRow[]> =>
       getFirmCheckLibrary({ data: { profile_id: profileId as string } }),
-  });
+  };
+}
+
+export function useFirmCheckLibrary(profileId: string | undefined) {
+  return useQuery(firmCheckLibraryQuery(profileId));
 }
 
 export function useSetFirmCheckActive(profileId: string | undefined) {

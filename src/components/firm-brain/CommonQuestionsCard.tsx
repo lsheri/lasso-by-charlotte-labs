@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { canAskTheFirm } from "@/lib/firm-ask-shared";
 import { canSeeCommonQuestions, COMMON_QUESTIONS_COPY, type CommonQuestion } from "@/lib/manager-tools-shared";
 import { commonQuestionKindsFn } from "@/lib/manager-tools.functions";
@@ -54,9 +55,7 @@ export function CommonQuestionsCard({ profile }: { profile: CardProfile | null |
       </h2>
       <p className="mt-1 max-w-prose text-(length:--type-small) text-muted-foreground">{COMMON_QUESTIONS_COPY.helper}</p>
       {state === "loading" ? (
-        <p role="status" className="mt-3 text-(length:--type-small) text-muted-foreground">
-          {COMMON_QUESTIONS_COPY.loading}
-        </p>
+        <SkeletonFrame shape="rows" count={2} label={COMMON_QUESTIONS_COPY.loading} className="mt-3" />
       ) : state === "error" ? (
         <p role="alert" className="mt-3 text-(length:--type-small) text-destructive">
           {COMMON_QUESTIONS_COPY.error}

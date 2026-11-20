@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ProposalLedgerFigures } from "@/components/firm-brain/ProposalLedgerFigures";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { LEDGER_COPY, ledgerFigureLines, type FirmValueSoFar } from "@/lib/proposal-ledger-shared";
 import { firmValueSoFar } from "@/lib/proposal-ledger.functions";
 
@@ -11,14 +12,19 @@ import { firmValueSoFar } from "@/lib/proposal-ledger.functions";
  * reader; every number opens to the rows behind it. Per proposal, never per person: no name, owner or board title is
  * read or shown.
  */
-export function FirmProposalsCard({ profileId }: { profileId: string | undefined }) {
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["firm-proposal-ledger", profileId],
+/** PERF-4: one definition, so the Firm view warmup and this card share a cache entry. */
+export function firmProposalLedgerQuery(profileId: string | undefined) {
+  return {
+    queryKey: ["firm-proposal-ledger", profileId] as const,
     enabled: Boolean(profileId),
     staleTime: 60_000,
     retry: false,
     queryFn: (): Promise<FirmValueSoFar> => firmValueSoFar({ data: { profile_id: profileId as string } }),
-  });
+  };
+}
+
+export function FirmProposalsCard({ profileId }: { profileId: string | undefined }) {
+  const { data, isLoading, error, refetch } = useQuery(firmProposalLedgerQuery(profileId));
   if (!profileId) return null;
   const lines = data ? ledgerFigureLines(data.figures, "firm") : [];
 
@@ -34,7 +40,7 @@ export function FirmProposalsCard({ profileId }: { profileId: string | undefined
           </button>
         </p>
       ) : null}
-      {isLoading ? <p className="text-sm text-muted-foreground">{LEDGER_COPY.loading}</p> : null}
+      {isLoading ? <SkeletonFrame shape="stats" count={3} label={LEDGER_COPY.loading} /> : null}
       {data && lines.length === 0 ? <p data-ledger-empty className="text-sm text-muted-foreground">{LEDGER_COPY.firmEmpty}</p> : null}
       {data ? <ProposalLedgerFigures lines={lines} rows={data.rows} /> : null}
       <p data-ledger-unshared className="mt-3 text-sm text-muted-foreground">{LEDGER_COPY.firmUnshared}</p>
