@@ -61,6 +61,7 @@ function Sheet({
         roster={PEOPLE}
         wonWords={WON_WORDS}
         demo={mode !== "real"}
+        connected={mode !== "practice"}
         preview={previewFor(mode)}
         send={async () => ({ ok: true, practice: mode === "practice" })}
         onSave={async () => ({ ok: true })}
@@ -92,6 +93,10 @@ export const ConfirmDemoWorkspace: Story = {
 };
 export const ConfirmPractice: Story = {
   render: () => <Sheet proposal={asked} start="confirm" mode="practice" />,
+};
+/** Texting is not switched on: a practice ask. Nothing on the list may say or imply a text is sent. */
+export const PickSenderOff: Story = {
+  render: () => <Sheet proposal={asked} start="pick" mode="practice" />,
 };
 export const ConfirmNoAgreement: Story = {
   render: () => (

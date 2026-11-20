@@ -60,6 +60,7 @@ export function LeadSheet({
   roster,
   wonWords,
   demo,
+  connected,
   preview,
   send,
   onSave,
@@ -74,6 +75,8 @@ export function LeadSheet({
   wonWords: string;
   /** A demo workspace: its texts go to the demo number, not to the person picked. */
   demo?: boolean | undefined;
+  /** Texting is switched on. When it is known to be off, nothing on the sheet may say or imply a text is sent. */
+  connected?: boolean | undefined;
   /** The exact words for this person, and anything that would stop the text. Reads only. */
   preview: (proposalId: string, contactId: string) => Promise<AskPreview>;
   send: (proposalId: string, pressId: string) => Promise<AskResult>;
@@ -207,7 +210,11 @@ export function LeadSheet({
               inert={confirm}
             >
               <div>
-                {roster !== undefined && people.length === 0 ? (
+                {roster === undefined ? (
+                  <p role="status" data-lead-no-list className="text-sm text-muted-foreground">
+                    {LEAD_COPY.noList}
+                  </p>
+                ) : people.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{LEAD_COPY.noPeople}</p>
                 ) : (
                   <div
@@ -293,8 +300,8 @@ export function LeadSheet({
               </p>
             ) : null}
             {!confirm ? (
-              <p data-lead-today className="mt-2 text-sm text-muted-foreground">
-                {LEAD_COPY.where(Boolean(demo))}
+              <p data-lead-today={connected === false ? "off" : demo ? "demo" : "real"} className="mt-2 text-sm text-muted-foreground">
+                {connected === false ? SHEET_COPY.off(Boolean(demo)) : LEAD_COPY.where(Boolean(demo))}
               </p>
             ) : null}
             {ready?.warning ? (
@@ -329,7 +336,7 @@ export function LeadSheet({
           <details className="text-(length:--type-small)">
             <summary className="cursor-pointer text-muted-foreground">{LEAD_COPY.preview}</summary>
             <div className="mt-2">
-              <MessageExamples words={wonWords} />
+              <MessageExamples words={wonWords} off={connected === false} />
             </div>
           </details>
         ) : null}

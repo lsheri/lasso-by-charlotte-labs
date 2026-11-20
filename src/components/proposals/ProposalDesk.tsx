@@ -122,7 +122,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheet} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => setSheet(null)} />
+        <LeadSheet target={sheet} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => setSheet(null)} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>

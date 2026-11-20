@@ -10,12 +10,12 @@ import { MESSAGE_EXAMPLES_COPY } from "@/lib/won-text-shared";
  * RCS are pictures only. Nothing in them can be pressed and nothing here sends anything; the Send button beside
  * this belongs to the text alone.
  */
-export function MessageExamples({ words }: { words: string }) {
+export function MessageExamples({ words, off }: { words: string; /** Texting is not switched on: the text is an example too. */ off?: boolean }) {
   const copy = MESSAGE_EXAMPLES_COPY;
   return (
     <div data-message-examples className="flex flex-col gap-2">
       <ul className="flex flex-wrap items-start gap-4" aria-label={copy.heading}>
-        <Example name={copy.text} state={copy.textState} live>
+        <Example name={copy.text} state={off ? copy.textOffState : copy.textState} live={!off}>
           <PhoneDevice kind="text">
             <PhoneBubble data-won-text-words="">{words}</PhoneBubble>
           </PhoneDevice>
@@ -39,7 +39,7 @@ export function MessageExamples({ words }: { words: string }) {
           </PhoneDevice>
         </Example>
       </ul>
-      <p className="max-w-[60ch] text-muted-foreground">{copy.note}</p>
+      <p className="max-w-[60ch] text-muted-foreground">{off ? copy.noteOff : copy.note}</p>
     </div>
   );
 }

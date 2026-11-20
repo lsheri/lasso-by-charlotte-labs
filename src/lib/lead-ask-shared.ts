@@ -183,6 +183,14 @@ export const SHEET_COPY = {
       : mode === "demo"
         ? `Demo workspace. This text goes to the demo number, not to ${name || "the lead"}.`
         : `One text to ${name || "the lead"}. They reply YES or NO, or STOP at any time.`,
+  /**
+   * Texting is not switched on. Said once on the list, in place of the line about where texts go, so nothing there
+   * says or implies a text is sent. The confirm says the same through goes("practice").
+   */
+  off: (demo: boolean) =>
+    demo
+      ? "Texting is not switched on yet, so this is a practice ask. Nothing is sent."
+      : "Texting is not switched on yet. Nothing is sent.",
   savedNotSent: (name: string, problem: string) => `${name || "The lead"} is saved as the lead. ${problem}`,
 } as const;
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/proposals/LeadSheet";
 import { ASK_COPY, leadAskBody, SHEET_COPY, type AskPreview } from "@/lib/lead-ask-shared";
 import { LEAD_COPY, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { MESSAGE_EXAMPLES_COPY } from "@/lib/won-text-shared";
 import type { RosterContact } from "@/lib/roster-shared";
 
 afterEach(cleanup);
@@ -64,6 +65,8 @@ function open(
     mode?: "real" | "demo" | "practice";
     lead?: string | null;
     pastWork?: Record<string, PastWork[]>;
+    noList?: boolean;
+    connected?: boolean;
   } = {},
 ) {
   const mode = over.mode ?? "real";
@@ -97,9 +100,10 @@ function open(
         }),
         start: over.start ?? "pick",
       }}
-      roster={roster}
+      roster={over.noList ? undefined : roster}
       wonWords="won"
       demo={mode !== "real"}
+      connected={over.connected}
       preview={preview}
       send={send}
       onSave={onSave}
@@ -267,5 +271,81 @@ describe("past work beside each name (Q-68)", () => {
     cleanup();
     const { container } = render(<LedBefore work={[{ client: "", title: "" }]} />);
     expect(container.textContent).toBe("");
+  });
+
+  // QA L4, carried from the two dialogs this sheet replaces.
+  it("says so in one line while the list of people loads or cannot be read, and offers nothing to press", () => {
+    const { preview, onSave, send } = open({ noList: true });
+    expect(within(sheet()).getByRole("status").textContent).toBe(LEAD_COPY.noList);
+    expect(sheet().querySelector("[data-lead-people]")).toBeNull();
+    expect(within(sheet()).queryByText(LEAD_COPY.noPeople)).toBeNull();
+    expect((within(sheet()).getByRole("button", { name: SHEET_COPY.ask("") }) as HTMLButtonElement).disabled).toBe(true);
+    expect(preview).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  // 20 Nov 2026 (orchestrator, after the live walk): with the sender off, nothing may say or imply a text is sent.
+  describe("where a text goes, in each of the three states", () => {
+    const pickChristy = async () => {
+      fireEvent.click(within(sheet()).getAllByRole("radio")[0] as HTMLElement);
+      await waitFor(() => expect(sheet().querySelector("[data-ask-words]")).not.toBeNull());
+    };
+    const toConfirm = async () => {
+      const first = (roster[0] as RosterContact).name.split(" ")[0] as string;
+      fireEvent.click(within(sheet()).getByRole("button", { name: SHEET_COPY.ask(first) }));
+      await waitFor(() => expect(sheet().getAttribute("data-lead-sheet")).toBe("confirm"));
+      return first;
+    };
+
+    it("real: texts go to the person picked, and the text is the one thing sent", async () => {
+      open({ mode: "real", connected: true });
+      const today = sheet().querySelector("[data-lead-today]") as HTMLElement;
+      expect(today.getAttribute("data-lead-today")).toBe("real");
+      expect(today.textContent).toBe(LEAD_COPY.where(false));
+      expect(sheet().textContent).toContain(MESSAGE_EXAMPLES_COPY.textState);
+      expect(sheet().textContent).toContain(MESSAGE_EXAMPLES_COPY.note);
+      expect(sheet().textContent).not.toMatch(/practice|demo number/i);
+    });
+
+    it("demo with the sender on: the demo-number line is right, on the list and on the confirm", async () => {
+      open({ mode: "demo", connected: true });
+      const today = sheet().querySelector("[data-lead-today]") as HTMLElement;
+      expect(today.getAttribute("data-lead-today")).toBe("demo");
+      expect(today.textContent).toBe(LEAD_COPY.where(true));
+      expect(sheet().textContent).toContain(MESSAGE_EXAMPLES_COPY.textState);
+      await pickChristy();
+      const first = await toConfirm();
+      expect(sheet().textContent).toContain(SHEET_COPY.goes("demo", first));
+      expect(sheet().textContent).not.toMatch(/practice/i);
+    });
+
+    it("sender off: a practice ask, nothing is sent, said once at each step, and nothing says sent or demo number", async () => {
+      open({ mode: "practice", connected: false });
+      const count = (needle: string) => (sheet().textContent ?? "").split(needle).length - 1;
+      const today = sheet().querySelector("[data-lead-today]") as HTMLElement;
+      expect(today.getAttribute("data-lead-today")).toBe("off");
+      expect(today.textContent).toBe(SHEET_COPY.off(true));
+      expect(count("Nothing is sent")).toBe(1);
+      expect(sheet().textContent).toContain(MESSAGE_EXAMPLES_COPY.noteOff);
+      expect(sheet().textContent).not.toContain(MESSAGE_EXAMPLES_COPY.textState);
+      expect(sheet().textContent).not.toContain(MESSAGE_EXAMPLES_COPY.note);
+      expect(sheet().textContent).not.toMatch(/demo number|Sent today|texts go to/i);
+      expect(sheet().querySelector('[data-message-example="live"]')).toBeNull();
+      await pickChristy();
+      expect(sheet().textContent).not.toMatch(/demo number|Sent today|texts go to/i);
+      const first = await toConfirm();
+      expect(count(SHEET_COPY.goes("practice", first))).toBe(1);
+      expect(sheet().querySelector("[data-lead-today]")).toBeNull();
+      expect(sheet().textContent).not.toMatch(/demo number|Sent today|texts go to/i);
+      expect(within(sheet()).getByRole("button", { name: ASK_COPY.sendPractice })).toBeTruthy();
+      expect(within(sheet()).queryByRole("button", { name: ASK_COPY.send })).toBeNull();
+    });
+
+    it("a real workspace with the sender off says nothing is sent and never calls it practice", () => {
+      open({ mode: "real", connected: false });
+      expect((sheet().querySelector("[data-lead-today]") as HTMLElement).textContent).toBe(SHEET_COPY.off(false));
+      expect(sheet().textContent).not.toMatch(/practice|Sent today|texts go to/i);
+    });
   });
 });
