@@ -34,7 +34,8 @@ import {
   LEAD_COPY,
   leadInput,
 } from "@/lib/proposal-desk-shared";
-import { boardWin, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { deskLinkFromSearch, deskProfileInput } from "@/lib/proposal-desk-shared";
+import { boardWin, changedInLastDay, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const BOARD_ID = "99999999-9999-4999-8999-999999999999";
@@ -233,19 +234,6 @@ describe("the dashboard read", () => {
       expect(theirs && "contextTitles" in theirs).toBe(false);
       expect(JSON.stringify(list)).not.toContain("SECRET");
       expect(list.canSetGoal).toBe(role === "admin");
-    }
-  });
-
-  // 20 Nov 2026, chat pill Phase 0: "Led before" on the lead sheet, from the workspace's own won proposals.
-  it("gives admins and leads what each person led before, and nobody else", async () => {
-    const won = [row({ id: "w1", status: "won", decided_at: hoursAgo(2), lead_contact_id: "c1", title: "Workforce plan" }), row({ id: "w2", status: "won", decided_at: hoursAgo(3), lead_contact_id: "c1", archived_at: hoursAgo(1) })];
-    for (const role of ["admin", "lead"]) {
-      const list = await listDesk(fakeStore({ rows: [...rows, ...won], role }));
-      expect(list.pastWork).toEqual({ c1: [{ client: "Marrowfield", title: "Workforce plan" }] });
-    }
-    for (const role of ["manager", "em", "coach"]) {
-      const list = await listDesk(fakeStore({ rows: [...rows, ...won], role }));
-      expect("pastWork" in list).toBe(false);
     }
   });
 
@@ -583,6 +571,17 @@ describe("20 Nov: who adds a client", () => {
     expect((await listDesk(off)).canAddClient).toBe(false);
     expect(await createProposal(off, newProposalInput({ title: "Audit", new_client_name: "Quillbrook" }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.adminAddsClients });
   });
+
+  it("tells only an admin that clients are switched off; others never see it", async () => {
+    expect((await listDesk(fakeStore({ role: "admin", clientsOn: async () => false }))).clientsOff).toBe(true);
+    expect((await listDesk(fakeStore({ role: "admin" }))).clientsOff).toBe(false);
+    expect((await listDesk(fakeStore({ role: "lead", clientsOn: async () => false }))).clientsOff).toBe(false);
+  });
+
+  it("a new pilot's admin adds the first client from the sheet itself", async () => {
+    const store = fakeStore({ role: "admin" });
+    expect(await createProposal(store, newProposalInput({ title: "First brief", new_client_name: "Brand New Client" }))).toMatchObject({ ok: true });
+  });
 });
 
 describe("20 Nov: the lead's name and the ask on the page", () => {
@@ -613,6 +612,37 @@ describe("20 Nov: the lead's name and the ask on the page", () => {
   it("nothing on the page times or counts a person", async () => {
     const list = await listDesk(fakeStore({ rows, asks, role: "admin" }));
     expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|minutes|seconds|\d{4}-\d{2}/);
+  });
+
+  it("QA H1 and N1: tells an admin, and only an admin, that an ask changed in the last day, by the server's own window", async () => {
+    // NOW is 12:00 UTC on 20 Nov: 2h and 23h ago are inside the last day, 25h ago is not.
+    const timed = async () => [
+      { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "yes", created_at: hoursAgo(30), status_at: hoursAgo(29), replied_at: hoursAgo(23) },
+      { proposal_id: "p2", contact_id: LEAD, to_demo: false, status: "delivered", reply: "no", created_at: hoursAgo(30), status_at: hoursAgo(26), replied_at: hoursAgo(25) },
+    ];
+    const admin = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }));
+    expect(admin.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ reply: "yes", recent: true });
+    expect("recent" in (admin.proposals.find((p) => p.id === "p2")?.ask ?? {})).toBe(false);
+    expect(JSON.stringify(admin.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|status_at|minutes|seconds|\d{4}-\d{2}/);
+    // A lead, or a member who started the proposal, sees the answer and nothing about when it came.
+    for (const role of ["lead", "em", "analyst"]) {
+      const list = await listDesk(fakeStore({ rows, asks: timed, role }));
+      expect(list.proposals.some((p) => p.ask && "recent" in p.ask), role).toBe(false);
+    }
+  });
+
+  it("QA H1 and N1: takes no time from the browser, and the window only moves on the hour", async () => {
+    // The list read keeps only the profile: a day start sent by the browser is dropped before the handler.
+    expect(deskProfileInput({ profile_id: null, day_start: "2026-11-20T08:00:00Z" } as never)).toEqual({ profile_id: null });
+    expect(listDesk.length).toBe(1);
+    const flag = (replied: string, now: string) => changedInLastDay({ replied_at: replied, status_at: null, created_at: replied }, new Date(now));
+    // A Pacific morning yes (17:00 UTC) is still there that evening, past UTC midnight (QA N1).
+    expect(flag("2026-11-20T17:00:00Z", "2026-11-21T01:00:00Z")).toBe(true);
+    // The start is the top of the hour 24 hours ago, at any minute within the hour: reads cannot narrow it further.
+    for (const now of ["2026-11-21T12:00:00Z", "2026-11-21T12:20:00Z", "2026-11-21T12:59:59Z"]) {
+      expect([flag("2026-11-20T12:00:00Z", now), flag("2026-11-20T12:59:00Z", now), flag("2026-11-20T11:59:59Z", now)], now).toEqual([true, true, false]);
+    }
+    expect(flag("2026-11-20T12:30:00Z", "2026-11-21T13:00:00Z")).toBe(false);
   });
 
   // QA M1 of PR 287: the sender's pause lifting must not strand a practice ask mid-demo.
@@ -832,5 +862,15 @@ describe("20 Nov: minutes are not an hour", () => {
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(2), goalHours: goal, now: NOW }), goal)).toBe("Went out in 1 hour");
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(3), sentAt: hoursAgo(1.5), goalHours: goal, now: NOW }), goal)).toBe("Went out in 2 hours");
     expect(timeLeftLine(timeLeft({ receivedAt: hoursAgo(1), sentAt: hoursAgo(1), goalHours: goal, now: NOW }), goal)).toBe("Went out in under an hour");
+  });
+});
+
+describe("21 Nov (D-82): links from an admin's Home into Proposals", () => {
+  const ID = "00000000-0000-4000-8000-0000000000a1";
+  it("keeps a proposal id, a lead sheet id and the People tab, and drops anything else", () => {
+    expect(deskLinkFromSearch({ proposal: ID })).toEqual({ proposal: ID });
+    expect(deskLinkFromSearch({ lead: ID.toUpperCase() })).toEqual({ lead: ID });
+    expect(deskLinkFromSearch(new URLSearchParams(`tab=people&proposal=${ID}`))).toEqual({ proposal: ID, tab: "people" });
+    for (const junk of [{ proposal: "1; drop" }, { lead: "<script>" }, { tab: "settings" }, { proposal: 5 }, {}]) expect(deskLinkFromSearch(junk)).toEqual({});
   });
 });

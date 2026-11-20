@@ -174,7 +174,7 @@ describe("nothing in the app can behave differently", () => {
 
   it("no SQL was added or changed for this", () => {
     // Later files that belong to other work are named here; anything else added after this one still fails the test.
-    const otherWork = ["20261120100000_roster_contact_details.sql"];
+    const otherWork = ["20261120100000_roster_contact_details.sql", "20261120200000_make_invite_offers.sql"];
     const migrations = readdirSync("supabase/migrations").filter(
       (name) => name > "20261120030000_lead_asks.sql" && !otherWork.includes(name),
     );

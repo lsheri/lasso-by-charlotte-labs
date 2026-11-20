@@ -78,7 +78,9 @@ describe("the one line on the page", () => {
     expect(askLine(view({ reply: "stop" }))).toBe("Christy Johnson opted out of texts");
     expect(askLine(view({ status: "delivered" }))).toBe("Delivered. Waiting for a reply");
     expect(askLine(view({ status: "sent" }))).toBe("Asked by text. Waiting for a reply");
-    for (const status of ["undelivered", "failed", "rejected", "expired"] as const) expect(askLine(view({ status, waiting: false }))).toBe("The text did not arrive");
+    for (const status of ["undelivered", "failed", "expired"] as const) expect(askLine(view({ status, waiting: false }))).toBe("The text did not arrive");
+    // QA M2: refused by the carrier means nothing went out.
+    expect(askLine(view({ status: "rejected", waiting: false }))).toBe("The text was not accepted, so nothing was sent");
     expect(askLine(view({ waiting: false }))).toBe("Asked by text. No reply");
     expect(askLine(view({ status: "practice", practice: true }))).toBe("Practice ask. Nothing was sent");
     expect(askLine(view({ name: "", reply: "yes" }))).toBe("The lead said yes");

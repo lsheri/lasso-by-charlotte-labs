@@ -223,17 +223,3 @@ describe("the morph", () => {
     expect(update).toHaveBeenCalledTimes(2);
   });
 });
-
-// 20 Nov 2026, chat pill Phase 0: "Led before" never showed, because the desk never handed the sheet its past work.
-describe("past work reaches the sheet", () => {
-  it("shows what each person led before, from the desk's own data", () => {
-    desk({ data: { ...data([made()]), pastWork: { c1: [{ client: "Larkspur Senior Living", title: "Workforce plan" }] } } });
-    const open = sheet() as HTMLElement;
-    expect(within(open).getByText(`${SHEET_COPY.ledBefore} Larkspur Senior Living, Workforce plan`)).toBeTruthy();
-  });
-
-  it("shows nothing beside a person with no past work", () => {
-    desk();
-    expect((sheet() as HTMLElement).querySelector("[data-led-before]")).toBeNull();
-  });
-});

@@ -16,34 +16,38 @@ import {
 import { PersonFace } from "@/components/ui/person-face";
 import { tagVariants } from "@/components/ui/tag";
 import { ASK_COPY, SHEET_COPY, type AskPreview, type AskResult } from "@/lib/lead-ask-shared";
-import { LEAD_COPY, type DeskProposal, type LeadResult, type PastWork } from "@/lib/proposal-desk-shared";
+import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
 import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
-/** One piece of past work a person led. The type lives with the desk's data, which now carries it. */
-export type { PastWork };
+/** One piece of past work a person led: who it was for and what it was. Never a fee, a value or a score. */
+export type PastWork = { client: string; title: string };
 /** The most past work one row shows. */
-export const PAST_WORK_SHOWN = 3;
+export const PAST_WORK_SHOWN = 2;
 
 /**
  * 20 Nov 2026 (Liam, card Q-68: "as past work beside each name"). The work a person has led before, so the partner
  * can see who fits. It sits beside the name and says nothing more: no count, no score, no "best match", and it never
  * changes the order of the list. With nothing to show, it renders nothing.
  */
-export function LedBefore({ work }: { work: readonly PastWork[] | undefined }) {
-  const shown = (work ?? []).filter((item) => item.client || item.title).slice(0, PAST_WORK_SHOWN);
-  if (shown.length === 0) return null;
+export function LedBefore({ work, known = false }: { work: readonly PastWork[] | undefined; /** Past work was read for everyone, so none means none. */ known?: boolean }) {
+  // D-86, few words: who it was for, each client once, newest first. The title only when there is no client name.
+  const shown = [...new Set((work ?? []).map((item) => item.client || item.title).filter(Boolean))].slice(0, PAST_WORK_SHOWN);
+  if (shown.length === 0) {
+    // D-86: a person who has led nothing with us says so in a few words, never a blank the partner must read into.
+    return known ? (
+      <span data-no-past className="mt-0.5 block text-(length:--type-small) text-muted-foreground">
+        {SHEET_COPY.noPast}
+      </span>
+    ) : null;
+  }
   return (
     <span
       data-led-before
       className="mt-0.5 block break-words text-(length:--type-small) text-muted-foreground [overflow-wrap:anywhere]"
     >
       {SHEET_COPY.ledBefore}{" "}
-      {shown
-        .map((item) =>
-          item.client && item.title ? `${item.client}, ${item.title}` : item.client || item.title,
-        )
-        .join("; ")}
+      {shown.join("; ")}
     </span>
   );
 }
@@ -300,7 +304,7 @@ export function LeadSheet({
                                 {person.role}
                               </span>
                             ) : null}
-                            <LedBefore work={pastWork?.[person.id]} />
+                            <LedBefore work={pastWork?.[person.id]} known={pastWork !== undefined} />
                           </span>
                           <span
                             className={cn(

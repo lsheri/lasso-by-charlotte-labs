@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import { BoardBuildReveal } from "@/components/proposals/BoardBuildReveal";
 import { LeadDialog } from "@/components/proposals/LeadPicker";
 import { LeadSheet, type LeadSheetStart } from "@/components/proposals/LeadSheet";
 import { ProposalRow } from "@/components/proposals/ProposalRow";
+import { useRowFlip } from "@/components/proposals/use-row-flip";
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +23,8 @@ import {
   deskView,
   timeLeft,
   timeLeftLine,
+  pastWorkByLead,
+  upNextId,
   WIN_COPY,
   type DeskList,
   type DeskProposal,
@@ -34,9 +38,12 @@ import type { RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
 /**
- * 20 Nov 2026, the Proposal Desk's dashboard: three views (All open, Needs me, Won) over the proposals this person
- * may see. One row per proposal: who it is for, what they asked for, how long it has left against the workspace's
- * own goal, and its context documents. Nothing here rates or ranks a person; a row names only who started it.
+ * 20 Nov 2026, the Proposal Desk's dashboard: four views (All open, Needs me, Won, Lost) over the proposals this
+ * person may see. One row per proposal: who it is for, what they asked for, how long it has left against the
+ * workspace's own goal, and its context documents. Nothing here rates or ranks a person; a row names only who started it.
+ *
+ * 20 Nov 2026 (Liam, D-86): the proposal closest to its goal that this person can move is Up next, at the top, and
+ * its next step is the one filled button on the page. Rows travel to their new place when they change.
  */
 export function ProposalDesk({
   data,
@@ -51,6 +58,7 @@ export function ProposalDesk({
   limit,
   initialView,
   startLead,
+  startLeadFresh = true,
   onStartLeadDone,
 }: {
   data: DeskList;
@@ -83,6 +91,8 @@ export function ProposalDesk({
   onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
   /** A proposal just made by New proposal: the lead sheet opens on it at once, for people who may pick a lead. */
   startLead?: string | null | undefined;
+  /** False when the sheet opens from a link (an admin's Home), not straight after New proposal: no "just started" words. */
+  startLeadFresh?: boolean | undefined;
   /** The sheet opened for a new proposal has closed, saved or not. */
   onStartLeadDone?: (() => void) | undefined;
 }) {
@@ -93,14 +103,19 @@ export function ProposalDesk({
   const picks = Boolean(data.canPickLead && onLead);
   // Worked out from the props, not set in an effect, so the sheet is there in the same render as the form leaves.
   const startProposal = startLead && picks && ask ? data.proposals.find((proposal) => proposal.id === startLead && proposal.status === "open") : undefined;
-  const sheetTarget = sheet ?? (startProposal ? { proposal: startProposal, start: "pick" as const, fresh: true } : null);
+  const sheetTarget = sheet ?? (startProposal ? { proposal: startProposal, start: "pick" as const, fresh: startLeadFresh } : null);
   const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
   // Texts have not started in a real workspace: the lead's answer is recorded by hand instead of asked by text.
   const recordAnswer = ask?.recordAnswer && !data.texts.demo && !data.texts.connected ? ask.recordAnswer : undefined;
   const all = deskView(data.proposals, view);
-  const rows = limit ? all.slice(0, limit) : all;
+  const shown = limit ? all.slice(0, limit) : all;
+  // Up next leads the list; the rows above it in reading order are ones this person cannot move.
+  const upNext = view === "open" || view === "mine" ? upNextId(shown, { send: Boolean(onSent), win: Boolean(onWin) }) : null;
+  const rows = upNext ? [...shown.filter((p) => p.id === upNext), ...shown.filter((p) => p.id !== upNext)] : shown;
+  const listRef = useRef<HTMLUListElement>(null);
+  useRowFlip(listRef);
 
   return (
     <section aria-label={DESK_COPY.title} data-testid="proposal-desk">
@@ -119,20 +134,14 @@ export function ProposalDesk({
         ))}
       </div>
 
-      {(view === "open" || view === "mine") && rows.length > 0 ? (
-        <p data-desk-no-board className="mb-3 text-sm text-muted-foreground">
-          {DESK_COPY.noBoardYet}
-        </p>
-      ) : null}
-
       {rows.length === 0 ? (
         <p data-desk-empty className="text-sm text-muted-foreground">
           {DESK_COPY.empty[view]}
         </p>
       ) : (
-        <ul className="divide-y divide-border border-y border-border">
+        <ul ref={listRef} className="flex flex-col gap-2 animate-in fade-in-0 duration-500 motion-reduce:animate-none">
           {rows.map((proposal) => (
-            <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
+            <ProposalRow key={proposal.id} featured={proposal.id === upNext} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
               lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => (ask ? setSheet({ proposal, start: "pick" }) : setLeading(proposal)) } : undefined}
               ask={
                 picks && ask
@@ -158,7 +167,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheetTarget} roster={roster} pastWork={data.pastWork} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
+        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>
@@ -252,13 +261,26 @@ function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null
         onClose();
       }}
     >
-      <DialogContent className="sm:max-w-md" data-testid="win-proposal">
+      <DialogContent className={cn("sm:max-w-md", working ? "sm:max-w-xl" : null)} data-testid="win-proposal">
         <DialogHeader>
           <DialogTitle className="page-title">{WIN_COPY.title}</DialogTitle>
           <DialogDescription className="break-words [overflow-wrap:anywhere]">{proposal ? `${proposal.clientName ? `${proposal.clientName}: ` : ""}${proposal.title}` : ""}</DialogDescription>
         </DialogHeader>
-        <p className="text-sm text-foreground">{WIN_COPY.body(proposal?.contextCount ?? 0)}</p>
-        <p className="text-sm text-muted-foreground">{WIN_COPY.sharing}</p>
+        {/* While the board is being made, the dialog shows that board building in (D-86); before, it says what will happen. */}
+        {working && proposal ? (
+          <BoardBuildReveal
+            client={proposal.clientName || proposal.title}
+            documents={proposal.contextTitles ?? []}
+            documentCount={proposal.contextCount}
+            lead={proposal.leadName ?? ""}
+            owner={proposal.ownerName}
+          />
+        ) : (
+          <>
+            <p className="text-sm text-foreground">{WIN_COPY.body(proposal?.contextCount ?? 0)}</p>
+            <p className="text-sm text-muted-foreground">{WIN_COPY.sharing}</p>
+          </>
+        )}
         {problem ? (
           <p role="alert" className="text-sm text-destructive">
             {problem}

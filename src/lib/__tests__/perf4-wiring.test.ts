@@ -32,7 +32,7 @@ describe("PERF-4 wiring", () => {
       "src/components/firm/FirmLiveBoards.tsx",
       "src/components/firm/FirmProposalsCard.tsx",
       "src/pages/ProposalsPage.tsx",
-      "src/components/home/HomeProposals.tsx",
+      "src/components/home/AdminHome.tsx",
       "src/components/firm-brain/FirmBrainMap.tsx",
       "src/components/firm-brain/CommonQuestionsCard.tsx",
     ]) {

@@ -9,7 +9,7 @@ import {
   markNotifications,
   recordNotificationOpened,
 } from "@/lib/notifications.functions";
-import { NOTIFICATION_COPY, unreadCount, type NotificationRow } from "@/lib/notifications-shared";
+import { NOTIFICATION_COPY, OPEN_NOTIFICATIONS_EVENT, unreadCount, type NotificationRow } from "@/lib/notifications-shared";
 
 import { NotificationPanel } from "./NotificationPanel";
 
@@ -86,6 +86,18 @@ export function NotificationBell({ className, side = "bottom", align = "end" }: 
     onOpenChange(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.isSuccess]);
+
+  // 21 Nov (D-82): an admin's Home opens the visible bell for an invite that waits on them. Only the bell on screen
+  // answers, so the sidebar's and the top bar's never open together.
+  useEffect(() => {
+    const open = () => {
+      const el = buttonRef.current;
+      if (!el || el.getClientRects().length === 0) return;
+      onOpenChange(true);
+    };
+    window.addEventListener(OPEN_NOTIFICATIONS_EVENT, open);
+    return () => window.removeEventListener(OPEN_NOTIFICATIONS_EVENT, open);
+  });
 
   const trigger = (
     <button

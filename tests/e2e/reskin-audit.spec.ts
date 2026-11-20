@@ -56,7 +56,7 @@ const board = async (page: Page) => {
 };
 
 const SCREENS: Screen[] = [
-  { name: "home", open: async (page) => { await page.goto("/home", { waitUntil: "domcontentloaded" }); await page.getByTestId("ask-the-firm").waitFor({ timeout: 30_000 }).catch(() => undefined); await page.waitForTimeout(2_000); } },
+  { name: "home", open: async (page) => { await page.goto("/home", { waitUntil: "domcontentloaded" }); await page.getByTestId("ask-the-firm").or(page.getByTestId("admin-home")).first().waitFor({ timeout: 30_000 }).catch(() => undefined); await page.waitForTimeout(2_000); } },
   { name: "board", open: board },
   { name: "board-more-menu", open: async (page) => { await board(page); await page.getByRole("toolbar", { name: "Board controls" }).locator('[data-toolbar-control="more"]').click(); await page.getByRole("menu").waitFor(); } },
   { name: "share-dialog", open: async (page) => { await board(page); await page.getByRole("button", { name: "Share", exact: true }).click(); await page.getByRole("dialog").waitFor(); await page.waitForTimeout(800); } },

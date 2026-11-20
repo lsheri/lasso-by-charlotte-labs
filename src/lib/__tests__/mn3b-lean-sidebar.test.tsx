@@ -80,22 +80,24 @@ afterEach(cleanup);
 const LANDED = ["Home -> /home", "# Boards", "All work -> /work"];
 // 19 Nov, layout A: a company workspace has Firm brain and Proposals above Boards.
 const LANDED_FIRM = ["Home -> /home", "Firm brain -> /firm-brain", "Proposals -> /proposals", "# Boards", "All work -> /work"];
+// 21 Nov, D-82: a company admin's Boards is a lower section that starts closed, just above Sources.
+const ADMIN_FIRM = ["Home -> /home", "Firm brain -> /firm-brain", "Proposals -> /proposals", "All work -> /work", "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "# Boards", "Sources -> /connectors"];
 
 describe("NAV-1 sidebar and the sources row", () => {
   it("NAV-4: navigation retains every destination and its event after removing the decorative loops", () => {
     const view = mount(<SidebarNav />);
-    expect(rows(view.container)).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(rows(view.container)).toEqual(ADMIN_FIRM);
     expect(view.container.querySelector(".lasso-nav-catch")).toBeNull();
     fireEvent.click(screen.getByRole("link", { name: "Home" }));
     expect(state.events).toHaveBeenLastCalledWith("nav.opened", "o1", { item: "home", surface: "sidebar" });
   });
   it("company admin with no work: Sources shows in the sidebar, not the menu", () => {
-    expect(sidebarRows()).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual(ADMIN_FIRM);
     expect(menuIds()).toEqual(["feedback", "sign-out"]);
   });
   it("company admin with five work items: Sources stays in the sidebar and is absent from the menu", () => {
     state.work = 5;
-    expect(sidebarRows()).toEqual([...LANDED_FIRM, "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "Sources -> /connectors"]);
+    expect(sidebarRows()).toEqual(ADMIN_FIRM);
     expect(menuIds()).toEqual(["feedback", "sign-out"]);
     const view = mount(<WorkspaceMenu />);
     expect(within(openMenu()).queryByText("Sources")).toBeNull();

@@ -260,9 +260,8 @@ describe("the tour link", () => {
 describe("the words the story borrows from the product", () => {
   // Presenter notes tell a person to press controls by name. If a control is renamed, its note must change too.
   const NAMED_CONTROLS: Record<string, string> = {
-    "Ask the firm": "src/lib/firm-ask-shared.ts",
+    // 20 Nov 2026 (QA L3 of PR 290): "Ask the firm" and "What we charged" left the notes; asking is the chat pill.
     "What it read": "src/lib/firm-ask-shared.ts",
-    "What we charged": "src/lib/firm-ask-shared.ts",
     "More tools": "src/components/canvas-lab/BoardToolbarSurface.tsx",
     "Start a proposal": "src/lib/proposal-shared.ts",
     "Red pen": "src/lib/red-pen-shared.ts",
@@ -317,7 +316,7 @@ describe("beat 2 matches the menu (20 Nov)", () => {
   });
 
   it("is a new version of the script", () => {
-    expect(FIRM_STORY_SCRIPT.version).toBe(3);
+    expect(FIRM_STORY_SCRIPT.version).toBe(4);
   });
 });
 

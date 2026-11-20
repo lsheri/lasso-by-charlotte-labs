@@ -55,8 +55,11 @@ test("firm_ask.source_opened: Harper opens a source under an answer", async ({ b
   await page.goto("/home", { waitUntil: "domcontentloaded" });
   const box = page.getByTestId("ask-the-firm");
   await box.waitFor({ timeout: 30_000 });
+  // 20 Nov 2026 (D-97): Ask the firm is the chat pill, on every page. Open it first; the answer builds in the chat.
+  if ((await box.getAttribute("data-mode")) === "shut") await box.getByRole("button", { name: /^Open the .+ helper$/ }).click();
+  await box.getByLabel("Question for the firm").waitFor({ state: "visible", timeout: 10_000 });
   await box.getByLabel("Question for the firm").fill("Have we done post-merger integration before?");
-  await box.getByRole("button", { name: "Ask" }).click();
+  await box.getByRole("button", { name: "Ask", exact: true }).click();
   await box.locator('[data-firm-answer="answered"]').waitFor({ timeout: 120_000 });
   const source = box.locator("[data-firm-source] button, [data-firm-source] a, button[data-firm-source]").first();
   await expect(source).toBeVisible({ timeout: 15_000 });

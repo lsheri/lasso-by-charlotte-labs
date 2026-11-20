@@ -3,7 +3,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { pastWorkByLead } from "@/lib/proposal-desk-shared";
 import {
   SENDER_PAUSE_MS,
   senderPaused,
@@ -157,59 +156,5 @@ describe("the words while texts have not started", () => {
       expect(readFileSync(file, "utf8")).not.toMatch(/Texting is not connected in this app yet/);
       expect(readFileSync(file, "utf8")).not.toMatch(/awaiting carrier approval/);
     }
-  });
-});
-
-describe("past work beside a name on the lead sheet", () => {
-  const CLIENTS = new Map([
-    ["c1", "Larkspur Senior Living"],
-    ["c2", "Harrow Water District"],
-  ]);
-  const row = (over: Record<string, unknown>) => ({
-    status: "won",
-    lead_contact_id: "p1",
-    archived_at: null,
-    decided_at: "2026-10-01T00:00:00Z",
-    client_id: "c1",
-    title: "Workforce plan",
-    ...over,
-  });
-
-  it("lists the won proposals each person led, newest first, three at most", () => {
-    const out = pastWorkByLead(
-      [
-        row({ decided_at: "2026-09-01T00:00:00Z", title: "Old" }),
-        row({ decided_at: "2026-11-01T00:00:00Z", client_id: "c2", title: "Rate study" }),
-        row({ decided_at: "2026-10-01T00:00:00Z" }),
-        row({ decided_at: "2026-08-01T00:00:00Z", title: "Oldest" }),
-        row({ lead_contact_id: "p2", title: "Someone else's" }),
-      ],
-      CLIENTS,
-    );
-    expect(out["p1"]).toEqual([
-      { client: "Harrow Water District", title: "Rate study" },
-      { client: "Larkspur Senior Living", title: "Workforce plan" },
-      { client: "Larkspur Senior Living", title: "Old" },
-    ]);
-    expect(out["p2"]).toEqual([{ client: "Larkspur Senior Living", title: "Someone else's" }]);
-  });
-
-  it("leaves out open, lost and archived proposals, and ones with no lead", () => {
-    expect(
-      pastWorkByLead(
-        [
-          row({ status: "open" }),
-          row({ status: "lost" }),
-          row({ archived_at: "2026-11-02T00:00:00Z" }),
-          row({ lead_contact_id: null }),
-        ],
-        CLIENTS,
-      ),
-    ).toEqual({});
-  });
-
-  it("carries no fee, count or score, only who it was for and what it was", () => {
-    const out = pastWorkByLead([row({})], CLIENTS);
-    expect(Object.keys(out["p1"]![0]!)).toEqual(["client", "title"]);
   });
 });

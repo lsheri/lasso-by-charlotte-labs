@@ -4,6 +4,7 @@ import path from "node:path";
 import { test, type Page } from "@playwright/test";
 
 import { brandFor } from "../../src/design/brand/brand";
+import { firstBoardCanvasHref } from "./board-link";
 
 import {
   BASELINE_SURFACES,
@@ -67,10 +68,7 @@ async function openAsk(page: Page) {
 
 async function openFirstBoard(page: Page): Promise<void> {
   await go(page, "/home");
-  const board = page.locator('a[href*="/canvas-lab"]').first();
-  await board.waitFor({ state: "attached", timeout: 30_000 });
-  const href = await board.getAttribute("href");
-  if (!href) throw new Error("no board link found");
+  const href = await firstBoardCanvasHref(page);
   await go(page, href);
   await page.locator(`[data-toolbar-control], [aria-label="${ASK_LABEL}"]`).first().waitFor({
     timeout: 60_000,

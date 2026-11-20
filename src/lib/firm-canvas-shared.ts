@@ -450,6 +450,8 @@ export const FIRM_CANVAS_COPY = {
   done: (lines: number, engagements: number) =>
     `${lines} ${lines === 1 ? "line" : "lines"} from ${engagements} ${engagements === 1 ? "engagement" : "engagements"}`,
   failed: "That did not work. Try again.",
+  /** The caption over a failed answer; the failure itself is said once, in the line below it. */
+  notRead: "The firm was not read",
   tryAgain: "Try again",
   fees: "Fees",
   feesOn: "Hide fees",

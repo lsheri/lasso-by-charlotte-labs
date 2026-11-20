@@ -102,7 +102,7 @@ describe("a real workspace whose texts have not started", () => {
     expect(within(row).queryByText(ASK_COPY.practiceTag)).toBeNull();
   });
 
-  it("after today's refused texts, the line says the text did not arrive and the answer can still be recorded", () => {
+  it("after today's refused texts, the line says the text was not accepted and the answer can still be recorded", () => {
     const refused: AskView = {
       name: "Christy Johnson",
       status: "rejected",
@@ -112,7 +112,7 @@ describe("a real workspace whose texts have not started", () => {
       waiting: false,
     };
     const { row } = desk({ demo: false, connected: false }, proposal({ ask: refused }));
-    expect(within(row).getByText(ASK_COPY.notArrived)).toBeTruthy();
+    expect(within(row).getByText(ASK_COPY.notAccepted)).toBeTruthy();
     expect(within(row).getByText(ASK_COPY.recordPrompt)).toBeTruthy();
   });
 

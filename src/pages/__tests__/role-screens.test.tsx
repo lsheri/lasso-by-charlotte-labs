@@ -4,10 +4,10 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { navFor, type NavCtx } from "@/components/layout/nav-config";
+import { boardsBelow, navFor, type NavCtx } from "@/components/layout/nav-config";
 import { DEFAULT_VOCAB } from "@/lib/edu-vocab";
 import { DESK_COPY, deskViewFromSearch, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
-import { FIRM_BRAIN_COPY, FIRM_VIEW_COPY, HOME_PROPOSALS_COPY, HOME_PROPOSAL_ROWS, firmBrainAccess, homeShowsProposals } from "@/lib/role-screens-shared";
+import { FIRM_BRAIN_COPY, FIRM_VIEW_COPY, HOME_PROPOSALS_COPY, firmBrainAccess, homeShowsProposals } from "@/lib/role-screens-shared";
 
 /**
  * 19 Nov 2026 (Liam): the menu rows and Home, role by role. Each role sees a row only for what it can use, the map
@@ -47,7 +47,6 @@ vi.mock("@/hooks/use-engagements", () => ({ useEngagements: () => ({ data: [{ id
 vi.mock("@/hooks/use-engagement-views", () => ({ useEngagementViews: () => ({ data: [{ engagement_id: "e1", last_viewed_at: "2026-11-01T00:00:00Z" }, { engagement_id: "e2", last_viewed_at: "2026-11-20T00:00:00Z" }] }) }));
 vi.mock("@/components/person/UsesHomeCard", () => ({ UsesHomeCard: () => null }));
 
-import { HomeProposals } from "@/components/home/HomeProposals";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { FirmBrainPage } from "@/pages/FirmBrainPage";
 import { FirmDashboardPage } from "@/pages/FirmDashboardPage";
@@ -87,9 +86,19 @@ describe("menu rows by role", () => {
       .flatMap((group) => (group.id === "engagements" ? ["# Boards"] : group.items.map((item) => `${item.label} -> ${item.to ?? "button"}`)));
 
   it("an admin and a lead see Firm brain, Proposals and Firm view", () => {
-    for (const role of ["admin", "lead"]) {
-      expect(main("company", role)).toEqual(["Home -> /home", "Create -> button", "Firm brain -> /firm-brain", "Proposals -> /proposals", "# Boards", "All work -> /work", "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm"]);
-    }
+    expect(main("company", "lead")).toEqual(["Home -> /home", "Create -> button", "Firm brain -> /firm-brain", "Proposals -> /proposals", "# Boards", "All work -> /work", "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm"]);
+    // D-82: an admin's boards move to the foot of the menu, in a section that starts closed.
+    expect(main("company", "admin")).toEqual(["Home -> /home", "Create -> button", "Firm brain -> /firm-brain", "Proposals -> /proposals", "All work -> /work", "Look back -> /archive", "Your coach -> /one-on-one", "Firm view -> /firm", "# Boards"]);
+  });
+
+  it("puts Boards in a lower, closed section for an admin of a company workspace only (D-82)", () => {
+    const boards = (type: NavCtx["type"], role: string) =>
+      navFor(ctx(type, role), { vocab: DEFAULT_VOCAB, institutionName: null }).find((group) => group.id === "engagements");
+    expect(boards("company", "admin")?.lower).toBe(true);
+    for (const role of ["lead", "em", "manager", "analyst", "coach"]) expect(boards("company", role)?.lower, role).toBeUndefined();
+    for (const type of ["personal", "partner", "edu"] as const) expect(boards(type, "admin")?.lower, type).toBeUndefined();
+    expect(boardsBelow({ type: "company", role: "admin" })).toBe(true);
+    expect(boardsBelow({ type: "partner", role: "admin" })).toBe(false);
   });
 
   it("a manager and an analyst see Firm brain and Proposals, and no Firm view row to be refused at", () => {
@@ -224,17 +233,15 @@ describe("Firm view by its address", () => {
 });
 
 describe("Home by role", () => {
-  it("leads an admin's Home with proposals, then Ask the firm, the tools and the boards", async () => {
+  it("gives an admin only the operating picture: no Ask the firm, no tools, no boards (D-82)", async () => {
     mocks.profile = person("admin");
     mocks.list.mockResolvedValue(desk([proposal({ id: "a" })]));
     mount(<HomePage />);
-    await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-    const [proposals, ask, tools, boards] = order("home-proposals", "ask-the-firm", "junior-tools", "home-board") as [number, number, number, number];
-    expect(proposals).toBeGreaterThanOrEqual(0);
-    expect(proposals).toBeLessThan(ask);
-    expect(ask).toBeLessThan(tools);
-    expect(tools).toBeLessThan(boards);
-    expect(mocks.list).toHaveBeenCalledWith({ data: { profile_id: person("admin").id } });
+    expect(screen.getByTestId("admin-home")).toBeTruthy();
+    for (const id of ["ask-the-firm", "junior-tools", "home-board", "home-ask"]) expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.getByRole("link", { name: /Up next in Proposals/ }).getAttribute("href")).toBe("/proposals");
+    await waitFor(() => expect(mocks.list).toHaveBeenCalled());
+    expect(mocks.list.mock.calls[0]?.[0]).toMatchObject({ data: { profile_id: person("admin").id } });
   });
 
   it("gives a lead and a member the mini firm brain over their boards, with no proposals asked for (D-85 PR B)", async () => {
@@ -242,10 +249,7 @@ describe("Home by role", () => {
       mocks.profile = person(role);
       mount(<HomePage />);
       const ask = screen.getByTestId("home-ask");
-      expect(ask.getAttribute("data-role")).toBe(role);
-      // The starters are made from the most recently opened board.
-      expect(ask.getAttribute("data-recent")).toBe("Fairhaven digital product operating model");
-      // The question box sits at the top of Home's board, above the boards as cards.
+      // The greeting and the orb sit at the top of Home's board, above the boards as cards. Asking is the pill's.
       expect(screen.getByTestId("home-board").contains(ask)).toBe(true);
       for (const id of ["home-proposals", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
       await Promise.resolve();
@@ -268,110 +272,14 @@ describe("Home by role", () => {
     for (const profile of [undefined, null, person("admin", { is_guest: true })]) {
       mocks.profile = profile;
       mount(<HomePage />);
-      expect(screen.queryByTestId("home-proposals")).toBeNull();
+      expect(screen.queryByTestId("admin-home")).toBeNull();
       expect(mocks.list).not.toHaveBeenCalled();
       cleanup();
     }
   });
 });
 
-describe("proposals on an admin's Home", () => {
-  const admin = person("admin");
-
-  it("shows the open, won and lost picture, the open proposals closest to their goal first, and where each stands", async () => {
-    mocks.list.mockResolvedValue(desk([
-      proposal({ id: "new", clientName: "Larkspur", receivedAt: new Date(NOW - 3_600_000).toISOString(), leadName: "Christy Johnson", ask: { status: "sent", waiting: false, reply: "yes", practice: true, name: "" } as never }),
-      proposal({ id: "old", clientName: "Pellham", receivedAt: new Date(NOW - 4.5 * 3_600_000).toISOString() }),
-      proposal({ id: "won", clientName: "Harrowgate", status: "won", decidedAt: "2026-11-20T09:00:00Z", engagementId: "b1" }),
-      proposal({ id: "lost", status: "lost", decidedAt: "2026-11-18T09:00:00Z" }),
-    ]));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(screen.getByRole("button", { name: "All open 2" })).toBeTruthy());
-    expect(screen.getByRole("button", { name: "Won 1" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Lost 1" })).toBeTruthy();
-    expect(Array.from(document.querySelectorAll("[data-proposal-row]")).map((row) => row.getAttribute("data-proposal-row"))).toEqual(["old", "new"]);
-    expect(within(document.querySelector('[data-proposal-row="old"]') as HTMLElement).getByText("67 hours left of 72")).toBeTruthy();
-    expect(within(document.querySelector('[data-proposal-row="new"]') as HTMLElement).getByText("Lead: Christy Johnson")).toBeTruthy();
-    expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.open }).getAttribute("href")).toBe("/proposals");
-    fireEvent.click(screen.getByRole("button", { name: "Won 1" }));
-    expect(document.querySelector('[data-proposal-row="won"]')).toBeTruthy();
-  });
-
-  it("is read only: no change can be made from Home, whatever the person may do on the Proposals page", async () => {
-    mocks.list.mockResolvedValue(desk([proposal({ id: "a", mine: true, leadContactId: "c1", leadName: "Christy Johnson" })]));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-    const section = screen.getByTestId("home-proposals");
-    const pressable = within(section).getAllByRole("button").map((button) => button.textContent?.trim());
-    expect(pressable).toEqual(["All open 1", "Needs me 1", "Won 0", "Lost 0"]);
-    for (const words of ["Mark as sent", "Record the win", "Pick a lead", "Change", "Close as lost", "Archive"]) expect(within(section).queryByText(words)).toBeNull();
-  });
-
-  it("never shows a fee, a value, a phone number or anything that rates a person", async () => {
-    mocks.list.mockResolvedValue(desk([proposal({ id: "a" }), proposal({ id: "b", status: "won", decidedAt: "2026-11-20T09:00:00Z" })]));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-    const words = screen.getByTestId("home-proposals").textContent ?? "";
-    expect(words).not.toMatch(/[$£€]|USD|GBP|EUR|\bfee|\bvalue|\+?\d[\d\s().-]{8,}\d|score|rank|fastest|slowest|reply time/i);
-  });
-
-  it("shows the first few and points to the Proposals page for the rest", async () => {
-    const many = Array.from({ length: HOME_PROPOSAL_ROWS + 2 }, (_, index) => proposal({ id: `p${index}`, receivedAt: new Date(NOW - (index + 1) * 3_600_000).toISOString() }));
-    mocks.list.mockResolvedValue(desk(many));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(document.querySelectorAll("[data-proposal-row]")).toHaveLength(HOME_PROPOSAL_ROWS));
-    expect(screen.getByRole("button", { name: `All open ${many.length}` })).toBeTruthy();
-    expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.seeAll(many.length) }).getAttribute("href")).toBe("/proposals");
-  });
-
-  it("carries the view chosen on Home to the Proposals page (QA finding 4)", async () => {
-    const won = Array.from({ length: HOME_PROPOSAL_ROWS + 1 }, (_, index) => proposal({ id: `w${index}`, status: "won", decidedAt: "2026-11-20T09:00:00Z" }));
-    mocks.list.mockResolvedValue(desk(won));
-    mount(<HomeProposals profile={admin} />);
-    fireEvent.click(await screen.findByRole("button", { name: `Won ${won.length}` }));
-    expect(screen.getByRole("link", { name: HOME_PROPOSALS_COPY.seeAll(won.length) }).getAttribute("href")).toBe("/proposals?view=won");
-  });
-
-  it("lets a long unbroken starter name wrap inside the row (QA finding 6)", async () => {
-    mocks.list.mockResolvedValue(desk([proposal({ id: "a", ownerName: "N".repeat(270) })]));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(document.querySelector("[data-proposal-owner]")).toBeTruthy());
-    const owner = document.querySelector("[data-proposal-owner]") as HTMLElement;
-    expect(owner.className).toContain("[overflow-wrap:anywhere]");
-    expect(owner.className).toContain("min-w-0");
-  });
-
-  it("says so plainly when there are no proposals, with no empty table and no link to more", async () => {
-    mocks.list.mockResolvedValue(desk([]));
-    mount(<HomeProposals profile={admin} />);
-    await waitFor(() => expect(screen.getByText(DESK_COPY.empty.open)).toBeTruthy());
-    expect(document.querySelector("[data-desk-more]")).toBeNull();
-    expect(document.querySelector("ul")).toBeNull();
-  });
-
-  it("says loading, and after a failed load offers Try again, which reads again", async () => {
-    let fail: (reason: Error) => void = () => {};
-    mocks.list.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject; }));
-    mount(<HomeProposals profile={admin} />);
-    expect(screen.getByText(DESK_COPY.loading)).toBeTruthy();
-    fail(new Error("down"));
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain(DESK_COPY.loadFailed));
-    expect(document.querySelector("[data-proposal-row]")).toBeNull();
-    mocks.list.mockResolvedValue(desk([proposal({ id: "a" })]));
-    fireEvent.click(screen.getByRole("button", { name: DESK_COPY.retry }));
-    await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-  });
-
-  it("goes away, and stops showing rows, when the person stops being an admin", async () => {
-    mocks.list.mockResolvedValue(desk([proposal({ id: "a" })]));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const view = render(<QueryClientProvider client={client}><HomeProposals profile={admin} /></QueryClientProvider>);
-    await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-    view.rerender(<QueryClientProvider client={client}><HomeProposals profile={person("analyst")} /></QueryClientProvider>);
-    expect(screen.queryByTestId("home-proposals")).toBeNull();
-    expect(document.querySelector("[data-proposal-row]")).toBeNull();
-  });
-
+describe("the Proposals page's list", () => {
   it("leaves the Proposals page's own list whole: no limit, no link to itself", () => {
     const many = Array.from({ length: 6 }, (_, index) => proposal({ id: `p${index}` }));
     render(<ProposalDesk data={desk(many)} />);

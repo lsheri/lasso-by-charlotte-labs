@@ -106,6 +106,12 @@ export type AskView = {
   recordedBy?: string | undefined;
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
+  /**
+   * 21 Nov (D-82, QA H1 and N1): true when the ask last changed (its reply, else its delivery report, else when it was
+   * sent) within the last day, by a window the server alone sets, so an admin's Home can list it under "Earlier". Sent
+   * to admins only. No time leaves the server, so nothing can work out how long anyone took.
+   */
+  recent?: true;
 };
 
 export const ASK_COPY = {
@@ -129,6 +135,8 @@ export const ASK_COPY = {
   sentWaiting: "Asked by text. Waiting for a reply",
   deliveredWaiting: "Delivered. Waiting for a reply",
   notArrived: "The text did not arrive",
+  /** QA M2: the carrier refused it, so nothing went out. Short form of `refused`. */
+  notAccepted: "The text was not accepted, so nothing was sent",
   noReply: "Asked by text. No reply",
   practiceWaiting: "Practice ask. Nothing was sent",
   practiceTag: "Practice",
@@ -173,6 +181,7 @@ export function askLine(ask: AskView): string {
   if (ask.reply === "yes") return ASK_COPY.saidYes(ask.name);
   if (ask.reply === "no") return ASK_COPY.saidNo(ask.name);
   if (ask.reply === "stop" || ask.status === "opted_out") return ASK_COPY.stopped(ask.name);
+  if (ask.status === "rejected") return ASK_COPY.notAccepted;
   if ((NOT_ARRIVED as readonly string[]).includes(ask.status)) return ASK_COPY.notArrived;
   if (ask.practice) return ASK_COPY.practiceWaiting;
   if (!ask.waiting) return ASK_COPY.noReply;
@@ -194,6 +203,8 @@ export const SHEET_COPY = {
   pickLater: "Pick later",
   pickFirst: "Pick someone to see their text",
   ledBefore: "Led before:",
+  /** D-86 (Liam): said beside a person who has led nothing with us yet, so the partner is not left guessing. */
+  noPast: "No past work with us yet",
   /** Where it goes, said once on the confirm. */
   goes: (mode: "real" | "demo" | "practice", name: string) =>
     mode === "practice"

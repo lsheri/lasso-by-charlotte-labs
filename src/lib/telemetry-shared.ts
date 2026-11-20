@@ -64,6 +64,10 @@ export type TelemetryEvent =
   | "demo.filter_changed"
   /** P4a: the signed-in Home board was opened. Content-free. */
   | "home.opened"
+  /** 20 Nov 2026, chat pill (D-97): the pill was opened. Dims: page (home | proposals | firm | board | work | other). Never the question. */
+  | "pill.opened"
+  /** 20 Nov 2026, chat pill: the chat was made full screen, by the button or a drag. Dims: page. */
+  | "pill.expanded"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */
   | "home.new_engagement_started"
   /** P4a: Past work was opened from Home. Content-free. */
@@ -148,6 +152,8 @@ export type TelemetryEvent =
   | "import.failed"
   /** GATE-1: a company or partner signup asked for a pilot. Register and team size band only. */
   | "pilot.requested"
+  /** 20 Nov, Set up a pilot: a founder made a company workspace and its first admin's invite. Dims: emailed (sent | not_configured | failed). Never the firm's name or the email. Portal registration required. */
+  | "pilot.set_up"
   /** PF1: a push through MCP. Dims include stage (options | capture | helper)
    *  and window_pos (only | first | middle | last); the full list lives in
    *  event-dim-allowlist.ts. */
@@ -251,6 +257,7 @@ export type TelemetryEvent =
   | "analysis.reader_story"
   | "member.deactivated"
   | "member.reactivated"
+  /** An admin changed a teammate's role (emitted from 20 Nov). Dims: from, to (admin | lead | em). Never who. Portal registration required. */
   | "member.role_changed"
   | "invite.revoked"
   | "invite.email_sent"
