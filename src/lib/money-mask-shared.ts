@@ -112,12 +112,14 @@ export function isSowItem(item: { type?: string | null; title?: string | null; m
  */
 export const PROPOSALS_ARE_FIRM_MONEY = true;
 
-// QA of PR 281 (open Medium): titles people give a firm's own proposal beyond a leading "Proposal": "external proposal
-// figures", "Draft proposal - Acme", "Acme proposal v3", "Re: Proposal", "1. Proposal". A title about a proposal (notes,
-// a review, comments) is not the proposal, and neither is a client's "State board proposal" or a request for proposal.
-const PROPOSAL_TITLE = new RegExp(
+// D-93: a title that starts with "Proposal" ("[Proposal] ...", "Copy of ... Proposal") is a proposal, always, whatever
+// else it says ("Proposal: Strategic review and options" is still the firm's proposal).
+const PROPOSAL_LEADING = /^\W*(?:copy of\s+)*\[?proposal\b/i;
+// QA of PR 281 (open Medium): other titles people give a firm's own proposal: "external proposal figures", "Draft
+// proposal - Acme", "Acme proposal v3", "Re: Proposal", "1. Proposal", "diagnostic-proposal-final". These count only when
+// the title is not about a proposal (notes, a review, comments): "Partner review notes on proposal draft v1" is not.
+const PROPOSAL_WIDER = new RegExp(
   [
-    "^\\W*(?:copy of\\s+)*\\[?proposal\\b",
     "\\bproposal[-_ ](?:draft|final)\\b",
     "\\b(?:draft|external|final|signed|our)\\s+proposal\\b",
     "\\bproposal\\s+(?:v\\d+|figures|pricing|fees?|budget)\\b",
@@ -132,7 +134,7 @@ export function isProposalItem(item: { type?: string | null; title?: string | nu
   if (!item.type || !isDeliverableType(item.type)) return false;
   const meta = item.meta && typeof item.meta === "object" && !Array.isArray(item.meta) ? (item.meta as Record<string, unknown>) : {};
   const title = item.title ?? "";
-  return meta["deliverable_kind"] === "proposal" || (PROPOSAL_TITLE.test(title) && !NOT_THE_PROPOSAL.test(title));
+  return meta["deliverable_kind"] === "proposal" || PROPOSAL_LEADING.test(title) || (PROPOSAL_WIDER.test(title) && !NOT_THE_PROPOSAL.test(title));
 }
 
 /** An item holding the firm's own money: a SOW, and a proposal while PROPOSALS_ARE_FIRM_MONEY is on. */
