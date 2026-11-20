@@ -205,7 +205,7 @@ export function LeadSheet({
     >
       <DialogContent
         ref={box}
-        className="max-h-[90dvh] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
+        className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
         data-testid={confirm ? "ask-lead" : "pick-lead"}
         data-lead-sheet={confirm ? "confirm" : "pick"}
       >
@@ -351,8 +351,9 @@ export function LeadSheet({
             ) : null}
           </div>
           {/* The phone stays where it is through both steps: the same message, first as a preview, then as what goes out. */}
-          <div className="flex flex-col items-center gap-2">
-            <p data-ask-gets className="micro-label self-start">
+          <div className="flex min-w-0 flex-col items-center gap-2">
+            {/* A first name of 30 or more unbroken letters must wrap here, or it pushes the sheet wide and Cancel and Send off the screen. */}
+            <p data-ask-gets className="micro-label max-w-full min-w-0 self-start break-words [overflow-wrap:anywhere]">
               {choice
                 ? ASK_COPY.gets(name, ready?.mode === "real" && !ready.warning)
                 : SHEET_COPY.pickFirst}
@@ -424,6 +425,8 @@ export function LeadSheet({
               </Button>
               <Button
                 type="button"
+                data-lead-ask
+                className="h-auto min-h-9 max-w-full whitespace-normal text-left [overflow-wrap:anywhere]"
                 disabled={working || !choice || gone}
                 onClick={() => {
                   setStep("confirm");

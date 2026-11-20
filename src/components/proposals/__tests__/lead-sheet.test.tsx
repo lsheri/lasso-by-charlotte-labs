@@ -427,6 +427,25 @@ describe("a lead who is no longer on the list, the agreement line, and the phone
     expect(sheet().className).toMatch(/overflow-x-hidden/);
     expect((within(sheet()).getByRole("heading") as HTMLElement).className).toMatch(/overflow-wrap:anywhere/);
   });
+
+  // QA recheck low on #265: a first name of 30 or more unbroken letters pushed the sheet wide at 390 and 320.
+  it("the label above the phone wraps a very long first name and cannot push the sheet wide", () => {
+    open();
+    const label = sheet().querySelector("[data-ask-gets]") as HTMLElement;
+    expect(label.className).toContain("[overflow-wrap:anywhere]");
+    expect(label.className).toMatch(/\bmax-w-full\b/);
+    expect(label.className).toMatch(/\bmin-w-0\b/);
+    expect(label.className).not.toMatch(/whitespace-nowrap|truncate/);
+    // Its column may shrink below the name's own width, inside a grid track that may too.
+    expect((label.parentElement as HTMLElement).className).toMatch(/\bmin-w-0\b/);
+    expect((label.parentElement?.parentElement as HTMLElement).className).toContain("minmax(0,1fr)");
+    // The sheet's own grid track may not grow with a long word, and the Ask button wraps its name.
+    expect(sheet().className).toContain("grid-cols-[minmax(0,1fr)]");
+    const ask = sheet().querySelector("[data-lead-ask]") as HTMLElement;
+    expect(ask.className).toMatch(/whitespace-normal/);
+    expect(ask.className).toContain("[overflow-wrap:anywhere]");
+    expect(ask.className).toMatch(/\bmax-w-full\b/);
+  });
 });
 
 describe("past work beside each name (Q-68)", () => {

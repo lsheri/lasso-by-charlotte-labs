@@ -14,9 +14,9 @@ const nothing = () => {};
 
 type Mode = "real" | "demo" | "practice";
 const previewFor =
-  (mode: Mode) =>
+  (mode: Mode, people = PEOPLE) =>
   async (_proposalId: string, contactId: string): Promise<AskPreview> => {
-    const person = PEOPLE.find((p) => p.id === contactId);
+    const person = people.find((p) => p.id === contactId);
     if (!person) return { ok: false, problem: ASK_COPY.missing };
     const words = leadAskBody({
       brandName: "Lasso",
@@ -48,21 +48,23 @@ function Sheet({
   start,
   mode,
   pastWork,
+  people = PEOPLE,
 }: {
   proposal: DeskProposal;
   start: LeadSheetStart;
   mode: Mode;
   pastWork?: Record<string, PastWork[]>;
+  people?: typeof PEOPLE;
 }) {
   return (
     <AsShipped>
       <LeadSheet
         target={{ proposal, start }}
-        roster={PEOPLE}
+        roster={people}
         wonWords={WON_WORDS}
         demo={mode !== "real"}
         connected={mode !== "practice"}
-        preview={previewFor(mode)}
+        preview={previewFor(mode, people)}
         send={async () => ({ ok: true, practice: mode === "practice" })}
         onSave={async () => ({ ok: true })}
         onClose={nothing}
@@ -106,4 +108,15 @@ export const ConfirmNoAgreement: Story = {
       mode="real"
     />
   ),
+};
+
+/** A first name of 35 unbroken letters: the label above the phone must wrap so Cancel and Send stay on the screen. */
+const LONG_NAME = "Wolfeschlegelsteinhausenbergerdorff Ashby";
+const LONG_PEOPLE = PEOPLE.map((p) => (p.id === "c1" ? { ...p, name: LONG_NAME } : p));
+const longAsked = { ...asked, leadName: LONG_NAME } as DeskProposal;
+export const ConfirmVeryLongFirstName: Story = {
+  render: () => <Sheet proposal={longAsked} start="confirm" mode="real" people={LONG_PEOPLE} />,
+};
+export const PickVeryLongFirstName: Story = {
+  render: () => <Sheet proposal={longAsked} start="pick" mode="real" people={LONG_PEOPLE} />,
 };
