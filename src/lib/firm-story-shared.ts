@@ -19,11 +19,20 @@ import { FIRM_ASK_COPY } from "./firm-ask-shared";
 import { FIRM_STORY_SCRIPT, type StoryBeat, type StoryPlace, type StoryWindow } from "./firm-story-script";
 import { FIRM_VIEW_COPY } from "./role-screens-shared";
 
-/** The demo firm's workspace. The story exists nowhere else; the server checks this, the browser only mirrors it. */
-export const KESTREL_BAY_ORG_ID = "2fd479d1-64da-4971-993b-279bed821179";
+/**
+ * The demo firm's workspace is the one marked settings.demo_firm = "kestrel-bay" (20 Nov 2026: found by its marker,
+ * never by id, so a reseed that makes a new workspace keeps working). The story exists nowhere else; the server checks
+ * the marker, the browser only mirrors it.
+ */
+export const DEMO_FIRM_MARKER = "kestrel-bay";
 
-/** The proposal board the story is told on. */
-export const STORY_BOARD_ID = "4a4abc70-32af-4cdb-8772-3850f9d673bc";
+/** Whether a workspace's settings carry the demo firm's marker. */
+export function isDemoFirmSettings(settings: unknown): boolean {
+  return Boolean(settings) && typeof settings === "object" && !Array.isArray(settings) && (settings as Record<string, unknown>)["demo_firm"] === DEMO_FIRM_MARKER;
+}
+
+/** The proposal board the story is told on, found by its title in the demo workspace (the seed's b31, Marrowfield). */
+export const STORY_BOARD_TITLE = "Diabetes prevention service line (proposal)";
 
 export const STORY_MODES = ["self", "presenter"] as const;
 export type StoryMode = (typeof STORY_MODES)[number];
@@ -68,14 +77,14 @@ export function storyWindowFor(role: string | null | undefined): StoryWindow {
   return role === "admin" || role === "lead" ? "partner" : "lead";
 }
 
-export type StoryAccess = { allowed: false } | { allowed: true; window: StoryWindow };
+export type StoryAccess = { allowed: false } | { allowed: true; window: StoryWindow; boardId?: string | null | undefined };
 
 /**
  * Who sees the story: an active member of the Kestrel Bay workspace who is not a coach or a guest. Everyone else,
  * in every other workspace, gets `allowed: false` and no hint that the story exists.
  */
-export function storyAccess(person: { orgId: string | null | undefined; role: string | null | undefined; isGuest: boolean; deactivated: boolean } | null): StoryAccess {
-  if (!person || person.orgId !== KESTREL_BAY_ORG_ID) return { allowed: false };
+export function storyAccess(person: { inDemoFirm: boolean; role: string | null | undefined; isGuest: boolean; deactivated: boolean } | null): StoryAccess {
+  if (!person || !person.inDemoFirm) return { allowed: false };
   if (person.isGuest || person.deactivated || !person.role || person.role === "coach") return { allowed: false };
   return { allowed: true, window: storyWindowFor(person.role) };
 }
@@ -136,16 +145,17 @@ export function previousBeat(window: StoryWindow, current: number): number {
 }
 
 /** Where a beat happens, as a path, or null for a card with no product screen. */
-export function placePath(place: StoryPlace | null): string | null {
+export function placePath(place: StoryPlace | null, boardId?: string | null): string | null {
   if (place === "home") return "/home";
   if (place === "firm") return "/firm-brain";
-  if (place === "board") return `/engagements/${STORY_BOARD_ID}/canvas-lab`;
+  // Without the board (not found in the demo workspace) the beat is shown where the person is.
+  if (place === "board") return boardId ? `/engagements/${boardId}/canvas-lab` : null;
   return null;
 }
 
 /** Whether the person is already where the beat happens. */
-export function isAtPlace(place: StoryPlace | null, pathname: string): boolean {
-  const path = placePath(place);
+export function isAtPlace(place: StoryPlace | null, pathname: string, boardId?: string | null): boolean {
+  const path = placePath(place, boardId);
   if (!path) return true;
   return pathname === path || pathname.startsWith(`${path}/`);
 }

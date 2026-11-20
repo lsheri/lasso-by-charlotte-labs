@@ -9,23 +9,37 @@
  */
 
 import { FIRM_BRAIN_LIMIT_COPY, FIRM_BRAIN_LIMIT_STATUS, FIRM_BRAIN_SURFACES, firmBrainLimitReached, isFirmBrainSurface, startOfUtcDay, type SpendRow } from "./firm-brain-limit-shared";
-import { KESTREL_BAY_ORG_ID } from "./firm-story-shared";
+import { isDemoFirmSettings } from "./firm-story-shared";
 
 export type FirmBrainLimitMeta = { surface?: string | null | undefined; orgId?: string | null | undefined; profileId?: string | null | undefined } | undefined;
 
 export type FirmBrainLimitDeps = {
   /** Today's firm brain usage rows for one workspace. Throws when the read fails. */
   spendSince: (orgId: string, sinceIso: string) => Promise<SpendRow[]>;
+  /** Whether the workspace is the demo firm, by its settings marker (never by id). Throws when the read fails. */
+  isDemoFirm?: ((orgId: string) => Promise<boolean>) | undefined;
   now: () => Date;
 };
 
 /** Enough rows for any day under the limit: at USD 25 a workspace is refused long before this many calls. */
 const ROW_LIMIT = 10_000;
 
+/** The marker barely changes: one read per workspace per ten minutes, not one per model call. */
+const demoCache = new Map<string, { demo: boolean; until: number }>();
+
 async function liveDeps(): Promise<FirmBrainLimitDeps> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return {
     now: () => new Date(),
+    isDemoFirm: async (orgId) => {
+      const cached = demoCache.get(orgId);
+      if (cached && cached.until > Date.now()) return cached.demo;
+      const { data, error } = await supabaseAdmin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+      if (error) throw new Error(error.message);
+      const demo = isDemoFirmSettings(data?.settings);
+      demoCache.set(orgId, { demo, until: Date.now() + 10 * 60_000 });
+      return demo;
+    },
     spendSince: async (orgId, sinceIso) => {
       const { data, error } = await supabaseAdmin
         .from("ai_usage")
@@ -42,10 +56,12 @@ async function liveDeps(): Promise<FirmBrainLimitDeps> {
 
 /** Resolves when the call may go ahead; throws a 429 Response when the person or the workspace is at its limit. */
 export async function assertWithinFirmBrainLimit(meta: FirmBrainLimitMeta, deps?: FirmBrainLimitDeps): Promise<void> {
-  if (!meta?.orgId || !isFirmBrainSurface(meta.surface) || meta.orgId === KESTREL_BAY_ORG_ID) return;
+  if (!meta?.orgId || !isFirmBrainSurface(meta.surface)) return;
   let rows: SpendRow[];
   try {
     const use = deps ?? (await liveDeps());
+    // The demo firm is left out. If its marker cannot be read, it is treated as any other workspace.
+    if (await (use.isDemoFirm?.(meta.orgId) ?? Promise.resolve(false)).catch(() => false)) return;
     rows = await use.spendSince(meta.orgId, startOfUtcDay(use.now()));
   } catch {
     return;

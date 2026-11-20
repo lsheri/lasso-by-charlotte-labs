@@ -26,6 +26,8 @@ export type Profile = {
   has_roster: boolean;
   shows_admin_role: boolean;
   has_firm_view: boolean;
+  /** The workspace carries the demo firm's marker (settings.demo_firm). Display only; servers check it themselves. */
+  demo_firm?: boolean;
 
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
@@ -345,6 +347,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
       has_roster: orgs?.has_roster === true,
       shows_admin_role: orgs?.shows_admin_role === true,
       has_firm_view: orgs?.has_firm_view === true,
+      demo_firm: orgs?.settings?.["demo_firm"] === "kestrel-bay",
 
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };

@@ -29,12 +29,14 @@ vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: m.brand 
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
 import { FIRM_STORY_SCRIPT } from "@/lib/firm-story-script";
-import { KESTREL_BAY_ORG_ID, storyStorageKey } from "@/lib/firm-story-shared";
+import { storyStorageKey } from "@/lib/firm-story-shared";
+/** Any demo workspace: found by its settings marker now, never by this id. */
+const KESTREL_BAY_ORG_ID = "demo-org";
 
 // Every test here runs as profile p1, with the tour link in the address unless it says otherwise.
 const STORY_STORAGE_KEY = storyStorageKey("p1") as string;
 
-const demoProfile = { id: "p1", org_id: KESTREL_BAY_ORG_ID };
+const demoProfile = { id: "p1", org_id: KESTREL_BAY_ORG_ID, demo_firm: true };
 
 function mount(profile: { id: string; org_id: string } | null = demoProfile): ReactNode {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -59,7 +61,7 @@ beforeEach(() => {
   m.path = "/home";
   m.search = "?tour=1";
   m.brand = "Charlotte";
-  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
+  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner", boardId: "story-board" });
   m.navigate.mockReset();
   m.log.mockReset();
   window.sessionStorage.clear();
@@ -152,7 +154,7 @@ describe("the Partner's window", () => {
     expect(window.sessionStorage.getItem(STORY_STORAGE_KEY)).toBe("4");
     fireEvent.click(screen.getByRole("button", { name: "Back in this window: continue" }));
     expect(card().getAttribute("data-story-beat")).toBe("5");
-    expect(m.navigate).toHaveBeenLastCalledWith({ to: "/engagements/$id/canvas-lab", params: { id: "4a4abc70-32af-4cdb-8772-3850f9d673bc" } });
+    expect(m.navigate).toHaveBeenLastCalledWith({ to: "/engagements/$id/canvas-lab", params: { id: "story-board" } });
   });
 
   it("ends on the closing line, then stops talking", async () => {
@@ -173,8 +175,8 @@ describe("the Partner's window", () => {
 
 describe("the Engagement lead's window", () => {
   it("starts on the handoff beat, shows no fee wording of its own, and hands back to the Partner", async () => {
-    m.access.mockResolvedValue({ allowed: true, window: "lead" });
-    m.path = "/engagements/4a4abc70-32af-4cdb-8772-3850f9d673bc/canvas-lab";
+    m.access.mockResolvedValue({ allowed: true, window: "lead", boardId: "story-board" });
+    m.path = "/engagements/story-board/canvas-lab";
     mount();
     const first = await start();
     expect(first.getAttribute("data-story-beat")).toBe("4");
@@ -220,7 +222,7 @@ describe("two modes from one script", () => {
 
   it("names the product from the brand in both looks, and never from the script", async () => {
     window.sessionStorage.setItem(STORY_STORAGE_KEY, "6");
-    m.access.mockResolvedValue({ allowed: true, window: "lead" });
+    m.access.mockResolvedValue({ allowed: true, window: "lead", boardId: "story-board" });
     mount();
     await waitFor(() => expect(card().textContent).toContain("Work arrives in Charlotte from the tools"));
     expect(card().textContent).not.toContain("{product}");

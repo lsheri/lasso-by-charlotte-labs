@@ -59,11 +59,10 @@ export const seedDemoFirmBoard = createServerFn({ method: "POST" })
 export const finishDemoFirmSeed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: Input) => input)
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; proposals: import("./demo-firm/seed.server").ProposalSeedResult | null }> => {
     const admin = await founderOnly(context, data.profile_id);
     const { finishDemoSeed } = await import("./demo-firm/seed.server");
-    await finishDemoSeed(admin);
-    return { ok: true };
+    return { ok: true, proposals: await finishDemoSeed(admin) };
   });
 
 export const resetDemoFirmFn = createServerFn({ method: "POST" })

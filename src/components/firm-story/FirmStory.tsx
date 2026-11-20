@@ -8,8 +8,6 @@ import { useBrand } from "@/components/skin/use-skin";
 import { FIRM_STORY_SCRIPT, type StoryPlace, type StoryRolePick } from "@/lib/firm-story-script";
 import {
   FIRM_STORY_COPY,
-  KESTREL_BAY_ORG_ID,
-  STORY_BOARD_ID,
   STORY_DONE,
   firstBeatFor,
   forgetOtherStoryBeats,
@@ -33,7 +31,7 @@ import { FirmStorySpotlight } from "./FirmStorySpotlight";
 import { useDialogOpen } from "./use-dialog-open";
 import { useStoryLayout } from "./use-story-layout";
 
-type StoryProfile = { id: string; org_id: string } | null | undefined;
+type StoryProfile = { id: string; org_id: string; demo_firm?: boolean | undefined } | null | undefined;
 
 /**
  * The Kestrel Bay demo story, mounted once in the signed-in shell so it sits over the real surfaces: Home, Firm brain
@@ -50,7 +48,8 @@ type StoryProfile = { id: string; org_id: string } | null | undefined;
  * a card live in memory. The firm_story.* events are emitted here and nowhere else.
  */
 export function FirmStory({ profile }: { profile: StoryProfile }) {
-  const inDemoFirm = profile?.org_id === KESTREL_BAY_ORG_ID;
+  // The workspace's own demo marker (settings.demo_firm), never a fixed id; the server checks it again.
+  const inDemoFirm = profile?.demo_firm === true;
   const profileId = profile?.id ?? null;
   const search = useRouterState({ select: (state) => state.location.searchStr ?? "" });
 
@@ -79,7 +78,7 @@ export function FirmStory({ profile }: { profile: StoryProfile }) {
 
   if (!inDemoFirm || !profile || !invited || !access.data?.allowed) return null;
   // Keyed by the person, so a change of profile starts from that person's own stored beat and nothing else.
-  return <FirmStoryStage key={profile.id} profileId={profile.id} orgId={profile.org_id} window={access.data.window} />;
+  return <FirmStoryStage key={profile.id} profileId={profile.id} orgId={profile.org_id} window={access.data.window} boardId={access.data.boardId ?? null} />;
 }
 
 const here = () => globalThis.location?.search ?? "";
@@ -89,7 +88,18 @@ const hasOptedIn = (profileId: string, search: string) => invitedBySearch(search
 const PAST_SIDEBAR = "md:pl-[calc(var(--nav-width)+0.875rem)]";
 const PAST_BOARD_RAIL = "md:pl-[calc(52px+1rem)]";
 
-export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { profileId: string; orgId: string; window: "partner" | "lead" }) {
+export function FirmStoryStage({
+  profileId,
+  orgId,
+  window: storyWindow,
+  boardId = null,
+}: {
+  profileId: string;
+  orgId: string;
+  window: "partner" | "lead";
+  /** The story board in this demo workspace, from the server; null when it is not there. */
+  boardId?: string | null;
+}) {
   const brand = useBrand();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -123,9 +133,9 @@ export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { prof
     (place: StoryPlace | null) => {
       if (place === "home") void navigate({ to: "/home" });
       else if (place === "firm") void navigate({ to: "/firm-brain" });
-      else if (place === "board") void navigate({ to: "/engagements/$id/canvas-lab", params: { id: STORY_BOARD_ID } });
+      else if (place === "board" && boardId) void navigate({ to: "/engagements/$id/canvas-lab", params: { id: boardId } });
     },
-    [navigate],
+    [navigate, boardId],
   );
 
   /** Stores a beat and, when this window plays it somewhere else, goes there. */
@@ -135,7 +145,7 @@ export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { prof
       setBeatState(n);
       setExploring(false);
       const view = storyView(storyWindow, n);
-      if (view.kind === "beat" && !isAtPlace(view.beat.place, globalThis.location?.pathname ?? "")) goTo(view.beat.place);
+      if (view.kind === "beat" && !isAtPlace(view.beat.place, globalThis.location?.pathname ?? "", boardId)) goTo(view.beat.place);
     },
     [goTo, profileId, storyWindow],
   );
@@ -154,7 +164,7 @@ export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { prof
   // The beat's target is brought into sight, and the card steps aside when it would cover it. Only while a beat with
   // a target is showing on its own page; otherwise the card stays in its usual place.
   const cardWrap = useRef<HTMLDivElement | null>(null);
-  const pointing = view.kind === "beat" && view.beat.anchor && isAtPlace(view.beat.place, pathname) && !exploring && !dialogOpen;
+  const pointing = view.kind === "beat" && view.beat.anchor && isAtPlace(view.beat.place, pathname, boardId) && !exploring && !dialogOpen;
   const layout = useStoryLayout(
     pointing ? view.beat.anchor : null,
     view.kind === "beat" ? view.beat.n : null,
@@ -217,7 +227,7 @@ export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { prof
     question: fill(shown?.question ?? ""),
     ask: view.kind === "beat" && shown?.ask ? fill(shown.ask) : null,
   };
-  const atPlace = view.kind !== "beat" || isAtPlace(view.beat.place, pathname);
+  const atPlace = view.kind !== "beat" || isAtPlace(view.beat.place, pathname, boardId);
 
   return (
     <>

@@ -2,7 +2,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "@/integrations/supabase/types";
 
+import { DEMO_BOARDS } from "./index";
 import { DEMO_PEOPLE, demoEmail } from "./people";
+import { DEMO_CONTACTS, DEMO_LOST_PROPOSALS, DEMO_OPEN_PROPOSALS, DEMO_WON_PROPOSALS } from "./proposals";
 import { CARD_H, CARD_W, fileNameFor, nextSlot, outcomeLine, planBoard, sectionTop, seedMeta, slideMap, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
@@ -159,9 +161,11 @@ async function clearPartialBoard(admin: Db, orgId: string, board: DemoBoard, eng
 }
 
 /** Step 3: placing cards notified everyone on each board; the demo starts with a quiet inbox. */
-export async function finishDemoSeed(admin: Db): Promise<void> {
+export async function finishDemoSeed(admin: Db, actAs: ActAs = actAsDemoPerson, now: Date = new Date()): Promise<ProposalSeedResult | null> {
   const orgId = await findDemoOrg(admin);
-  if (!orgId) return;
+  if (!orgId) return null;
+  // The proposals and people the backfill used to paste (20 Nov): written here, so a reseed brings them back.
+  const proposals = await seedDemoProposals(admin, actAs, now);
   // Each demo person has said they use the app for work, so Home skips the first-use question.
   const { userId } = await demoPeople(admin, orgId);
   const rows = [...userId.values()].map((user_id) => ({ user_id, uses: ["work"], uses_declared_at: new Date().toISOString() }));
@@ -171,6 +175,7 @@ export async function finishDemoSeed(admin: Db): Promise<void> {
   }
   const { error } = await admin.from("notifications").delete().eq("org_id", orgId);
   if (error) throw new Error(`clearing notifications: ${error.message}`);
+  return proposals;
 }
 
 async function seedBoard(
@@ -518,6 +523,163 @@ async function repairBoard(admin: Db, orgId: string, board: DemoBoard, workboard
   await writeSlideMaps(admin, { ...board, items: decks.filter((deck) => itemId.has(deck.key)) }, itemId, itemHash, itemRef);
 }
 
+export type ProposalSeedResult = { people: number; won: number; lost: number; open: number; ledger: number };
+
+/**
+ * The demo firm's proposals and the people it works with (20 Nov 2026, chat pill build Phase 2), from proposals.ts.
+ * The same rows backfill-kestrel.sql pasted, so a reseed brings them back. Safe to run again: a person is matched by
+ * name, a won proposal by its board, any other by title and client, and a ledger row by board and kind, so nothing
+ * is added twice and nothing already there (the live backfill, Larkspur, Pellham, Harrowgate) is changed. Writes no
+ * phone number, email, text agreement, ask or fee. Every row is in the marked demo workspace.
+ */
+export async function seedDemoProposals(admin: Db, actAs: ActAs = actAsDemoPerson, now: Date = new Date()): Promise<ProposalSeedResult> {
+  const orgId = await findDemoOrg(admin);
+  if (!orgId) throw new Error("Create the demo firm's people first.");
+  const loose = admin as unknown as { from: (table: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const read = async <T>(table: string, columns: string): Promise<T[]> => {
+    const { data, error } = await loose.from(table).select(columns).eq("org_id", orgId);
+    if (error) throw new Error(`reading ${table}: ${error.message}`);
+    return (data ?? []) as T[];
+  };
+  const insert = async (table: string, rows: Record<string, unknown>[], what: string) => {
+    if (rows.length === 0) return;
+    const { error } = await loose.from(table).insert(rows);
+    if (error) throw new Error(`${what}: ${error.message}`);
+  };
+  const { profileId } = await demoPeople(admin, orgId);
+  const result: ProposalSeedResult = { people: 0, won: 0, lost: 0, open: 0, ledger: 0 };
+
+  // People we work with: name, role and firm only.
+  const known = await read<{ id: string; full_name: string }>("roster_contacts", "id, full_name");
+  const missingPeople = DEMO_CONTACTS.filter((contact) => !known.some((row) => row.full_name === contact.name));
+  await insert(
+    "roster_contacts",
+    missingPeople.map((contact) => ({
+      org_id: orgId,
+      full_name: contact.name,
+      role_title: contact.role,
+      affiliation: contact.firm ? "firm" : "independent",
+      firm_name: contact.firm,
+    })),
+    "people we work with",
+  );
+  result.people = missingPeople.length;
+  const people = await read<{ id: string; full_name: string }>("roster_contacts", "id, full_name");
+  const leadId = (key: string | null) => {
+    if (!key) return null;
+    const name = DEMO_CONTACTS.find((contact) => contact.key === key)?.name;
+    return people.find((row) => row.full_name === name)?.id ?? null;
+  };
+
+  const [boards, existing, ledger] = await Promise.all([
+    read<{ id: string; title: string; client_id: string | null; owner_id: string | null; archived_at: string | null }>("engagements", "id, title, client_id, owner_id, archived_at"),
+    read<{ engagement_id: string | null; title: string; client_id: string }>("proposals", "engagement_id, title, client_id"),
+    read<{ engagement_id: string; kind: string }>("proposal_ledger", "engagement_id, kind"),
+  ]);
+  let clients = await read<{ id: string; name: string }>("clients", "id, name");
+  const clientId = (name: string) => clients.find((row) => row.name === name)?.id ?? null;
+  const taken = (title: string, client: string) => existing.some((row) => row.title === title && row.client_id === client);
+
+  // Won: one per older board, as Record the win leaves it, with the firm's figures for it.
+  const won: Record<string, unknown>[] = [];
+  const figures: Record<string, unknown>[] = [];
+  for (const entry of DEMO_WON_PROPOSALS) {
+    const board = DEMO_BOARDS_BY_KEY().get(entry.board);
+    const engagement = board ? boards.find((row) => row.title === board.title && !row.archived_at) : undefined;
+    const owner = board ? profileId.get(board.team[0]!) : undefined;
+    if (!board || !engagement?.client_id || !owner || existing.some((row) => row.engagement_id === engagement.id)) continue;
+    const decidedAt = new Date(Date.parse(`${board.start}T09:00:00Z`) - 17).toISOString();
+    won.push({
+      org_id: orgId,
+      client_id: engagement.client_id,
+      title: board.title.slice(0, 160),
+      notes: board.brief.slice(0, 8000) || null,
+      owner_id: owner,
+      received_at: entry.receivedAt,
+      sent_at: entry.sentAt,
+      status: "won",
+      decided_at: decidedAt,
+      engagement_id: engagement.id,
+      lead_contact_id: leadId(entry.lead),
+      created_at: entry.receivedAt,
+    });
+    const has = (kind: string) => ledger.some((row) => row.engagement_id === engagement.id && row.kind === kind);
+    // A board with an outcome of its own already keeps it; no second one is written.
+    if (has("won") || has("lost")) continue;
+    const steps: [string, string | null][] = [["brief_received", entry.receivedAt], ["sent_to_client", entry.sentAt], ["won", decidedAt]];
+    for (const [kind, at] of steps)
+      if (at && !has(kind)) figures.push({ org_id: orgId, engagement_id: engagement.id, kind, occurred_at: at, created_at: decidedAt });
+  }
+  await insert("proposals", won, "won proposals");
+  await insert("proposal_ledger", figures, "the firm's figures");
+  result.won = won.length;
+  result.ledger = figures.length;
+
+  // Lost: for clients the firm has, no board.
+  const lost: Record<string, unknown>[] = [];
+  for (const entry of DEMO_LOST_PROPOSALS) {
+    const board = DEMO_BOARDS_BY_KEY().get(entry.clientOf);
+    const client = board ? clientId(board.client.name) : null;
+    const owner = profileId.get(entry.owner);
+    if (!client || !owner || taken(entry.title, client)) continue;
+    lost.push({
+      org_id: orgId,
+      client_id: client,
+      title: entry.title,
+      notes: entry.notes,
+      owner_id: owner,
+      received_at: entry.receivedAt,
+      sent_at: entry.sentAt,
+      status: "lost",
+      decided_at: entry.decidedAt,
+      engagement_id: null,
+      lead_contact_id: leadId(entry.lead),
+      created_at: entry.receivedAt,
+    });
+  }
+  await insert("proposals", lost, "lost proposals");
+  result.lost = lost.length;
+
+  // Open: the buyer script's starting point, dated from now. Their clients are new, added as the admin partner
+  // (the database lets only an admin or lead add a client).
+  const newClients = [...new Set(DEMO_OPEN_PROPOSALS.map((entry) => entry.client))].filter((name) => !clientId(name));
+  if (newClients.length) {
+    const partner = await actAs(demoEmail(DEMO_ADMIN));
+    for (const name of newClients) must(await partner.from("clients").insert({ org_id: orgId, name, quick_folder: false }).select("id").single(), `client ${name}`);
+    clients = await read<{ id: string; name: string }>("clients", "id, name");
+  }
+  const open: Record<string, unknown>[] = [];
+  for (const entry of DEMO_OPEN_PROPOSALS) {
+    const client = clientId(entry.client);
+    const owner = profileId.get(entry.owner);
+    if (!client || !owner || taken(entry.title, client)) continue;
+    const received = new Date(now.getTime() - entry.receivedHoursAgo * 3_600_000).toISOString();
+    open.push({
+      org_id: orgId,
+      client_id: client,
+      title: entry.title,
+      notes: entry.notes,
+      owner_id: owner,
+      received_at: received,
+      sent_at: entry.sentAfterHours === null ? null : new Date(Date.parse(received) + entry.sentAfterHours * 3_600_000).toISOString(),
+      status: "open",
+      decided_at: null,
+      engagement_id: null,
+      lead_contact_id: leadId(entry.lead),
+      created_at: received,
+    });
+  }
+  await insert("proposals", open, "open proposals");
+  result.open = open.length;
+  return result;
+}
+
+let boardsByKey: Map<string, DemoBoard> | null = null;
+function DEMO_BOARDS_BY_KEY(): Map<string, DemoBoard> {
+  boardsByKey ??= new Map(DEMO_BOARDS.map((board) => [board.key, board]));
+  return boardsByKey;
+}
+
 /**
  * Removes the demo firm entirely, child rows first, every delete scoped to the marked org, its boards, its people
  * and the demo email domain. Returns what could not be removed rather than stopping half way.
@@ -537,6 +699,21 @@ export async function resetDemoFirm(admin: Db): Promise<{ removed: boolean; prob
   const profileIds = (people ?? []).map((row) => row.id);
   const { data: files } = await admin.from("work_items").select("content_ref").eq("org_id", orgId).not("content_ref", "is", null);
 
+  // Proposals first (20 Nov): they hold the workspace's clients and people with on-delete-restrict, so while any
+  // exists nothing below can go. Then everything tied to them, the agreements to texts and the people we work with.
+  const loose = admin as unknown as { from: (table: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data: proposals } = await loose.from("proposals").select("id").eq("org_id", orgId);
+  const proposalIds = ((proposals ?? []) as { id: string }[]).map((row) => row.id);
+  await step("proposal texts", () => loose.from("proposal_texts").delete().eq("org_id", orgId));
+  if (proposalIds.length) await step("proposal documents", () => loose.from("proposal_context_items").delete().in("proposal_id", proposalIds));
+  await step("proposal figures", () => loose.from("proposal_ledger").delete().eq("org_id", orgId));
+  await step("proposal values", () => loose.from("proposal_ledger_values").delete().eq("org_id", orgId));
+  await step("proposals", () => loose.from("proposals").delete().eq("org_id", orgId));
+  await step("agreements to texts", () => loose.from("message_consents").delete().eq("org_id", orgId));
+  await step("demo text number", () => loose.from("demo_text_recipients").delete().eq("org_id", orgId));
+  await step("contact details", () => loose.from("roster_contact_details").delete().eq("org_id", orgId));
+  await step("people we work with", () => loose.from("roster_contacts").delete().eq("org_id", orgId));
+  await step("invites", () => admin.from("invites").delete().eq("org_id", orgId));
   await step("client marks", () => admin.from("client_showings").delete().eq("org_id", orgId));
   await step("traced spans", () => admin.from("span_links").delete().eq("org_id", orgId));
   await step("workboards", () => admin.from("workboards").delete().eq("org_id", orgId));

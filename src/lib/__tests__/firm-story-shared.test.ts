@@ -9,7 +9,7 @@ import { FIRM_ASK_COPY } from "../firm-ask-shared";
 import { FIRM_STORY_SCRIPT } from "../firm-story-script";
 import { FIRM_BRAIN_COPY, FIRM_VIEW_COPY } from "../role-screens-shared";
 import {
-  KESTREL_BAY_ORG_ID,
+  isDemoFirmSettings,
   STORY_BEATS,
   STORY_DONE,
   STORY_LAST_BEAT,
@@ -34,7 +34,7 @@ import {
   writeStoredBeat,
 } from "../firm-story-shared";
 
-const member = { orgId: KESTREL_BAY_ORG_ID, role: "em", isGuest: false, deactivated: false };
+const member = { inDemoFirm: true, role: "em", isGuest: false, deactivated: false };
 
 describe("who sees the story", () => {
   it("allows an active member of the demo firm and gives each role its window", () => {
@@ -44,8 +44,7 @@ describe("who sees the story", () => {
   });
 
   it("refuses every other workspace, guests, coaches, deactivated people and nobody", () => {
-    expect(storyAccess({ ...member, orgId: "15db4d78-eed3-4443-b9ef-437a67ad1b79" })).toEqual({ allowed: false });
-    expect(storyAccess({ ...member, orgId: null })).toEqual({ allowed: false });
+    expect(storyAccess({ ...member, inDemoFirm: false })).toEqual({ allowed: false });
     expect(storyAccess({ ...member, isGuest: true })).toEqual({ allowed: false });
     expect(storyAccess({ ...member, role: "coach" })).toEqual({ allowed: false });
     expect(storyAccess({ ...member, role: null })).toEqual({ allowed: false });
@@ -150,7 +149,12 @@ describe("which window plays which beat", () => {
     expect(placePath("firm")).toBe("/firm-brain");
     expect(isAtPlace("firm", "/firm-brain")).toBe(true);
     expect(isAtPlace("firm", "/firm")).toBe(false); // Firm view still has the map, but the menu row is Firm brain
-    expect(placePath("board")).toMatch(/^\/engagements\/[0-9a-f-]{36}\/canvas-lab$/);
+    expect(placePath("board", "board-1")).toBe("/engagements/board-1/canvas-lab");
+    // No board found in the demo workspace: the beat is shown where the person is, never a stale address.
+    expect(placePath("board")).toBeNull();
+    expect(isAtPlace("board", "/home")).toBe(true);
+    expect(isAtPlace("board", "/home", "board-1")).toBe(false);
+    expect(isAtPlace("board", "/engagements/board-1/canvas-lab", "board-1")).toBe(true);
     expect(placePath(null)).toBeNull();
     expect(isAtPlace("home", "/home")).toBe(true);
     expect(isAtPlace("home", "/firm")).toBe(false);
@@ -358,5 +362,13 @@ describe("where the story's events and storage live", () => {
     for (const file of files.filter((entry) => entry.path.includes("firm-story"))) {
       expect(file.text, file.path).not.toMatch(/\.(insert|update|upsert|delete)\(|supabaseAdmin|\.rpc\(/);
     }
+  });
+});
+
+describe("20 Nov: the demo workspace is found by its marker", () => {
+  it("reads only the exact kestrel-bay marker", () => {
+    expect(isDemoFirmSettings({ type: "company", demo_firm: "kestrel-bay" })).toBe(true);
+    for (const settings of [{ demo_firm: true }, { demo_firm: "true" }, { demo_firm: "Kestrel-Bay" }, {}, null, undefined, "kestrel-bay", ["kestrel-bay"]])
+      expect(isDemoFirmSettings(settings)).toBe(false);
   });
 });
