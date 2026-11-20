@@ -18,7 +18,7 @@ function InRouter({ children }: { children: ReactNode }) {
 
 const ok = async () => ({ ok: true as const });
 type Texting = "demo" | "practice" | "real" | "no-agreement";
-function Desk({ role, texting = "demo" }: { role: "admin" | "manager" | "analyst"; texting?: Texting }) {
+function Desk({ role, texting = "demo", winning = false }: { role: "admin" | "manager" | "analyst"; texting?: Texting; winning?: boolean }) {
   const picks = role !== "analyst";
   const base = desk(role);
   // The sheet opened from the rows, in each state texting can be in. Stand-ins only: nothing is sent or saved.
@@ -33,7 +33,7 @@ function Desk({ role, texting = "demo" }: { role: "admin" | "manager" | "analyst
             data={data}
             now={NOW}
             onSent={ok}
-            onWin={async () => ({ ok: true, engagementId: "e0" }) as never}
+            onWin={winning ? () => new Promise<never>(() => {}) : async () => ({ ok: true, engagementId: "e0" }) as never}
             onClose={ok}
             roster={picks ? PEOPLE : undefined}
             leadWords={WON_WORDS}
@@ -56,3 +56,5 @@ export const Analyst: Story = { render: () => <Desk role="analyst" /> };
 export const AdminPractice: Story = { render: () => <Desk role="admin" texting="practice" /> };
 export const AdminReal: Story = { render: () => <Desk role="admin" texting="real" /> };
 export const AdminNoAgreement: Story = { render: () => <Desk role="admin" texting="no-agreement" /> };
+/** D-86: press Record the win, then Make the team board, to see the board build in. The stand-in never finishes. */
+export const AdminWinning: Story = { render: () => <Desk role="admin" winning /> };

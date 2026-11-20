@@ -554,6 +554,8 @@ export const REVEAL_COPY = {
     ] as string[],
   brief: "The brief",
   briefLine: "From your notes",
+  /** A document whose title this person is not sent. */
+  document: "Context document",
   board: "Team board",
   label: "The team board, being made",
   /** Each stage stays readable: about 1.4 seconds apiece. */

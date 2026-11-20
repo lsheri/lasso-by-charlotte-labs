@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 
 /** Where each document lands on the little canvas, loosely, the way a fresh board places them. */
 const SPOTS = [
-  { left: "39%", top: "22%", turn: "-1.5deg" },
-  { left: "63%", top: "30%", turn: "1deg" },
-  { left: "45%", top: "58%", turn: ".5deg" },
-  { left: "69%", top: "64%", turn: "-.8deg" },
+  { left: "40%", top: "36%", turn: "-1.5deg" },
+  { left: "67%", top: "30%", turn: "1deg" },
+  { left: "47%", top: "66%", turn: ".5deg" },
+  { left: "71%", top: "62%", turn: "-.8deg" },
 ];
 const ARRIVE = "animate-in fade-in-0 zoom-in-50 slide-in-from-bottom-2 duration-700 motion-reduce:animate-none";
 const at = (seconds: number): CSSProperties => ({ animationDelay: `${seconds}s`, animationFillMode: "both" });
@@ -59,10 +59,8 @@ export function BoardBuildReveal({
           style={at(0.8)}
         >
           <span className="size-2 rounded-full bg-[var(--good-mark)] ring-[1.2px] ring-foreground" />
-          <span className="truncate">
-            {BOARD_WIN_COPY.won("")}
-            {lead ? ` · ${BOARD_WIN_COPY.lead(lead)}` : ""}
-          </span>
+          {/* The lead has their own chip on the board, so the line says only the win. */}
+          <span className="truncate">{BOARD_WIN_COPY.won("")}</span>
         </div>
         <div
           data-reveal-brief
@@ -84,7 +82,7 @@ export function BoardBuildReveal({
             >
               <span className="h-8 rounded-[var(--radius-control)] border border-border bg-background [background-image:repeating-linear-gradient(transparent_0_6px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px_8px)] sm:h-10" />
               <span className="flex min-w-0 items-center gap-1">
-                <span className="min-w-0 flex-1 truncate text-(length:--type-label) font-semibold">{title}</span>
+                <span className="min-w-0 flex-1 truncate text-(length:--type-label) font-semibold">{title || REVEAL_COPY.document}</span>
                 <PersonFace name={owner} size="sm" className="size-5 text-(length:--type-label)" />
               </span>
             </div>
