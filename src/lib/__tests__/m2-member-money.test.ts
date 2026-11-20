@@ -208,6 +208,23 @@ describe("QA H2 (PR 281), D-93: proposals are firm money", () => {
     [{ type: "email", title: "Proposal: Marrowfield", meta: {} }, false],
     [{ type: "document", title: "Harrowgate request for proposal summary", meta: {} }, false],
     [{ type: "document", title: "Harper's notes: Tarnhollow proposal", meta: {} }, false],
+    // QA of PR 281, open Medium and Low: titles the first rule missed, and one it over-matched.
+    [{ type: "document", title: "Artemis 3-month pilot — external proposal figures", meta: {} }, true],
+    [{ type: "document", title: "Draft proposal - Acme", meta: {} }, true],
+    [{ type: "document", title: "Acme proposal v3", meta: {} }, true],
+    [{ type: "document", title: "Re: Proposal", meta: {} }, true],
+    [{ type: "document", title: "1. Proposal", meta: {} }, true],
+    [{ type: "document", title: "Partner review notes on proposal draft v1", meta: {} }, false],
+    [{ type: "document", title: "Partner review notes on proposal draft v1", meta: { deliverable_kind: "proposal" } }, true],
+    [{ type: "document", title: "State board proposal: draft need, demand and duplication sections", meta: {} }, false],
+    [{ type: "document", title: "Harper's notes: Marrowfield proposal", meta: {} }, false],
+    // QA of PR 283: a title that starts with "Proposal" stays a proposal, whatever else it says (main masks these).
+    [{ type: "document", title: "Proposal: Strategic review and options", meta: {} }, true],
+    [{ type: "document", title: "Proposal: Operating model review", meta: {} }, true],
+    [{ type: "document", title: "Proposal: Pricing review for Acme", meta: {} }, true],
+    [{ type: "document", title: "Proposal: Customer feedback programme", meta: {} }, true],
+    [{ type: "document", title: "Proposal: Care pathway redesign (with notes)", meta: {} }, true],
+    [{ type: "document", title: "[Proposal] Board effectiveness review", meta: {} }, true],
   ])("%j is firm money: %s", (item, expected) => {
     expect(isProposalItem(item)).toBe(expected);
     expect(isFirmMoneyItem(item)).toBe(expected);
