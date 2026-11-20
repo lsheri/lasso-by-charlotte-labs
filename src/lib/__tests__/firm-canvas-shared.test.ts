@@ -53,7 +53,6 @@ describe("money figures", () => {
     ["A$80k", ""],
     ["2019 450 000 €", "2019"],
     ["Acme (GBP 1.2m)", "Acme"],
-    ["Pilot 120k", "Pilot"],
   ])("takes the money out of %s", (input, output) => {
     // Checked against the written-out answer, not against the pattern itself.
     expect(withoutMoney(input)).toBe(output);
@@ -70,6 +69,17 @@ describe("money figures", () => {
     "Top 3 000 users",
     "Phase 2 of 3",
     "Series A raise",
+    // QA M1 (#281): a scale word or k with no currency or fee word is a count.
+    "Pilot 120k",
+    "2 million users",
+    "1.2 million patients",
+    "10k users",
+    "5k employees",
+    "4k video",
+    "50 thousand visits",
+    "500 lakh people",
+    "1.2bn users",
+    "2 bn people",
   ])("leaves %s alone", (text) => {
     expect(withoutMoney(text)).toBe(text);
     expect(hasMoney(text)).toBe(false);

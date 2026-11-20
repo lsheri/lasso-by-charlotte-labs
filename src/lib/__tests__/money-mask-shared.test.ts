@@ -25,7 +25,6 @@ describe("withoutMoney: the canvas formats", () => {
     ["A$80k", ""],
     ["2019 450 000 €", "2019"],
     ["Acme (GBP 1.2m)", "Acme"],
-    ["Pilot 120k", "Pilot"],
   ])("takes the money out of %s", (input, output) => {
     expect(withoutMoney(input)).toBe(output);
   });
@@ -48,6 +47,16 @@ describe("withoutMoney: the formats QA found next (Lows)", () => {
     ["INR 1,20,00,000", ""],
     ["Fee: 12,50,000 rupees", "Fee"],
     ["3 Tsd. € pro Monat", "pro Monat"],
+    // QA M2 (#281): a fee word makes a bare figure money; codes in brackets; thin spaces.
+    ["Fees: 290,000", "Fees"],
+    ["A fee of 290,000 over 12 weeks", "A fee of over 12 weeks"],
+    ["fee: 290 000", "fee"],
+    ["day rate 1,200", "day rate"],
+    ["Total: 290,000 (USD)", "Total"],
+    ["290\u2009000 € audit", "audit"],
+    ["€290\u2009000 audit", "audit"],
+    ["a fee of 1.2 million", "a fee of"],
+    ["120k retainer", "retainer"],
   ])("takes the money out of %s", (input, output) => {
     expect(withoutMoney(input)).toBe(output);
   });
@@ -65,6 +74,17 @@ describe("leaves counts, dates and names alone", () => {
     "Top 3 000 users",
     "Phase 2 of 3",
     "Series A raise",
+    // QA M1 (#281): a scale word or k with no currency or fee word is a count.
+    "Pilot 120k",
+    "2 million users",
+    "1.2 million patients",
+    "10k users",
+    "5k employees",
+    "4k video",
+    "50 thousand visits",
+    "500 lakh people",
+    "1.2bn users",
+    "2 bn people",
     "12 weeks from 3 March",
     "Krakow office, 40 people",
     "Version 1.2.3",

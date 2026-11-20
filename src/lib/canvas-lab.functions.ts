@@ -70,10 +70,13 @@ export const getWorkboardCardPreviewsFn = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return [];
     const { readWorkboardCardPreviews } = await import("@/lib/workboard-card-preview.server");
-    const { data: board } = await supabase.from("engagements").select("org_id").eq("id", data.engagement_id).maybeSingle();
-    const inOrg = board?.org_id ? await resolveProfile(supabase, userId, null, board.org_id) : null;
     const { seesMoney } = await import("@/lib/money-mask-shared");
-    return readWorkboardCardPreviews(supabase, data.work_item_ids, seesMoney(inOrg?.role));
+    const roles = new Map<string, boolean>();
+    const readsMoneyIn = async (orgId: string) => {
+      if (!roles.has(orgId)) roles.set(orgId, seesMoney((await resolveProfile(supabase, userId, null, orgId))?.role));
+      return roles.get(orgId)!;
+    };
+    return readWorkboardCardPreviews(supabase, data.work_item_ids, readsMoneyIn);
   });
 
 /** Slice 2a unit 1: the caller's own highlights on one chat. */

@@ -20,7 +20,11 @@ type PreviewSummaryRow = {
 };
 
 /** One caller-scoped read for every chat card currently visible on the board. */
-export async function readWorkboardCardPreviews(db: Db, workItemIds: string[], readsMoney = true): Promise<WorkboardCardPreview[]> {
+/**
+ * `readsMoneyIn` answers whether the caller reads money in a workspace (admin or lead there). Each firm-money item is
+ * judged by its own workspace (QA L1), never by the board id the browser sent. Without it, nothing is masked.
+ */
+export async function readWorkboardCardPreviews(db: Db, workItemIds: string[], readsMoneyIn?: (orgId: string) => Promise<boolean>): Promise<WorkboardCardPreview[]> {
   const ids = [...new Set(workItemIds.filter(Boolean))].slice(0, 100);
   if (ids.length === 0) return [];
   const [turnResult, summaryResult] = await Promise.all([
@@ -36,12 +40,12 @@ export async function readWorkboardCardPreviews(db: Db, workItemIds: string[], r
   }
   const summaries = new Map(((summaryResult.data ?? []) as PreviewSummaryRow[]).map((row) => [row.work_item_id, row.summary]));
   // D-91: a SOW's summary reaches a Member with money removed, whatever ids the browser asks for.
-  if (!readsMoney && summaries.size > 0) {
-    const { isSowItem, moneyFreeText } = await import("./money-mask-shared");
-    const { data: items } = await db.from("work_items").select("id, type, title, meta").in("id", [...summaries.keys()]);
+  if (readsMoneyIn && summaries.size > 0) {
+    const { isFirmMoneyItem, moneyFreeText } = await import("./money-mask-shared");
+    const { data: items } = await db.from("work_items").select("id, org_id, type, title, meta").in("id", [...summaries.keys()]);
     for (const item of items ?? []) {
       const summary = summaries.get(item.id);
-      if (summary && isSowItem(item)) summaries.set(item.id, moneyFreeText(summary));
+      if (summary && isFirmMoneyItem(item) && !(await readsMoneyIn(item.org_id))) summaries.set(item.id, moneyFreeText(summary));
     }
   }
   return ids.map((workItemId) => {

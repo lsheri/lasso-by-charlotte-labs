@@ -4250,9 +4250,9 @@ async function handleResource(owner: Owner, token: string, method: string, param
         .select("summary, decisions, entities, handoff").eq("work_item_id", work.id).maybeSingle();
       if (extractError) throw extractError;
       // D-91: a Member's connector reads a SOW's summary, decisions and handover with money removed.
-      const { isSowItem, moneyFreeText, seesMoney } = await import("./money-mask-shared");
+      const { isFirmMoneyItem, moneyFreeText, seesMoney } = await import("./money-mask-shared");
       let mask = false;
-      if (isSowItem(work)) {
+      if (isFirmMoneyItem(work)) {
         const { data: asker } = await db.from("profiles").select("role, org_id").eq("id", owner.profileId).maybeSingle();
         mask = !(asker && asker.org_id === work.org_id && seesMoney(asker.role));
       }

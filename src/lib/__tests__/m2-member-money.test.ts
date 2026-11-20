@@ -18,6 +18,9 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 const { moneyViewFor, sowSummariesForMember, viewText } = await import("@/lib/money-view.server");
 const { readWorkboardCardPreviews } = await import("@/lib/workboard-card-preview.server");
 const { readFilePreviews } = await import("@/lib/board-share-open.server");
+const { publicSafeWork } = await import("@/lib/public-work-allowlist");
+const { maskFees } = await import("@/lib/firm-ask-shared");
+const { isFirmMoneyItem, isProposalItem, PROPOSALS_ARE_FIRM_MONEY } = await import("@/lib/money-mask-shared");
 
 const ORG = "org-1";
 const SOW = { id: "sow-1", org_id: ORG, type: "document", title: "Statement of work, St. Brigid", meta: { sow_facts: { weeks: 16 } } };
@@ -55,6 +58,7 @@ describe("isSowItem", () => {
     [{ type: "ai_thread", title: "SOW questions", meta: {} }, false],
     [{ type: "document", title: "Sowing season notes", meta: {} }, false],
     [{ type: "document", title: "Kickoff notes", meta: { sow_facts: "text" } }, false],
+    [{ type: "document", title: "Kickoff notes", meta: { sow_facts: [{ weeks: 4 }] } }, false],
     [{ type: null, title: "SOW", meta: {} }, false],
   ])("%j is a SOW: %s", (item, expected) => {
     expect(isSowItem(item)).toBe(expected);
@@ -123,12 +127,18 @@ describe("card previews", () => {
     work_items: [SOW, NOTE],
   });
   it("a Member asking for a SOW's id gets its summary without money", async () => {
-    const rows = await readWorkboardCardPreviews(db, ["sow-1", "note-1"], false);
+    const rows = await readWorkboardCardPreviews(db, ["sow-1", "note-1"], async () => false);
     expect(hasMoney(rows.find((row) => row.workItemId === "sow-1")!.summary!)).toBe(false);
     expect(rows.find((row) => row.workItemId === "note-1")!.summary).toBe(SUMMARY);
   });
+  it("judges each SOW by its own workspace, not the board the browser names (QA L1)", async () => {
+    const asked: string[] = [];
+    const rows = await readWorkboardCardPreviews(db, ["sow-1"], async (orgId) => (asked.push(orgId), orgId !== ORG));
+    expect(asked).toEqual([ORG]);
+    expect(hasMoney(rows[0]!.summary!)).toBe(false);
+  });
   it("an admin or lead gets it as written", async () => {
-    const rows = await readWorkboardCardPreviews(db, ["sow-1"], true);
+    const rows = await readWorkboardCardPreviews(db, ["sow-1"], async () => true);
     expect(rows[0]!.summary).toBe(SUMMARY);
   });
 });
@@ -169,5 +179,57 @@ describe("public share link previews", () => {
     const html = (out["sow-1"] as { html?: string }).html ?? "";
     expect(html).toContain("Fee:");
     expect(hasMoney(html)).toBe(false);
+  });
+});
+
+describe("QA M1 (#281): maskFees reads counts as on main", () => {
+  it.each(["Serves 2 million users", "1.2 million patients a year", "10k users", "5k employees", "a 4k video", "50 thousand visits", "500 lakh people", "1.2bn users", "2 bn people"])(
+    "%s",
+    (text) => {
+      expect(maskFees(text)).toBe(text);
+    },
+  );
+  it("still masks a fee", () => {
+    expect(maskFees("Fixed fee of $290k, a fee of 1.2 million")).toBe("Fixed fee of [fee], a fee of [fee]");
+  });
+});
+
+describe("QA H2 (#281), D-93: proposals are firm money", () => {
+  it("the one rule is on", () => {
+    expect(PROPOSALS_ARE_FIRM_MONEY).toBe(true);
+  });
+  it.each([
+    [{ type: "document", title: "Proposal: St. Brigid weight management service line", meta: { deliverable_kind: "proposal" } }, true],
+    [{ type: "document", title: "Anything", meta: { deliverable_kind: "proposal" } }, true],
+    [{ type: "document", title: "[Proposal] CureFirst & Artemis", meta: {} }, true],
+    [{ type: "document", title: "Copy of Copy of [Proposal] Cure First", meta: {} }, true],
+    [{ type: "document", title: "Proposal draft: Commercial diligence", meta: {} }, true],
+    [{ type: "document", title: "diagnostic-proposal-final.md", meta: {} }, true],
+    [{ type: "email", title: "Proposal: Marrowfield", meta: {} }, false],
+    [{ type: "document", title: "Harrowgate request for proposal summary", meta: {} }, false],
+    [{ type: "document", title: "Harper's notes: Tarnhollow proposal", meta: {} }, false],
+  ])("%j is firm money: %s", (item, expected) => {
+    expect(isProposalItem(item)).toBe(expected);
+    expect(isFirmMoneyItem(item)).toBe(expected);
+  });
+  it("a Member reads a proposal's summary without its fee", async () => {
+    const proposal = { id: "prop-1", org_id: ORG, type: "document", title: "Proposal: Fairhaven", meta: { deliverable_kind: "proposal" } };
+    const view = await moneyViewFor(callerDb([{ id: "p1", org_id: ORG, role: "em" }]), "u1", proposal);
+    expect(view.mask).toBe(true);
+    expect(viewText(view, "Fixed fee of $340k over 10 weeks")).not.toMatch(/\$/);
+    const lead = await moneyViewFor(callerDb([{ id: "p1", org_id: ORG, role: "lead" }]), "u1", proposal);
+    expect(lead.mask).toBe(false);
+  });
+});
+
+describe("QA H3 (#281): public links", () => {
+  it("publicSafeWork never carries an extract", () => {
+    const [row] = publicSafeWork([{ ...SOW, work_item_extracts: [{ summary: SUMMARY }] } as never]);
+    expect(JSON.stringify(row)).not.toContain("290");
+    expect(row).not.toHaveProperty("work_item_extracts");
+  });
+  it("rowForReader on a link row masks a SOW and a proposal summary", () => {
+    const proposal = { id: "prop-1", type: "document", title: "Proposal: Fairhaven", meta: {}, work_item_extracts: [{ summary: "Fixed fee of $340k" }] };
+    expect(hasMoney(rowForReader(proposal, false).work_item_extracts[0]!.summary!)).toBe(false);
   });
 });

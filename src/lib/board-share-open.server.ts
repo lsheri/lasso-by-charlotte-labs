@@ -47,7 +47,7 @@ import {
   type SharedWorkboard,
 } from "./board-share-shared";
 import { isBoardDefaultTask } from "./board-default-task";
-import { isSowItem, maskMoney } from "./money-mask-shared";
+import { isFirmMoneyItem, maskMoney, rowForReader } from "./money-mask-shared";
 import type { WorkItemRow } from "./work-types";
 import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
 import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
@@ -241,7 +241,9 @@ export async function readBoard(
         continue;
       }
       // No person travels: the owner is dropped, and so is the client claim.
-      const { owner_id: _owner, client_id: _client, ...rest } = item as WorkItemRow;
+      // QA H3 (#281): a link has no reader, so a SOW's or proposal's summary is money free before it goes anywhere
+      // (publicSafeWork drops extracts too; this holds even if a caller forgets it).
+      const { owner_id: _owner, client_id: _client, ...rest } = rowForReader(item as WorkItemRow, false);
       workById.set(item.id, { ...rest, taskIds: [task.id] });
     }
   }
@@ -416,7 +418,7 @@ export async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Pr
       const versionCount = versions?.length ?? 0;
       // D-91: a link has no reader to check, so a shared SOW always goes out with money removed, and never as its
       // original PDF.
-      const sow = isSowItem(item);
+      const sow = isFirmMoneyItem(item);
       const artifactKind = artifactPreviewKind(item);
       if (artifactKind && item.content_ref) {
         const stored = await db.storage.from("work-files").download(item.content_ref);

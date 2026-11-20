@@ -25,7 +25,7 @@ const CODES = "USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|JPY|INR|CNY|RMB|HKD|SEK|NOK|DKK|Z
 const WORDS = "dollars?|pounds?|euros?|yen|rupees?|francs?|kronor|kroner|krona|krone";
 // Thousands by comma, dot, space, narrow space or apostrophe ("1'200'000"); lakh grouping ("12,50,000", "1,20,00,000");
 // or a plain number with an optional decimal ("2,5", "1.5").
-const SEP = "[,.\\u00A0\\u202F '’]";
+const SEP = "[,.\\u00A0\\u202F\\u2009 '’]";
 const NUMBER =
   "(?:(?<![\\d.,'’])\\d{1,2}(?:,\\d{2})+,\\d{3}(?:\\.\\d+)?(?![\\d])" +
   `|(?<![\\d.,'’])\\d{1,3}(?:${SEP}\\d{3})+(?:[.,]\\d+)?(?![\\d])` +
@@ -34,12 +34,23 @@ const SCALE = "(?:\\s?(?:k|m|mm|mn|bn|b|million|billion|thousand|lakhs?|crores?|
 const SCALE_WORD = "(?:million|billion|thousand|lakhs?|crores?|mm|mn|bn|mio|mrd)(?![\\p{L}])";
 const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)?";
 
+// QA M1 (#281): a scale word or a bare "k" with no currency is a count ("2 million users", "10k employees", "4k video"),
+// never money, unless a fee word sits right before or after it ("a fee of 1.2 million", "120k retainer"). The same
+// fee words make a bare grouped figure money ("Fees: 290,000", "day rate 1,200").
+const FEE_WORD = "(?:fees?|retainer|budget|price[ds]?|pricing|costs?|rate|charged?|honorar(?:ium)?|paid|payment)";
+const AFTER_FEE_WORD = `(?<=\\b${FEE_WORD}\\b[^.\\n\\d]{0,15})`;
+const BEFORE_FEE_WORD = `(?=\\s?${FEE_WORD}\\b)`;
+const STRICT_FEE_WORD = "(?:fees?|retainer|price[ds]?|day rate|honorar(?:ium)?)";
+const AFTER_STRICT_FEE_WORD = `(?<=\\b${STRICT_FEE_WORD}\\b[^.\\n\\d]{0,15})`;
+const GROUPED = "(?:(?<![\\d.,'’])\\d{1,2}(?:,\\d{2})+,\\d{3}(?![\\d])" + `|(?<![\\d.,'’])\\d{1,3}(?:${SEP}\\d{3})+(?:[.,]\\d+)?(?![\\d]))`;
+
 const MONEY_PARTS = [
   `${SYMBOL}\\s?${NUMBER}${SCALE}?${PER}`,
   `\\b(?:${CODES})\\s?${NUMBER}${SCALE}?${PER}`,
-  `${NUMBER}${SCALE}?\\s?(?:${SYMBOL_AFTER}|\\b(?:${CODES}|${WORDS})\\b)${PER}`,
-  `${NUMBER}\\s?${SCALE_WORD}${PER}`,
-  `${NUMBER}\\s?k\\b${PER}`,
+  `${NUMBER}${SCALE}?\\s?\\(?(?:${SYMBOL_AFTER}|\\b(?:${CODES}|${WORDS})\\b)\\)?${PER}`,
+  `${AFTER_FEE_WORD}${NUMBER}\\s?(?:${SCALE_WORD}|k\\b)${PER}`,
+  `${NUMBER}\\s?(?:${SCALE_WORD}|k\\b)${PER}${BEFORE_FEE_WORD}`,
+  `${AFTER_STRICT_FEE_WORD}${GROUPED}${PER}`,
 ];
 const MONEY = new RegExp(MONEY_PARTS.join("|"), "giu");
 
@@ -90,7 +101,29 @@ const SOW_TITLE = /\b(sow|statement of work|scope of work|engagement letter)\b/i
 export function isSowItem(item: { type?: string | null; title?: string | null; meta?: unknown }): boolean {
   if (!item.type || !isDeliverableType(item.type)) return false;
   const meta = item.meta && typeof item.meta === "object" && !Array.isArray(item.meta) ? (item.meta as Record<string, unknown>) : {};
-  return Boolean(meta["sow_facts"] && typeof meta["sow_facts"] === "object") || SOW_TITLE.test(item.title ?? "");
+  // A list is not fee terms (QA L3): the SQL rule reads jsonb_typeof = 'object', and so does this.
+  const facts = meta["sow_facts"];
+  return Boolean(facts && typeof facts === "object" && !Array.isArray(facts)) || SOW_TITLE.test(item.title ?? "");
+}
+
+/**
+ * QA H2 (#281): a proposal states the firm's fee. Liam, D-93: proposals count as firm money. This one line holds that
+ * rule; the SQL files carry the same rule on one marked line.
+ */
+export const PROPOSALS_ARE_FIRM_MONEY = true;
+
+const PROPOSAL_TITLE = /^\W*(?:copy of\s+)*\[?proposal\b|\bproposal[-_ ](?:draft|final)\b/i;
+
+/** A proposal document: the proposal desk marks it, or its title starts with "Proposal" ("[Proposal] ...", "Proposal draft: ..."). */
+export function isProposalItem(item: { type?: string | null; title?: string | null; meta?: unknown }): boolean {
+  if (!item.type || !isDeliverableType(item.type)) return false;
+  const meta = item.meta && typeof item.meta === "object" && !Array.isArray(item.meta) ? (item.meta as Record<string, unknown>) : {};
+  return meta["deliverable_kind"] === "proposal" || PROPOSAL_TITLE.test(item.title ?? "");
+}
+
+/** An item holding the firm's own money: a SOW, and a proposal while PROPOSALS_ARE_FIRM_MONEY is on. */
+export function isFirmMoneyItem(item: { type?: string | null; title?: string | null; meta?: unknown }): boolean {
+  return isSowItem(item) || (PROPOSALS_ARE_FIRM_MONEY && isProposalItem(item));
 }
 
 /** Shown instead of the original file when a Member opens a SOW: they read its text, with figures withheld. */
@@ -104,7 +137,7 @@ type WithExtracts = { type?: string | null; title?: string | null; meta?: unknow
  * Every other row, and every row for admins and leads, comes back as it was.
  */
 export function rowForReader<T extends WithExtracts>(row: T, reads: boolean): T {
-  if (reads || !isSowItem(row) || !row.work_item_extracts) return row;
+  if (reads || !isFirmMoneyItem(row) || !row.work_item_extracts) return row;
   const clean = (extract: ExtractText): ExtractText => ({
     ...extract,
     ...(typeof extract.summary === "string" ? { summary: moneyFreeText(extract.summary) } : {}),
