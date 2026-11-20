@@ -307,7 +307,7 @@ describe("New proposal", () => {
 describe("picking the lead", () => {
   const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", linkPath: "/texts?w=o&c=c1", ...over });
   const roster = [person({}), person({ id: "c2", name: "Mina Okafor", role: null, texts: "none", agreedOn: null }), person({ id: "c3", name: "Zoë D'Arcy-Núñez", texts: "unknown", agreedOn: null })];
-  const WORDS = "Lasso for Kestrel Bay Advisory: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.";
+  const WORDS = "Lasso for Kestrel Bay Advisory: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.";
   const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
 
   it("shows nothing about a lead to someone who may not pick, even when a handler is passed", () => {

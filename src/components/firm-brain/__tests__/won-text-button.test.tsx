@@ -15,7 +15,7 @@ vi.mock("@/lib/won-text.functions", () => ({
 import { WonTextButton } from "@/components/firm-brain/WonTextButton";
 
 const BOARD = "0000000b-0000-4000-8000-000000000001";
-const WORDS = "Lasso for Kestrel Bay: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.";
+const WORDS = "Lasso for Kestrel Bay: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 beforeEach(() => {

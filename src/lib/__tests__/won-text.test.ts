@@ -71,12 +71,12 @@ const status = async (work: Promise<unknown>): Promise<number | "ok"> => {
 describe("the words", () => {
   it("is one plain segment that names the firm, the product and how to stop", () => {
     const body = wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" });
-    expect(body).toBe("Lasso for Kestrel Bay: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.");
+    expect(body).toBe("Lasso for Kestrel Bay: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.");
     expect(body.length).toBeLessThanOrEqual(SMS_ONE_SEGMENT);
   });
 
-  it("with today's brand, these are the words Liam approved (D-40)", () => {
-    expect(wonTextBody({ brandName: launchBrand().name, firmName: "Kestrel Bay" })).toBe("Lasso for Kestrel Bay: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.");
+  it("with today's brand, these are the words Liam approved (card Q-50)", () => {
+    expect(wonTextBody({ brandName: launchBrand().name, firmName: "Kestrel Bay" })).toBe("Lasso for Kestrel Bay: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.");
   });
 
   it("takes the product name it is given, so the brand module decides it", () => {
@@ -84,7 +84,7 @@ describe("the words", () => {
   });
 
   it.each(["", "   ", "\u{1F680}"])("still reads well with no usable firm name (%j)", (firmName) => {
-    expect(wonTextBody({ brandName: "Lasso", firmName })).toBe("Lasso: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.");
+    expect(wonTextBody({ brandName: "Lasso", firmName })).toBe("Lasso: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.");
   });
 
   it("folds accents, drops what a plain text cannot carry and never grows past one segment", () => {

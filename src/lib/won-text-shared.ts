@@ -32,11 +32,11 @@ export const MESSAGE_EXAMPLES_COPY = {
   rcs: "RCS",
   rcsState: "Coming soon",
   subject: "The proposal you helped with has been won",
-  emailBody: "The team board is ready. Open it to see the brief and the first documents.",
+  emailBody: "Good news. The team board is ready for you. Open it to see the brief and the first documents.",
   emailFoot: "You are getting this because you agreed to hear about proposals you help with. Unsubscribe at any time.",
   rcsSender: "Verified sender",
   rcsTitle: "Proposal won",
-  rcsBody: "The proposal you helped with has been won, and the team board is ready.",
+  rcsBody: "Good news. The proposal you helped with has been won, and the team board is ready for you.",
   rcsYes: "Open the team board",
   rcsNo: "Not now",
   note: "Email and RCS are examples of what is coming. Only the text is sent.",
@@ -98,7 +98,8 @@ const OPT_OUT = "Reply STOP to opt out.";
  */
 export function wonTextBody(input: { brandName: string; firmName: string }): string {
   const brand = plainForSms(input.brandName) || "Lasso";
-  const tail = `the proposal you helped with has been won, and the team board is ready. ${OPT_OUT}`;
+  // Liam, card Q-50, 19 Nov: "Yes, use the friendlier text". The carrier filing quotes these words exactly.
+  const tail = `good news. The proposal you helped with has been won, and the team board is ready for you. ${OPT_OUT}`;
   const firm = plainForSms(input.firmName);
   const withFirm = `${brand} for ${firm}: ${tail}`;
   if (firm && withFirm.length <= SMS_ONE_SEGMENT) return withFirm;
