@@ -1,6 +1,7 @@
 import posthog, { type BeforeSendFn } from "posthog-js";
 
 import { isProductionHost } from "@/lib/app-host";
+import { environmentFromHost } from "@/lib/environment-shared";
 
 /**
  * The ONLY file in src that may touch posthog-js.
@@ -30,11 +31,87 @@ function scrubProperty(value: unknown): unknown {
   return value;
 }
 
+/** The events PostHog's script makes by itself from a click, a burst of clicks or a copy. */
+export const CLICK_EVENTS: readonly string[] = ["$autocapture", "$rageclick", "$dead_click", "$copy_autocapture"];
+
+/** Click properties that carry what was on the screen: the words, where a link went, what was copied. */
+const CLICK_TEXT_KEYS = ["$el_text", "$external_click_url", "$selected_content"] as const;
+
+const TAG = /^[a-z][a-z0-9-]*/;
+const POSITION = /:(?:[^"]|"(?:[^"\\]|\\.)*")*?nth-child="(\d+)"(?:[^"]|"(?:[^"\\]|\\.)*")*?nth-of-type="(\d+)"/;
+
+/** One element of the chain, cut where a new element starts and never inside a quoted value. */
+function chainSegments(chain: string): string[] {
+  const segments: string[] = [];
+  let start = 0;
+  let quoted = false;
+  for (let index = 0; index < chain.length; index += 1) {
+    const char = chain[index];
+    if (char === "\\") index += 1;
+    else if (char === '"') quoted = !quoted;
+    else if (char === ";" && !quoted) {
+      segments.push(chain.slice(start, index));
+      start = index + 1;
+    }
+  }
+  segments.push(chain.slice(start));
+  return segments;
+}
+
+/**
+ * 20 Nov 2026 (Liam, Q-59): the element chain of a click, rebuilt from nothing but each element's kind and its place
+ * among its siblings. Text, link addresses, ids, titles, labels, values and class names are never copied across: an
+ * element is written out again from the two things we keep, so anything this does not recognise is left out.
+ */
+export function bareElementsChain(chain: unknown): string {
+  if (typeof chain !== "string" || chain.length === 0 || chain.length > 100_000) return "";
+  const kept: string[] = [];
+  for (const segment of chainSegments(chain)) {
+    const tag = TAG.exec(segment)?.[0];
+    if (!tag) continue;
+    const place = POSITION.exec(segment.slice(tag.length));
+    kept.push(place ? `${tag}:nth-child="${place[1]}"nth-of-type="${place[2]}"` : tag);
+  }
+  return kept.join(";");
+}
+
+function bareElements(elements: unknown): Array<Record<string, string | number>> {
+  if (!Array.isArray(elements)) return [];
+  const kept: Array<Record<string, string | number>> = [];
+  for (const element of elements) {
+    const record = element && typeof element === "object" ? (element as Record<string, unknown>) : {};
+    const tag = typeof record["tag_name"] === "string" ? TAG.exec(record["tag_name"].toLowerCase())?.[0] : undefined;
+    if (!tag) continue;
+    const place = (key: string) => (typeof record[key] === "number" && Number.isFinite(record[key]) ? { [key]: record[key] as number } : {});
+    kept.push({ tag_name: tag, ...place("nth_child"), ...place("nth_of_type") });
+  }
+  return kept;
+}
+
+/**
+ * A click event with everything that was on the screen taken out. What is left says that something of a given kind
+ * was clicked, where it sat in the page, and on which page. Nothing a person typed, read or named.
+ */
+export function stripClickText(properties: Record<string, unknown>): Record<string, unknown> {
+  const kept: Record<string, unknown> = { ...properties };
+  for (const key of CLICK_TEXT_KEYS) delete kept[key];
+  if ("$elements" in kept) kept["$elements"] = bareElements(kept["$elements"]);
+  if ("$elements_chain" in kept) kept["$elements_chain"] = bareElementsChain(kept["$elements_chain"]);
+  return kept;
+}
+
+/** Local development: this machine's own address. Nothing made here is sent to the live project. */
+export function isLocalHost(hostname: unknown): boolean {
+  return typeof hostname === "string" && environmentFromHost(hostname) === "local";
+}
+
 const scrubShareEvent: BeforeSendFn = (event) => {
   if (!event) return null;
+  if (typeof window !== "undefined" && isLocalHost(window.location.hostname)) return null;
+  const properties = scrubProperty(event.properties) as typeof event.properties;
   return {
     ...event,
-    properties: scrubProperty(event.properties) as typeof event.properties,
+    properties: CLICK_EVENTS.includes(event.event) ? (stripClickText(properties) as typeof event.properties) : properties,
     ...(event.$set ? { $set: scrubProperty(event.$set) as typeof event.$set } : {}),
     ...(event.$set_once ? { $set_once: scrubProperty(event.$set_once) as typeof event.$set_once } : {}),
   };
@@ -48,6 +125,11 @@ export const POSTHOG_CONFIG = {
   // cross_subdomain_cookie, which defaults to true and scopes the cookie to
   // the registrable domain.
   autocapture: true,
+  // 20 Nov 2026 (Liam, Q-59): a click is kept, what was clicked on is not. The script is told to read no text and no
+  // attributes, and before_send above rebuilds the element chain as well, because the script still adds a link's
+  // address after masking. Both must hold: the second is the one our tests can prove.
+  mask_all_text: true,
+  mask_all_element_attributes: true,
   capture_pageview: false, // first-party perf.pageload + landing.viewed own this
   capture_pageleave: false,
   capture_performance: false, // first-party owns timings; never double-count

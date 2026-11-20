@@ -20,7 +20,7 @@ async function getServerEntry(): Promise<ServerEntry> {
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"}, try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(response: Response, request: Request): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -30,7 +30,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
   const swallowed = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
   console.error(swallowed);
-  await reportServerException(swallowed, "ssr_swallowed");
+  await reportServerException(swallowed, "ssr_swallowed", request);
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
@@ -41,13 +41,18 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 async function reportServerException(
   error: unknown,
   where: "ssr_catch" | "ssr_swallowed",
+  request: Request,
 ): Promise<void> {
   try {
-    const [{ runAfterResponse }, { captureServerException }] = await Promise.all([
+    const [{ runAfterResponse }, { captureServerException }, { environmentFromHost }] = await Promise.all([
       import("./lib/background"),
       import("./lib/server-exceptions.server"),
+      import("./lib/environment-shared"),
     ]);
-    runAfterResponse(() => captureServerException(error, where));
+    // Read here, from the request itself: once the response has gone there is no request left to read it from, which
+    // is why every server error used to be labelled "unknown".
+    const environment = environmentFromHost(request.headers.get("x-forwarded-host") ?? request.headers.get("host"));
+    runAfterResponse(() => captureServerException(error, where, environment));
   } catch {
     /* error reporting must never break the error path */
   }
@@ -69,10 +74,10 @@ export default {
       setRequestContext(ctx);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return await normalizeCatastrophicSsrResponse(response, request);
     } catch (error) {
       console.error(error);
-      await reportServerException(error, "ssr_catch");
+      await reportServerException(error, "ssr_catch", request);
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },

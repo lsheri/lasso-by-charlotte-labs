@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://lasso.charlotte-labs.com/" }
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeforeSendFn, CaptureResult } from "posthog-js";
 

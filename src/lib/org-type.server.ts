@@ -5,6 +5,8 @@
  * the life of the process.
  */
 
+import { isDemoWorkspace } from "./demo-text-number-shared";
+
 const ORG_TYPE_TTL_MS = 10_000;
 
 const cache = new Map<string, { at: number; value: string }>();
@@ -117,19 +119,49 @@ const accountStageCache = new Map<string, { at: number; value: string | null }>(
 /** Test seam. */
 export function resetAccountStageCache(): void {
   accountStageCache.clear();
+  demoCache.clear();
 }
 
+const demoCache = new Map<string, { at: number; value: boolean }>();
+
+/** Whether the workspace carries the demo marker. Read only; false when the read fails. */
+async function isDemoOrg(orgId: string): Promise<boolean> {
+  const hit = demoCache.get(orgId);
+  if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+    if (error) return false;
+    const value = isDemoWorkspace(data?.settings ?? null);
+    demoCache.set(orgId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return false;
+  }
+}
+
+/** What a demo workspace is reported as. Never stored anywhere. */
+export const DEMO_STAGE = "demo";
+
 /**
- * A-S2: the account stage of the workspace ('internal' | 'pilot' | 'customer'
- * | 'free' | 'none'), read through the service-role-only account_stage()
- * function. Mirror-only: this never lands on the events row. Read only, same
- * cache window as above. Null when there is no org, the read fails, or
- * anything throws. Never throws.
+ * A-S2: the account stage of the workspace as it is REPORTED on the PostHog copy of an event ('internal' | 'pilot' |
+ * 'customer' | 'free' | 'none', read through the service-role-only account_stage() function, or 'demo').
+ *
+ * 20 Nov 2026 (Liam, Q-59): a workspace carrying the demo marker is reported as 'demo', so the demo firm can be told
+ * from real firms. Its stored stage is not changed and is not read differently by anything else: this function has
+ * exactly two callers, both of them the copy sent to PostHog, and a test holds that. It reads; it never writes.
+ *
+ * Mirror-only: this never lands on the events row. Read only, same cache window as above. Null when there is no org,
+ * the read fails, or anything throws. Never throws.
  */
 export async function accountStageOf(orgId: string | null | undefined): Promise<string | null> {
   if (!orgId) return null;
   const hit = accountStageCache.get(orgId);
   if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
+  if (await isDemoOrg(orgId)) {
+    accountStageCache.set(orgId, { at: Date.now(), value: DEMO_STAGE });
+    return DEMO_STAGE;
+  }
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // account_stage is not in the generated types; cast locally at the call site.

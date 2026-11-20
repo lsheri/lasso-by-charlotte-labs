@@ -4,6 +4,7 @@
  * Content-safe by construction: the message is scrubbed and capped, and no
  * request URL, path, header, body or user id is ever sent. Never throws.
  */
+import type { Environment } from "./environment-shared";
 import { resolveEnvironment } from "./environment.server";
 import { POSTHOG_HOST, POSTHOG_KEY } from "./telemetry.server";
 
@@ -67,7 +68,19 @@ export function parseFrames(stack: string | undefined): ExceptionFrame[] {
   return frames.reverse();
 }
 
-export function buildExceptionPayload(error: unknown, where: ServerExceptionWhere) {
+const ABORT_MESSAGE = /^(?:this|the) operation was aborted\.?$|^aborted\.?$/i;
+
+/**
+ * 20 Nov 2026 (Liam, Q-59): what the server logs when a visitor closes the page or moves on while it is still
+ * loading. Nothing is broken, and over 30 days it was 3,310 of 3,332 errors, hiding the real ones. A timeout is not
+ * this: it has its own name and is still sent.
+ */
+export function isHarmlessAbort(error: unknown): boolean {
+  if (error instanceof Error) return error.name === "AbortError" || ABORT_MESSAGE.test(error.message.trim());
+  return typeof error === "string" && ABORT_MESSAGE.test(error.trim());
+}
+
+export function buildExceptionPayload(error: unknown, where: ServerExceptionWhere, environment?: Environment) {
   const isError = error instanceof Error;
   const type = isError && error.name ? error.name : "Error";
   const rawMessage = isError ? error.message : typeof error === "string" ? error : String(error);
@@ -79,7 +92,7 @@ export function buildExceptionPayload(error: unknown, where: ServerExceptionWher
       $process_person_profile: false,
       $exception_source: "server",
       where,
-      environment: resolveEnvironment(),
+      environment: environment ?? resolveEnvironment(),
       $exception_list: [
         {
           type,
@@ -95,9 +108,15 @@ export function buildExceptionPayload(error: unknown, where: ServerExceptionWher
 export async function captureServerException(
   error: unknown,
   where: ServerExceptionWhere,
+  /** Where the failing request came from, read by the caller while the request is still at hand. */
+  environment?: Environment,
 ): Promise<void> {
   try {
-    const body = JSON.stringify(buildExceptionPayload(error, where));
+    if (isHarmlessAbort(error)) return;
+    const from = environment ?? resolveEnvironment();
+    // Local development never writes to the live project.
+    if (from === "local") return;
+    const body = JSON.stringify(buildExceptionPayload(error, where, from));
     await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

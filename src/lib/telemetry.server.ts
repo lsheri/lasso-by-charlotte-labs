@@ -218,6 +218,9 @@ export async function mirrorToPostHog(
     console.warn(`[telemetry] mirror skipped for ${eventType}: no actor hash (TELEMETRY_SALT?)`);
     return;
   }
+  // 20 Nov 2026 (Liam, Q-59): local development never writes to the live project. Its events are still stored in our
+  // own table, labelled local; only the copy is left out. Over 90 days local runs had sent more than 6,500 copies.
+  if (context?.environment === "local") return;
   const body = JSON.stringify({
     api_key: POSTHOG_KEY,
     event: eventType,
@@ -277,6 +280,7 @@ export async function mirrorToPostHog(
 export async function aliasAnonymousVisitor(visitorId: string, userId: string): Promise<boolean> {
   try {
     if (!visitorId || !userId) return false;
+    if (resolveEnvironment() === "local") return false;
     const anonHash = await computeActorHash(`anon:${visitorId}`);
     if (!anonHash) return false;
     const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
