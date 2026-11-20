@@ -435,7 +435,22 @@ async function seedItem(
       .select("id"),
     `index card for ${item.key}`,
   );
+  await moveSeedFees(admin, orgId, row.id, item.type === "ai_thread" ? { ...extraMeta } : { mime_type: "text/markdown", ...extraMeta });
   return { id: row.id, hash, contentRef };
+}
+
+/**
+ * F2: a seeded SOW's fee goes to the server-only fee table, not the meta every member's browser reads. Before the
+ * table exists, storeSowTerms leaves the meta as it was.
+ */
+async function moveSeedFees(admin: Db, orgId: string, itemId: string, meta: Record<string, Json>): Promise<void> {
+  const facts = meta["sow_facts"];
+  if (!facts || typeof facts !== "object" || Array.isArray(facts)) return;
+  const { storeSowTerms } = await import("../fee-terms.server");
+  const next = await storeSowTerms(admin as never, { itemId, orgId, meta, facts: facts as Record<string, unknown> });
+  if (JSON.stringify(next) === JSON.stringify(meta)) return;
+  const update = await admin.from("work_items").update({ meta: next as never }).eq("id", itemId);
+  if (update.error) throw new Error(`moving fees for ${itemId}: ${update.error.message}`);
 }
 
 /** Deck cards preview their first slide from document_versions.slide_map; one version per seeded deck. */
@@ -579,6 +594,7 @@ async function topUpBoard(admin: Db, orgId: string, board: DemoBoard, workboardI
     if (!row || Object.keys(extra).every((key) => key in meta)) continue;
     const update = await admin.from("work_items").update({ meta: { ...meta, ...extra } }).eq("id", row.id);
     if (update.error) throw new Error(`updating ${item.key}: ${update.error.message}`);
+    await moveSeedFees(admin, orgId, row.id, { ...meta, ...extra });
   }
 
   const missing = board.items.filter((item) => !byTitle.has(item.title));
