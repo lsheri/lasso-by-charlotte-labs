@@ -167,7 +167,7 @@ export function AdminWhatChanged({
             {feed.waiting.map(row(false))}
           </ul>
         ) : (
-          <p data-admin-home-empty="waiting" className="text-(length:--type-small) text-muted-foreground">{C.nothingWaiting}</p>
+          <p data-admin-home-empty="waiting" className="text-(length:--type-small) text-muted-foreground">{failed ? C.notCheckedWaiting : C.nothingWaiting}</p>
         )}
       </div>
 
@@ -180,7 +180,7 @@ export function AdminWhatChanged({
             {feed.today.map(row(true))}
           </ul>
         ) : (
-          <p data-admin-home-empty="today" className="text-(length:--type-small) text-muted-foreground">{C.nothingToday}</p>
+          <p data-admin-home-empty="today" className="text-(length:--type-small) text-muted-foreground">{failed ? C.notCheckedToday : C.nothingToday}</p>
         )}
         {feed && feed.todayMore > 0 ? (
           <Link to="/proposals" className="text-(length:--type-small) text-muted-foreground underline hover:text-foreground">
@@ -267,17 +267,16 @@ function FeedRow({
   );
   return (
     <li data-feed-item={item.id} data-feed-kind={item.kind} data-feed-new={isNew ? "true" : undefined} className={cn(isNew && "ah-arrive")}>
-      {isNew ? (
-        <div className="ah-arrive-inner">
+      {/* One shape whether new or not, so the row's button is never remounted and keeps focus (QA L4). */}
+      <div className="ah-arrive-inner">
+        {isNew ? (
           <div aria-hidden className="ah-skel flex flex-col gap-2">
             <Skeleton className="h-3 w-2/5 motion-reduce:animate-none" />
             <Skeleton className="h-2.5 w-3/5 motion-reduce:animate-none" />
           </div>
-          {words}
-        </div>
-      ) : (
-        words
-      )}
+        ) : null}
+        {words}
+      </div>
     </li>
   );
 }

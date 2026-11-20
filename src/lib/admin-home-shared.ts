@@ -27,7 +27,7 @@ const NOT_ARRIVED = new Set(["undelivered", "failed", "rejected", "expired"]);
 
 /** Where an item's next step goes. Paths only: the page turns them into links. */
 export type NextStep =
-  | { to: "/proposals"; search: { proposal?: string; lead?: string; tab?: "people"; view?: "lost" } }
+  | { to: "/proposals"; search: { proposal?: string; lead?: string; tab?: "people"; view?: "won" | "lost" } }
   | { to: "/engagements/$id/canvas-lab"; params: { id: string } }
   | { to: "/settings" }
   | { to: "notifications" };
@@ -72,7 +72,10 @@ export const ADMIN_HOME_COPY = {
   waiting: "Waiting on you",
   today: "Earlier today",
   nothingWaiting: "Nothing waits on you right now.",
-  nothingToday: "Nothing else has happened today.",
+  nothingToday: "Nothing has happened today.",
+  /** QA M3: a source could not be read, so an empty list cannot be called empty. */
+  notCheckedWaiting: "Could not check everything that may be waiting on you.",
+  notCheckedToday: "Could not check everything that happened today.",
   loading: "Loading what changed",
   /** One source could not be read; the rest still show. */
   partFailed: "Some of this could not be loaded, so the lists may be short. Try again in a moment.",
@@ -89,6 +92,8 @@ export const ADMIN_HOME_COPY = {
   arrived: "New",
   /** The titles, by kind. A proposal is named by its client and what they asked for. */
   titles: {
+    /** QA M1: a practice ask's answer is never shown as a real one. */
+    practice: (title: string) => `Practice ask: ${title}`,
     notArrived: (lead: string) => `The text to ${lead || "the lead"} did not arrive`,
     saidNo: (lead: string) => ASK_COPY.saidNo(lead),
     optedOut: (lead: string) => ASK_COPY.stopped(lead),
@@ -125,6 +130,9 @@ export const ADMIN_HOME_COPY = {
     saidYes: "Their past work, the documents and the clock are on the proposal. Mark it as sent when it goes out.",
     brief: "A new proposal starts with picking its lead.",
     briefLed: "Its lead is picked. The clock, the documents and matching past work are on the proposal.",
+    briefDecided: "It came in today and has already been decided.",
+    wonNoBoard: "It was recorded as won. It has no team board yet.",
+    practice: "This was a practice ask, so nothing went to anyone's phone and no one really answered.",
     sent: "It is with the client. Record the win or close it as lost when you hear back.",
     won: "The team board was made from the proposal. Add the people who will do the work.",
     lost: "Add what you learned, so the next proposal starts from it.",
@@ -166,7 +174,11 @@ export function nearlyOver(hoursLeft: number, goalHours: number): boolean {
   return hoursLeft <= Math.max(4, Math.round(goalHours * 0.2));
 }
 
-const toProposal = (id: string): NextStep => ({ to: "/proposals", search: { proposal: id } });
+/** QA M2: a decided proposal is only listed under Won or Lost, so the link opens that view with the row in it. */
+const toProposal = (proposal: Pick<DeskProposal, "id" | "status">): NextStep => ({
+  to: "/proposals",
+  search: proposal.status === "won" || proposal.status === "lost" ? { view: proposal.status, proposal: proposal.id } : { proposal: proposal.id },
+});
 const toLead = (id: string): NextStep => ({ to: "/proposals", search: { lead: id } });
 const toPeople: NextStep = { to: "/proposals", search: { tab: "people" } };
 
@@ -191,16 +203,18 @@ function waitingFor(proposal: DeskProposal, goalHours: number, now: Date): FeedI
   if (ask && !ask.practice && NOT_ARRIVED.has(ask.status)) {
     return base("not_arrived", C.titles.notArrived(lead), C.steps.checkNumber, C.whys.notArrived, toPeople, proposal.receivedAt);
   }
-  if (ask?.reply === "no") return base("said_no", C.titles.saidNo(lead), C.steps.pickAnother, C.whys.saidNo, toLead(proposal.id), proposal.receivedAt);
+  const practice = Boolean(ask?.practice);
+  const title = (words: string) => (practice ? C.titles.practice(words) : words);
+  if (ask?.reply === "no") return base("said_no", title(C.titles.saidNo(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.saidNo, toLead(proposal.id), proposal.receivedAt);
   if (ask?.reply === "stop" || (ask && ask.status === "opted_out")) {
-    return base("opted_out", C.titles.optedOut(lead), C.steps.pickAnother, C.whys.optedOut, toLead(proposal.id), proposal.receivedAt);
+    return base("opted_out", title(C.titles.optedOut(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.optedOut, toLead(proposal.id), proposal.receivedAt);
   }
   if (!proposal.leadContactId && !proposal.leadName) {
     return base("no_lead", C.titles.noLead, C.steps.pickLead, C.whys.noLead, toLead(proposal.id), proposal.receivedAt);
   }
-  if (left.state === "over") return base("over", C.titles.over, C.steps.openProposal, C.whys.over, toProposal(proposal.id), proposal.receivedAt);
+  if (left.state === "over") return base("over", C.titles.over, C.steps.openProposal, C.whys.over, toProposal(proposal), proposal.receivedAt);
   if (left.state === "running" && nearlyOver(left.hoursLeft, goalHours)) {
-    return base("nearly_over", C.titles.nearlyOver, C.steps.openProposal, C.whys.nearlyOver, toProposal(proposal.id), proposal.receivedAt);
+    return base("nearly_over", C.titles.nearlyOver, C.steps.openProposal, C.whys.nearlyOver, toProposal(proposal), proposal.receivedAt);
   }
   return null;
 }
@@ -220,14 +234,14 @@ function todayFor(proposal: DeskProposal, now: Date): FeedItem[] {
       detail: name,
       next: proposal.engagementId
         ? { label: C.steps.openBoard, why: C.whys.won, step: { to: "/engagements/$id/canvas-lab", params: { id: proposal.engagementId } } }
-        : { label: C.steps.openProposal, why: C.whys.won, step: toProposal(proposal.id) },
+        : { label: C.steps.openProposal, why: C.whys.wonNoBoard, step: toProposal(proposal) },
     });
   }
   if (proposal.status === "lost" && isToday(proposal.decidedAt, now)) {
-    items.push({ id: `lost:${proposal.id}`, kind: "lost", at: proposal.decidedAt as string, title: C.titles.lost, detail: name, next: { label: C.steps.seeLost, why: C.whys.lost, step: { to: "/proposals", search: { view: "lost" } } } });
+    items.push({ id: `lost:${proposal.id}`, kind: "lost", at: proposal.decidedAt as string, title: C.titles.lost, detail: name, next: { label: C.steps.seeLost, why: C.whys.lost, step: toProposal(proposal) } });
   }
   if (proposal.sentAt && isToday(proposal.sentAt, now)) {
-    items.push({ id: `sent:${proposal.id}`, kind: "sent", at: proposal.sentAt, title: C.titles.sent, detail: name, next: { label: C.steps.openProposal, why: C.whys.sent, step: toProposal(proposal.id) } });
+    items.push({ id: `sent:${proposal.id}`, kind: "sent", at: proposal.sentAt, title: C.titles.sent, detail: name, next: { label: C.steps.openProposal, why: C.whys.sent, step: toProposal(proposal) } });
   }
   const ask = proposal.ask;
   // The server says only that the yes came today, never when, so it carries no time of its own and is listed first.
@@ -236,9 +250,9 @@ function todayFor(proposal: DeskProposal, now: Date): FeedItem[] {
       id: `yes:${proposal.id}`,
       kind: "said_yes",
       at: "",
-      title: C.titles.saidYes(lead),
+      title: ask.practice ? C.titles.practice(C.titles.saidYes(lead)) : C.titles.saidYes(lead),
       detail: name,
-      next: { label: C.steps.openProposal, why: C.whys.saidYes, step: toProposal(proposal.id) },
+      next: { label: C.steps.openProposal, why: ask.practice ? C.whys.practice : C.whys.saidYes, step: toProposal(proposal) },
     });
   }
   if (isToday(proposal.receivedAt, now)) {
@@ -249,9 +263,12 @@ function todayFor(proposal: DeskProposal, now: Date): FeedItem[] {
       at: proposal.receivedAt,
       title: C.titles.brief,
       detail: name,
-      next: led || proposal.status !== "open"
-        ? { label: C.steps.openProposal, why: C.whys.briefLed, step: toProposal(proposal.id) }
-        : { label: C.steps.pickLead, why: C.whys.brief, step: toLead(proposal.id) },
+      next:
+        proposal.status !== "open"
+          ? { label: C.steps.openProposal, why: C.whys.briefDecided, step: toProposal(proposal) }
+          : led
+            ? { label: C.steps.openProposal, why: C.whys.briefLed, step: toProposal(proposal) }
+            : { label: C.steps.pickLead, why: C.whys.brief, step: toLead(proposal.id) },
     });
   }
   return items;

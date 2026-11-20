@@ -866,14 +866,17 @@ export function SidebarNav({
  */
 export function LowerBoards({ label, profileId, onBoard, children }: { label: string; profileId: string | undefined; onBoard: boolean; children: ReactNode }) {
   const key = `lasso.nav.boards-open.${profileId ?? "anon"}`;
-  const [open, setOpen] = useState(() => {
+  // null: the person has not chosen in this tab, so the section follows where they are (open on a board, else closed).
+  // QA L1: once they press it, their choice wins, on a board too.
+  const [open, setOpen] = useState<boolean | null>(() => {
     try {
-      return globalThis.sessionStorage?.getItem(key) === "1";
+      const saved = globalThis.sessionStorage?.getItem(key);
+      return saved === "1" ? true : saved === "0" ? false : null;
     } catch {
-      return false;
+      return null;
     }
   });
-  const shown = open || onBoard;
+  const shown = open ?? onBoard;
   const toggle = () => {
     const next = !shown;
     setOpen(next);
@@ -884,7 +887,7 @@ export function LowerBoards({ label, profileId, onBoard, children }: { label: st
     }
   };
   return (
-    <div data-nav-lower-boards className="flex shrink-0 flex-col">
+    <div data-nav-lower-boards className="mb-2 flex shrink-0 flex-col">
       <button
         type="button"
         aria-expanded={shown}

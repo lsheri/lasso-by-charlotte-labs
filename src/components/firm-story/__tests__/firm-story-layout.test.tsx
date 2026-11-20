@@ -19,7 +19,8 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: "Lasso" }) }));
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
-import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
+import { FIRM_STORY_SCRIPT } from "@/lib/firm-story-script";
+import { KESTREL_BAY_ORG_ID, STORY_DONE, storyStorageKey } from "@/lib/firm-story-shared";
 
 // The page as the browser would lay it out: 1440 x 900, the card 416 x 340 at the bottom past the sidebar.
 const page = { askTop: 480, scrollY: 0, maxScroll: 2000 };
@@ -195,5 +196,49 @@ describe("the demo story keeps its target in sight", () => {
     await tick(1000);
     expect(m.access).toHaveBeenCalledTimes(1);
     expect(Object.keys(window.sessionStorage)).toHaveLength(1);
+  });
+});
+
+describe("QA M4 on PR 285: cards with no target of their own on Firm brain", () => {
+  it("moves the hand-off card off the question box, without outlining it", async () => {
+    page.maxScroll = 0; // the canvas page does not scroll
+    await toBeatOne();
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 4 belongs to the other window: the hand-off
+    await tick(700);
+    expect(screen.getByTestId("firm-story").textContent).toContain("Hand over to the");
+    expect(placement()).toBe("top-end");
+    expect(screen.queryByTestId("firm-story-spotlight")).toBeNull();
+  });
+
+  it("moves the closing card off the question box", async () => {
+    page.maxScroll = 0;
+    window.sessionStorage.setItem(storyStorageKey("p1")!, String(STORY_DONE));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div data-testid="ask-the-firm" />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      </QueryClientProvider>,
+    );
+    await tick(700);
+    expect(screen.getByTestId("firm-story").textContent).toContain(FIRM_STORY_SCRIPT.closing);
+    expect(placement()).toBe("top-end");
+  });
+
+  it("leaves the cards where they were on any other page", async () => {
+    page.maxScroll = 0;
+    m.path = "/home";
+    window.sessionStorage.setItem(storyStorageKey("p1")!, String(STORY_DONE));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div data-testid="ask-the-firm" />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      </QueryClientProvider>,
+    );
+    await tick(700);
+    expect(placement()).toBe("bottom-start");
   });
 });

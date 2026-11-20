@@ -38,7 +38,6 @@ import {
   seesAllProposals,
   type DeskClient,
   type DeskList,
-  type DeskListInput,
   type DeskProfileInput,
   type DeskProposal,
   type NewProposalInput,
@@ -145,14 +144,19 @@ export type DeskStore = {
 
 const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
 
-/** Whether the ask's latest change (reply, else delivery report, else sending) came at or after `dayStart`. */
-function changedSince(ask: DeskAsk, dayStart: number): boolean {
+/**
+ * QA H1 on PR 285: whether the ask's latest change (reply, else delivery report, else sending) fell on today's calendar
+ * day in UTC, the one day rule the app's dates already use. The server alone decides the day: nothing from the browser
+ * moves its edges, so repeated reads can never narrow a reply down to less than a whole day.
+ */
+export function changedTodayUtc(ask: Pick<DeskAsk, "replied_at" | "status_at" | "created_at">, now: Date): boolean {
   const at = Date.parse(ask.replied_at ?? ask.status_at ?? ask.created_at);
-  return Number.isFinite(at) && at >= dayStart;
+  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Number.isFinite(at) && at >= start && at < start + 86_400_000;
 }
 
 /** The latest ask per proposal, as the page draws it. */
-function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false, dayStart: number | null = null): Map<string, AskView> {
+function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false, flagToday = false): Map<string, AskView> {
   const views = new Map<string, AskView>();
   for (const ask of asks) {
     if (views.has(ask.proposal_id)) continue;
@@ -163,7 +167,7 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connec
       practice: ask.status === "practice",
       // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
       waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
-      ...(dayStart !== null && changedSince(ask, dayStart) ? { today: true as const } : {}),
+      ...(flagToday && changedTodayUtc(ask, now) ? { today: true as const } : {}),
     });
   }
   return views;
@@ -175,7 +179,7 @@ async function mayAddClient(store: DeskStore, caller: DeskCaller): Promise<boole
 }
 
 /** The dashboard's rows. */
-export async function listDesk(store: DeskStore, input: { day_start?: string | undefined } = {}): Promise<DeskList> {
+export async function listDesk(store: DeskStore): Promise<DeskList> {
   const caller = await store.caller();
   const all = seesAllProposals(caller.role);
   // The roster is for admins and leads, so only they are told who the lead is.
@@ -196,8 +200,8 @@ export async function listDesk(store: DeskStore, input: { day_start?: string | u
     store.texts(caller.orgId),
     mayAddClient(store, caller),
   ]);
-  const dayStart = input.day_start ? Date.parse(input.day_start) : NaN;
-  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected, Number.isFinite(dayStart) ? dayStart : null);
+  // The "today" flag is for an admin's Home only (D-82): nobody else is told even that much about when a lead answered.
+  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected, caller.role === "admin");
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
   const proposals: DeskProposal[] = mine.map((row) => {
@@ -659,8 +663,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
 
 /** The server functions' handlers. The functions file only wires them up, so these are what the tests call. */
 export const deskHandlers = {
-  async list(context: DeskContext, data: DeskListInput): Promise<DeskList> {
-    return listDesk(await realStore(context, data.profile_id), data);
+  async list(context: DeskContext, data: DeskProfileInput): Promise<DeskList> {
+    return listDesk(await realStore(context, data.profile_id));
   },
   async clients(context: DeskContext, data: DeskProfileInput): Promise<DeskClient[]> {
     return listDeskClients(await realStore(context, data.profile_id));

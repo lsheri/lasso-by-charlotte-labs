@@ -34,8 +34,8 @@ import {
   LEAD_COPY,
   leadInput,
 } from "@/lib/proposal-desk-shared";
-import { deskLinkFromSearch, deskListInput } from "@/lib/proposal-desk-shared";
-import { boardWin, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { deskLinkFromSearch, deskProfileInput } from "@/lib/proposal-desk-shared";
+import { boardWin, changedTodayUtc, closeProposal, createProposal, listDesk, listDeskClients, setGoal, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const BOARD_ID = "99999999-9999-4999-8999-999999999999";
@@ -603,27 +603,31 @@ describe("20 Nov: the lead's name and the ask on the page", () => {
     expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|minutes|seconds|\d{4}-\d{2}/);
   });
 
-  it("21 Nov (D-82): flags an ask that changed since the reader's day began, and sends no time with it", async () => {
+  it("QA H1: tells an admin, and only an admin, that an ask changed today, by the server's own UTC day", async () => {
+    // NOW is 12:00 UTC: 2h ago is today, 13h ago was yesterday.
     const timed = async () => [
       { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "yes", created_at: hoursAgo(30), status_at: hoursAgo(29), replied_at: hoursAgo(2) },
-      { proposal_id: "p2", contact_id: LEAD, to_demo: false, status: "delivered", reply: null, created_at: hoursAgo(30), status_at: hoursAgo(20), replied_at: null },
+      { proposal_id: "p2", contact_id: LEAD, to_demo: false, status: "delivered", reply: "no", created_at: hoursAgo(30), status_at: hoursAgo(20), replied_at: hoursAgo(13) },
     ];
-    const dayStart = hoursAgo(6);
-    const list = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }), { day_start: dayStart });
-    expect(list.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ reply: "yes", today: true });
-    expect(list.proposals.find((p) => p.id === "p2")?.ask && "today" in (list.proposals.find((p) => p.id === "p2")?.ask ?? {})).toBe(false);
-    expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|status_at|minutes|seconds|\d{4}-\d{2}/);
-    // No day start, no flag: the Proposals page's read is exactly as it was.
-    const plain = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }));
-    expect(plain.proposals.some((p) => p.ask && "today" in p.ask)).toBe(false);
+    const admin = await listDesk(fakeStore({ rows, asks: timed, role: "admin" }));
+    expect(admin.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ reply: "yes", today: true });
+    expect("today" in (admin.proposals.find((p) => p.id === "p2")?.ask ?? {})).toBe(false);
+    expect(JSON.stringify(admin.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|status_at|minutes|seconds|\d{4}-\d{2}/);
+    // A lead, or a member who started the proposal, sees the answer and nothing about when it came.
+    for (const role of ["lead", "em", "analyst"]) {
+      const list = await listDesk(fakeStore({ rows, asks: timed, role }));
+      expect(list.proposals.some((p) => p.ask && "today" in p.ask), role).toBe(false);
+    }
   });
 
-  it("21 Nov (D-82): keeps a day start only when it is a time from the last two days", () => {
-    const now = new Date("2026-11-20T12:00:00Z");
-    expect(deskListInput({ profile_id: null, day_start: "2026-11-20T08:00:00.000Z" }, now)).toEqual({ profile_id: null, day_start: "2026-11-20T08:00:00.000Z" });
-    for (const junk of ["2026-11-10T00:00:00Z", "2026-11-22T00:00:00Z", "yesterday", "", 5, null, "x".repeat(80)]) {
-      expect(deskListInput({ profile_id: null, day_start: junk }, now), String(junk)).toEqual({ profile_id: null });
-    }
+  it("QA H1: takes no day from the browser, so repeated reads cannot narrow a reply below a whole day", async () => {
+    // The list read keeps only the profile: a day start sent by the browser is dropped before the handler.
+    expect(deskProfileInput({ profile_id: null, day_start: "2026-11-20T08:00:00Z" } as never)).toEqual({ profile_id: null });
+    expect(listDesk.length).toBe(1);
+    // Every reply time on the same UTC day reads the same, and one on the day before reads the same as any other then.
+    const flag = (replied: string) => changedTodayUtc({ replied_at: replied, status_at: null, created_at: replied }, NOW);
+    expect(["2026-11-20T00:00:00Z", "2026-11-20T07:23:11Z", "2026-11-20T11:59:59Z"].map(flag)).toEqual([true, true, true]);
+    expect(["2026-11-19T23:59:59Z", "2026-11-19T00:00:01Z"].map(flag)).toEqual([false, false]);
   });
 
   it("a practice ask stops waiting once texting is switched on", async () => {

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { startOfToday } from "@/lib/admin-home-shared";
 import type { DeskList } from "@/lib/proposal-desk-shared";
 import { listProposalsFn } from "@/lib/proposal-desk.functions";
 
@@ -14,9 +13,7 @@ export function useProposalDesk(profileId: string | undefined, options: { refres
     enabled: Boolean(profileId),
     staleTime: 30_000,
     retry: false,
-    // The start of this person's own day, so an ask that changed today is flagged for an admin's Home (D-82). Only the
-    // flag comes back, never a time.
-    queryFn: (): Promise<DeskList> => listProposalsFn({ data: { profile_id: profileId as string, day_start: startOfToday(new Date()).toISOString() } }),
+    queryFn: (): Promise<DeskList> => listProposalsFn({ data: { profile_id: profileId as string } }),
     // While an ask waits for its reply the page looks again every few seconds, so "said yes" shows without a reload.
     // An admin's Home also reads again once a minute (D-85), and on focus, which is react-query's own default.
     refetchInterval: (query) => (query.state.data?.proposals.some((proposal) => proposal.ask?.waiting) ? 5000 : (options.refreshMs ?? false)),

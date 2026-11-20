@@ -155,8 +155,12 @@ export function FirmStoryStage({ profileId, orgId, window: storyWindow }: { prof
   // a target is showing on its own page; otherwise the card stays in its usual place.
   const cardWrap = useRef<HTMLDivElement | null>(null);
   const pointing = view.kind === "beat" && view.beat.anchor && isAtPlace(view.beat.place, pathname) && !exploring && !dialogOpen;
+  // QA M4 on PR 285: on Firm brain the question box floats at the bottom, where the usual card sits. A card with no
+  // target of its own there (the hand-off, the closing line, or a beat whose target has not loaded) steps clear of
+  // the box without outlining it, so the viewer can still type.
+  const clearOfBox = !pointing && !exploring && !dialogOpen && isAtPlace("firm", pathname) && view.kind !== "idle";
   const layout = useStoryLayout(
-    pointing ? view.beat.anchor : null,
+    pointing ? view.beat.anchor : clearOfBox ? "ask-the-firm" : null,
     view.kind === "beat" ? view.beat.n : null,
     cardWrap,
     view.kind === "beat" && view.beat.phoneCardAtTop === true,

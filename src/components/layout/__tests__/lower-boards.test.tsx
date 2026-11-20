@@ -49,6 +49,16 @@ describe("the admin's lower Boards section", () => {
     expect(screen.getByTestId("board-tree")).toBeTruthy();
   });
 
+  it("QA L1: closes on a press even while the admin is on a board", () => {
+    mount(true);
+    const toggle = screen.getByTestId("nav-boards-toggle");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByTestId("board-tree")).toBeNull();
+    fireEvent.click(toggle);
+    expect(screen.getByTestId("board-tree")).toBeTruthy();
+  });
+
   it("remembers open for this tab, and still works when storage is refused", () => {
     mount();
     fireEvent.click(screen.getByTestId("nav-boards-toggle"));

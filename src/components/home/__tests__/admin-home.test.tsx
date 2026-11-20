@@ -93,6 +93,30 @@ describe("the lists", () => {
   });
 });
 
+describe("QA M3: a source that failed", () => {
+  it("never says nothing waits when it could not check", () => {
+    const view = render(<AdminWhatChanged feed={feed([], [])} failed open={null} onRetry={() => {}} onStep={() => {}} />);
+    expect(screen.queryByText(ADMIN_HOME_COPY.nothingWaiting)).toBeNull();
+    expect(screen.queryByText(ADMIN_HOME_COPY.nothingToday)).toBeNull();
+    expect(screen.getByText(ADMIN_HOME_COPY.notCheckedWaiting)).toBeTruthy();
+    expect(screen.getByText(ADMIN_HOME_COPY.notCheckedToday)).toBeTruthy();
+    view.rerender(<AdminWhatChanged feed={feed([], [])} failed={false} open={0} onRetry={() => {}} onStep={() => {}} />);
+    expect(screen.getByText(ADMIN_HOME_COPY.nothingWaiting)).toBeTruthy();
+  });
+});
+
+describe("QA L4: keyboard focus", () => {
+  it("keeps focus on a row when it stops being new", () => {
+    const view = render(<AdminWhatChanged feed={feed([item("a")])} failed={false} open={1} onRetry={() => {}} onStep={() => {}} />);
+    view.rerender(<AdminWhatChanged feed={feed([item("n"), item("a")])} failed={false} open={1} onRetry={() => {}} onStep={() => {}} />);
+    const row = screen.getByRole("button", { name: /Title n/ });
+    row.focus();
+    view.rerender(<AdminWhatChanged feed={feed([item("x"), item("n"), item("a")])} failed={false} open={1} onRetry={() => {}} onStep={() => {}} />);
+    expect(document.querySelector('[data-feed-item="n"]')?.getAttribute("data-feed-new")).toBeNull();
+    expect(document.activeElement).toBe(row);
+  });
+});
+
 describe("an item morphs into its next step", () => {
   it("opens on press with Next and Why written on it, takes the step, and closes again", () => {
     const onStep = vi.fn();
@@ -151,7 +175,8 @@ describe("reading", () => {
     await waitFor(() => expect(screen.getByTestId("admin-home-waiting")).toBeTruthy());
     expect([...document.querySelectorAll("[data-feed-kind]")].map((node) => node.getAttribute("data-feed-kind"))).toEqual(["over", "invite", "people", "won"]);
     expect(m.list.mock.calls[0]?.[0]).toMatchObject({ data: { profile_id: admin.id } });
-    expect(typeof m.list.mock.calls[0]?.[0].data.day_start).toBe("string");
+    // QA H1: the browser sends no day of its own.
+    expect(m.list.mock.calls[0]?.[0]).toEqual({ data: { profile_id: admin.id } });
     expect(m.roster).toHaveBeenCalledWith({ data: { profile_id: admin.id } });
     expect(screen.getByTestId("admin-home-up-next").textContent).toContain("1 open proposal");
   });

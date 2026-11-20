@@ -99,9 +99,9 @@ export type AskView = {
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
   /**
-   * 21 Nov (D-82): true when the ask last changed (its reply, else its delivery report, else when it was sent) since
-   * the start of the reader's day, so an admin's Home can list it under "earlier today". Only this flag leaves the
-   * server, never a time: nothing on the page can work out how long anyone took.
+   * 21 Nov (D-82, QA H1): true when the ask last changed (its reply, else its delivery report, else when it was sent) on
+   * today's UTC calendar day, so an admin's Home can list it under "earlier today". Sent to admins only. The server
+   * alone decides the day and no time leaves it, so nothing can work out how long anyone took.
    */
   today?: true;
 };

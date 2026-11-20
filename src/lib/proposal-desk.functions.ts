@@ -4,7 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   boardInput,
   closeInput,
-  deskListInput,
   deskProfileInput,
   goalInput,
   type BoardWin,
@@ -31,7 +30,7 @@ import {
 /** The dashboard: the proposals this person may see, and the workspace's turnaround goal. */
 export const listProposalsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { profile_id?: string | null; day_start?: string }) => deskListInput(input))
+  .inputValidator(deskProfileInput)
   .handler(async ({ data, context }): Promise<DeskList> => (await import("./proposal-desk.server")).deskHandlers.list(context, data));
 
 /** The clients a new proposal can be for. */

@@ -150,7 +150,7 @@ describe("earlier today", () => {
     });
     expect(feed.today.map((item) => item.id)).toEqual(["brief:brief", "won:won", "sent:sent", "lost:lost"]);
     expect(feed.today.find((item) => item.kind === "won")?.next.step).toEqual({ to: "/engagements/$id/canvas-lab", params: { id: "b1" } });
-    expect(feed.today.find((item) => item.kind === "lost")?.next.step).toEqual({ to: "/proposals", search: { view: "lost" } });
+    expect(feed.today.find((item) => item.kind === "lost")?.next.step).toEqual({ to: "/proposals", search: { view: "lost", proposal: "lost" } });
     expect(feed.today.find((item) => item.kind === "brief")?.next.step).toEqual({ to: "/proposals", search: { lead: "brief" } });
   });
 
@@ -166,6 +166,57 @@ describe("earlier today", () => {
     const feed = buildAdminFeed({ now: NOW, desk: desk(many) });
     expect(feed.today).toHaveLength(ADMIN_HOME_TODAY_ROWS);
     expect(feed.todayMore).toBe(3);
+  });
+});
+
+describe("QA of PR 285", () => {
+  it("M1: says a practice ask's answer is practice, never a real yes, no or opt out", () => {
+    const feed = buildAdminFeed({
+      now: NOW,
+      desk: desk([
+        proposal({ id: "y", ask: ask({ status: "practice", practice: true, reply: "yes", today: true }) }),
+        proposal({ id: "n", ask: ask({ status: "practice", practice: true, reply: "no" }) }),
+        proposal({ id: "s", ask: ask({ status: "practice", practice: true, reply: "stop" }) }),
+      ]),
+    });
+    const titles = [...feed.waiting, ...feed.today].map((item) => item.title);
+    expect(titles).toEqual(expect.arrayContaining(["Practice ask: Christy Johnson said no", "Practice ask: Christy Johnson opted out of texts", "Practice ask: Christy Johnson said yes"]));
+    for (const item of [...feed.waiting, ...feed.today]) {
+      expect(item.title.startsWith("Practice ask: ")).toBe(true);
+      expect(item.next.why).toBe(ADMIN_HOME_COPY.whys.practice);
+    }
+  });
+
+  it("M2: opens a decided proposal in Won or Lost with its row named, and an open one in the default view", () => {
+    const feed = buildAdminFeed({
+      now: NOW,
+      desk: desk([
+        proposal({ id: "w", status: "won", receivedAt: hoursAgo(1), sentAt: hoursAgo(0.8), decidedAt: hoursAgo(0.5), engagementId: null }),
+        proposal({ id: "l", status: "lost", receivedAt: hoursAgo(1), sentAt: hoursAgo(0.9), decidedAt: hoursAgo(0.4), leadName: null, leadContactId: null }),
+        proposal({ id: "o", receivedAt: hoursAgo(1), sentAt: hoursAgo(0.7) }),
+      ]),
+    });
+    const step = (id: string) => feed.today.find((item) => item.id === id)?.next;
+    expect(step("won:w")?.step).toEqual({ to: "/proposals", search: { view: "won", proposal: "w" } });
+    expect(step("sent:w")?.step).toEqual({ to: "/proposals", search: { view: "won", proposal: "w" } });
+    expect(step("brief:w")?.step).toEqual({ to: "/proposals", search: { view: "won", proposal: "w" } });
+    expect(step("lost:l")?.step).toEqual({ to: "/proposals", search: { view: "lost", proposal: "l" } });
+    expect(step("brief:l")?.step).toEqual({ to: "/proposals", search: { view: "lost", proposal: "l" } });
+    expect(step("sent:o")?.step).toEqual({ to: "/proposals", search: { proposal: "o" } });
+  });
+
+  it("M2: says only what is true for a win with no board, and a brief already decided", () => {
+    const feed = buildAdminFeed({
+      now: NOW,
+      desk: desk([
+        proposal({ id: "w", status: "won", decidedAt: hoursAgo(0.5), engagementId: null }),
+        proposal({ id: "l", status: "lost", receivedAt: hoursAgo(1), decidedAt: hoursAgo(0.4), leadName: null, leadContactId: null }),
+      ]),
+    });
+    expect(feed.today.find((item) => item.id === "won:w")?.next.why).toBe(ADMIN_HOME_COPY.whys.wonNoBoard);
+    expect(feed.today.find((item) => item.id === "brief:l")?.next.why).toBe(ADMIN_HOME_COPY.whys.briefDecided);
+    expect(words(feed.today)).not.toContain("The team board was made");
+    expect(words(feed.today)).not.toContain("Its lead is picked");
   });
 });
 
