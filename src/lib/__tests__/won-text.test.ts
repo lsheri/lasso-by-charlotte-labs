@@ -98,6 +98,16 @@ describe("the words", () => {
     }
   });
 
+  it("never cuts a workspace name: one that does not fit whole is left out", () => {
+    const SHORT = "Lasso: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.";
+    const fits = "A".repeat(35);
+    expect(wonTextBody({ brandName: "Lasso", firmName: fits })).toBe(`Lasso for ${fits}: ${SHORT.slice("Lasso: ".length)}`);
+    expect(wonTextBody({ brandName: "Lasso", firmName: fits }).length).toBe(SMS_ONE_SEGMENT);
+    for (const firmName of ["A".repeat(36), "St. Brigid Health and Community Services Partnership", "x".repeat(400)]) {
+      expect(wonTextBody({ brandName: "Lasso", firmName })).toBe(SHORT);
+    }
+  });
+
   it("has no long dash anywhere in its copy", () => {
     for (const line of [...Object.values(WON_TEXT_COPY), ...Object.values(WON_TEXT_PROBLEMS)]) expect(line).not.toMatch(/[\u2013\u2014]/);
   });

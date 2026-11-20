@@ -94,7 +94,7 @@ const OPT_OUT = "Reply STOP to opt out.";
 
 /**
  * The words. The product's name comes from the brand module and the firm's name is the workspace's own; no client is
- * named and the sender behind the text is never named. A long firm name is shortened so the text stays one segment.
+ * named and the sender behind the text is never named. A firm name that does not fit whole in one segment is left out, never cut mid-word.
  */
 export function wonTextBody(input: { brandName: string; firmName: string }): string {
   const brand = plainForSms(input.brandName) || "Lasso";
@@ -102,10 +102,8 @@ export function wonTextBody(input: { brandName: string; firmName: string }): str
   const tail = `good news. The proposal you helped with has been won, and the team board is ready for you. ${OPT_OUT}`;
   const firm = plainForSms(input.firmName);
   const withFirm = `${brand} for ${firm}: ${tail}`;
-  if (firm && withFirm.length <= SMS_ONE_SEGMENT) return withFirm;
-  const room = SMS_ONE_SEGMENT - `${brand} for : ${tail}`.length;
-  const short = firm.slice(0, Math.max(0, room)).trim();
-  return short ? `${brand} for ${short}: ${tail}` : `${brand}: ${tail}`;
+  // A name is never cut: when it does not fit whole in one segment, the text goes without it.
+  return firm && withFirm.length <= SMS_ONE_SEGMENT ? withFirm : `${brand}: ${tail}`;
 }
 
 /** A full international number: a plus, then 8 to 15 digits, the first not zero. */
