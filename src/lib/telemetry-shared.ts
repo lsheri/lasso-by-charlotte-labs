@@ -148,6 +148,8 @@ export type TelemetryEvent =
   | "import.failed"
   /** GATE-1: a company or partner signup asked for a pilot. Register and team size band only. */
   | "pilot.requested"
+  /** 20 Nov, Set up a pilot: a founder made a company workspace and its first admin's invite. Dims: emailed (sent | not_configured | failed). Never the firm's name or the email. Portal registration required. */
+  | "pilot.set_up"
   /** PF1: a push through MCP. Dims include stage (options | capture | helper)
    *  and window_pos (only | first | middle | last); the full list lives in
    *  event-dim-allowlist.ts. */

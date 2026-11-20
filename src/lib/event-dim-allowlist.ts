@@ -209,6 +209,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "import.completed": ["entry", "imported_bucket", "last_screen", "tier", "vendor"],
   "import.failed": ["last_screen", "reason", "tier", "vendor"],
   "pilot.requested": ["register", "team_size"],
+  "pilot.set_up": ["emailed"],
   "import.parsed": ["conversations_found_bucket", "date_span_days_bucket", "last_screen", "parse_failures", "tier", "vendor"],
   "import.started": ["last_screen", "tier", "vendor"],
   "inbox.arrival_undone": ["reverted"],
