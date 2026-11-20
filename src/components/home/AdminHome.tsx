@@ -203,7 +203,7 @@ function FeedRow({
   onClose,
 }: {
   item: FeedItem;
-  /** Earlier today shows the time of day; a waiting item's time would be the brief's, which may be days ago. */
+  /** Earlier shows the time of day; a waiting item's time would be the brief's, which may be days ago. */
   showTime: boolean;
   isNew: boolean;
   open: boolean;

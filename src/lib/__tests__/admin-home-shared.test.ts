@@ -5,6 +5,7 @@ import {
   ADMIN_HOME_TODAY_ROWS,
   arrivedIds,
   buildAdminFeed,
+  feedTime,
   nearlyOver,
   openCount,
   proposalName,
@@ -155,7 +156,7 @@ describe("earlier today", () => {
   });
 
   it("lists a lead's yes only when the server flagged it as today, with no time of its own", () => {
-    const flagged = buildAdminFeed({ now: NOW, desk: desk([proposal({ ask: ask({ reply: "yes", today: true }) })]) });
+    const flagged = buildAdminFeed({ now: NOW, desk: desk([proposal({ ask: ask({ reply: "yes", recent: true }) })]) });
     expect(flagged.today).toHaveLength(1);
     expect(flagged.today[0]).toMatchObject({ kind: "said_yes", title: "Christy Johnson said yes", at: "" });
     expect(buildAdminFeed({ now: NOW, desk: desk([proposal({ ask: ask({ reply: "yes" }) })]) }).today).toEqual([]);
@@ -174,7 +175,7 @@ describe("QA of PR 285", () => {
     const feed = buildAdminFeed({
       now: NOW,
       desk: desk([
-        proposal({ id: "y", ask: ask({ status: "practice", practice: true, reply: "yes", today: true }) }),
+        proposal({ id: "y", ask: ask({ status: "practice", practice: true, reply: "yes", recent: true }) }),
         proposal({ id: "n", ask: ask({ status: "practice", practice: true, reply: "no" }) }),
         proposal({ id: "s", ask: ask({ status: "practice", practice: true, reply: "stop" }) }),
       ]),
@@ -217,6 +218,38 @@ describe("QA of PR 285", () => {
     expect(feed.today.find((item) => item.id === "brief:l")?.next.why).toBe(ADMIN_HOME_COPY.whys.briefDecided);
     expect(words(feed.today)).not.toContain("The team board was made");
     expect(words(feed.today)).not.toContain("Its lead is picked");
+  });
+});
+
+describe("QA recheck of PR 285", () => {
+  it("N1: Earlier is the last 24 hours, so a yesterday-evening item stays and a 25 hour old one goes", () => {
+    const feed = buildAdminFeed({ now: NOW, desk: desk([proposal({ id: "a", receivedAt: hoursAgo(20), leadName: "X" }), proposal({ id: "b", receivedAt: hoursAgo(25) })]) });
+    expect(feed.today.map((item) => item.id)).toEqual(["brief:a"]);
+    expect(ADMIN_HOME_COPY.today).toBe("Earlier");
+  });
+
+  it("N1: says Yesterday on a time before the admin's own midnight", () => {
+    expect(feedTime(hoursAgo(20), NOW)).toMatch(/^Yesterday \d/);
+    expect(feedTime(hoursAgo(2), NOW)).toMatch(/^\d/);
+  });
+
+  it("N2: a proposal that went out and was then decided does not ask to be recorded", () => {
+    const feed = buildAdminFeed({ now: NOW, desk: desk([proposal({ id: "l", status: "lost", receivedAt: hoursAgo(40), sentAt: hoursAgo(3), decidedAt: hoursAgo(1) })]) });
+    expect(feed.today.find((item) => item.id === "sent:l")?.next.why).toBe(ADMIN_HOME_COPY.whys.sentDecided);
+  });
+
+  it("N3: a practice no waits behind every real item", () => {
+    const feed = buildAdminFeed({
+      now: NOW,
+      desk: desk([
+        proposal({ id: "p", ask: ask({ status: "practice", practice: true, reply: "no" }) }),
+        proposal({ id: "n", leadContactId: null, leadName: null }),
+        proposal({ id: "s", receivedAt: hoursAgo(62) }),
+      ]),
+      roster: [person("Dana West", true)],
+    });
+    expect(feed.waiting.map((item) => item.id)).toEqual(["wait:n", "wait:s", "people:missing", "wait:p"]);
+    expect(feed.waiting.at(-1)?.practice).toBe(true);
   });
 });
 

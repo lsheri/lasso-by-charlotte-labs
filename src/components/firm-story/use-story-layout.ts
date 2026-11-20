@@ -50,6 +50,8 @@ export function useStoryLayout(
   phoneTop = false,
   /** This beat names the card's corner on a wide screen. */
   wideAt: StoryPlacement | null = null,
+  /** QA N4 on PR 285: kept clear of instead when the target is not on the page (a map that did not load). */
+  fallback: string | null = null,
 ): { placement: StoryPlacement; style: CSSProperties } {
   const [layout, setLayout] = useState<Layout>(USUAL);
   const current = useRef<Layout>(USUAL);
@@ -80,7 +82,7 @@ export function useStoryLayout(
       const now = Date.now();
       if (now < waitUntil) return;
       const card = cardWrap.current?.querySelector('[data-testid="firm-story-card"]');
-      let target = measureAnchor(anchor);
+      let target = measureAnchor(anchor) ?? (fallback ? measureAnchor(fallback) : null);
       if (!card || !target) return;
       const rect = card.getBoundingClientRect();
       const viewport = { width: window.innerWidth, height: window.innerHeight };
@@ -106,7 +108,7 @@ export function useStoryLayout(
         const delta = storyScrollDelta(target, metrics);
         if (delta !== 0) {
           window.scrollBy({ top: delta, behavior: "instant" });
-          target = measureAnchor(anchor) ?? target;
+          target = measureAnchor(anchor) ?? (fallback ? measureAnchor(fallback) : null) ?? target;
           quietSince = now;
         } else quietSince ??= now;
         if (now - quietSince >= QUIET_MS || now - startedAt >= SETTLE_CAP_MS) settled = true;
@@ -145,7 +147,7 @@ export function useStoryLayout(
       window.removeEventListener("keydown", key);
     };
     // A new beat lines the page up again, even when it points at the same surface as the one before.
-  }, [anchor, beat, cardWrap, phoneTop, wideAt]);
+  }, [anchor, beat, cardWrap, phoneTop, wideAt, fallback]);
 
   const { placement, top } = layout;
   const style: CSSProperties = {

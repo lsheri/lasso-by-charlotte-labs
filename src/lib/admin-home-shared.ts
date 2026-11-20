@@ -1,6 +1,6 @@
 /**
  * 21 Nov 2026, D-82 (Liam): an admin's Home is only the operating picture. Two lists: what waits on the admin, then
- * what happened earlier today. The pure rules and the words live here; the page only draws what this file returns.
+ * what happened in the last day ("Earlier"). The pure rules and the words live here; the page only draws what this file returns.
  *
  * Every item is built from something the app records today: a proposal and its clock, its lead and the latest ask by
  * text, when it went out, when it was won or lost, the people on the roster with no number or email, and the admin's
@@ -19,7 +19,7 @@ import type { RosterContact } from "./roster-shared";
 /** D-85: Home reads again when the window comes back into focus, and once a minute while it is open. No realtime. */
 export const ADMIN_HOME_REFRESH_MS = 60_000;
 
-/** How many "earlier today" items Home shows before it points to Proposals for the rest. */
+/** How many "Earlier" items Home shows before it points to Proposals for the rest. */
 export const ADMIN_HOME_TODAY_ROWS = 8;
 
 /** Texts that did not reach the phone, as the delivery report names them. */
@@ -61,6 +61,8 @@ export type FeedItem = {
   title: string;
   /** The line under it: the client, the clock, the lead. */
   detail: string;
+  /** A practice ask's answer: nobody really replied (QA N3). */
+  practice?: true;
   /** What pressing the item opens, said on the item once it is pressed. */
   next: { label: string; why: string; step: NextStep };
 };
@@ -70,12 +72,13 @@ export type AdminFeed = { waiting: FeedItem[]; today: FeedItem[]; todayMore: num
 export const ADMIN_HOME_COPY = {
   title: "What changed",
   waiting: "Waiting on you",
-  today: "Earlier today",
+  /** QA N1: the last 24 hours, the same window for every item, so nothing drops off at someone else's midnight. */
+  today: "Earlier",
   nothingWaiting: "Nothing waits on you right now.",
-  nothingToday: "Nothing has happened today.",
+  nothingToday: "Nothing has happened in the last day.",
   /** QA M3: a source could not be read, so an empty list cannot be called empty. */
   notCheckedWaiting: "Could not check everything that may be waiting on you.",
-  notCheckedToday: "Could not check everything that happened today.",
+  notCheckedToday: "Could not check everything from the last day.",
   loading: "Loading what changed",
   /** One source could not be read; the rest still show. */
   partFailed: "Some of this could not be loaded, so the lists may be short. Try again in a moment.",
@@ -83,7 +86,8 @@ export const ADMIN_HOME_COPY = {
   upNext: "Up next in Proposals",
   openCount: (count: number) => (count === 1 ? "1 open proposal" : `${count} open proposals`),
   noneOpen: "No open proposals",
-  more: (count: number) => (count === 1 ? "1 more today in Proposals" : `${count} more today in Proposals`),
+  more: (count: number) => (count === 1 ? "1 more in Proposals" : `${count} more in Proposals`),
+  yesterday: (time: string) => `Yesterday ${time}`,
   next: "Next",
   why: "Why",
   close: "Not now",
@@ -130,7 +134,8 @@ export const ADMIN_HOME_COPY = {
     saidYes: "Their past work, the documents and the clock are on the proposal. Mark it as sent when it goes out.",
     brief: "A new proposal starts with picking its lead.",
     briefLed: "Its lead is picked. The clock, the documents and matching past work are on the proposal.",
-    briefDecided: "It came in today and has already been decided.",
+    briefDecided: "It came in within the last day and has already been decided.",
+    sentDecided: "It went out, and has since been decided.",
     wonNoBoard: "It was recorded as won. It has no team board yet.",
     practice: "This was a practice ask, so nothing went to anyone's phone and no one really answered.",
     sent: "It is with the client. Record the win or close it as lost when you hear back.",
@@ -156,10 +161,11 @@ export function startOfToday(now: Date): Date {
   return start;
 }
 
+/** QA N1: within the last 24 hours, the same window the server uses for a lead's reply. */
 function isToday(iso: string | null | undefined, now: Date): boolean {
   if (!iso) return false;
   const at = Date.parse(iso);
-  return Number.isFinite(at) && at >= startOfToday(now).getTime() && at <= now.getTime() + 60_000;
+  return Number.isFinite(at) && at >= now.getTime() - 86_400_000 && at <= now.getTime() + 60_000;
 }
 
 /** "Pellham: Network redesign", or whichever of the two is there. */
@@ -205,9 +211,10 @@ function waitingFor(proposal: DeskProposal, goalHours: number, now: Date): FeedI
   }
   const practice = Boolean(ask?.practice);
   const title = (words: string) => (practice ? C.titles.practice(words) : words);
-  if (ask?.reply === "no") return base("said_no", title(C.titles.saidNo(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.saidNo, toLead(proposal.id), proposal.receivedAt);
+  const mark = (item: FeedItem): FeedItem => (practice ? { ...item, practice: true } : item);
+  if (ask?.reply === "no") return mark(base("said_no", title(C.titles.saidNo(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.saidNo, toLead(proposal.id), proposal.receivedAt));
   if (ask?.reply === "stop" || (ask && ask.status === "opted_out")) {
-    return base("opted_out", title(C.titles.optedOut(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.optedOut, toLead(proposal.id), proposal.receivedAt);
+    return mark(base("opted_out", title(C.titles.optedOut(lead)), C.steps.pickAnother, practice ? C.whys.practice : C.whys.optedOut, toLead(proposal.id), proposal.receivedAt));
   }
   if (!proposal.leadContactId && !proposal.leadName) {
     return base("no_lead", C.titles.noLead, C.steps.pickLead, C.whys.noLead, toLead(proposal.id), proposal.receivedAt);
@@ -241,11 +248,11 @@ function todayFor(proposal: DeskProposal, now: Date): FeedItem[] {
     items.push({ id: `lost:${proposal.id}`, kind: "lost", at: proposal.decidedAt as string, title: C.titles.lost, detail: name, next: { label: C.steps.seeLost, why: C.whys.lost, step: toProposal(proposal) } });
   }
   if (proposal.sentAt && isToday(proposal.sentAt, now)) {
-    items.push({ id: `sent:${proposal.id}`, kind: "sent", at: proposal.sentAt, title: C.titles.sent, detail: name, next: { label: C.steps.openProposal, why: C.whys.sent, step: toProposal(proposal) } });
+    items.push({ id: `sent:${proposal.id}`, kind: "sent", at: proposal.sentAt, title: C.titles.sent, detail: name, next: { label: C.steps.openProposal, why: proposal.status === "open" ? C.whys.sent : C.whys.sentDecided, step: toProposal(proposal) } });
   }
   const ask = proposal.ask;
   // The server says only that the yes came today, never when, so it carries no time of its own and is listed first.
-  if (ask?.reply === "yes" && ask.today) {
+  if (ask?.reply === "yes" && ask.recent) {
     items.push({
       id: `yes:${proposal.id}`,
       kind: "said_yes",
@@ -321,7 +328,9 @@ export function buildAdminFeed({ desk, roster, notifications, now }: FeedSources
     const detail = rest > 0 ? `${names.join(", ")} and ${rest} more` : names.join(" and ");
     waiting.push({ id: "people:missing", kind: "people", at: now.toISOString(), title: C.titles.people(missing.length), detail, next: { label: C.steps.people, why: C.whys.people, step: toPeople } });
   }
-  waiting.sort((a, b) => URGENCY[a.kind] - URGENCY[b.kind] || byTime(a, b));
+  // QA N3: a practice answer is labelled as such and needs no one, so it waits behind every real item.
+  const rank = (item: FeedItem) => (item.practice ? 100 : URGENCY[item.kind]);
+  waiting.sort((a, b) => rank(a) - rank(b) || byTime(a, b));
   today.sort((a, b) => byTime(b, a));
   return { waiting, today: today.slice(0, ADMIN_HOME_TODAY_ROWS), todayMore: Math.max(0, today.length - ADMIN_HOME_TODAY_ROWS) };
 }
@@ -332,11 +341,12 @@ export function arrivedIds(previous: ReadonlySet<string> | null, items: readonly
   return new Set(items.filter((item) => !previous.has(item.id)).map((item) => item.id));
 }
 
-/** "09:42", in the admin's own clock. Only a time of day, never a duration. */
-export function feedTime(iso: string, locale?: string): string {
+/** "09:42", or "Yesterday 16:20" before the admin's own midnight. Only a time of day, never a duration. */
+export function feedTime(iso: string, now: Date = new Date(), locale?: string): string {
   const at = new Date(iso);
   if (!Number.isFinite(at.getTime())) return "";
-  return at.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const time = at.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  return at.getTime() < startOfToday(now).getTime() ? ADMIN_HOME_COPY.yesterday(time) : time;
 }
 
 /** How many proposals are open, for the one-tap way into Proposals. */

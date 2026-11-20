@@ -30,7 +30,7 @@ const DESK: DeskList = {
     proposal({ id: "p2", clientName: "Quillbrook", title: "Pricing study", receivedAt: ago(78) }),
     proposal({ id: "p3", clientName: "St. Brigid", title: "Diabetes prevention service line", leadContactId: null, leadName: null, receivedAt: ago(2.2) }),
     proposal({ id: "p4", clientName: "Tarnhollow", title: "Launch readiness", leadName: "Aoife Brennan", ask: ask({ name: "Aoife Brennan", reply: "no" }), receivedAt: ago(26) }),
-    proposal({ id: "p5", clientName: "Marrowfield", title: "Supplier strategy", leadName: "Priya Raghunathan", ask: ask({ name: "Priya Raghunathan", reply: "yes", today: true }), receivedAt: ago(28) }),
+    proposal({ id: "p5", clientName: "Marrowfield", title: "Supplier strategy", leadName: "Priya Raghunathan", ask: ask({ name: "Priya Raghunathan", reply: "yes", recent: true }), receivedAt: ago(28) }),
     proposal({ id: "p6", clientName: "Medrova", title: "Portfolio review", receivedAt: ago(50), sentAt: ago(3.4) }),
     proposal({ id: "p7", clientName: "Ostrander", title: "Due diligence", status: "won", receivedAt: ago(120), sentAt: ago(60), decidedAt: ago(1.1), engagementId: "e7" }),
     proposal({ id: "p8", clientName: "Vale & Finch", title: "Operating model", status: "won", receivedAt: ago(300), decidedAt: ago(40), engagementId: "e8" }),

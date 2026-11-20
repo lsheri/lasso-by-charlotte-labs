@@ -242,3 +242,25 @@ describe("QA M4 on PR 285: cards with no target of their own on Firm brain", () 
     expect(placement()).toBe("bottom-start");
   });
 });
+
+describe("QA N4 on PR 285: a beat whose target did not load", () => {
+  it("keeps beat 3's card clear of the question box when the Fees chip is not on the page", async () => {
+    page.maxScroll = 0;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <div data-testid="ask-the-firm" />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+      </QueryClientProvider>,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    fireEvent.click(screen.getByTestId("firm-story-launcher"));
+    for (let i = 0; i < 3; i += 1) fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByTestId("firm-story-card").getAttribute("data-story-beat")).toBe("3");
+    await tick(700);
+    expect(placement()).toBe("top-end");
+    expect(screen.queryByTestId("firm-story-spotlight")).toBeNull();
+  });
+});
