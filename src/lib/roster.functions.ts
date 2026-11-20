@@ -13,8 +13,8 @@ import {
 /**
  * 19 Nov 2026, Proposal Desk: the roster's server functions. Each is requireSupabaseAuth, then its handler in
  * roster.server.ts, which starts with requireFirmMember (an active member of a company workspace, never a coach or a
- * guest) and then asks for an admin or a lead. No flag sits in front of the panel. Neither function takes or returns
- * a phone number.
+ * guest) and then asks for an admin or a lead. No flag sits in front of the panel. A save takes the number an admin
+ * or lead types; no function returns a full number, only one masked to its last four digits.
  */
 
 /** The people this workspace works with, each with one word for their text agreement. Admins and leads only. */

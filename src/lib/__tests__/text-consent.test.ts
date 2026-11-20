@@ -758,6 +758,77 @@ function fakeDb(
   return { db: db as unknown as Parameters<typeof consentRecords>[0], calls };
 }
 
+describe("a number an admin typed is contact information, never an agreement", () => {
+  // A stand-in database where the roster's details table holds a number for the person and message_consents holds
+  // no agreement. It records every table asked, so the test can see the details table is never even read.
+  function typedOnly() {
+    const asked: string[] = [];
+    const db = {
+      from(table: string) {
+        asked.push(table);
+        const data = table === "roster_contact_details" ? { phone_e164: "+12065550142" } : null;
+        const chain: Record<string, unknown> = {
+          eq: () => chain,
+          is: () => chain,
+          maybeSingle: async () => ({ data, error: null }),
+          then: (resolve: (value: unknown) => unknown) =>
+            Promise.resolve({ data, error: null }).then(resolve),
+        };
+        return { select: () => chain, update: () => chain, insert: async () => ({ error: null }) };
+      },
+      rpc: async () => ({ data: null, error: null }),
+    };
+    return { db: db as unknown as Parameters<typeof consentRecords>[0], asked };
+  }
+
+  it("gives the sender no number for a person who has not agreed, so nothing is sent", async () => {
+    const { db, asked } = typedOnly();
+    expect(await consentRecords(db).numberFor(ORG, PERSON)).toBeNull();
+    expect(asked).toEqual(["message_consents"]);
+  });
+
+  it("is the only place the senders get a roster person's number: they never read the typed details", () => {
+    const wonText = readFileSync("src/lib/won-text.server.ts", "utf8");
+    const leadAsk = readFileSync("src/lib/lead-ask.server.ts", "utf8");
+    const consent = readFileSync("src/lib/text-consent.server.ts", "utf8");
+    for (const source of [
+      wonText,
+      leadAsk,
+      consent,
+      readFileSync("src/lib/text-sender.server.ts", "utf8"),
+    ])
+      expect(source).not.toMatch(
+        /roster_contact_details|roster\.server|phoneMasked|maskPhone|DetailRow|save_roster_contact/,
+      );
+    for (const source of [wonText, leadAsk]) {
+      const body = source.slice(source.indexOf("async agreedNumber("));
+      expect(body.slice(0, body.indexOf("},"))).toMatch(
+        /liveConsentRecords\(\)\)\.numberFor\(orgId, contactId\)/,
+      );
+    }
+    // numberFor itself reads the agreement table, filtered to a live agreement, and nothing else.
+    const numberFor = consent.slice(
+      consent.indexOf("async numberFor("),
+      consent.indexOf("async stopNumber("),
+    );
+    expect(numberFor.match(/from\("(\w+)"\)/g)).toEqual(['from("message_consents")']);
+    expect(numberFor).toContain('.is("revoked_at", null)');
+  });
+
+  it("typing a number on the roster makes no agreement: the roster's server never writes message_consents", () => {
+    const roster = readFileSync("src/lib/roster.server.ts", "utf8");
+    const writes = [
+      ...roster.matchAll(/from\("message_consents"\)\s*\.(insert|update|upsert|delete)/g),
+    ];
+    expect(writes).toEqual([]);
+    const sql = readFileSync(
+      "supabase/migrations/20261120100000_roster_contact_details.sql",
+      "utf8",
+    ).replace(/--.*$/gm, "");
+    expect(sql).not.toMatch(/(insert into|update|delete from) public\.message_consents/);
+  });
+});
+
 describe("for the sending and reply code", () => {
   const NUMBER = "+12068675309";
 
