@@ -178,7 +178,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   const mine = rows.filter((row) => row.org_id === caller.orgId && isStatus(row.status) && !row.archived_at && (all || row.owner_id === caller.profileId));
   // The lead's name and the ask go to admins, leads and the person who started the proposal.
   const named = mine.filter((row) => pickers || row.owner_id === caller.profileId);
-  const [settings, clientNames, ownerNames, context, leadNames, asks, texts, canAddClient] = await Promise.all([
+  const [settings, clientNames, ownerNames, context, leadNames, asks, texts, clientsOn] = await Promise.all([
     store.settings(caller.orgId),
     store.clientNames([...new Set(mine.map((row) => row.client_id))]),
     store.ownerNames([...new Set(mine.map((row) => row.owner_id))]),
@@ -186,8 +186,9 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
     store.leadNames(caller.orgId, [...new Set(named.map((row) => row.lead_contact_id).filter((id): id is string => Boolean(id)))]),
     store.asks(caller.orgId, named.map((row) => row.id)),
     store.texts(caller.orgId),
-    mayAddClient(store, caller),
+    caller.role === "admin" ? store.clientsOn(caller.orgId) : Promise.resolve(false),
   ]);
+  const canAddClient = caller.role === "admin" && clientsOn;
   const askByProposal = askViews(asks, leadNames, store.now(), texts.connected);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
@@ -214,7 +215,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
     };
   });
-  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, canAddClient, texts, proposals };
+  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, canAddClient, clientsOff: caller.role === "admin" && !clientsOn, texts, proposals };
 }
 
 /** The clients a new proposal can be for. */
