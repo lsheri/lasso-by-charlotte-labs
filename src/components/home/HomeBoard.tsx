@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
@@ -35,6 +35,7 @@ export function homeFramesForViewport(
   viewport: { width: number; height: number },
   cardCount: number,
   pendingHeight = 0,
+  heroContentHeight = HOME_HERO_CONTENT_HEIGHT,
 ): HomeFrame[] {
   const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
   const hero: HomeFrame = {
@@ -43,7 +44,7 @@ export function homeFramesForViewport(
     x: BOARD_FIT_PADDING,
     y: BOARD_FIT_PADDING,
     width,
-    height: HOME_HERO_FRAME_HEIGHT,
+    height: heroContentHeight === HOME_HERO_CONTENT_HEIGHT ? HOME_HERO_FRAME_HEIGHT : HOME_HERO_FRAME_HEIGHT - HOME_HERO_CONTENT_HEIGHT + heroContentHeight,
   };
   const grid: HomeFrame = {
     id: "home-grid",
@@ -163,13 +164,37 @@ function HomePendingInvites({ pending, onHeight }: { pending: PendingInviteRow[]
   </div>;
 }
 
-export function HomeBoard() {
+/**
+ * Measures a hero's content so its frame is as tall as what it holds. A hero that grows (a question box with more
+ * lines, starters wrapping on a phone) pushes the boards down instead of overlapping them.
+ */
+function MeasuredHero({ children, onHeight }: { children: ReactNode; onHeight: (height: number) => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => onHeight(Math.ceil(element.getBoundingClientRect().height));
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onHeight]);
+  return <div ref={ref}>{children}</div>;
+}
+
+/**
+ * Home as a board of the person's boards. `hero`, when given, takes the top frame in place of the welcome (21 Nov,
+ * D-85: the mini firm brain for firm members who are not admins); the boards stay below as cards.
+ */
+export function HomeBoard({ hero }: { hero?: ReactNode } = {}) {
   const copy = useBrandCopy();
   const { data: profile } = useProfile();
   const { shared, pending } = useSharedWithYou(Boolean(profile?.id));
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
   const [pendingHeight, setPendingHeight] = useState(0);
+  const [heroHeight, setHeroHeight] = useState(HOME_HERO_CONTENT_HEIGHT);
 
   // CS-1: one home.opened per mount and org, through the same signed-in
   // pipeline as nav.opened, and only once the acting profile has resolved.
@@ -205,7 +230,7 @@ export function HomeBoard() {
     workCount: null,
     shared: { hostOrg: board.host_org, addedAt: board.added_at },
   }))];
-  const frames = homeFramesForViewport(viewport, cards.length, pending.length > 0 ? pendingHeight : 0);
+  const frames = homeFramesForViewport(viewport, cards.length, pending.length > 0 ? pendingHeight : 0, hero ? heroHeight : HOME_HERO_CONTENT_HEIGHT);
   const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
@@ -243,7 +268,15 @@ export function HomeBoard() {
             </Button>
           </div>
         )}
-        renderFrame={(currentFrame) => currentFrame.kind === "hero" ? (
+        renderFrame={(currentFrame) => currentFrame.kind === "hero" && hero ? (
+          <div
+            data-testid="home-hero-content"
+            className="absolute left-1/2 w-[720px] max-w-[calc(100%-32px)] -translate-x-1/2"
+            style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
+          >
+            <MeasuredHero onHeight={setHeroHeight}>{hero}</MeasuredHero>
+          </div>
+        ) : currentFrame.kind === "hero" ? (
           <section
             data-testid="home-hero-content"
             aria-labelledby="home-title"

@@ -48,6 +48,8 @@ export function useStoryLayout(
   cardWrap: RefObject<HTMLElement | null>,
   /** This beat wants the card at the top on a phone. */
   phoneTop = false,
+  /** This beat names the card's corner on a wide screen. */
+  wideAt: StoryPlacement | null = null,
 ): { placement: StoryPlacement; style: CSSProperties } {
   const [layout, setLayout] = useState<Layout>(USUAL);
   const current = useRef<Layout>(USUAL);
@@ -110,7 +112,7 @@ export function useStoryLayout(
         if (now - quietSince >= QUIET_MS || now - startedAt >= SETTLE_CAP_MS) settled = true;
         restedAt = target.top + window.scrollY;
       }
-      apply({ placement: storyCardPlacement(target, metrics, phoneTop), top: storyCardTop(metrics) });
+      apply({ placement: storyCardPlacement(target, metrics, phoneTop, wideAt), top: storyCardTop(metrics) });
     };
 
     // The person's own scrolling wins from the first touch.
@@ -143,7 +145,7 @@ export function useStoryLayout(
       window.removeEventListener("keydown", key);
     };
     // A new beat lines the page up again, even when it points at the same surface as the one before.
-  }, [anchor, beat, cardWrap, phoneTop]);
+  }, [anchor, beat, cardWrap, phoneTop, wideAt]);
 
   const { placement, top } = layout;
   const style: CSSProperties = {
