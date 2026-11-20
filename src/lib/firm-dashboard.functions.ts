@@ -20,12 +20,17 @@ export const getFirmDashboard = createServerFn({ method: "POST" })
       data.profile_id,
     );
     const dashboard = await buildFirmDashboard(supabaseAdmin, profile.org_id);
-    await recordEvent(supabaseAdmin, {
-      eventType: "admin.dashboard_viewed",
-      orgId: profile.org_id,
-      userId: context.userId,
-      dims: { panels_shown: dashboard.panels_shown },
-    });
+    // PERF-4: the view event is still written, after the answer instead of before it. It made about five reads and
+    // an insert in series while the whole Firm view waited.
+    const { runAfterResponse } = await import("./background");
+    runAfterResponse(() =>
+      recordEvent(supabaseAdmin, {
+        eventType: "admin.dashboard_viewed",
+        orgId: profile.org_id,
+        userId: context.userId,
+        dims: { panels_shown: dashboard.panels_shown },
+      }),
+    );
     return dashboard;
   });
 

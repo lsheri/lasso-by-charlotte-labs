@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useReducer, useState, type ComponentType } from "react";
 
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { Button } from "@/components/ui/button";
 import { useReducedMotion } from "@/hooks/use-motion";
 import type { FirmAskResult } from "@/lib/firm-ask-shared";
@@ -184,9 +185,7 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className={FIRM_MAP_STAGE_CLASS}>
           {query.isPending ? (
-            <p role="status" className="p-4 text-(length:--type-small) text-muted-foreground">
-              {FIRM_MAP_COPY.loading}
-            </p>
+            <SkeletonFrame shape="panel" label={FIRM_MAP_COPY.loading} className="p-4" testId="firm-map-skeleton" />
           ) : query.isError ? (
             <p className="p-4 text-(length:--type-small) text-muted-foreground">
               {FIRM_MAP_COPY.error}
