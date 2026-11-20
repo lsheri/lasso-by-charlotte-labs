@@ -30,6 +30,8 @@ export const WON_TEXT_COPY = {
   /** Shown under the words before a press, while no approved number is connected. */
   awaiting: "The number is awaiting carrier approval. Send will not send anything yet.",
   notConnected: "The number is awaiting carrier approval, so nothing was sent.",
+  /** No recipient is set for this demo workspace. Shown before a press and as the answer to one. */
+  noNumber: "No number is set for this demo workspace, so nothing will be sent. An admin sets one on the Proposals page, under People.",
   optedOut: "They have opted out of texts. Nothing was sent.",
   capped: "That is the limit for texts today. Nothing was sent.",
   notWon: "Mark this proposal as won first.",
@@ -90,7 +92,7 @@ export function isE164(value: unknown): value is string {
 export type WonTextStatus =
   /** Nothing to show: not an admin, not the workspace whose lead agreed to texts, not won, or nobody to text. */
   | { show: false }
-  | { show: true; connected: boolean; preview: string };
+  | { show: true; connected: boolean; needsNumber: boolean; preview: string };
 
 export type WonTextResult = { ok: true } | { ok: false; problem: string };
 

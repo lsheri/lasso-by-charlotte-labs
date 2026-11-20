@@ -2,17 +2,18 @@
  * 19 Nov, Proposal Desk, first live slice (Liam, D-37 and D-39): "Text the lead" on a won proposal board.
  *
  * No flag sits in front of it. What decides whether a workspace has the button is whether it has someone who agreed
- * to be texted, and tonight that is one person, for the Kestrel Bay demo workspace, whose number is the server secret
- * PROPOSAL_TEXT_TO. Every other workspace is answered `show: false` and refused on a direct call, before any send.
- * Until that secret and an approved sender are both set, the demo workspace's admins see the words and a press
- * answers that nothing was sent (Liam, D-40). Setting the secrets is the whole switch to a real text.
+ * to be texted. Today that is demo workspaces only (Liam, D-50): an admin of a workspace carrying the demo marker
+ * types the one number on the Proposals page and ticks that the person agreed. Every other workspace is answered
+ * `show: false` and refused on a direct call, before any send; real workspaces will send only to a person who agreed
+ * on the public page with their own number. Until a number and an approved sender are both set, the demo
+ * workspace's admins see the words and a press answers that nothing was sent (Liam, D-40).
  *
  * Order of a press: who is asking, which workspace, is the board theirs and won, is there someone to text, record the
  * press, count today's presses, send, record what happened. If the press cannot be recorded nothing is sent, so the
  * daily limit can never be passed by a recording fault.
  *
- * The number is read from the secret inside `recipient` and handed straight to the sender. It is never returned,
- * logged, stored or put in an event.
+ * The number is read on the server inside `recipient` and handed straight to the sender. It is never returned,
+ * logged or put in an event.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -20,7 +21,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { launchBrand } from "@/design/brand/brand";
 import type { Database } from "@/integrations/supabase/types";
 
-import { KESTREL_BAY_ORG_ID } from "./firm-story-shared";
 import { textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
 import {
   isE164,
@@ -37,9 +37,6 @@ import {
 
 type Db = SupabaseClient<Database>;
 
-/** The workspace whose lead has agreed to be texted. One tonight; the desk's consent table replaces this. */
-export const TEXT_WORKSPACES: readonly string[] = [KESTREL_BAY_ORG_ID];
-
 export type WonTextCaller = { profileId: string; orgId: string; role: string; userId: string };
 
 /** Everything the rules need from outside, so each can be tested without a database, a secret or a network. */
@@ -50,8 +47,10 @@ export type WonTextDeps = {
   board: (orgId: string, engagementId: string) => Promise<{ archived: boolean; won: boolean } | null>;
   firmName: (orgId: string) => Promise<string>;
   brandName: () => string;
-  /** The one number that may be texted, or null when nobody has agreed. */
-  recipient: () => string | null;
+  /** Whether this workspace carries the demo marker. Only demo workspaces have the button today. */
+  demo: (orgId: string) => Promise<boolean>;
+  /** The one number this workspace may text, or null when none is set. Server only. */
+  recipient: (orgId: string) => Promise<string | null>;
   config: () => TextConfig | null;
   recordPress: (caller: WonTextCaller) => Promise<void>;
   recordResult: (caller: WonTextCaller, outcome: WonTextOutcome) => Promise<void>;
@@ -65,7 +64,7 @@ type Ready = { caller: WonTextCaller; to: string | null; preview: string };
 /** The checks a status read and a send share. Null means "nothing here for this person", whatever the reason. */
 async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): Promise<Ready | "not_won" | null> {
   const caller = await deps.caller();
-  const allowed = caller.role === "admin" && TEXT_WORKSPACES.includes(caller.orgId);
+  const allowed = caller.role === "admin" && (await deps.demo(caller.orgId));
   if (!allowed) {
     if (strict) throw new Response("Forbidden", { status: 403 });
     return null;
@@ -77,7 +76,7 @@ async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): 
   }
   if (board.archived) return null;
   if (!board.won) return "not_won";
-  const number = deps.recipient();
+  const number = await deps.recipient(caller.orgId);
   const preview = wonTextBody({ brandName: deps.brandName(), firmName: await deps.firmName(caller.orgId) });
   return { caller, to: isE164(number) ? number : null, preview };
 }
@@ -90,7 +89,7 @@ async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): 
 export async function wonTextStatus(deps: WonTextDeps, input: WonTextBoardInput): Promise<WonTextStatus> {
   const state = await ready(deps, input.engagement_id, false);
   if (!state || state === "not_won") return { show: false };
-  return { show: true, connected: deps.config() !== null && state.to !== null, preview: state.preview };
+  return { show: true, connected: deps.config() !== null && state.to !== null, needsNumber: state.to === null, preview: state.preview };
 }
 
 /** One press of Send. */
@@ -99,6 +98,7 @@ export async function sendWonText(deps: WonTextDeps, input: WonTextSendInput): P
   if (state === "not_won") return { ok: false, problem: WON_TEXT_COPY.notWon };
   // An archived board, nobody to text, or no sender: one plain line, nothing sent and nothing recorded.
   const config = deps.config();
+  if (state && !state.to) return { ok: false, problem: WON_TEXT_COPY.noNumber };
   if (!state || !state.to || !config) return { ok: false, problem: WON_TEXT_COPY.notConnected };
   const to = state.to;
 
@@ -152,9 +152,14 @@ export async function realDeps(context: WonTextContext, profileId: string | null
     },
     // The brand module is the one source for the product's name.
     brandName: () => launchBrand().name,
-    recipient: () => {
-      const value = (process.env["PROPOSAL_TEXT_TO"] ?? "").trim();
-      return isE164(value) ? value : null;
+    async demo(orgId) {
+      const { data } = await admin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+      const { isDemoWorkspace } = await import("./demo-text-number-shared");
+      return isDemoWorkspace(data?.settings);
+    },
+    async recipient(orgId) {
+      const { demoRecipient } = await import("./demo-text-number.server");
+      return demoRecipient(admin, orgId);
     },
     config: () => textConfig(),
     recordPress: (who) => record(who, "proposal_text.pressed", { channel: "sms" }),

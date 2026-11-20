@@ -19,7 +19,7 @@ const WORDS = "Lasso for Kestrel Bay: the proposal you helped with has been won,
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 beforeEach(() => {
-  m.status.mockReset().mockResolvedValue({ show: true, connected: true, preview: WORDS });
+  m.status.mockReset().mockResolvedValue({ show: true, connected: true, needsNumber: false, preview: WORDS });
   m.send.mockReset().mockResolvedValue({ ok: true });
 });
 afterEach(cleanup);
@@ -108,7 +108,7 @@ describe("WonTextButton", () => {
   });
 
   it("awaiting approval: the words show, Send says nothing was sent, and no sent line ever appears", async () => {
-    m.status.mockResolvedValue({ show: true, connected: false, preview: WORDS });
+    m.status.mockResolvedValue({ show: true, connected: false, needsNumber: false, preview: WORDS });
     m.send.mockResolvedValue({ ok: false, problem: WON_TEXT_COPY.notConnected });
     await open();
     expect(screen.getByText(WORDS)).toBeTruthy();

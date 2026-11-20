@@ -70,6 +70,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "proposal.created": ["client", "documents", "notes"],
   "proposal.sent": ["change", "within_goal"],
   "proposal.won": ["documents", "notes", "sent_first"],
+  "demo_text_number.changed": ["change"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],
   "proposal_draft.questions_copied": [],

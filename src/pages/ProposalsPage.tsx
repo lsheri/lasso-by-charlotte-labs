@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { RosterPanel } from "@/components/roster/RosterPanel";
@@ -102,6 +103,7 @@ export function ProposalsPage() {
         {showPeople ? (
           <TabsContent value="people" className="pt-4">
             <RosterPanel profileId={profileId} />
+            <DemoTextNumberCard profileId={profileId} />
           </TabsContent>
         ) : null}
       </Tabs>

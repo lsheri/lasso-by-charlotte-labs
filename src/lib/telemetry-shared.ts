@@ -556,6 +556,8 @@ export type TelemetryEvent =
   | "proposal.sent"
   /** 20 Nov, Proposal Desk: the person who started a proposal recorded the win, which made its team board. Dims: documents (band), notes (yes | no), sent_first (yes | no). Never a title, a client or a person. Portal registration required. */
   | "proposal.won"
+  /** 20 Nov, D-50: an admin of a demo workspace set or cleared the one number its won-proposal text goes to. Dim: change (set | cleared). Never the number or any part of it. Portal registration required. */
+  | "demo_text_number.changed"
   /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */
   | "proposal_text.pressed"
   /** 19 Nov, Proposal Desk: what that press came to. Dims: channel (sms), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */

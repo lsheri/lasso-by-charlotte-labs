@@ -9,7 +9,7 @@ import { EVENT_DIM_KEYS, guardServerEventDims } from "@/lib/event-dim-allowlist"
 import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
 import { sendText, textConfig, type TextConfig, type TextSendResult } from "@/lib/text-sender.server";
 import { isE164, plainForSms, SMS_ONE_SEGMENT, WON_TEXT_COPY, WON_TEXT_DAILY_CAP, WON_TEXT_OUTCOMES, WON_TEXT_PROBLEMS, wonTextBoardInput, wonTextBody, wonTextSendInput } from "@/lib/won-text-shared";
-import { sendWonText, startOfUtcDay, TEXT_WORKSPACES, wonTextStatus, type WonTextCaller, type WonTextDeps } from "@/lib/won-text.server";
+import { sendWonText, startOfUtcDay, wonTextStatus, type WonTextCaller, type WonTextDeps } from "@/lib/won-text.server";
 
 const BOARD = "0000000b-0000-4000-8000-000000000001";
 const PRESS = "0000000c-0000-4000-8000-000000000001";
@@ -39,7 +39,8 @@ function world(over: Partial<World> = {}) {
     board: async (orgId) => (orgId === w.orgId ? w.board : null),
     firmName: async () => w.firm,
     brandName: () => "Lasso",
-    recipient: () => w.recipient,
+    demo: async (orgId) => orgId === KESTREL_BAY_ORG_ID,
+    recipient: async (orgId) => (orgId === w.orgId ? w.recipient : null),
     config: () => w.config,
     recordPress: async () => {
       if (w.recordWorks) w.presses += 1;
@@ -133,7 +134,7 @@ describe("inputs", () => {
 describe("who has the button", () => {
   it("an admin of the demo workspace, on a won board, with someone to text", async () => {
     const { deps } = world();
-    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: true, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: true, needsNumber: false, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
   });
 
   it.each([
@@ -143,7 +144,7 @@ describe("who has the button", () => {
     ["neither is set, as on the first day", { config: null, recipient: null }],
   ] as [string, Partial<World>][])("shows the words but not connected when %s", async (_name, over) => {
     const { deps, sends } = world(over);
-    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: false, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: false, needsNumber: over.recipient !== undefined, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
     expect(sends).toEqual([]);
   });
 
@@ -163,8 +164,10 @@ describe("who has the button", () => {
     expect(results).toEqual([]);
   });
 
-  it("only the one workspace is listed", () => {
-    expect(TEXT_WORKSPACES).toEqual([KESTREL_BAY_ORG_ID]);
+  it("is for demo workspaces only, decided on the server, with no workspace named in the code", () => {
+    const source = readFileSync("src/lib/won-text.server.ts", "utf8");
+    expect(source).toContain('caller.role === "admin" && (await deps.demo(caller.orgId))');
+    expect(source).not.toContain("KESTREL_BAY_ORG_ID");
   });
 
   it("never returns the number", async () => {
@@ -198,9 +201,9 @@ describe("a press", () => {
   it.each([
     ["not won", { board: { archived: false, won: false } }, WON_TEXT_COPY.notWon],
     ["archived", { board: { archived: true, won: true } }, WON_TEXT_COPY.notConnected],
-    ["nobody to text", { recipient: null }, WON_TEXT_COPY.notConnected],
-    ["a recipient that is not a full number", { recipient: "4155550100" }, WON_TEXT_COPY.notConnected],
-    ["neither set", { config: null, recipient: null }, WON_TEXT_COPY.notConnected],
+    ["nobody to text", { recipient: null }, WON_TEXT_COPY.noNumber],
+    ["a recipient that is not a full number", { recipient: "4155550100" }, WON_TEXT_COPY.noNumber],
+    ["neither set", { config: null, recipient: null }, WON_TEXT_COPY.noNumber],
     ["no sender connected", { config: null }, WON_TEXT_COPY.notConnected],
   ] as [string, Partial<World>, string][])("%s: a plain line, nothing sent, nothing recorded", async (_name, over, problem) => {
     const { deps, sends, results, w } = world(over);
@@ -339,10 +342,11 @@ describe("wiring", () => {
     expect(body).toContain(`(await import("./won-text.server")).wonTextHandlers.${handler}(context, data)`);
   });
 
-  it("the real wiring starts with the firm member check, reads the number only from the secret and records before it counts", () => {
+  it("the real wiring starts with the firm member check, reads the number only on the server from the demo table and records before it counts", () => {
     const source = read("src/lib/won-text.server.ts");
     expect(source).toContain("await requireFirmMember(context.supabase, context.userId, profileId)");
-    expect(source.match(/PROPOSAL_TEXT_TO/g)?.length).toBe(2); // the header comment and the one read
+    expect(source).not.toContain("PROPOSAL_TEXT_TO"); // D-50: the secret is gone
+    expect(source).toContain("return demoRecipient(admin, orgId)");
     expect(source.indexOf("await deps.recordPress(state.caller)")).toBeLessThan(source.indexOf("await deps.pressesToday(state.caller.orgId)"));
     expect(source.indexOf("await deps.pressesToday(state.caller.orgId)")).toBeLessThan(source.indexOf("await deps.send(config"));
     expect(source).not.toMatch(/console\.(log|error|warn)\([^)]*(state\.to|message\.to|config\.from|preview)/);
