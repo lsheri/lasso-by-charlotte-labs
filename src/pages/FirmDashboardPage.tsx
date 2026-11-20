@@ -19,7 +19,6 @@ import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { SkeletonFrame } from "@/components/ui/skeleton-frame";
-import { useFirmViewWarmup } from "@/hooks/use-firm-view-warmup";
 import { FIRM_VIEW_COPY, firmBrainAccess } from "@/lib/role-screens-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
@@ -28,7 +27,6 @@ export function FirmDashboardPage() {
   const canSee =
     profileHasFirmView(profile) && (profile?.role === "admin" || profile?.role === "lead");
   const { data, isLoading, error } = useFirmDashboard(canSee ? profile?.id : undefined);
-  useFirmViewWarmup(canSee ? profile?.id : undefined);
   const [reduceMotion, setReduceMotion] = useState(true);
 
   useEffect(() => {

@@ -49,12 +49,9 @@ export async function requireFirmMember(
   if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as unknown as Db;
-  // PERF-4: the two checks are independent, so they are read together; each still refuses on its own.
-  const [{ data: me }, { data: org }] = await Promise.all([
-    admin.from("profiles").select("is_guest, deactivated_at").eq("id", profile.id).maybeSingle(),
-    admin.from("orgs").select("settings").eq("id", profile.org_id).maybeSingle(),
-  ]);
+  const { data: me } = await admin.from("profiles").select("is_guest, deactivated_at").eq("id", profile.id).maybeSingle();
   if (!me || me.is_guest || me.deactivated_at) throw new Response("Forbidden", { status: 403 });
+  const { data: org } = await admin.from("orgs").select("settings").eq("id", profile.org_id).maybeSingle();
   const settings = (org?.settings ?? null) as Record<string, unknown> | null;
   if (!hasFirmView(settings?.["type"] as string | null | undefined)) throw new Response("Forbidden", { status: 403 });
   return { profile, supabaseAdmin: admin };
@@ -215,26 +212,22 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
   }));
   const itemIds = [...new Set(placements.map((row) => row.work_item_id))];
 
-  // PERF-4: these five reads need only the board and item ids already in hand, so they run together instead of one
-  // after another. The same rows are read with the same filters; only the waiting changed.
-  const [itemRows, extracts, showings, exemplars, { data: memberships }] = await Promise.all([
-    inPages(itemIds, (page) =>
-      admin.from("work_items").select("id, owner_id, type, title, display_title, visibility, work_date, meta").eq("org_id", orgId).in("id", page),
-    ),
-    inPages(itemIds, (page) =>
-      admin.from("work_item_extracts").select("work_item_id, summary, decisions, entities, created_at").in("work_item_id", page),
-    ),
-    inPages(itemIds, (page) =>
-      admin.from("client_showings").select("work_item_id, engagement_id, shown_on, occasion").eq("org_id", orgId).in("work_item_id", page),
-    ),
-    readExemplarMarks(admin, orgId, boardIds, itemIds),
-    admin.from("engagement_members").select("engagement_id").eq("profile_id", asker.id).in("engagement_id", boardIds),
-  ]);
+  const itemRows = await inPages(itemIds, (page) =>
+    admin.from("work_items").select("id, owner_id, type, title, display_title, visibility, work_date, meta").eq("org_id", orgId).in("id", page),
+  );
+  const extracts = await inPages(itemIds, (page) =>
+    admin.from("work_item_extracts").select("work_item_id, summary, decisions, entities, created_at").in("work_item_id", page),
+  );
+  const showings = await inPages(itemIds, (page) =>
+    admin.from("client_showings").select("work_item_id, engagement_id, shown_on, occasion").eq("org_id", orgId).in("work_item_id", page),
+  );
+  const exemplars = await readExemplarMarks(admin, orgId, boardIds, itemIds);
   // F2: SOW fees live in a table only the server reads; put them back here, where pastFees and Ask decide who sees them.
   const { withFeeTerms } = await import("./fee-terms.server");
   const items = await withFeeTerms(admin, itemRows);
   const peopleIds = [...new Set([...items.map((item) => item.owner_id), ...boardRows.map((board) => board.owner_id)].filter((id): id is string => Boolean(id)))];
   const people = await inPages(peopleIds, (page) => admin.from("profiles").select("id, display_name, is_guest").eq("org_id", orgId).in("id", page));
+  const { data: memberships } = await admin.from("engagement_members").select("engagement_id").eq("profile_id", asker.id).in("engagement_id", boardIds);
   const askerBoards = [
     ...(memberships ?? []).map((row) => row.engagement_id),
     ...boardRows.filter((board) => board.owner_id === asker.id).map((board) => board.id),
