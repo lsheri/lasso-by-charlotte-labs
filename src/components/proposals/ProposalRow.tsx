@@ -125,7 +125,7 @@ export function ProposalRow({
           {proposal.mine ? (
             <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span>
           ) : proposal.ownerName ? (
-            <span>{DESK_COPY.owner(proposal.ownerName)}</span>
+            <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
           ) : null}
           {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
           {proposal.status === "open" || proposal.contextCount > 0 ? (

@@ -337,7 +337,9 @@ describe("where the map may appear", () => {
     text: readFileSync(file, "utf8"),
   }));
 
-  it("is rendered only by the signed-in firm view, never on shared, demo, tour or rollup surfaces", () => {
+  // 19 Nov, layout A: the Firm brain page is the second signed-in place for the map. Both pages give it to admins
+  // and leads only (role-screens.test.tsx).
+  it("is rendered only by the signed-in firm view and Firm brain page, never on shared, demo, tour or rollup surfaces", () => {
     const users = sources
       .filter(({ text }) =>
         /from\s+["']@\/components\/firm-brain\/FirmBrainMap["']|from\s+["']\.\/FirmBrainMap["']/.test(
@@ -345,7 +347,7 @@ describe("where the map may appear", () => {
         ),
       )
       .map(({ file }) => file);
-    expect(users).toEqual(["pages/FirmDashboardPage.tsx"]);
+    expect(users.sort()).toEqual(["pages/FirmBrainPage.tsx", "pages/FirmDashboardPage.tsx"]);
   });
 
   it("keeps three.js out of the main bundle: only the 3D map imports it, and only by dynamic import", () => {

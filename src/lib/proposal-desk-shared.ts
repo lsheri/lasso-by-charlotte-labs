@@ -118,6 +118,11 @@ export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
 export const DESK_VIEWS = ["open", "mine", "won", "lost"] as const;
 export type DeskView = (typeof DESK_VIEWS)[number];
 
+/** A view named in the address, other than the default one. Anything unknown is no view. */
+export function deskViewFromSearch(value: unknown): Exclude<DeskView, "open"> | null {
+  return value === "mine" || value === "won" || value === "lost" ? value : null;
+}
+
 export const DESK_COPY = {
   nav: "Proposals",
   title: "Proposals",

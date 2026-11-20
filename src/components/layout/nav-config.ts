@@ -45,6 +45,8 @@ export type NavItemId =
   | "coach-notes"
   /** 20 Nov, Proposal Desk (D-34): the Proposals row, for company workspaces. */
   | "proposals"
+  /** 19 Nov, layout A: the Firm brain row, for company workspaces. */
+  | "firm-brain"
   | "firm-view"
   | "members"
   | "affiliation"
@@ -222,6 +224,31 @@ export const NAV_ITEMS: NavManifestItem[] = [
     icon: "plus",
     runtimeOnly: true,
   },
+  // 19 Nov, layout A (Liam): Firm brain and Proposals sit above Boards, so a long list of clients never pushes them
+  // out of sight. Both are for every member of a company workspace. A coach is not a member.
+  {
+    id: "firm-brain",
+    placement: "main",
+    group: "landed",
+    label: "Firm brain",
+    to: "/firm-brain",
+    icon: "ask-lasso",
+    types: ["company"],
+    runtimeOnly: true,
+    show: (ctx) => ctx.role !== "coach",
+  },
+  // 20 Nov, Proposal Desk (D-34, D-38): on for every company workspace, for every member.
+  {
+    id: "proposals",
+    placement: "main",
+    group: "landed",
+    label: "Proposals",
+    to: "/proposals",
+    icon: "send",
+    types: ["company"],
+    runtimeOnly: true,
+    show: (ctx) => ctx.role !== "coach",
+  },
   {
     id: "all-work",
     placement: "main",
@@ -373,18 +400,6 @@ export const NAV_ITEMS: NavManifestItem[] = [
     to: "/one-on-one",
     icon: "one-on-one",
     runtimeOnly: true,
-  },
-  // 20 Nov, Proposal Desk (D-34, D-38): on for every company workspace, for every member. A coach is not a member.
-  {
-    id: "proposals",
-    placement: "main",
-    group: "firm",
-    label: "Proposals",
-    to: "/proposals",
-    icon: "send",
-    types: ["company"],
-    runtimeOnly: true,
-    show: (ctx) => ctx.role !== "coach",
   },
   {
     id: "firm-view",
