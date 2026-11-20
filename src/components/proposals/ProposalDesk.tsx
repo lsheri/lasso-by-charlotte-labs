@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { AskDialog } from "@/components/proposals/AskLead";
 import { LeadDialog } from "@/components/proposals/LeadPicker";
+import { LeadSheet, type LeadSheetStart } from "@/components/proposals/LeadSheet";
 import { ProposalRow } from "@/components/proposals/ProposalRow";
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
@@ -62,7 +62,8 @@ export function ProposalDesk({
   /** Asking the lead by text: the words before a press, the press, and a practice answer. Admins and leads only. */
   ask?:
     | {
-        preview: (proposalId: string) => Promise<AskPreview>;
+        /** The words for the saved lead, or for a person picked on the sheet and not saved yet. Reads only. */
+        preview: (proposalId: string, contactId?: string) => Promise<AskPreview>;
         send: (proposalId: string, pressId: string) => Promise<AskResult>;
         practiceReply: (proposalId: string, reply: Reply) => Promise<PracticeReplyResult>;
       }
@@ -70,7 +71,8 @@ export function ProposalDesk({
   /** Closes an open proposal as lost, or archives one made by mistake. */
   onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
 }) {
-  const [asking, setAsking] = useState<DeskProposal | null>(null);
+  // With asking available, picking and asking are one sheet; it opens on the list, or on the confirm for a saved lead.
+  const [sheet, setSheet] = useState<{ proposal: DeskProposal; start: LeadSheetStart } | null>(null);
   const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
@@ -110,16 +112,18 @@ export function ProposalDesk({
         <ul className="divide-y divide-border border-y border-border">
           {rows.map((proposal) => (
             <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
-              lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => setLeading(proposal) } : undefined}
-              ask={picks && ask ? { onAsk: () => setAsking(proposal), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
+              lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => (ask ? setSheet({ proposal, start: "pick" }) : setLeading(proposal)) } : undefined}
+              ask={picks && ask ? { onAsk: () => setSheet({ proposal, start: "confirm" }), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
               onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
             />
           ))}
         </ul>
       )}
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
-      {picks && onLead ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
-      {picks && ask ? <AskDialog proposal={asking} load={ask.preview} send={ask.send} onClose={() => setAsking(null)} /> : null}
+      {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
+      {picks && ask && onLead ? (
+        <LeadSheet target={sheet} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => setSheet(null)} />
+      ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>
   );

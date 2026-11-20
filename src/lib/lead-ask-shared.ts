@@ -165,6 +165,39 @@ export function askLine(ask: AskView): string {
 }
 
 /** What the workspace can do about texts, for the page. */
+/**
+ * 20 Nov 2026 (Liam, card Q-67): the one sheet where a lead is picked and asked. Short lines: the phone already
+ * shows what goes out, so the words say only who, and where it goes.
+ */
+export const SHEET_COPY = {
+  title: (client: string) => (client ? `Who leads ${client}?` : "Who leads this?"),
+  confirmTitle: (name: string) => (name ? `Ask ${name}?` : "Ask the lead?"),
+  ask: (name: string) => (name ? `Ask ${name}` : "Ask"),
+  back: "Back",
+  pickFirst: "Pick someone to see their text",
+  ledBefore: "Led before:",
+  /** Where it goes, said once on the confirm. */
+  goes: (mode: "real" | "demo" | "practice", name: string) =>
+    mode === "practice"
+      ? "Practice ask. Nothing is sent. You can answer it here as the lead would."
+      : mode === "demo"
+        ? `Demo workspace. This text goes to the demo number, not to ${name || "the lead"}.`
+        : `One text to ${name || "the lead"}. They reply YES or NO, or STOP at any time.`,
+  /**
+   * Texting is not switched on. Said once on the list, in place of the line about where texts go, so nothing there
+   * says or implies a text is sent. The confirm says the same through goes("practice").
+   */
+  off: (demo: boolean) =>
+    demo
+      ? "Texting is not switched on yet, so this is a practice ask. Nothing is sent."
+      : "Texting is not switched on yet. Nothing is sent.",
+  /** The words for this person did not arrive. Said before anyone can press Send, and it is not a failed text. */
+  wordsFailed: "The text for this person could not be loaded, so nothing can be sent yet. Pick them again, or close this and try again.",
+  /** The lead was not saved, so nothing was sent either. */
+  notSaved: (problem: string) => `${problem} Nothing was sent.`,
+  savedNotSent: (name: string, problem: string) => `${name || "The lead"} is saved as the lead. ${problem}`,
+} as const;
+
 export type TextsState = {
   /** A demo workspace: texts go to its demo number. */
   demo: boolean;
@@ -189,6 +222,13 @@ export function askProposalInput(raw: { profile_id?: string | null | undefined; 
   const proposal = id((raw as Loose)?.["proposal_id"]);
   if (!proposal) throw new Error(ASK_COPY.failed);
   return { profile_id: id((raw as Loose)?.["profile_id"]), proposal_id: proposal };
+}
+
+export type AskPreviewInput = AskProposalInput & { lead_contact_id: string | null };
+
+/** A preview may name a person who is not saved as the lead yet. Anything that is not an id is "the saved lead". */
+export function askPreviewInput(raw: { profile_id?: string | null | undefined; proposal_id: string; lead_contact_id?: string | null | undefined }): AskPreviewInput {
+  return { ...askProposalInput(raw), lead_contact_id: id((raw as Loose)?.["lead_contact_id"]) };
 }
 
 export type AskSendInput = AskProposalInput & { press_id: string };
