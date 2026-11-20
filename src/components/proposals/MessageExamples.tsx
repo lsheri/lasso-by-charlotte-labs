@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { InboxDevice, PhoneBubble, PhoneDevice } from "@/components/proposals/MessageDevices";
 import { tagVariants } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 import { MESSAGE_EXAMPLES_COPY } from "@/lib/won-text-shared";
 
 /**
@@ -15,17 +16,17 @@ export function MessageExamples({ words, off }: { words: string; /** Texting is 
   return (
     <div data-message-examples className="flex flex-col gap-2">
       <ul className="flex flex-wrap items-start gap-4" aria-label={copy.heading}>
-        <Example name={copy.text} state={off ? copy.textOffState : copy.textState} live={!off}>
+        <Example device="phone" name={copy.text} state={off ? copy.textOffState : copy.textState} live={!off}>
           <PhoneDevice kind="text">
             <PhoneBubble data-won-text-words="">{words}</PhoneBubble>
           </PhoneDevice>
         </Example>
-        <Example name={copy.email} state={copy.emailState}>
+        <Example device="inbox" name={copy.email} state={copy.emailState}>
           <InboxDevice subject={copy.subject} foot={copy.emailFoot}>
             <p>{copy.emailBody}</p>
           </InboxDevice>
         </Example>
-        <Example name={copy.rcs} state={copy.rcsState}>
+        <Example device="phone" name={copy.rcs} state={copy.rcsState}>
           <PhoneDevice kind="rcs" verified={copy.rcsSender}>
             <div className="w-full overflow-hidden rounded-(--corner-panel) border border-border bg-card text-(length:--type-control)">
               <div className="px-3 py-2">
@@ -44,9 +45,13 @@ export function MessageExamples({ words, off }: { words: string; /** Texting is 
   );
 }
 
-function Example({ name, state, live, children }: { name: string; state: string; live?: boolean; children: ReactNode }) {
+/**
+ * Each example keeps its device's own width and wraps to the next line when there is no room, rather than
+ * shrinking: a phone squeezed narrow would grow tall and lose its shape.
+ */
+function Example({ device, name, state, live, children }: { device: "phone" | "inbox"; name: string; state: string; live?: boolean; children: ReactNode }) {
   return (
-    <li data-message-example={live ? "live" : "example"} className="flex w-full max-w-[22rem] flex-col gap-1.5 sm:w-auto">
+    <li data-message-example={live ? "live" : "example"} className={cn("flex w-full shrink-0 flex-col gap-1.5", device === "phone" ? "max-w-[13.5rem]" : "max-w-[22rem]")}>
       <p className="flex items-center gap-2">
         <span className="font-medium text-foreground">{name}</span>
         <span className={tagVariants({ tone: live ? "accent" : "outline" })}>{state}</span>

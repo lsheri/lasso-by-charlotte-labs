@@ -139,6 +139,8 @@ export const DESK_COPY = {
   retry: "Try again",
   loading: "Loading proposals",
   loadFailed: "The proposals could not be loaded. Try again in a moment.",
+  /** QA M1 (21 Nov): the proposal saved but the list could not be read again, so its row is not shown yet. */
+  startedNotRefreshed: "Proposal started. The list could not be refreshed; try again in a moment.",
   notHere: "Proposals are for the members of a company workspace.",
   notHereCoach: "Proposals are for the firm's own team. As a coach you do not see them.",
   owner: (name: string) => `Started by ${name}`,
@@ -172,6 +174,8 @@ export const CLOSE_COPY = {
 export const INTAKE_COPY = {
   title: "New proposal",
   intro: "Drop in whatever you have. The team board is made when the proposal is won.",
+  /** Shown on the form while a proposal just started is not in the list yet, so a second one is never made by accident. */
+  justStarted: (title: string) => (title ? `You just started "${title}". It is saved, so there is no need to start it again.` : "You just started a proposal. It is saved, so there is no need to start it again."),
   clientLegend: "Who is it for",
   existingClient: "Existing client",
   newClient: "New client",
@@ -561,3 +565,14 @@ export const REVEAL_COPY = {
   /** Each stage stays readable: about 1.4 seconds apiece. */
   stageMs: 1400,
 } as const;
+
+/**
+ * After New proposal saves, what the page does next. The list has just been read again: when the new proposal is in
+ * it, someone who may pick a lead goes straight to the lead sheet and everyone else to the rows. When it is not (the
+ * read failed, or has not caught up), the page says the proposal was started and opens nothing by itself later.
+ */
+export function afterCreate(list: DeskList | undefined, id: string, mayPickLead: boolean): "sheet" | "rows" | "notRefreshed" {
+  const shown = list?.proposals.some((proposal) => proposal.id === id && proposal.status === "open") ?? false;
+  if (!shown) return "notRefreshed";
+  return mayPickLead ? "sheet" : "rows";
+}

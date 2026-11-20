@@ -174,6 +174,9 @@ export const SHEET_COPY = {
   confirmTitle: (name: string) => (name ? `Ask ${name}?` : "Ask the lead?"),
   ask: (name: string) => (name ? `Ask ${name}` : "Ask"),
   back: "Back",
+  /** 21 Nov 2026: the sheet that opens straight after New proposal saves. Closing it leaves the proposal with no lead. */
+  started: "Proposal started.",
+  pickLater: "Pick later",
   pickFirst: "Pick someone to see their text",
   ledBefore: "Led before:",
   /** Where it goes, said once on the confirm. */

@@ -4240,7 +4240,7 @@ async function handleResource(owner: Owner, token: string, method: string, param
       ].join("\n\n");
     } else {
       const { data: work, error: workError } = await db.from("work_items")
-        .select("id, display_title, title, type, work_date, source_vendor").eq("id", parsed.id).maybeSingle();
+        .select("id, org_id, display_title, title, type, work_date, source_vendor, meta").eq("id", parsed.id).maybeSingle();
       if (workError) throw workError;
       if (!work) {
         await note("not_found");
@@ -4249,12 +4249,20 @@ async function handleResource(owner: Owner, token: string, method: string, param
       const { data: extract, error: extractError } = await db.from("work_item_extracts")
         .select("summary, decisions, entities, handoff").eq("work_item_id", work.id).maybeSingle();
       if (extractError) throw extractError;
+      // D-91: a Member's connector reads a SOW's summary, decisions and handover with money removed.
+      const { isFirmMoneyItem, moneyFreeText, seesMoney } = await import("./money-mask-shared");
+      let mask = false;
+      if (isFirmMoneyItem(work)) {
+        const { data: asker } = await db.from("profiles").select("role, org_id").eq("id", owner.profileId).maybeSingle();
+        mask = !(asker && asker.org_id === work.org_id && seesMoney(asker.role));
+      }
+      const shown = (value: string | null) => (mask && value ? moneyFreeText(value) : value);
       const lines = [RESOURCE_PREFACE, `# ${work.display_title ?? work.title}`,
         [work.type, work.work_date, work.source_vendor].filter(Boolean).join(" · ")];
       if (!extract) lines.push("No summary has been made for this work yet.");
       else for (const [heading, value] of [["Summary", extract.summary], ["Decisions", extract.decisions],
         ["Entities", extract.entities], ["Handover", extract.handoff]]) {
-        if (value?.trim()) lines.push(`## ${heading}`, value);
+        if (value?.trim()) lines.push(`## ${heading}`, shown(value) ?? value);
       }
       text = lines.join("\n\n");
     }

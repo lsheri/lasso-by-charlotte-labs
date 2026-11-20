@@ -17,7 +17,7 @@ export const getWorkboardArtifactPreview = createServerFn({ method: "POST" })
     // whether it comes back. Same pattern as getItemTextPane.
     const { data: item, error } = await context.supabase
       .from("work_items")
-      .select("source_meta, content_ref")
+      .select("org_id, title, type, meta, source_meta, content_ref")
       .eq("id", data.work_item_id)
       .maybeSingle();
     if (error || !item?.content_ref) return { html: null };
@@ -33,7 +33,12 @@ export const getWorkboardArtifactPreview = createServerFn({ method: "POST" })
     try {
       const text = await stored.data.text();
       if (new TextEncoder().encode(text).byteLength > MAX_ARTIFACT_PREVIEW_BYTES) return { html: null };
-      return { html: kind === "svg" ? wrapSvgArtifact(text) : text };
+      // D-91: a SOW artifact reaches a Member with every money figure withheld.
+      const { moneyViewFor } = await import("./money-view.server");
+      const view = await moneyViewFor(context.supabase, context.userId, item);
+      const { maskMoney } = await import("./money-mask-shared");
+      const shown = view.mask ? maskMoney(text) : text;
+      return { html: kind === "svg" ? wrapSvgArtifact(shown) : shown };
     } catch {
       return { html: null };
     }

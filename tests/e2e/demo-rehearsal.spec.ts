@@ -6,7 +6,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
  * The 30-minute buyer demo, rehearsed on the deployed site before each session (firm-brain-review RECOMMENDATION
  * section 9). Each person signs in in a fresh browser and walks their part of the script; each step records pass or
  * fail with what it saw, in test-results/demo-rehearsal.json. Nothing is written: no draft, no sharing change. The
- * live draft has its own check (proposal-draft-live).
+ * live draft has its own check (proposal-draft-live). Table writes from the browser are blocked.
  *
  *   runpane secrets exec --project lasso-by-charlotte-labs --only DEMO_FIRM_PASSWORD -- \
  *     env LASSO_E2E_BASE_URL=https://lasso.charlotte-labs.com bunx playwright test demo-rehearsal
@@ -20,6 +20,13 @@ const steps: Step[] = [];
 
 async function as(browser: Browser, person: string): Promise<Page> {
   const context = await browser.newContext({ viewport: { width: 1500, height: 1000 } });
+  // Read only: a table write from the browser (a board records "viewed" when opened) never leaves. Reads and RPCs go.
+  await context.route(/supabase\.co\/rest\/v1\//, (route) => {
+    const request = route.request();
+    const table = request.url().split("/rest/v1/")[1] ?? "";
+    if (["GET", "HEAD", "OPTIONS"].includes(request.method()) || table.startsWith("rpc/")) return route.continue();
+    return route.abort();
+  });
   const page = await context.newPage();
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.locator("input#email").fill(`${person}@kestrelbay.test`);
@@ -45,15 +52,36 @@ async function openProposalPanel(page: Page) {
   return panel;
 }
 
+/** The answer's status as the server sent it ("answered", "not_found", "about_people"...), from the Ask reply. */
+const ASK_STATUS = /"k":\["status","summary"[^\]]*\],"v":\[\{"t":1,"s":"(\w+)"/;
+
+/**
+ * Asks from Home the way the person does. An admin's Home answers in place (`data-firm-answer`); for a lead or a
+ * member, Home turns the orb and opens the answer on the Firm brain canvas (D-85, #279), so the status is read from
+ * the server's reply and the words from the canvas answer card once they stop changing.
+ */
 async function ask(page: Page, question: string): Promise<{ status: string; text: string }> {
   await page.goto("/home", { waitUntil: "domcontentloaded" });
   const box = page.getByTestId("ask-the-firm");
   await box.waitFor({ timeout: 30_000 });
+  const reply = page.waitForResponse(async (res) => res.url().includes("_serverFn") && ASK_STATUS.test(await res.text().catch(() => "")), { timeout: 120_000 });
   await box.getByLabel("Question for the firm").fill(question);
   await box.getByRole("button", { name: "Ask" }).click();
-  const answer = box.locator("[data-firm-answer]");
-  await answer.waitFor({ timeout: 120_000 });
-  return { status: (await answer.getAttribute("data-firm-answer")) ?? "", text: await answer.innerText() };
+  const status = (await reply.then((res) => res.text())).match(ASK_STATUS)?.[1] ?? "";
+  const inPlace = box.locator("[data-firm-answer]");
+  const onCanvas = page.getByTestId("canvas-answer").last();
+  await inPlace.or(onCanvas).first().waitFor({ timeout: 60_000 });
+  if (await inPlace.count()) return { status, text: await inPlace.innerText() };
+  await expect(page).toHaveURL(/\/firm-brain/);
+  await expect(onCanvas).not.toHaveAttribute("data-answer-status", "pending", { timeout: 120_000 });
+  let text = "";
+  for (let tries = 0; tries < 30; tries += 1) {
+    const now = await onCanvas.innerText();
+    if (now === text) break;
+    text = now;
+    await page.waitForTimeout(700);
+  }
+  return { status, text };
 }
 
 test.beforeEach(() => {

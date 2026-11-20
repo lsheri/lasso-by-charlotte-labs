@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { getFirmLiveBoards } from "@/lib/firm-dashboard.functions";
 import { FIRM_LIVE_BOARDS_COPY, type FirmLiveBoard } from "@/lib/firm-live-boards-shared";
 import { formatDate } from "@/lib/work-types";
@@ -9,20 +10,25 @@ import { formatDate } from "@/lib/work-types";
  * Boards colleagues shared with the firm (Liam, 15 Nov), newest share first. Read-only rows: what the board is for,
  * whose it is, and how much placed work it holds. The firm brain builds on this list later.
  */
-export function FirmLiveBoards({ profileId }: { profileId: string | undefined }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["firm-live-boards", profileId],
+/** PERF-4: one definition, so the Firm view warmup and this card share a cache entry. */
+export function firmLiveBoardsQuery(profileId: string | undefined) {
+  return {
+    queryKey: ["firm-live-boards", profileId] as const,
     enabled: Boolean(profileId),
     staleTime: 60_000,
     queryFn: (): Promise<FirmLiveBoard[]> => getFirmLiveBoards({ data: { profile_id: profileId as string } }),
-  });
+  };
+}
+
+export function FirmLiveBoards({ profileId }: { profileId: string | undefined }) {
+  const { data, isLoading, error } = useQuery(firmLiveBoardsQuery(profileId));
 
   return (
     <section aria-label={FIRM_LIVE_BOARDS_COPY.title} data-testid="firm-live-boards">
       <SectionHeader title={FIRM_LIVE_BOARDS_COPY.title} />
       <p className="mb-3 text-sm text-muted-foreground">{FIRM_LIVE_BOARDS_COPY.line}</p>
       {error ? <p className="text-sm text-destructive">That could not be loaded. Try again.</p> : null}
-      {isLoading ? <p className="text-sm text-muted-foreground">Loading.</p> : null}
+      {isLoading ? <SkeletonFrame shape="rows" count={3} label={FIRM_LIVE_BOARDS_COPY.title} /> : null}
       {data && data.length === 0 ? <p className="text-sm text-muted-foreground">{FIRM_LIVE_BOARDS_COPY.empty}</p> : null}
       {data && data.length > 0 ? (
         <ul className="folder-page-rows">

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LeadChip } from "@/components/proposals/LeadChip";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
-import { ProposalDeskSkeleton } from "@/components/proposals/ProposalDeskSkeleton";
+import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import type { AskView } from "@/lib/lead-ask-shared";
 import { askWord, DESK_COPY, LEAD_COPY, nextStep, REVEAL_COPY, SENT_COPY, upNextId, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 
@@ -192,11 +192,11 @@ describe("the clock", () => {
 });
 
 describe("the first load", () => {
-  it("is a skeleton of the page that says Loading proposals to a screen reader, and nothing else", () => {
-    render(<ProposalDeskSkeleton />);
+  it("is the shared skeleton frame that says Loading proposals to a screen reader, and nothing else", () => {
+    render(<SkeletonFrame shape="rows" count={6} label={DESK_COPY.loading} />);
     const status = screen.getByRole("status");
     expect(status.textContent).toBe(DESK_COPY.loading);
-    expect(status.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(3);
+    expect(status.querySelector('[aria-hidden="true"]')?.children.length).toBeGreaterThan(0);
   });
 });
 

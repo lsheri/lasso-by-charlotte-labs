@@ -6,7 +6,6 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { canvasLabBoardQuery } from "@/hooks/use-canvas-lab";
-import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { useRememberBoardOpen } from "@/lib/sidebar-tree-state";
 import { useProfile } from "@/hooks/use-profile";
 import type { StickyTarget } from "@/components/canvas-lab/useStickyDeepLink";
@@ -50,8 +49,8 @@ function CanvasLabRoute() {
   const { data: profile } = useProfile();
   const profileId = profile?.id;
 
-  // Opening the board records that this person opened it, once per open.
-  useRecordEngagementView(id);
+  // Opening the board records that this person opened it, once per open: CanvasLabPage does that. PERF-4: it was
+  // also done here, so every open wrote the row twice and re-read the "N NEW" counts twice.
   useRememberBoardOpen(profileId, id);
 
   // PERF-A: direct opens start the board read here; a redirected open finds

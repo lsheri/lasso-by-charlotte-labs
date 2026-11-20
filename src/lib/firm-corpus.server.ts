@@ -212,7 +212,7 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
   }));
   const itemIds = [...new Set(placements.map((row) => row.work_item_id))];
 
-  const items = await inPages(itemIds, (page) =>
+  const itemRows = await inPages(itemIds, (page) =>
     admin.from("work_items").select("id, owner_id, type, title, display_title, visibility, work_date, meta").eq("org_id", orgId).in("id", page),
   );
   const extracts = await inPages(itemIds, (page) =>
@@ -222,6 +222,9 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
     admin.from("client_showings").select("work_item_id, engagement_id, shown_on, occasion").eq("org_id", orgId).in("work_item_id", page),
   );
   const exemplars = await readExemplarMarks(admin, orgId, boardIds, itemIds);
+  // F2: SOW fees live in a table only the server reads; put them back here, where pastFees and Ask decide who sees them.
+  const { withFeeTerms } = await import("./fee-terms.server");
+  const items = await withFeeTerms(admin, itemRows);
   const peopleIds = [...new Set([...items.map((item) => item.owner_id), ...boardRows.map((board) => board.owner_id)].filter((id): id is string => Boolean(id)))];
   const people = await inPages(peopleIds, (page) => admin.from("profiles").select("id, display_name, is_guest").eq("org_id", orgId).in("id", page));
   const { data: memberships } = await admin.from("engagement_members").select("engagement_id").eq("profile_id", asker.id).in("engagement_id", boardIds);

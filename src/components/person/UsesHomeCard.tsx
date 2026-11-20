@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { UsesChips } from "@/components/person/UsesChips";
 import { Button } from "@/components/ui/button";
+import { ensureAuthUser } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { saveUses, usesDim, USES_COPY, type PersonUse } from "@/lib/person-uses";
 import { logEvent } from "@/lib/telemetry";
@@ -18,8 +19,8 @@ export function UsesHomeCard({ orgId }: { orgId: string | null | undefined }) {
   const q = useQuery({
     queryKey: MY_USES_KEY,
     queryFn: async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
+      // PERF-4: the identity everyone else already shares, not a fresh network call of its own.
+      const uid = (await ensureAuthUser())?.id;
       if (!uid) return { uid: null, uses: null as string[] | null };
       const { data, error } = await supabase
         .from("people")

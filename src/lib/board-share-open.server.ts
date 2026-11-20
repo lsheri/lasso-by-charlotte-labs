@@ -47,6 +47,7 @@ import {
   type SharedWorkboard,
 } from "./board-share-shared";
 import { isBoardDefaultTask } from "./board-default-task";
+import { isFirmMoneyItem, maskMoney, rowForReader } from "./money-mask-shared";
 import type { WorkItemRow } from "./work-types";
 import type { WorkboardFilePreview } from "./workboard-card-preview.shared";
 import { readWorkboardCardPreviews } from "./workboard-card-preview.server";
@@ -240,7 +241,9 @@ export async function readBoard(
         continue;
       }
       // No person travels: the owner is dropped, and so is the client claim.
-      const { owner_id: _owner, client_id: _client, ...rest } = item as WorkItemRow;
+      // QA H3 (PR 281): a link has no reader, so a SOW's or proposal's summary is money free before it goes anywhere
+      // (publicSafeWork drops extracts too; this holds even if a caller forgets it).
+      const { owner_id: _owner, client_id: _client, ...rest } = rowForReader(item as WorkItemRow, false);
       workById.set(item.id, { ...rest, taskIds: [task.id] });
     }
   }
@@ -403,7 +406,8 @@ async function readSummaryOnlyPreviews(db: AdminDb, ids: string[]) {
 }
 
 /** The live board's document and artifact previews, read without writing. */
-async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Promise<Record<string, WorkboardFilePreview>> {
+/** Exported for tests. */
+export async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Promise<Record<string, WorkboardFilePreview>> {
   const entries = await Promise.all(items.map(async (item): Promise<[string, WorkboardFilePreview]> => {
     try {
       const { data: versions } = await db
@@ -412,21 +416,28 @@ async function readFilePreviews(db: AdminDb, items: SharedSeedWork[]): Promise<R
         .eq("work_item_id", item.id)
         .order("version_no", { ascending: false });
       const versionCount = versions?.length ?? 0;
+      // D-91: a link has no reader to check, so a shared SOW always goes out with money removed, and never as its
+      // original PDF.
+      const sow = isFirmMoneyItem(item);
       const artifactKind = artifactPreviewKind(item);
       if (artifactKind && item.content_ref) {
         const stored = await db.storage.from("work-files").download(item.content_ref);
         if (!stored.error && stored.data && stored.data.size <= MAX_ARTIFACT_BYTES) {
           const text = await stored.data.text();
-          const html = artifactKind === "svg" ? wrapSvgArtifact(text) : text;
+          const shown = sow ? maskMoney(text) : text;
+          const html = artifactKind === "svg" ? wrapSvgArtifact(shown) : shown;
           return [item.id, { workItemId: item.id, kind: artifactKind === "mermaid" ? "mermaid" : "html", url: null, html, lines: [], slideTitle: null, versionCount }];
         }
       }
-      const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
+      const rawPages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
+      const pages = sow
+        ? rawPages.map((page) => ({ ...page, title: page.title === null ? null : maskMoney(page.title), lines: page.lines.map((line) => maskMoney(line)), notes: page.notes === null ? null : maskMoney(page.notes) }))
+        : rawPages;
       const slide = pages[0] ?? null;
       if (slide) {
         return [item.id, { workItemId: item.id, kind: "slide", url: null, lines: slide.lines, slideTitle: slide.title, pages, versionCount }];
       }
-      if (filePreviewKind(item) === "pdf" && item.content_ref) {
+      if (!sow && filePreviewKind(item) === "pdf" && item.content_ref) {
         const signed = await db.storage.from("work-files").createSignedUrl(item.content_ref, 600);
         if (!signed.error && signed.data?.signedUrl) {
           return [item.id, { workItemId: item.id, kind: "pdf", url: signed.data.signedUrl, lines: [], slideTitle: null, versionCount }];

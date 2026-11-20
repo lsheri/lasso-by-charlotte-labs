@@ -12,21 +12,14 @@ export const getFirmDashboard = createServerFn({ method: "POST" })
   .inputValidator((input: Ctx) => input)
   .handler(async ({ data, context }): Promise<FirmDashboard> => {
     const { requireFirmView } = await import("./firm-view.server");
-    const { buildFirmDashboard } = await import("./firm-dashboard.server");
-    const { recordEvent } = await import("./telemetry.server");
     const { profile, supabaseAdmin } = await requireFirmView(
       context.supabase,
       context.userId,
       data.profile_id,
     );
-    const dashboard = await buildFirmDashboard(supabaseAdmin, profile.org_id);
-    await recordEvent(supabaseAdmin, {
-      eventType: "admin.dashboard_viewed",
-      orgId: profile.org_id,
-      userId: context.userId,
-      dims: { panels_shown: dashboard.panels_shown },
-    });
-    return dashboard;
+    const { buildFirmDashboardRecorded } = await import("./firm-dashboard.server");
+    // PERF-4 (QA F1): the counts and their view event run together; see buildFirmDashboardRecorded.
+    return buildFirmDashboardRecorded(supabaseAdmin, profile.org_id, context.userId);
   });
 
 export const getFirmCheckLibrary = createServerFn({ method: "POST" })

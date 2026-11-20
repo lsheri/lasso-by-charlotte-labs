@@ -26,5 +26,27 @@ export const getEngagementPage = createServerFn({ method: "POST" })
     if (!profile) return EMPTY_ENGAGEMENT_PAGE;
 
     const { buildEngagementPage } = await import("./engagement-page.server");
-    return buildEngagementPage(supabase, data.engagement_id, profile.id);
+    const page = await buildEngagementPage(supabase, data.engagement_id, profile.id);
+    // D-91: a Member gets each SOW's summary with money removed. The role is the caller's in the board's workspace.
+    // Once the SQL floor is pasted, row security hands a Member no SOW extract at all, so the summary is read here
+    // with the server client (the item itself was already read under the caller's own policies) and masked.
+    const orgId = page.engagement?.org_id;
+    const inOrg = orgId ? await resolveProfile(supabase, userId, null, orgId) : null;
+    const { seesMoney } = await import("./money-mask-shared");
+    if (seesMoney(inOrg?.role)) return page;
+    const { sowSummariesForMember } = await import("./money-view.server");
+    const rows = page.tasks.flatMap((task) => (task.work_item_tasks ?? []).map((link) => link.work_items)).filter((row) => row !== null);
+    const summaries = await sowSummariesForMember(rows);
+    if (summaries.size === 0) return page;
+    return {
+      ...page,
+      tasks: page.tasks.map((task) => ({
+        ...task,
+        work_item_tasks: (task.work_item_tasks ?? []).map((link) =>
+          link.work_items && summaries.has(link.work_items.id)
+            ? { ...link, work_items: { ...link.work_items, work_item_extracts: [{ summary: summaries.get(link.work_items.id) ?? null }] } }
+            : link,
+        ),
+      })),
+    };
   });

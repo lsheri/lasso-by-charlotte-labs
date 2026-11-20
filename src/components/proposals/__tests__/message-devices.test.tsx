@@ -85,3 +85,60 @@ describe("the won message, three ways", () => {
     expect(source).not.toMatch(/Good news|has been won|Unsubscribe|Reply STOP/i);
   });
 });
+
+// 21 Nov 2026 (Liam: "it should be normal scale always"): the phone keeps a real iPhone's shape at any size, and is
+// scaled down to fit its column rather than shrinking to the height of the message. The browser check measures it;
+// these tests hold the rules that make it so.
+describe("the devices keep a real device's shape", () => {
+  const css = readFileSync("src/components/proposals/message-devices.css", "utf8");
+  const rule = (selector: string) => {
+    const at = css.indexOf(`${selector}{`);
+    expect(at, `${selector} has a rule`).toBeGreaterThan(-1);
+    return css.slice(at, css.indexOf("}", at));
+  };
+
+  it("the phone is about 9 to 19.5, and its bezel, corners, island and home bar are sized from its own width", () => {
+    expect(rule(".message-phone-frame")).toContain("container-type:inline-size");
+    const phone = rule(".message-phone");
+    expect(phone).toContain("aspect-ratio:9/19.5");
+    expect(phone).toMatch(/border-radius:[\d.]+cqw/);
+    expect(phone).toMatch(/border-width:max\(3px,[\d.]+cqw\)/);
+    expect(rule(".message-phone-island")).toMatch(/width:[\d.]+cqw;height:[\d.]+cqw/);
+    expect(rule(".message-phone-home")).toMatch(/width:[\d.]+cqw/);
+    // Nothing on the phone is a fixed rem or px corner, and no height follows the message.
+    expect(phone).not.toMatch(/border-radius:[\d.]+(rem|px)/);
+  });
+
+  it("neither device cuts words: a message longer than the screen makes the device taller, never clipped", () => {
+    expect(rule(".message-phone")).not.toContain("overflow");
+    expect(rule(".message-inbox")).toBe(".message-inbox{aspect-ratio:4/3");
+    const view = render(<MessageExamples words={sent()} />);
+    for (const device of view.container.querySelectorAll("[data-message-device]")) {
+      expect((device as HTMLElement).className).not.toMatch(/overflow-(hidden|clip)/);
+    }
+  });
+
+  it("the message sits at the top of a messages screen: the sender, then the thread, then empty screen down to the home bar", () => {
+    const view = render(<MessageExamples words={sent()} />);
+    const phone = view.container.querySelector('[data-message-device="text"]') as HTMLElement;
+    const parts = [...phone.children].map((el) => el.getAttribute("data-message-sender") !== null ? "sender" : el.getAttribute("data-message-thread") !== null ? "thread" : el.className.includes("island") ? "island" : el.className.includes("home") ? "home" : "?");
+    expect(parts).toEqual(["island", "sender", "thread", "home"]);
+    const thread = phone.querySelector("[data-message-thread]") as HTMLElement;
+    expect(thread.className).toMatch(/\bflex-1\b/);
+    expect(thread.className).toMatch(/\bflex-col\b/);
+    expect(thread.className).not.toMatch(/justify-(center|end)/);
+    expect(thread.className).not.toMatch(/min-h-/);
+    expect(within(thread).getByText(sent())).toBeTruthy();
+    expect((phone.parentElement as HTMLElement).className).toMatch(/message-phone-frame/);
+    expect((phone.parentElement as HTMLElement).className).toMatch(/max-w-\[13\.5rem\]/);
+  });
+
+  it("an example device keeps its own width and wraps, rather than being squeezed narrow and tall", () => {
+    const view = render(<MessageExamples words={sent()} />);
+    const items = [...view.container.querySelectorAll("[data-message-example]")] as HTMLElement[];
+    expect(items).toHaveLength(3);
+    for (const item of items) expect(item.className).toMatch(/\bshrink-0\b/);
+    expect(items.map((item) => item.className.match(/max-w-\[[\d.]+rem\]/)?.[0])).toEqual(["max-w-[13.5rem]", "max-w-[22rem]", "max-w-[13.5rem]"]);
+    expect(items.some((item) => /sm:w-auto/.test(item.className))).toBe(false);
+  });
+});
