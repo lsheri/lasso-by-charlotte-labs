@@ -19,6 +19,8 @@ import {
   goalToSave,
   SENT_COPY,
   sentInput,
+  WIN_COPY,
+  winInput,
   INTAKE_COPY,
   newProposalInput,
   sameClientName,
@@ -26,7 +28,7 @@ import {
   timeLeftLine,
   type DeskProposal,
 } from "@/lib/proposal-desk-shared";
-import { createProposal, listDesk, listDeskClients, setProposalSent, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { createProposal, listDesk, listDeskClients, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const ME = "22222222-2222-4222-8222-222222222222";
@@ -141,11 +143,11 @@ describe("what a person may type", () => {
 
 /* ------------------------------------------------------------------------- */
 
-type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[]; sent: { id: string; sentAt: string | null }[] } };
+type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[]; sent: { id: string; sentAt: string | null }[]; steps: string[]; boards: Record<string, unknown>[]; placed: { taskId: string; ids: string[] }[]; ledger: { kind: string; occurred_at: string }[]; claims: { id: string; engagementId: string }[]; removedBoards: string[] } };
 
 function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRow[]; owned?: string[] } = {}): Fake {
   const caller: DeskCaller = { profileId: ME, orgId: ORG, role: over.role ?? "manager", userId: "u" };
-  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [], sent: [] };
+  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [], sent: [], steps: [], boards: [], placed: [], ledger: [], claims: [], removedBoards: [] };
   let next = 0;
   return {
     state,
@@ -165,6 +167,13 @@ function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRo
     removeProposal: async (id) => { state.proposals = state.proposals.filter((p) => p["id"] !== id); },
     proposal: async (id) => (over.rows ?? []).find((r) => r.id === id) ?? null,
     setSent: async (id, sentAt) => { state.sent.push({ id, sentAt }); return true; },
+    notes: async () => "  Met them at the conference.  ",
+    makeBoard: async (board) => { state.steps.push("board"); state.boards.push(board); return true; },
+    boardHome: async () => { state.steps.push("home"); return "task-1"; },
+    placeItems: async (taskId, ids) => { state.steps.push("place"); state.placed.push({ taskId, ids }); return true; },
+    writeLedger: async (rows) => { state.steps.push("ledger"); state.ledger.push(...rows.map((r) => ({ kind: r.kind, occurred_at: r.occurred_at }))); return true; },
+    claimWin: async (id, engagementId) => { state.steps.push("claim"); state.claims.push({ id, engagementId }); return true; },
+    removeBoard: async (id) => { state.removedBoards.push(id); },
     now: () => NOW,
     record: async (_c, e, dims) => { state.events.push(e === "proposal.created" ? dims : { event: e, ...dims }); },
     newId: () => `id-${++next}`,
@@ -312,6 +321,96 @@ describe("marking a proposal as sent", () => {
     expect(await setProposalSent(store, P(UUIDS["p1"]!, true))).toEqual({ ok: false, problem: SENT_COPY.failed });
     expect(store.state.events).toEqual([]);
     expect(() => sentInput({ proposal_id: "x", sent: true })).toThrow();
+  });
+});
+
+describe("recording the win", () => {
+  const W1 = "bbbbbbbb-0000-4000-8000-000000000001";
+  const W = (id = W1) => winInput({ profile_id: ME, proposal_id: id });
+  const ctx = async () => [{ proposal_id: W1, work_item_id: ITEM_B }, { proposal_id: W1, work_item_id: ITEM_A }, { proposal_id: "someone-elses", work_item_id: "x" }];
+  const open = row({ id: W1, received_at: hoursAgo(30), sent_at: hoursAgo(4) });
+
+  it("makes the board for the client with the notes as its brief, puts the context documents on it first and in order, then marks the proposal won", async () => {
+    const store = fakeStore({ rows: [open], context: ctx });
+    expect(await winProposal(store, W())).toEqual({ ok: true, engagementId: "id-1" });
+    expect(store.state.steps).toEqual(["board", "home", "place", "ledger", "claim"]);
+    expect(store.state.boards).toEqual([{ id: "id-1", orgId: ORG, title: "Network redesign", clientId: CLIENT, brief: "Met them at the conference.", ownerId: ME }]);
+    expect(store.state.placed).toEqual([{ taskId: "task-1", ids: [ITEM_B, ITEM_A] }]);
+    expect(store.state.ledger).toEqual([
+      { kind: "brief_received", occurred_at: hoursAgo(30) },
+      { kind: "sent_to_client", occurred_at: hoursAgo(4) },
+      { kind: "won", occurred_at: NOW.toISOString() },
+    ]);
+    expect(store.state.claims).toEqual([{ id: W1, engagementId: "id-1" }]);
+    expect(store.state.removedBoards).toEqual([]);
+    expect(store.state.events).toEqual([{ event: "proposal.won", documents: "2-5", notes: "yes", sent_first: "yes" }]);
+    expect(EVENT_DIM_KEYS["proposal.won"]).toEqual(["documents", "notes", "sent_first"]);
+  });
+
+  it("works with no documents, no notes and no sent date, and leaves out a document deleted since", async () => {
+    const bare = fakeStore({ rows: [row({ id: W1 })], context: async () => [], notes: async () => null });
+    expect(await winProposal(bare, W())).toMatchObject({ ok: true });
+    expect(bare.state.steps).toEqual(["board", "home", "ledger", "claim"]);
+    expect(bare.state.boards[0]).toMatchObject({ brief: null });
+    expect(bare.state.ledger.map((r) => r.kind)).toEqual(["brief_received", "won"]);
+    expect(bare.state.events).toEqual([{ event: "proposal.won", documents: "0", notes: "no", sent_first: "no" }]);
+    const gone = fakeStore({ rows: [open], context: ctx, owned: [ITEM_A] });
+    await winProposal(gone, W());
+    expect(gone.state.placed).toEqual([{ taskId: "task-1", ids: [ITEM_A] }]);
+  });
+
+  it("is only for the person who started it: an admin, a lead, another workspace and a made-up id all get the same words and nothing is made", async () => {
+    const theirs = row({ id: W1, owner_id: OTHER });
+    for (const store of [fakeStore({ rows: [theirs], role: "admin" }), fakeStore({ rows: [theirs], role: "lead" }), fakeStore({ rows: [row({ id: W1, org_id: "another-org" })] }), fakeStore({ rows: [] })]) {
+      expect(await winProposal(store, W())).toEqual({ ok: false, problem: WIN_COPY.notYours });
+      expect(store.state.steps).toEqual([]);
+    }
+    expect(() => winInput({ proposal_id: "nope" })).toThrow();
+  });
+
+  it("hands back the same board on a second press, and refuses a lost proposal", async () => {
+    const won = fakeStore({ rows: [row({ id: W1, status: "won", decided_at: hoursAgo(1), engagement_id: "board-9" })] });
+    expect(await winProposal(won, W())).toEqual({ ok: true, engagementId: "board-9" });
+    expect(won.state.steps).toEqual([]);
+    const lost = fakeStore({ rows: [row({ id: W1, status: "lost", decided_at: hoursAgo(1) })] });
+    expect(await winProposal(lost, W())).toEqual({ ok: false, problem: WIN_COPY.lost });
+  });
+
+  it("takes the board back and leaves the proposal open when any step fails", async () => {
+    const fails: Partial<DeskStore>[] = [
+      { boardHome: async () => null },
+      { placeItems: async () => false },
+      { writeLedger: async () => false },
+      { placeItems: async () => { throw new Error("network"); } },
+    ];
+    for (const over of fails) {
+      const store = fakeStore({ rows: [open], context: ctx, ...over });
+      expect(await winProposal(store, W())).toEqual({ ok: false, problem: WIN_COPY.failed });
+      expect(store.state.removedBoards).toEqual(["id-1"]);
+      expect(store.state.claims).toEqual([]);
+      expect(store.state.events).toEqual([]);
+    }
+    const noBoard = fakeStore({ rows: [open], makeBoard: async () => false });
+    expect(await winProposal(noBoard, W())).toEqual({ ok: false, problem: WIN_COPY.failed });
+    expect(noBoard.state.removedBoards).toEqual([]);
+  });
+
+  it("when two presses race, the loser removes its own board and returns the winner's", async () => {
+    let reads = 0;
+    const store = fakeStore({
+      context: ctx,
+      proposal: async () => (++reads === 1 ? open : { ...open, status: "won", decided_at: NOW.toISOString(), engagement_id: "winner" }),
+      claimWin: async () => false,
+    });
+    expect(await winProposal(store, W())).toEqual({ ok: true, engagementId: "winner" });
+    expect(store.state.removedBoards).toEqual(["id-1"]);
+    expect(store.state.events).toEqual([]);
+  });
+
+  it("keeps the win when recording the event fails", async () => {
+    const store = fakeStore({ rows: [open], context: ctx, record: async () => { throw new Error("down"); } });
+    expect(await winProposal(store, W())).toEqual({ ok: true, engagementId: "id-1" });
+    expect(store.state.removedBoards).toEqual([]);
   });
 });
 

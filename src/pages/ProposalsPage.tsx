@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
 import { DESK_COPY, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
-import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalSentFn } from "@/lib/proposal-desk.functions";
+import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 /**
@@ -22,6 +23,7 @@ import { profileHasFirmView } from "@/lib/workspace-capabilities";
 export function ProposalsPage() {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { captureWithResult } = useCaptureFiles();
   const [open, setOpen] = useState(false);
   const allowed = profileHasFirmView(profile) && profile?.role !== "coach" && !profile?.is_guest;
@@ -83,6 +85,15 @@ export function ProposalsPage() {
               onSent={async (proposalId, sent) => {
                 const result = await setProposalSentFn({ data: { profile_id: profileId as string, proposal_id: proposalId, sent } });
                 if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                return result;
+              }}
+              onWin={async (proposalId) => {
+                const result = await winProposalFn({ data: { profile_id: profileId as string, proposal_id: proposalId } });
+                if (result.ok) {
+                  void queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                  void queryClient.invalidateQueries({ queryKey: ["engagements"] });
+                  await navigate({ to: "/engagements/$id/canvas-lab", params: { id: result.engagementId } });
+                }
                 return result;
               }}
             />

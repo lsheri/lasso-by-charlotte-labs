@@ -5,10 +5,12 @@ import {
   deskProfileInput,
   newProposalInput,
   sentInput,
+  winInput,
   type DeskClient,
   type DeskList,
   type NewProposalResult,
   type SentResult,
+  type WinResult,
 } from "@/lib/proposal-desk-shared";
 
 /**
@@ -40,3 +42,9 @@ export const setProposalSentFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(sentInput)
   .handler(async ({ data, context }): Promise<SentResult> => (await import("./proposal-desk.server")).deskHandlers.sent(context, data));
+
+/** Records the win: makes the team board with the context documents first. Only the person who started the proposal. */
+export const winProposalFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(winInput)
+  .handler(async ({ data, context }): Promise<WinResult> => (await import("./proposal-desk.server")).deskHandlers.win(context, data));

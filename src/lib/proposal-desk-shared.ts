@@ -54,6 +54,25 @@ export const SENT_COPY = {
   closed: "This proposal is already decided.",
 } as const;
 
+export const WIN_COPY = {
+  record: "Record the win",
+  title: "Record the win",
+  /** What pressing it does, said before it happens. */
+  body: (documents: number) =>
+    documents === 0
+      ? "This makes the team board for this proposal. Your notes become its brief."
+      : `This makes the team board for this proposal and puts your ${documents === 1 ? "context document" : `${documents} context documents`} on it first. Your notes become its brief.`,
+  sharing: "People you add to the board will be able to open those documents. The board is not shared with the firm until you choose to.",
+  confirm: "Make the team board",
+  working: "Making the board",
+  cancel: "Not yet",
+  /** Shown to an admin or lead on someone else's proposal. */
+  ownerOnly: (name: string) => `Only ${name || "the person who started it"} can record the win, because it puts their documents on the team board.`,
+  notYours: "Only the person who started this proposal can record the win.",
+  lost: "This proposal was recorded as lost.",
+  failed: "The team board could not be made. Nothing changed. Try again in a moment.",
+} as const;
+
 export const MAX_TITLE_CHARS = 160;
 export const MAX_CLIENT_CHARS = 120;
 export const MAX_NOTES_CHARS = 8000;
@@ -142,7 +161,7 @@ export type DeskProposal = {
   /** How many context documents wait on the proposal. Titles go only to the owner. */
   contextCount: number;
   contextTitles?: string[];
-  /** May mark it sent or record the win: the person who started it, an admin or a lead. */
+  /** May mark it sent: the person who started it, an admin or a lead. Recording the win is for `mine` only. */
   canAct: boolean;
 };
 
@@ -248,6 +267,17 @@ export function sentInput(raw: { profile_id?: string | null | undefined; proposa
 }
 
 export type SentResult = { ok: true } | { ok: false; problem: string };
+
+export type WinInput = DeskProfileInput & { proposal_id: string };
+
+export function winInput(raw: { profile_id?: string | null | undefined; proposal_id: string }): WinInput {
+  const loose = raw as Loose;
+  const id = uuidOrNull(loose?.["proposal_id"]);
+  if (!id) throw new Error(WIN_COPY.failed);
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), proposal_id: id };
+}
+
+export type WinResult = { ok: true; engagementId: string } | { ok: false; problem: string };
 
 export type IntakeProblem = keyof typeof INTAKE_COPY.problems;
 

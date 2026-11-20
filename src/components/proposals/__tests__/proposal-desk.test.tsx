@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { ProposalGoalForm } from "@/components/settings/ProposalGoalCard";
-import { DESK_COPY, GOAL_COPY, INTAKE_COPY, SENT_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { DESK_COPY, GOAL_COPY, INTAKE_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, params }: { children: ReactNode; params?: { id?: string } }) => <a href={`/engagements/${params?.id}/canvas-lab`}>{children}</a>,
@@ -41,7 +41,7 @@ describe("the Proposals dashboard", () => {
   });
 
   it("switches between All open, Needs me and Won, each with its count", () => {
-    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a" }), proposal({ id: "b", mine: true }), proposal({ id: "w", status: "won", decidedAt: "2026-11-20T09:00:00Z", engagementId: "board-1" })])} />);
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a" }), proposal({ id: "b", mine: true }), proposal({ id: "w", mine: true, status: "won", decidedAt: "2026-11-20T09:00:00Z", engagementId: "board-1" })])} />);
     expect(screen.getByRole("button", { name: "All open 2" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Needs me 1" }));
     expect(document.querySelectorAll("[data-proposal-row]")).toHaveLength(1);
@@ -112,6 +112,62 @@ describe("Mark as sent", () => {
     onSent.mockImplementationOnce(() => Promise.reject(new Error("offline")));
     fireEvent.click(screen.getByRole("button", { name: SENT_COPY.mark }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(SENT_COPY.failed));
+  });
+});
+
+describe("Record the win", () => {
+  const mine = proposal({ id: "a", mine: true, canAct: true, contextCount: 2 });
+
+  it("is offered only on the person's own open proposals", () => {
+    render(<ProposalDesk now={NOW} data={list([mine, proposal({ id: "b", canAct: true })])} onWin={async () => ({ ok: true, engagementId: "e" })} />);
+    expect(within(document.querySelector('[data-proposal-row="a"]') as HTMLElement).getByRole("button", { name: WIN_COPY.record })).toBeTruthy();
+    expect(within(document.querySelector('[data-proposal-row="b"]') as HTMLElement).queryByRole("button", { name: WIN_COPY.record })).toBeNull();
+  });
+
+  it("says what it will do first, and does nothing on Not yet", () => {
+    const onWin = vi.fn(async () => ({ ok: true as const, engagementId: "e" }));
+    render(<ProposalDesk now={NOW} data={list([mine])} onWin={onWin} />);
+    fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
+    const dialog = screen.getByTestId("win-proposal");
+    expect(within(dialog).getByText(WIN_COPY.body(2))).toBeTruthy();
+    expect(within(dialog).getByText(WIN_COPY.sharing)).toBeTruthy();
+    expect(within(dialog).getByText("Marrowfield: Network redesign")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: WIN_COPY.cancel }));
+    expect(onWin).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("win-proposal")).toBeNull();
+  });
+
+  it("makes the board once on a double press and closes", async () => {
+    let finish: (value: { ok: true; engagementId: string }) => void = () => {};
+    const onWin = vi.fn(() => new Promise<{ ok: true; engagementId: string }>((resolve) => { finish = resolve; }));
+    render(<ProposalDesk now={NOW} data={list([mine])} onWin={onWin} />);
+    fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
+    const confirm = screen.getByRole("button", { name: WIN_COPY.confirm });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    expect(onWin).toHaveBeenCalledTimes(1);
+    expect(onWin).toHaveBeenCalledWith("a");
+    finish({ ok: true, engagementId: "e" });
+    await waitFor(() => expect(screen.queryByTestId("win-proposal")).toBeNull());
+  });
+
+  it("stays open with a plain line when the board could not be made", async () => {
+    const onWin = vi.fn().mockResolvedValueOnce({ ok: false, problem: WIN_COPY.failed }).mockRejectedValueOnce(new Error("offline"));
+    render(<ProposalDesk now={NOW} data={list([mine])} onWin={onWin} />);
+    fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(screen.getByRole("button", { name: WIN_COPY.confirm }));
+      await waitFor(() => expect(within(screen.getByTestId("win-proposal")).getByRole("alert").textContent).toBe(WIN_COPY.failed));
+    }
+    expect(onWin).toHaveBeenCalledTimes(2);
+  });
+
+  it("links a won proposal to its board only for the person whose board it is", () => {
+    const won = { status: "won" as const, decidedAt: hoursAgo(2), engagementId: "e1" };
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, ...won }), proposal({ id: "b", ...won, engagementId: "e2" })])} />);
+    fireEvent.click(document.querySelector('[data-desk-view="won"]') as HTMLElement);
+    expect(within(document.querySelector('[data-proposal-row="a"]') as HTMLElement).getByRole("link", { name: DESK_COPY.openBoard })).toBeTruthy();
+    expect(within(document.querySelector('[data-proposal-row="b"]') as HTMLElement).queryByRole("link")).toBeNull();
   });
 });
 

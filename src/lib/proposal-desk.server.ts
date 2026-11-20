@@ -21,6 +21,7 @@ import {
   INTAKE_COPY,
   SENT_COPY,
   timeLeft,
+  WIN_COPY,
   PROPOSAL_STATUSES,
   sameClientName,
   seesAllProposals,
@@ -33,6 +34,8 @@ import {
   type ProposalStatus,
   type SentInput,
   type SentResult,
+  type WinInput,
+  type WinResult,
 } from "./proposal-desk-shared";
 
 type Db = SupabaseClient<Database>;
@@ -79,7 +82,21 @@ export type DeskStore = {
   proposal: (id: string) => Promise<ProposalRow | null>;
   /** Sets or clears when the proposal went out. False when nothing changed. */
   setSent: (id: string, sentAt: string | null) => Promise<boolean>;
-  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent", dims: Record<string, string>) => Promise<void>;
+  /** The salesperson's notes on one proposal. */
+  notes: (id: string) => Promise<string | null>;
+  /** Makes the board, owned by this person and with them on it. Not shared with the firm. False when refused. */
+  makeBoard: (board: { id: string; orgId: string; title: string; clientId: string; brief: string | null; ownerId: string }) => Promise<boolean>;
+  /** The board's home for loose work, asked for as the signed-in person. Null when refused. */
+  boardHome: (engagementId: string) => Promise<string | null>;
+  /** Puts these work items on the board in this order, as the signed-in person, so the database's own rule decides. */
+  placeItems: (taskId: string, itemIds: string[], at: Date) => Promise<boolean>;
+  /** The board's proposal history: when the brief came in, when it went out, when it was won. */
+  writeLedger: (rows: { org_id: string; engagement_id: string; kind: "brief_received" | "sent_to_client" | "won"; occurred_at: string }[]) => Promise<boolean>;
+  /** Marks the proposal won and ties it to its board, only if it is still open. False when it was not open any more. */
+  claimWin: (id: string, engagementId: string, decidedAt: string) => Promise<boolean>;
+  /** Takes back a board this code just made and could not finish. */
+  removeBoard: (id: string) => Promise<void>;
+  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won", dims: Record<string, string>) => Promise<void>;
   now: () => Date;
   newId: () => string;
 };
@@ -218,6 +235,71 @@ export async function setProposalSent(store: DeskStore, input: SentInput): Promi
   return { ok: true };
 }
 
+/**
+ * Records the win. This is the moment the team board comes to exist (D-37): the board is made for the proposal's
+ * client, the salesperson's notes become its brief, and their context documents go on it first, in their order.
+ *
+ * Only the person who started the proposal may do this, because it puts their own documents where a team can open
+ * them; an admin or lead cannot do it on their behalf. The board is not shared with the firm: that stays a choice
+ * made on the board. Everything is made before the proposal is marked won, and taken back if any step fails, so a
+ * failure leaves the proposal open and no half-made board.
+ */
+export async function winProposal(store: DeskStore, input: WinInput): Promise<WinResult> {
+  const caller = await store.caller();
+  const row = await store.proposal(input.proposal_id);
+  if (!row || row.org_id !== caller.orgId || row.owner_id !== caller.profileId) return { ok: false, problem: WIN_COPY.notYours };
+  // A second press, or a second tab: the board already exists, so hand it back.
+  if (row.status === "won" && row.engagement_id) return { ok: true, engagementId: row.engagement_id };
+  if (row.status !== "open") return { ok: false, problem: WIN_COPY.lost };
+
+  const listed = (await store.context([row.id])).filter((c) => c.proposal_id === row.id).map((c) => c.work_item_id);
+  // A document deleted since, or no longer this person's, is left out rather than failing the win.
+  const still = new Set(listed.length > 0 ? await store.ownedItems(caller.orgId, caller.profileId, listed) : []);
+  const items = listed.filter((id) => still.has(id));
+  const notes = (await store.notes(row.id))?.trim() || null;
+
+  const now = store.now();
+  const engagementId = store.newId();
+  if (!(await store.makeBoard({ id: engagementId, orgId: caller.orgId, title: row.title, clientId: row.client_id, brief: notes, ownerId: caller.profileId }))) {
+    return { ok: false, problem: WIN_COPY.failed };
+  }
+  const undo = async (): Promise<WinResult> => {
+    try {
+      await store.removeBoard(engagementId);
+    } catch {
+      /* nothing more can be done from here */
+    }
+    return { ok: false, problem: WIN_COPY.failed };
+  };
+  try {
+    const home = await store.boardHome(engagementId);
+    if (!home) return await undo();
+    if (items.length > 0 && !(await store.placeItems(home, items, now))) return await undo();
+    const received = Date.parse(row.received_at);
+    const sent = row.sent_at ? Date.parse(row.sent_at) : NaN;
+    const ledger: Parameters<DeskStore["writeLedger"]>[0] = [
+      { org_id: caller.orgId, engagement_id: engagementId, kind: "brief_received", occurred_at: new Date(Number.isFinite(received) ? Math.min(received, now.getTime()) : now.getTime()).toISOString() },
+      ...(Number.isFinite(sent) ? [{ org_id: caller.orgId, engagement_id: engagementId, kind: "sent_to_client" as const, occurred_at: new Date(Math.min(sent, now.getTime())).toISOString() }] : []),
+      { org_id: caller.orgId, engagement_id: engagementId, kind: "won", occurred_at: now.toISOString() },
+    ];
+    if (!(await store.writeLedger(ledger))) return await undo();
+    if (!(await store.claimWin(row.id, engagementId, now.toISOString()))) {
+      // Someone got there first. Their board stands; this one goes.
+      await undo();
+      const after = await store.proposal(row.id);
+      return after && after.status === "won" && after.engagement_id ? { ok: true, engagementId: after.engagement_id } : { ok: false, problem: WIN_COPY.failed };
+    }
+  } catch {
+    return await undo();
+  }
+  try {
+    await store.record(caller, "proposal.won", { documents: countBand(items.length), notes: notes ? "yes" : "no", sent_first: row.sent_at ? "yes" : "no" });
+  } catch {
+    /* the win is saved; a recording fault never undoes it */
+  }
+  return { ok: true, engagementId };
+}
+
 /* ---------------------------------------------------------------------------
  * The real outside world. Kept thin: every rule is above.
  * ------------------------------------------------------------------------- */
@@ -233,6 +315,11 @@ export async function realStore(context: DeskContext, profileId: string | null):
   const own = context.supabase;
   const ownLoose = own as unknown as LooseDb;
   const adminLoose = supabaseAdmin as unknown as LooseDb;
+  const removeBoard = async (id: string): Promise<void> => {
+    // Archived first: the database will not take an owner off a live board, and a board that cannot be deleted stays hidden.
+    await supabaseAdmin.from("engagements").update({ archived_at: new Date().toISOString() }).eq("id", id).eq("org_id", caller.orgId);
+    await supabaseAdmin.from("engagements").delete().eq("id", id).eq("org_id", caller.orgId);
+  };
   return {
     caller: async () => caller,
     async settings(orgId) {
@@ -299,6 +386,37 @@ export async function realStore(context: DeskContext, profileId: string | null):
       const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
       return !error && (data ?? []).length === 1;
     },
+    async notes(id) {
+      const { data } = await adminLoose.from("proposals").select("notes").eq("id", id).eq("org_id", caller.orgId).maybeSingle();
+      return ((data as { notes: string | null } | null)?.notes) ?? null;
+    },
+    async makeBoard(board) {
+      // The service role has no signed-in person, so the owner is named here; the database fills the board's code.
+      const made = await supabaseAdmin.from("engagements").insert({ id: board.id, org_id: board.orgId, title: board.title, client_id: board.clientId, brief: board.brief, owner_id: board.ownerId, shared_with_firm: false } as never);
+      if (made.error) return false;
+      const joined = await supabaseAdmin.from("engagement_members").insert({ engagement_id: board.id, profile_id: board.ownerId, member_role: "em", added_by: board.ownerId } as never);
+      if (!joined.error) return true;
+      await removeBoard(board.id);
+      return false;
+    },
+    async boardHome(engagementId) {
+      const { data, error } = await own.rpc("ensure_board_default_task", { p_engagement: engagementId });
+      return error || !data ? null : (data as unknown as string);
+    },
+    async placeItems(taskId, itemIds, at) {
+      // One millisecond apart, so the order they were added in is the order the board has them.
+      const { error } = await own.from("work_item_tasks").insert(itemIds.map((id, index) => ({ work_item_id: id, task_id: taskId, mapped_at: new Date(at.getTime() + index).toISOString() })));
+      return !error;
+    },
+    async writeLedger(rows) {
+      const { error } = await supabaseAdmin.from("proposal_ledger").insert(rows);
+      return !error;
+    },
+    async claimWin(id, engagementId, decidedAt) {
+      const { data, error } = await adminLoose.from("proposals").update({ status: "won", decided_at: decidedAt, engagement_id: engagementId }).eq("id", id).eq("org_id", caller.orgId).eq("owner_id", caller.profileId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    removeBoard,
     now: () => new Date(),
     async record(who, eventType, dims) {
       const { recordEvent } = await import("./telemetry.server");
@@ -321,5 +439,8 @@ export const deskHandlers = {
   },
   async sent(context: DeskContext, data: SentInput): Promise<SentResult> {
     return setProposalSent(await realStore(context, data.profile_id), data);
+  },
+  async win(context: DeskContext, data: WinInput): Promise<WinResult> {
+    return winProposal(await realStore(context, data.profile_id), data);
   },
 };
