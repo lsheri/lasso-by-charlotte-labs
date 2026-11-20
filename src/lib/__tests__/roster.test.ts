@@ -606,7 +606,11 @@ describe("listRoster", () => {
 
 describe("contact detail rules", () => {
   it("accepts emails people really have and stores them lower case", () => {
-    expect(cleanEmail("  Tomas.O'Briain+bids@St-Brigid.example  ")).toBeNull();
+    expect(cleanEmail("  Tomas.O'Briain+bids@St-Brigid.example  ")).toBe(
+      "tomas.o'briain+bids@st-brigid.example",
+    );
+    expect(cleanEmail("dana.o'brien@example.test")).toBe("dana.o'brien@example.test");
+    expect(cleanEmail("dana@o'brien.example.test")).toBeNull();
     expect(cleanEmail("Tomas.OBriain+bids@St-Brigid.Example")).toBe(
       "tomas.obriain+bids@st-brigid.example",
     );
@@ -624,6 +628,31 @@ describe("contact detail rules", () => {
       7,
     ])
       expect(cleanEmail(bad)).toBeNull();
+  });
+
+  it("refuses an email holding an invisible or control character", () => {
+    for (const hidden of [
+      "\u200B",
+      "\u200D",
+      "\u2060",
+      "\uFEFF",
+      "\u0085",
+      "\u0000",
+      "\u0007",
+      "\u00AD",
+      "\u202E",
+    ]) {
+      expect(cleanEmail(`a${hidden}b@example.test`)).toBeNull();
+      expect(cleanEmail(`ab@exa${hidden}mple.test`)).toBeNull();
+    }
+    expect(cleanEmail("ab@example.test")).toBe("ab@example.test");
+  });
+
+  it("the email hint promises only what exists, and the edit form's opening line fits an edit", () => {
+    expect(ROSTER_COPY.dialog.emailHint).toBe("For reaching them.");
+    expect(ROSTER_COPY.dialog.editDescription).not.toContain("to add someone");
+    expect(ROSTER_COPY.dialog.editDescription).toContain("only after they agree on their own link");
+    expect(ROSTER_COPY.dialog.description).toContain("are needed to add someone");
   });
 
   it("accepts a LinkedIn address the ways people paste one, and no other site", () => {

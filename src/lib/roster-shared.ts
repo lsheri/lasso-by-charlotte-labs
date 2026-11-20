@@ -162,7 +162,10 @@ export function cleanEmail(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const email = value.trim().toLowerCase();
   if (email.length < 3 || email.length > EMAIL_MAX) return null;
-  return /^[^@\s<>"',;:()]+@[^@\s<>"',;:()]+\.[a-z0-9-]{2,}$/.test(email) ? email : null;
+  // Invisible and control characters (a pasted zero-width space, say) look right on the page and never deliver.
+  if (/[\p{Cc}\p{Cf}]/u.test(email)) return null;
+  // An apostrophe is allowed before the @ only: O'Brien and D'Arcy are real addresses.
+  return /^[^@\s<>",;:()]+@[^@\s<>"',;:()]+\.[a-z0-9-]{2,}$/.test(email) ? email : null;
 }
 
 /**
@@ -382,11 +385,13 @@ export const ROSTER_COPY = {
     editTitle: "Edit this person",
     description:
       "Name, what they do, where they work and how to reach them. A mobile number and an email are needed to add someone. The number here is for contact only: Lasso texts a person only after they agree on their own link.",
+    editDescription:
+      "Their name, what they do, where they work and how to reach them. The number here is for contact only: Lasso texts a person only after they agree on their own link.",
     phone: "Mobile number",
     phoneHint: "United States or Canada. For example (206) 555-0142.",
     phoneKeep: (masked: string) => `On file: ${masked}. Leave empty to keep it, or type a new one.`,
     email: "Email",
-    emailHint: "For reaching them, and for sending them their own text agreement link.",
+    emailHint: "For reaching them.",
     linkedin: "LinkedIn address (optional)",
     linkedinHint: "For example linkedin.com/in/their-name.",
     legacy:

@@ -492,7 +492,7 @@ function RosterDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{contact ? D.editTitle : D.addTitle}</DialogTitle>
-          <DialogDescription>{D.description}</DialogDescription>
+          <DialogDescription>{contact ? D.editDescription : D.description}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} noValidate className="space-y-4">
           <div className="space-y-1">
