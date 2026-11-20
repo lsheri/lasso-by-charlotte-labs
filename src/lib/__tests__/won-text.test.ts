@@ -152,14 +152,21 @@ describe("who has the button", () => {
     expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: true, needsNumber: false, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
   });
 
+  it("shows the words but not connected while no sender is connected, when there is someone to text", async () => {
+    const { deps, sends } = world({ config: null });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: false, needsNumber: false, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
+    expect(sends).toEqual([]);
+  });
+
+  // 21 Nov (Liam, D-73): a button that can only answer "nothing was sent" is not drawn at all.
   it.each([
-    ["no sender is connected", { config: null }],
-    ["nobody to text yet", { recipient: null }],
-    ["the recipient is not a full number", { recipient: "4155550100" }],
-    ["neither is set, as on the first day", { config: null, recipient: null }],
-  ] as [string, Partial<World>][])("shows the words but not connected when %s", async (_name, over) => {
+    ["no demo number is set", { recipient: null }],
+    ["the demo number is not a full number", { recipient: "4155550100" }],
+    ["neither a number nor a sender is set, as on the first day", { config: null, recipient: null }],
+  ] as [string, Partial<World>][])("has no button when %s, and a direct call still sends nothing", async (_name, over) => {
     const { deps, sends } = world(over);
-    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: false, needsNumber: over.recipient !== undefined, preview: wonTextBody({ brandName: "Lasso", firmName: "Kestrel Bay" }) });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: false });
+    expect(await sendWonText(deps, input)).toEqual({ ok: false, problem: WON_TEXT_COPY.noNumber });
     expect(sends).toEqual([]);
   });
 
@@ -395,9 +402,9 @@ describe("a real workspace (20 Nov): the text goes to the picked lead, and only 
     expect(sends).toEqual([]);
   });
 
-  it("no agreement, no send, and the screen says so plainly", async () => {
+  it("no agreement: no button, and a direct call sends nothing and says why", async () => {
     const { deps, sends } = real({ agreed: {} });
-    expect(await wonTextStatus(deps, input)).toMatchObject({ show: true, connected: false, needsNumber: false, blocked: WON_TEXT_COPY.notAgreed("Christy Johnson") });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: false });
     expect(await sendWonText(deps, input)).toEqual({ ok: false, problem: WON_TEXT_COPY.notAgreed("Christy Johnson") });
     expect(sends).toEqual([]);
   });
@@ -405,14 +412,15 @@ describe("a real workspace (20 Nov): the text goes to the picked lead, and only 
   it("an agreement in another workspace, or a stored value that is not a full number, does not count", async () => {
     for (const agreed of [{ [`${KESTREL_BAY_ORG_ID}/${LEAD_ID}`]: LEAD_NUMBER }, { [`${REAL}/${LEAD_ID}`]: "2065550142" }]) {
       const { deps, sends } = real({ agreed });
+      expect(await wonTextStatus(deps, input)).toEqual({ show: false });
       expect((await sendWonText(deps, input)).ok).toBe(false);
       expect(sends).toEqual([]);
     }
   });
 
-  it("no lead picked: says so and sends nothing", async () => {
+  it("no lead picked: no button, and a direct call sends nothing and says why", async () => {
     const { deps, sends } = real({ lead: { contactId: null, name: null } });
-    expect(await wonTextStatus(deps, input)).toMatchObject({ show: true, connected: false, blocked: WON_TEXT_COPY.noLead });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: false });
     expect(await sendWonText(deps, input)).toEqual({ ok: false, problem: WON_TEXT_COPY.noLead });
     expect(sends).toEqual([]);
   });
