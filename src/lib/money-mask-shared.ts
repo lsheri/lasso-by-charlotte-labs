@@ -114,20 +114,26 @@ export const PROPOSALS_ARE_FIRM_MONEY = true;
 
 // D-93: a title that starts with "Proposal" ("[Proposal] ...", "Copy of ... Proposal") is a proposal, always, whatever
 // else it says ("Proposal: Strategic review and options" is still the firm's proposal).
-const PROPOSAL_LEADING = /^\W*(?:copy of\s+)*\[?proposal\b/i;
+// Words are bounded by anything that is not a letter or digit, and joined by a space, "-" or "_", so uploaded file
+// names count like titles ("draft-proposal-acme.docx", "Acme_proposal_v2.docx", "proposal_acme.pdf"); "\\b" alone treats
+// "_" as part of a word and missed them (QA of PR 283).
+const START = "(?<![\\p{L}\\p{N}])";
+const END = "(?![\\p{L}])";
+const JOIN = "[\\s_-]+";
+const PROPOSAL_LEADING = new RegExp(`^[\\W_]*(?:copy${JOIN}of${JOIN})*\\[?proposal${END}`, "iu");
 // QA of PR 281 (open Medium): other titles people give a firm's own proposal: "external proposal figures", "Draft
 // proposal - Acme", "Acme proposal v3", "Re: Proposal", "1. Proposal", "diagnostic-proposal-final". These count only when
 // the title is not about a proposal (notes, a review, comments): "Partner review notes on proposal draft v1" is not.
 const PROPOSAL_WIDER = new RegExp(
   [
-    "\\bproposal[-_ ](?:draft|final)\\b",
-    "\\b(?:draft|external|final|signed|our)\\s+proposal\\b",
-    "\\bproposal\\s+(?:v\\d+|figures|pricing|fees?|budget)\\b",
-    "^\\W*(?:re:\\s*|\\d+[.)]\\s*)proposal\\b",
+    `${START}proposal${JOIN}(?:draft|final)${END}`,
+    `${START}(?:draft|external|final|signed|our)${JOIN}proposal${END}`,
+    `${START}proposal${JOIN}(?:v\\d+|figures|pricing|fees?|budget)${END}`,
+    `^[\\W_]*(?:re:\\s*|\\d+[.)]\\s*)proposal${END}`,
   ].join("|"),
-  "i",
+  "iu",
 );
-const NOT_THE_PROPOSAL = /\b(?:notes?|review|feedback|comments?)\b/i;
+const NOT_THE_PROPOSAL = new RegExp(`${START}(?:notes?|review|feedback|comments?)${END}`, "iu");
 
 /** A proposal document: the proposal desk marks it, or its title starts with "Proposal" ("[Proposal] ...", "Proposal draft: ..."). */
 export function isProposalItem(item: { type?: string | null; title?: string | null; meta?: unknown }): boolean {

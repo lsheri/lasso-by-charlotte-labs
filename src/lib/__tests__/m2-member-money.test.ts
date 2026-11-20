@@ -225,6 +225,18 @@ describe("QA H2 (PR 281), D-93: proposals are firm money", () => {
     [{ type: "document", title: "Proposal: Customer feedback programme", meta: {} }, true],
     [{ type: "document", title: "Proposal: Care pathway redesign (with notes)", meta: {} }, true],
     [{ type: "document", title: "[Proposal] Board effectiveness review", meta: {} }, true],
+    // QA of PR 283 (Medium): uploaded file names with dashes or underscores.
+    [{ type: "document", title: "draft-proposal-acme.docx", meta: {} }, true],
+    [{ type: "document", title: "Acme_proposal_v2.docx", meta: {} }, true],
+    [{ type: "document", title: "acme_proposal_final.pdf", meta: {} }, true],
+    [{ type: "document", title: "external_proposal_figures.xlsx", meta: {} }, true],
+    [{ type: "document", title: "proposal_acme.pdf", meta: {} }, true],
+    [{ type: "document", title: "Proposal-Acme-2026.docx", meta: {} }, true],
+    [{ type: "document", title: "partner_review_notes_on_proposal_draft_v1.docx", meta: {} }, false],
+    // The plural is not matched, as on main ("Proposals: Acme and Beta" is still open in QA's list).
+    [{ type: "document", title: "proposals_overview_for_harper.docx", meta: {} }, false],
+    [{ type: "document", title: "counterproposal-notes.docx", meta: {} }, false],
+    [{ type: "document", title: "acme-proposalist.docx", meta: {} }, false],
   ])("%j is firm money: %s", (item, expected) => {
     expect(isProposalItem(item)).toBe(expected);
     expect(isFirmMoneyItem(item)).toBe(expected);
