@@ -241,7 +241,7 @@ export async function readBoard(
         continue;
       }
       // No person travels: the owner is dropped, and so is the client claim.
-      // QA H3 (#281): a link has no reader, so a SOW's or proposal's summary is money free before it goes anywhere
+      // QA H3 (PR 281): a link has no reader, so a SOW's or proposal's summary is money free before it goes anywhere
       // (publicSafeWork drops extracts too; this holds even if a caller forgets it).
       const { owner_id: _owner, client_id: _client, ...rest } = rowForReader(item as WorkItemRow, false);
       workById.set(item.id, { ...rest, taskIds: [task.id] });

@@ -34,7 +34,7 @@ const SCALE = "(?:\\s?(?:k|m|mm|mn|bn|b|million|billion|thousand|lakhs?|crores?|
 const SCALE_WORD = "(?:million|billion|thousand|lakhs?|crores?|mm|mn|bn|mio|mrd)(?![\\p{L}])";
 const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)?";
 
-// QA M1 (#281): a scale word or a bare "k" with no currency is a count ("2 million users", "10k employees", "4k video"),
+// QA M1 (PR 281): a scale word or a bare "k" with no currency is a count ("2 million users", "10k employees", "4k video"),
 // never money, unless a fee word sits right before or after it ("a fee of 1.2 million", "120k retainer"). The same
 // fee words make a bare grouped figure money ("Fees: 290,000", "day rate 1,200").
 const FEE_WORD = "(?:fees?|retainer|budget|price[ds]?|pricing|costs?|rate|charged?|honorar(?:ium)?|paid|payment)";
@@ -107,7 +107,7 @@ export function isSowItem(item: { type?: string | null; title?: string | null; m
 }
 
 /**
- * QA H2 (#281): a proposal states the firm's fee. Liam, D-93: proposals count as firm money. This one line holds that
+ * QA H2 (PR 281): a proposal states the firm's fee. Liam, D-93: proposals count as firm money. This one line holds that
  * rule; the SQL files carry the same rule on one marked line.
  */
 export const PROPOSALS_ARE_FIRM_MONEY = true;

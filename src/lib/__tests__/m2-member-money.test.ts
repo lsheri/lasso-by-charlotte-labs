@@ -182,7 +182,7 @@ describe("public share link previews", () => {
   });
 });
 
-describe("QA M1 (#281): maskFees reads counts as on main", () => {
+describe("QA M1 (PR 281): maskFees reads counts as on main", () => {
   it.each(["Serves 2 million users", "1.2 million patients a year", "10k users", "5k employees", "a 4k video", "50 thousand visits", "500 lakh people", "1.2bn users", "2 bn people"])(
     "%s",
     (text) => {
@@ -194,7 +194,7 @@ describe("QA M1 (#281): maskFees reads counts as on main", () => {
   });
 });
 
-describe("QA H2 (#281), D-93: proposals are firm money", () => {
+describe("QA H2 (PR 281), D-93: proposals are firm money", () => {
   it("the one rule is on", () => {
     expect(PROPOSALS_ARE_FIRM_MONEY).toBe(true);
   });
@@ -222,7 +222,7 @@ describe("QA H2 (#281), D-93: proposals are firm money", () => {
   });
 });
 
-describe("QA H3 (#281): public links", () => {
+describe("QA H3 (PR 281): public links", () => {
   it("publicSafeWork never carries an extract", () => {
     const [row] = publicSafeWork([{ ...SOW, work_item_extracts: [{ summary: SUMMARY }] } as never]);
     expect(JSON.stringify(row)).not.toContain("290");

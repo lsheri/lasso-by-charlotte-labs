@@ -69,7 +69,7 @@ describe("money figures", () => {
     "Top 3 000 users",
     "Phase 2 of 3",
     "Series A raise",
-    // QA M1 (#281): a scale word or k with no currency or fee word is a count.
+    // QA M1 (PR 281): a scale word or k with no currency or fee word is a count.
     "Pilot 120k",
     "2 million users",
     "1.2 million patients",

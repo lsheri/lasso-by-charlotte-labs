@@ -47,7 +47,7 @@ describe("withoutMoney: the formats QA found next (Lows)", () => {
     ["INR 1,20,00,000", ""],
     ["Fee: 12,50,000 rupees", "Fee"],
     ["3 Tsd. € pro Monat", "pro Monat"],
-    // QA M2 (#281): a fee word makes a bare figure money; codes in brackets; thin spaces.
+    // QA M2 (PR 281): a fee word makes a bare figure money; codes in brackets; thin spaces.
     ["Fees: 290,000", "Fees"],
     ["A fee of 290,000 over 12 weeks", "A fee of over 12 weeks"],
     ["fee: 290 000", "fee"],
@@ -74,7 +74,7 @@ describe("leaves counts, dates and names alone", () => {
     "Top 3 000 users",
     "Phase 2 of 3",
     "Series A raise",
-    // QA M1 (#281): a scale word or k with no currency or fee word is a count.
+    // QA M1 (PR 281): a scale word or k with no currency or fee word is a count.
     "Pilot 120k",
     "2 million users",
     "1.2 million patients",
