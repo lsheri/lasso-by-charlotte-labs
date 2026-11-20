@@ -1148,6 +1148,12 @@ describe("sendRosterInvite, with a stand-in sender that sends nothing", () => {
     expect(mail.subject + mail.text + mail.html).not.toMatch(/resend|bird/i);
     expect(mail.subject).toBe("Kestrel & Bay Bcc: x@example.test: agree to texts about proposals you help with");
     expect(mail.html).toContain("Kestrel &amp; Bay");
+    // QA recheck N1: every placeholder is filled in, and the heading says what the subject says.
+    expect(mail.html).not.toContain("${");
+    expect(mail.html).toContain("color:#2a2d2b");
+    expect(mail.html).toContain("color:#9a9c98");
+    expect(mail.html).toContain("<title>Texts about proposals you help with</title>");
+    expect(mail.html).not.toMatch(/your proposals/);
   });
 });
 

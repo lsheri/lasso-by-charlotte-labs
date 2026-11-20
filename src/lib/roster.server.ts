@@ -191,8 +191,8 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
   const how = "To agree, open your link and enter your own mobile number. It takes a minute.";
   const notYet = "If you would rather not get texts, do nothing. No text is sent unless you agree.";
   const lines = [`Hello ${mail.name},`, intro, how, mail.link, notYet, `Sent by Lasso for ${workspace}.`];
-  const body = "font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:${C.body};";
-  const small = "font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:${C.quiet};";
+  const body = `font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:${C.body};`;
+  const small = `font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:${C.quiet};`;
   const rule = `<tr><td style="padding-bottom:22px;font-size:0;line-height:0;"><img src="${EMAIL_ASSETS}/nb-rule-frontdoor.png" width="300" height="10" alt="" border="0" style="display:block;border:0;width:300px;height:10px;" /></td></tr>`;
   const link = esc(mail.link);
   const html = `<!DOCTYPE html>
@@ -201,7 +201,7 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light">
-<title>Texts about your proposals</title>
+<title>Texts about proposals you help with</title>
 </head>
 <body style="margin:0;padding:0;background-color:${C.page};">
 <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${esc(intro)}</div>
@@ -209,7 +209,7 @@ export function rosterInviteEmail(mail: Omit<RosterInviteMail, "to">): {
 <tr><td align="center" style="padding:36px 16px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 <tr><td style="padding-bottom:28px;font-size:0;line-height:0;"><img src="${EMAIL_ASSETS}/lockup-clear.gif" width="194" height="73" alt="Lasso by Charlotte Labs" border="0" style="display:block;border:0;width:194px;height:73px;" /></td></tr>
-<tr><td style="padding-bottom:10px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;line-height:35px;color:${C.heading};">Texts about your proposals</td></tr>
+<tr><td style="padding-bottom:10px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;line-height:35px;color:${C.heading};">Texts about proposals you help with</td></tr>
 ${rule}
 <tr><td style="padding-bottom:16px;${body}">Hello ${esc(mail.name)},</td></tr>
 <tr><td style="padding-bottom:16px;${body}">${esc(intro)}</td></tr>
