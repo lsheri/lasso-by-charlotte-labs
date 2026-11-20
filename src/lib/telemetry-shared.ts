@@ -253,6 +253,7 @@ export type TelemetryEvent =
   | "analysis.reader_story"
   | "member.deactivated"
   | "member.reactivated"
+  /** An admin changed a teammate's role (emitted from 20 Nov). Dims: from, to (admin | lead | em). Never who. Portal registration required. */
   | "member.role_changed"
   | "invite.revoked"
   | "invite.email_sent"

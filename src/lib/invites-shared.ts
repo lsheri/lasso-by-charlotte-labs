@@ -66,3 +66,6 @@ export function coachScopeLine(subjectNames: readonly string[] | undefined): str
   const verb = clean.length === 1 ? "chooses" : "choose";
   return `You will see only the work ${names} ${verb} to share with you. Nothing else in the workspace is visible to you.`;
 }
+
+/** A role this workspace does not offer (Lead outside a company workspace, or anything unknown). Nothing was made. */
+export const ROLE_NOT_OFFERED_LINE = "That role is not offered in this workspace. Nothing was made.";

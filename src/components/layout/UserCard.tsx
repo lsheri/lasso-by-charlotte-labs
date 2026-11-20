@@ -22,7 +22,7 @@ export function UserCard({
         <p className="truncate nb-type-small font-medium leading-4 text-foreground">{name}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-(length:--type-label) uppercase leading-3 tracking-[0.08em] text-soft">
-            {(role && ROLE_LABELS[role]) ?? "Engagement Mgr"}
+            {(role && ROLE_LABELS[role]) ?? "Member"}
           </span>
           <button
             type="button"
