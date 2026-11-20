@@ -285,8 +285,13 @@ body:has([data-lasso="on"]) [data-sonner-toaster] {
    overlays that open at <body>), and nowhere else.
    Contrast on the ground #ECEEF0: ink 12.7:1, muted 5.6:1 (5.1:1 on sunk, 6.5:1 on raised). The six kind inks the
    skin already sets stay, at 5.3:1 or better on the ground.
-   Lime is the thread. It means the product is working, and nothing else. It is 1.24:1 on the ground, so it is fill and
-   decoration only and the mark's lime thread always carries an ink outline on light surfaces.
+   Lime is the thread. At full strength it means the product is working now, and it is the logo's thread; nothing
+   else. It is 1.24:1 on the ground, so it is fill and decoration only and the mark's lime thread always carries an ink
+   outline on light surfaces. Lime tints (20 Nov 2026) are different values with a different job: good news and brand
+   (a yes, a win, a finished bar). Lime, at any strength, is never text and never focus.
+   Navy (20 Nov 2026, Liam's D-74) is the colour of what you can press: the one filled button, links, the focus ring.
+   Slate stays the reading colour; navy is never body text, a page or a state. On the ground navy is 9.8:1.
+   Bone is paper: the ground of a document being read, and the landing page. Never app chrome.
    Type is unchanged. No em dashes. */
 [data-brand-theme="slate-spool"][data-skin] [data-lasso="on"],
 [data-brand-theme="slate-spool"][data-skin] body:has([data-lasso="on"]) > [role="dialog"],
@@ -304,4 +309,13 @@ body:has([data-lasso="on"]) [data-sonner-toaster] {
   --skin-mark:#7C8791; /* faint marks, not text */
   --neutral-10:#F4F5F6;
   --neutral-80:#34404B;
+  --skin-action:#163A6B; /* navy: what you can press */
+  --skin-action-deep:#0B2A4A; /* hover and pressed */
+  --skin-action-wash:#E4EAF2; /* a chosen chip or row */
+  --skin-action-edge:#AFC0D6; /* its border; not text */
+  --skin-live-tint:#C9F7D6; /* good news: a yes, a win */
+  --skin-live-wash:#E3FBEA; /* a won row */
+  --skin-live-deep:#0A7A33; /* a tick or an outline; glyphs only */
+  --skin-paper:#F2F0EA; /* bone: document paper */
+  --skin-paper-deep:#E8E4DA;
 }

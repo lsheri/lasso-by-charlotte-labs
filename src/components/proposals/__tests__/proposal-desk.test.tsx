@@ -407,13 +407,25 @@ describe("picking the lead", () => {
     expect(`${LEAD_COPY.agreed("x")} ${LEAD_COPY.intro}`).not.toMatch(/they get|will get|hears when/);
     expect(dialog.querySelectorAll("[data-message-example]")).toHaveLength(3);
     expect(within(dialog).getByText(MESSAGE_EXAMPLES_COPY.rcsState)).toBeTruthy();
-    const select = within(dialog).getByLabelText(LEAD_COPY.select);
-    fireEvent.change(select, { target: { value: "c2" } });
+    // 20 Nov (design review): the people are rows you can see, one choice at a time, each saying whether they agreed.
+    const people = within(dialog).getByRole("radiogroup", { name: LEAD_COPY.select });
+    const rows = within(people).getAllByRole("radio");
+    expect(rows).toHaveLength(roster.length);
+    expect(rows.every((row) => row.getAttribute("aria-checked") === "false")).toBe(true);
+    for (const person of roster) expect(within(people).getByText(person.name)).toBeTruthy();
+    const pick = (id: string) => fireEvent.click(people.querySelector(`[data-lead-person="${id}"]`) as HTMLElement);
+    pick("c2");
     expect(within(dialog).getByText(LEAD_COPY.notAgreed("Mina Okafor"))).toBeTruthy();
-    fireEvent.change(select, { target: { value: "c3" } });
+    pick("c3");
     expect(within(dialog).getByText(LEAD_COPY.unknown("Zoë D'Arcy-Núñez"))).toBeTruthy();
-    fireEvent.change(select, { target: { value: "c1" } });
+    pick("c1");
     expect(within(dialog).getByText(LEAD_COPY.agreed("Tom Reyes"))).toBeTruthy();
+    expect(within(people).getAllByRole("radio").filter((row) => row.getAttribute("aria-checked") === "true")).toHaveLength(1);
+    // Each example sits in the device it arrives on, with the product as the sender and its mark as the picture.
+    expect([...dialog.querySelectorAll("[data-message-device]")].map((d) => d.getAttribute("data-message-device"))).toEqual(["text", "email", "rcs"]);
+    expect(dialog.querySelectorAll("[data-message-sender-picture]")).toHaveLength(3);
+    expect(dialog.querySelector('[data-message-example="live"] [data-won-text-words]')?.textContent).toBe(WORDS);
+    expect(dialog.querySelectorAll("[data-message-device] button, [data-message-device] a")).toHaveLength(0);
     expect(dialog.textContent).not.toMatch(/\+?1?\d{10}/);
     fireEvent.click(save);
     fireEvent.click(save);
@@ -443,6 +455,13 @@ describe("picking the lead", () => {
     render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "gone" })])} roster={undefined} leadWords={WORDS} onLead={vi.fn()} />);
     expect(screen.getByText(LEAD_COPY.none)).toBeTruthy();
     expect(screen.getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
+    // QA L4: while the list loads or cannot be read, one plain line sits where the list would be.
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.change }));
+    const noList = await screen.findByTestId("pick-lead");
+    expect(within(noList).getByRole("status").textContent).toBe(LEAD_COPY.noList);
+    expect(noList.querySelector("[data-lead-people]")).toBeNull();
+    expect(within(noList).queryByText(LEAD_COPY.noPeople)).toBeNull();
+    expect((within(noList).getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
