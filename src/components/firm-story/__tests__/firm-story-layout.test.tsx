@@ -39,6 +39,7 @@ function layOut() {
   });
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
   Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+  Object.defineProperty(window, "scrollY", { configurable: true, get: () => page.scrollY });
   window.scrollBy = vi.fn((options?: ScrollToOptions | number) => {
     const by = typeof options === "object" ? (options.top ?? 0) : 0;
     page.scrollY = Math.max(0, Math.min(page.maxScroll, page.scrollY + by));
@@ -95,16 +96,21 @@ describe("the demo story keeps its target in sight", () => {
     expect(placement()).toBe("bottom-start");
   });
 
-  it("follows a block that loads late above the target, then stops lining up", async () => {
+  it("follows a block that loads late above the target, however late, until the person scrolls", async () => {
     await toBeatOne();
     await tick();
     page.askTop = 1100; // the proposals rows arrived and pushed it back under the card
     await tick();
     expect(page.scrollY).toBe(1088);
-    await tick(3000);
+    await tick(7000); // long after the page settled (QA second pass, finding A)
     page.askTop = 1700;
     await tick();
-    expect(page.scrollY).toBe(1088);
+    expect(page.scrollY).toBe(1688);
+    await tick(3000);
+    fireEvent.wheel(window);
+    page.askTop = 1900;
+    await tick(700);
+    expect(page.scrollY).toBe(1688);
   });
 
   it("stops moving the page once the person scrolls for themselves", async () => {

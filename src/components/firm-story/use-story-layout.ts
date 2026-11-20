@@ -52,6 +52,9 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
     let startedAt: number | null = null;
     let quietSince: number | null = null;
     let settled = false;
+    let personMoved = false;
+    // Where the target sits in the page itself. Scrolling does not change it; a block arriving above it does.
+    let restedAt: number | null = null;
 
     const apply = (next: Layout) => {
       if (current.current.placement === next.placement && current.current.top === next.top) return;
@@ -85,6 +88,13 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
         wide: viewport.width >= 768,
       };
       startedAt ??= now;
+      // The target itself moved after the page had settled (the proposals rows arrived late): line up again.
+      const inPage = target.top + window.scrollY;
+      if (settled && !personMoved && restedAt !== null && Math.abs(inPage - restedAt) > 4) {
+        settled = false;
+        quietSince = null;
+        startedAt = now;
+      }
       if (!settled) {
         const delta = storyScrollDelta(target, metrics);
         if (delta !== 0) {
@@ -93,6 +103,7 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
           quietSince = now;
         } else quietSince ??= now;
         if (now - quietSince >= QUIET_MS || now - startedAt >= SETTLE_CAP_MS) settled = true;
+        restedAt = target.top + window.scrollY;
       }
       apply({ placement: storyCardPlacement(target, metrics), top: storyCardTop(metrics) });
     };
@@ -100,9 +111,10 @@ export function useStoryLayout(anchor: string | null, beat: number | null, cardW
     // The person's own scrolling wins from the first touch.
     const moved = () => {
       settled = true;
+      personMoved = true;
     };
     const key = (event: KeyboardEvent) => {
-      if (MOVE_KEYS.has(event.key)) settled = true;
+      if (MOVE_KEYS.has(event.key)) moved();
     };
     const resized = () => {
       // The usual place changes with the screen: go back to it and measure again.
