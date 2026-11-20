@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { FIRM_ASK_COPY } from "../firm-ask-shared";
 import { FIRM_STORY_SCRIPT } from "../firm-story-script";
+import { FIRM_BRAIN_COPY, FIRM_VIEW_COPY } from "../role-screens-shared";
 import {
   KESTREL_BAY_ORG_ID,
   STORY_BEATS,
@@ -146,7 +147,9 @@ describe("which window plays which beat", () => {
 
   it("knows where each beat happens", () => {
     expect(placePath("home")).toBe("/home");
-    expect(placePath("firm")).toBe("/firm");
+    expect(placePath("firm")).toBe("/firm-brain");
+    expect(isAtPlace("firm", "/firm-brain")).toBe(true);
+    expect(isAtPlace("firm", "/firm")).toBe(false); // Firm view still has the map, but the menu row is Firm brain
     expect(placePath("board")).toMatch(/^\/engagements\/[0-9a-f-]{36}\/canvas-lab$/);
     expect(placePath(null)).toBeNull();
     expect(isAtPlace("home", "/home")).toBe(true);
@@ -264,6 +267,7 @@ describe("the words the story borrows from the product", () => {
     "Start a proposal": "src/lib/proposal-shared.ts",
     "Red pen": "src/lib/red-pen-shared.ts",
     "Share with firm": "src/lib/firm-share-copy.ts",
+    "Firm brain": "src/lib/role-screens-shared.ts",
   };
 
   it("takes the Ask the firm label from the product's own copy", () => {
@@ -284,6 +288,32 @@ describe("the words the story borrows from the product", () => {
     const listed = Object.keys(NAMED_CONTROLS);
     const unlisted = told.filter((label) => !listed.includes(label) && !["Share", "Then"].includes(label));
     expect(unlisted).toEqual([]);
+  });
+});
+
+describe("beat 2 matches the menu (20 Nov)", () => {
+  const beat2 = STORY_BEATS[2]!;
+
+  it("happens on Firm brain, says so, and offers the product's own way there", () => {
+    expect(beat2.place).toBe("firm");
+    expect(beat2.anchor).toBe("firm-brain-map");
+    expect(beat2.caption.startsWith(`${FIRM_BRAIN_COPY.title}:`)).toBe(true);
+    expect(FIRM_STORY_COPY.open.firm).toBe(FIRM_VIEW_COPY.openFirmBrain);
+    expect(FIRM_STORY_COPY.open.firm).toBe("Open Firm brain");
+  });
+
+  it("never sends anyone to Firm view or calls it by that name", () => {
+    const words = STORY_BEATS.flatMap((beat) => [beat.title, beat.caption, beat.notes, beat.question]).join(" ");
+    expect(words).not.toMatch(/firm view/i);
+    expect(Object.values(FIRM_STORY_COPY.open).join(" ")).not.toMatch(/firm view/i);
+  });
+
+  it("asks for the top of a phone screen on beat 2 only", () => {
+    expect(STORY_BEATS.filter((beat) => beat.phoneCardAtTop).map((beat) => beat.n)).toEqual([2]);
+  });
+
+  it("is a new version of the script", () => {
+    expect(FIRM_STORY_SCRIPT.version).toBe(2);
   });
 });
 

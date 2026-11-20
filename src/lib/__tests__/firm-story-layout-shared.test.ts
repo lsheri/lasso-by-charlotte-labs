@@ -25,6 +25,14 @@ describe("where the story card sits", () => {
     expect(storyCardPlacement({ top: 150, left: 314, width: 1070, height: 900 }, laptop)).toBe("bottom-start");
   });
 
+  it("goes to the top on a phone when the beat asks for it, and ignores the ask on a wide screen", () => {
+    const map = { top: 205, left: 16, width: 358, height: 1400 };
+    expect(storyCardPlacement(map, phone)).toBe("bottom-start");
+    expect(storyCardPlacement(map, phone, true)).toBe("top-start");
+    expect(storyCardPlacement({ top: 150, left: 314, width: 1070, height: 900 }, laptop, true)).toBe("bottom-start");
+    expect(storyCardPlacement(null, phone, true)).toBe("bottom-start");
+  });
+
   it("only counts the part of the target that is on screen", () => {
     expect(storyCardPlacement({ top: 880, left: 338, width: 1022, height: 300 }, { ...laptop, bottomOffset: 30 })).toBe("bottom-start");
   });

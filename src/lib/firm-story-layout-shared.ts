@@ -58,9 +58,14 @@ function seen(target: StoryRect, metrics: StoryLayoutMetrics): StoryRect {
   return { top, left: target.left, width: target.width, height: Math.max(0, bottom - top) };
 }
 
-/** The card's place for this target: its usual place unless that covers the target and another corner covers none. */
-export function storyCardPlacement(target: StoryRect | null, metrics: StoryLayoutMetrics): StoryPlacement {
+/**
+ * The card's place for this target: its usual place unless that covers the target and another corner covers none.
+ * A beat can ask for the top on a phone (`phoneTop`): the firm map is taller than the screen, so no place clears it,
+ * and its threads are drawn below the ask box, where the card at the bottom would sit.
+ */
+export function storyCardPlacement(target: StoryRect | null, metrics: StoryLayoutMetrics, phoneTop = false): StoryPlacement {
   if (!target) return STORY_DEFAULT_PLACEMENT;
+  if (phoneTop && !metrics.wide) return "top-start";
   const visible = seen(target, metrics);
   if (overlap(visible, storyPlacementRect(STORY_DEFAULT_PLACEMENT, metrics)) === 0) return STORY_DEFAULT_PLACEMENT;
   const others: StoryPlacement[] = metrics.wide ? ["bottom-end", "top-end", "top-start"] : ["top-start"];

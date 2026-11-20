@@ -135,9 +135,9 @@ describe("the Partner's window", () => {
     next();
     expect(m.navigate).not.toHaveBeenCalled(); // beat 1 is on Home, where the person already is
     next();
-    expect(m.navigate).toHaveBeenLastCalledWith({ to: "/firm" });
-    expect(screen.getByRole("button", { name: "Open the firm view" })).toBeTruthy(); // the mocked path is still /home
-    fireEvent.click(screen.getByRole("button", { name: "Open the firm view" }));
+    expect(m.navigate).toHaveBeenLastCalledWith({ to: "/firm-brain" });
+    expect(screen.getByRole("button", { name: "Open Firm brain" })).toBeTruthy(); // the mocked path is still /home
+    fireEvent.click(screen.getByRole("button", { name: "Open Firm brain" }));
     expect(m.navigate).toHaveBeenCalledTimes(2);
   });
 
