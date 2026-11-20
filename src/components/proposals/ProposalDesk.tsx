@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { tagVariants } from "@/components/ui/tag";
+// Kept apart from the other proposal imports so open redraw PRs that add imports above merge cleanly.
+import { WinPicture } from "@/components/proposals/WinPicture";
 import type { AskPreview, AskResult, PracticeReplyResult, Reply } from "@/lib/lead-ask-shared";
 import {
   CLOSE_COPY,
@@ -185,7 +187,7 @@ function CloseDialog({
 }
 
 /** Says what recording the win does before it happens, then does it once. */
-function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null; onClose: () => void; onWin: (proposalId: string) => Promise<WinResult> }) {
+export function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null; onClose: () => void; onWin: (proposalId: string) => Promise<WinResult> }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   async function confirm() {
@@ -216,8 +218,7 @@ function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null
           <DialogTitle className="page-title">{WIN_COPY.title}</DialogTitle>
           <DialogDescription className="break-words [overflow-wrap:anywhere]">{proposal ? `${proposal.clientName ? `${proposal.clientName}: ` : ""}${proposal.title}` : ""}</DialogDescription>
         </DialogHeader>
-        <p className="text-sm text-foreground">{WIN_COPY.body(proposal?.contextCount ?? 0)}</p>
-        <p className="text-sm text-muted-foreground">{WIN_COPY.sharing}</p>
+        <WinPicture count={proposal?.contextCount ?? 0} titles={proposal?.contextTitles} />
         {problem ? (
           <p role="alert" className="text-sm text-destructive">
             {problem}
