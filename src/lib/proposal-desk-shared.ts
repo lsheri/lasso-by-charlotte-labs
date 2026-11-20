@@ -49,7 +49,8 @@ export const GOAL_COPY = {
 
 export const SENT_COPY = {
   mark: "Mark as sent",
-  undo: "Not sent yet",
+  /** Takes "sent" back. Says what the press does, so it cannot be read as the proposal's state. */
+  undo: "Undo sent",
   working: "Saving",
   failed: "That could not be saved. Nothing changed. Try again in a moment.",
   notYours: "Only the person who started this proposal, an admin or a lead can change it.",
@@ -66,6 +67,8 @@ export const LEAD_COPY = {
   intro: "Choose who leads this proposal from People we work with. Picking a lead sends nothing.",
   select: "Choose a person",
   noPeople: "Nobody is on the list yet. Add people under the People tab first.",
+  /** The list has not arrived: still loading, or it could not be read. One line, where the list would be. */
+  noList: "The list of people is not here yet. If it stays empty, close this and try again.",
   agreed: (name: string) => `${name} has agreed to texts.`,
   notAgreed: (name: string) => `${name} has not agreed to texts. Copy their link under the People tab and send it to them.`,
   unknown: (name: string) => `We could not check whether ${name} agreed to texts.`,

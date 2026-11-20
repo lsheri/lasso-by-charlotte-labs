@@ -27,6 +27,8 @@ export const MESSAGE_EXAMPLES_COPY = {
   heading: "How the lead hears",
   text: "Text",
   textState: "Sent today",
+  /** Texting is not switched on in this workspace: the text is a picture too, and nothing may say it is sent. */
+  textOffState: "Example",
   email: "Email",
   emailState: "Later",
   rcs: "RCS",
@@ -40,6 +42,7 @@ export const MESSAGE_EXAMPLES_COPY = {
   rcsYes: "Open the team board",
   rcsNo: "Not now",
   note: "Email and RCS are examples of what is coming. Only the text is sent.",
+  noteOff: "All three are examples of what the lead would see.",
 } as const;
 
 export const WON_TEXT_COPY = {

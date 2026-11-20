@@ -1402,7 +1402,14 @@ body:has(.lasso-decisions-ledger) .canvas-lab-undo-toast { position: fixed; z-in
   [data-lasso="on"] .canvas-lab-floating-tools button[data-toolbar-control="add-work"] { width: 36px; min-width: 36px; padding: 0; }
   .canvas-lab-add-work-label { display: none; }
   [data-lasso="on"] .canvas-lab-floating-tools > div:has(> button.md\:hidden) { display: flex; }
-  [data-lasso="on"] .canvas-lab-board-status { top: 82px; }
+  /* A phone has no spare room at the top: the first card starts under the toolbar. The status column runs the height
+     of the board and lets touches through, save alerts stay under the bar, and the win strip sits at the foot.
+     Only the two things with something to press take touches, and they are named: the offline alert keeps its own
+     pointer-events: none, so a touch on it reaches the card beneath (it sits over the first card). */
+  [data-lasso="on"] .canvas-lab-board-status { top: 82px; bottom: 16px; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+  [data-lasso="on"] .canvas-lab-board-status > .canvas-lab-banner, [data-lasso="on"] .canvas-lab-board-status > [data-board-win] { pointer-events: auto; }
+  /* The strip comes before the save alerts in the page; here it is drawn last, so an alert never drops to the foot. */
+  [data-lasso="on"] .canvas-lab-board-status > [data-board-win] { margin-top: auto; order: 1; }
 }
 @media (prefers-reduced-motion: reduce) { [data-lasso="on"] .canvas-lab-floating-tools button { transition: none; } }
 
@@ -1748,3 +1755,22 @@ button.lift-trail-item:hover, button.lift-trail-item:focus-visible { background:
 @keyframes lift-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lift-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .lift-backdrop, .lift-layer[data-closing="true"] .lift-backdrop { animation: none; } .lift-panel, .lift-panel > .lift-head, .lift-panel > .lift-main { transition: none; } }
+
+/* 20 Nov 2026 (design review, D-74): inside the app, a small label is plain Archivo in sentence case. Mono capitals
+   are for numbers and times only. Scoped to the app shell and its overlays, so the public pages keep their voice.
+   Size is left alone so a label that sets its own size keeps it. */
+[data-lasso="on"] .micro-label,
+body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]) .micro-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* 20 Nov 2026 (design review, D-74): a page title in the app is Archivo, bold. One reading family; the second sans
+   (Instrument Sans) leaves titles first. */
+[data-lasso="on"] .page-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}

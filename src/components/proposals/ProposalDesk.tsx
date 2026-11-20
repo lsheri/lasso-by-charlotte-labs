@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { AskDialog, AskLine } from "@/components/proposals/AskLead";
-import { LeadDialog, LeadLine } from "@/components/proposals/LeadPicker";
+import { LeadDialog } from "@/components/proposals/LeadPicker";
+import { LeadSheet, type LeadSheetStart } from "@/components/proposals/LeadSheet";
+import { ProposalRow } from "@/components/proposals/ProposalRow";
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,7 +62,8 @@ export function ProposalDesk({
   /** Asking the lead by text: the words before a press, the press, and a practice answer. Admins and leads only. */
   ask?:
     | {
-        preview: (proposalId: string) => Promise<AskPreview>;
+        /** The words for the saved lead, or for a person picked on the sheet and not saved yet. Reads only. */
+        preview: (proposalId: string, contactId?: string) => Promise<AskPreview>;
         send: (proposalId: string, pressId: string) => Promise<AskResult>;
         practiceReply: (proposalId: string, reply: Reply) => Promise<PracticeReplyResult>;
       }
@@ -69,7 +71,8 @@ export function ProposalDesk({
   /** Closes an open proposal as lost, or archives one made by mistake. */
   onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
 }) {
-  const [asking, setAsking] = useState<DeskProposal | null>(null);
+  // With asking available, picking and asking are one sheet; it opens on the list, or on the confirm for a saved lead.
+  const [sheet, setSheet] = useState<{ proposal: DeskProposal; start: LeadSheetStart } | null>(null);
   const [closing, setClosing] = useState<{ proposal: DeskProposal; change: "lost" | "archived" } | null>(null);
   const [leading, setLeading] = useState<DeskProposal | null>(null);
   const picks = Boolean(data.canPickLead && onLead);
@@ -109,16 +112,18 @@ export function ProposalDesk({
         <ul className="divide-y divide-border border-y border-border">
           {rows.map((proposal) => (
             <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
-              lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => setLeading(proposal) } : undefined}
-              ask={picks && ask ? { onAsk: () => setAsking(proposal), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
+              lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => (ask ? setSheet({ proposal, start: "pick" }) : setLeading(proposal)) } : undefined}
+              ask={picks && ask ? { onAsk: () => setSheet({ proposal, start: "confirm" }), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
               onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
             />
           ))}
         </ul>
       )}
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
-      {picks && onLead ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
-      {picks && ask ? <AskDialog proposal={asking} load={ask.preview} send={ask.send} onClose={() => setAsking(null)} /> : null}
+      {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
+      {picks && ask && onLead ? (
+        <LeadSheet target={sheet} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => setSheet(null)} />
+      ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>
   );
@@ -233,137 +238,5 @@ function WinDialog({ proposal, onClose, onWin }: { proposal: DeskProposal | null
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ProposalRow({
-  proposal,
-  goalHours,
-  now,
-  onSent,
-  onWin,
-  lead,
-  ask,
-  onClose,
-}: {
-  proposal: DeskProposal;
-  goalHours: number;
-  now?: Date | undefined;
-  onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
-  onWin?: (() => void) | undefined;
-  lead?: { person: RosterContact | undefined; onPick: () => void } | undefined;
-  ask?: { onAsk: () => void; onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult> } | undefined;
-  onClose?: ((change: "lost" | "archived") => void) | undefined;
-}) {
-  const [working, setWorking] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
-  async function press(sent: boolean) {
-    if (!onSent || working) return;
-    setWorking(true);
-    setProblem(null);
-    try {
-      const result = await onSent(proposal.id, sent);
-      if (!result.ok) setProblem(result.problem);
-    } catch {
-      setProblem(SENT_COPY.failed);
-    } finally {
-      setWorking(false);
-    }
-  }
-  const left = timeLeft({ receivedAt: proposal.receivedAt, sentAt: proposal.sentAt, goalHours, now });
-  const titles = proposal.contextTitles ?? [];
-  return (
-    <li data-proposal-row={proposal.id} className="flex flex-col gap-1 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-      <div className="min-w-0">
-        <p data-proposal-title className="break-words text-(length:--type-body) font-medium text-foreground [overflow-wrap:anywhere]">
-          {proposal.clientName ? <span>{proposal.clientName}: </span> : null}
-          {proposal.title}
-        </p>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-          {proposal.mine ? <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span> : proposal.ownerName ? <span>{DESK_COPY.owner(proposal.ownerName)}</span> : null}
-          {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
-          {proposal.status === "open" || proposal.contextCount > 0 ? <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span> : null}
-        </p>
-        {lead && proposal.status === "open" ? <LeadLine lead={lead.person} picked={Boolean(proposal.leadContactId)} onPick={lead.onPick} /> : null}
-        {/* The person who started it sees who the lead is, without the roster or the pick. */}
-        {!lead && proposal.status === "open" && proposal.leadName ? (
-          <p data-proposal-lead className="mt-1 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {LEAD_COPY.lead(proposal.leadName)}
-          </p>
-        ) : null}
-        {proposal.status === "open" ? <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} /> : null}
-        {titles.length > 0 ? (
-          <ul className="mt-1 text-sm text-muted-foreground" data-proposal-context-titles>
-            {titles.map((title, index) => (
-              <li key={`${index}-${title}`} className="break-words [overflow-wrap:anywhere]">
-                {title}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-      <div className="shrink-0 text-sm sm:text-right">
-        {proposal.status === "open" ? (
-          <>
-            <p data-proposal-clock={left.state} className={cn(left.state === "over" ? "text-destructive" : "text-foreground")}>
-              {timeLeftLine(left, goalHours)}
-            </p>
-            {onSent && proposal.canAct ? (
-              <button
-                type="button"
-                className="mt-1 text-muted-foreground underline hover:text-foreground disabled:opacity-50"
-                disabled={working}
-                onClick={() => void press(!proposal.sentAt)}
-              >
-                {working ? SENT_COPY.working : proposal.sentAt ? SENT_COPY.undo : SENT_COPY.mark}
-              </button>
-            ) : null}
-            {problem ? (
-              <p role="alert" className="mt-1 text-destructive">
-                {problem}
-              </p>
-            ) : null}
-            {onWin && proposal.mine ? (
-              <div className="mt-2">
-                <Button type="button" variant="outline" size="sm" onClick={onWin}>
-                  {WIN_COPY.record}
-                </Button>
-              </div>
-            ) : null}
-            {onClose && (proposal.canClose || proposal.canArchive) ? (
-              <p data-proposal-close className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground sm:justify-end">
-                {proposal.canClose ? (
-                  <button type="button" className="underline hover:text-foreground" onClick={() => onClose("lost")}>
-                    {CLOSE_COPY.lost}
-                  </button>
-                ) : null}
-                {proposal.canArchive ? (
-                  <button type="button" className="underline hover:text-foreground" onClick={() => onClose("archived")}>
-                    {CLOSE_COPY.archive}
-                  </button>
-                ) : null}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <p className="text-foreground">{proposal.status === "won" ? DESK_COPY.wonOn(deskDate(proposal.decidedAt, now)) : DESK_COPY.lostOn(deskDate(proposal.decidedAt, now))}</p>
-            {/* The board is the owner's; nobody else is on it until they are added there. */}
-            {onClose && proposal.canArchive ? (
-              <p className="mt-1">
-                <button type="button" className="text-muted-foreground underline hover:text-foreground" onClick={() => onClose("archived")}>
-                  {CLOSE_COPY.archive}
-                </button>
-              </p>
-            ) : null}
-            {proposal.engagementId && proposal.mine ? (
-              <Link to="/engagements/$id/canvas-lab" params={{ id: proposal.engagementId }} className="mt-1 inline-block underline">
-                {DESK_COPY.openBoard}
-              </Link>
-            ) : null}
-          </>
-        )}
-      </div>
-    </li>
   );
 }
