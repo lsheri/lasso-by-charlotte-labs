@@ -1,5 +1,5 @@
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,18 @@ import {
   type RosterSaveResult,
 } from "@/lib/roster-shared";
 import { askNewNumberFn, listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
+import { ExperienceDialog, type ExperienceActions } from "@/components/roster/ExperienceDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { EXPERIENCE_BUCKET, EXPERIENCE_COPY, experienceLine, type ExperienceSummary } from "@/lib/roster-experience-shared";
+import {
+  finishExperienceUploadFn,
+  listExperienceFn,
+  openExperienceFileFn,
+  readExperienceFn,
+  removeExperienceFileFn,
+  saveExperienceBlurbFn,
+  startExperienceUploadFn,
+} from "@/lib/roster-experience.functions";
 
 /**
  * 19 Nov 2026, Proposal Desk: the roster, "People we work with". People a firm brings in on proposals who have no
@@ -45,14 +57,37 @@ export function RosterPanel({ profileId }: { profileId: string | null | undefine
   const load = useServerFn(listRosterFn);
   const save = useServerFn(saveRosterContactFn);
   const askNewNumber = useServerFn(askNewNumberFn);
+  const listExperience = useServerFn(listExperienceFn);
+  const readExperience = useServerFn(readExperienceFn);
+  const saveBlurb = useServerFn(saveExperienceBlurbFn);
+  const startUpload = useServerFn(startExperienceUploadFn);
+  const finishUpload = useServerFn(finishExperienceUploadFn);
+  const removeFile = useServerFn(removeExperienceFileFn);
+  const openFile = useServerFn(openExperienceFileFn);
+  const id = profileId ?? null;
+  // One object for the dialog's effect to depend on, so it does not reload on every render.
+  const actions = useMemo<ExperienceActions>(
+    () => ({
+      load: (contactId) => readExperience({ data: { profile_id: id, contact_id: contactId } }),
+      saveBlurb: (contactId, blurb) => saveBlurb({ data: { profile_id: id, contact_id: contactId, blurb } }),
+      start: (contactId, file) => startUpload({ data: { profile_id: id, contact_id: contactId, ...file } }),
+      // The one-time address the server made: the file goes straight to the private bucket, under the path it chose.
+      upload: async (path, token, file) => !(await supabase.storage.from(EXPERIENCE_BUCKET).uploadToSignedUrl(path, token, file, file.type ? { contentType: file.type } : {})).error,
+      finish: (contactId, file) => finishUpload({ data: { profile_id: id, contact_id: contactId, ...file } }),
+      remove: (contactId, fileId) => removeFile({ data: { profile_id: id, contact_id: contactId, file_id: fileId } }),
+      open: (contactId, fileId) => openFile({ data: { profile_id: id, contact_id: contactId, file_id: fileId } }),
+    }),
+    [id, readExperience, saveBlurb, startUpload, finishUpload, removeFile, openFile],
+  );
   return (
     <RosterView
-      profileId={profileId ?? null}
-      load={(id) => load({ data: { profile_id: id } })}
+      profileId={id}
+      load={(pid) => load({ data: { profile_id: pid } })}
       save={(input) => save({ data: input })}
-      askNewNumber={(id, contactId) => askNewNumber({ data: { profile_id: id, id: contactId } })}
+      askNewNumber={(pid, contactId) => askNewNumber({ data: { profile_id: pid, id: contactId } })}
       copyText={(text) => navigator.clipboard.writeText(text)}
       origin={typeof window === "undefined" ? "" : window.location.origin}
+      experience={{ summaries: (pid) => listExperience({ data: { profile_id: pid } }), actions }}
     />
   );
 }
@@ -66,6 +101,8 @@ export type RosterViewProps = {
   copyText: (text: string) => Promise<void>;
   /** The site's address, put in front of each person's link. */
   origin: string;
+  /** 20 Nov 2026 (D-86): experience on a person. Left out, the rows show none and offer no Experience button. */
+  experience?: { summaries: (profileId: string | null) => Promise<Record<string, ExperienceSummary>>; actions: ExperienceActions } | undefined;
 };
 
 type Loaded =
@@ -87,6 +124,7 @@ export function RosterView({
   askNewNumber,
   copyText,
   origin,
+  experience,
 }: RosterViewProps) {
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
   const [editing, setEditing] = useState<Editing>(null);
@@ -94,6 +132,9 @@ export function RosterView({
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [summaries, setSummaries] = useState<Record<string, ExperienceSummary>>({});
+  const [experienceFor, setExperienceFor] = useState<{ id: string; name: string } | null>(null);
+  const [experienceRound, setExperienceRound] = useState(0);
   const live = useRef(true);
   useEffect(() => {
     live.current = true;
@@ -128,6 +169,20 @@ export function RosterView({
     // `load` is a new function each render; the profile and the retry count are what a reload depends on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, attempt]);
+
+  // Experience lines load beside the list. A failed read shows no lines; it never blocks the list.
+  useEffect(() => {
+    if (!experience) return;
+    let current = true;
+    experience
+      .summaries(profileId)
+      .then((found) => current && setSummaries(found ?? {}))
+      .catch(() => current && setSummaries({}));
+    return () => {
+      current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId, attempt, experienceRound]);
 
   const put = useCallback((contact: RosterContact) => {
     setLoaded((now) =>
@@ -315,6 +370,12 @@ export function RosterView({
                       ) : null}
                     </p>
                   ) : null}
+                  {experience ? (
+                    <p data-roster-experience className="ph-no-capture mt-1 text-sm break-words text-muted-foreground [overflow-wrap:anywhere]">
+                      {summaries[contact.id]?.blurb ? EXPERIENCE_COPY.line(experienceLine(summaries[contact.id])) : experienceLine(null)}
+                      {summaries[contact.id]?.documents ? ` · ${EXPERIENCE_COPY.documents(summaries[contact.id]?.documents ?? 0)}` : null}
+                    </p>
+                  ) : null}
                   <p className="mt-2 flex flex-wrap items-center gap-2">
                     {contact.needsDetails ? (
                       <span className={tagVariants({ tone: "neutral" })}>{COPY.needsDetails}</span>
@@ -378,6 +439,17 @@ export function RosterView({
                   >
                     {COPY.edit}
                   </Button>
+                  {experience ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={EXPERIENCE_COPY.buttonLabel(contact.name)}
+                      onClick={() => setExperienceFor({ id: contact.id, name: contact.name })}
+                    >
+                      {EXPERIENCE_COPY.button}
+                    </Button>
+                  ) : null}
                 </div>
               </div>
               {note?.id === contact.id ? (
@@ -403,6 +475,9 @@ export function RosterView({
         </ul>
       ) : null}
 
+      {experience ? (
+        <ExperienceDialog person={experienceFor} actions={experience.actions} onClose={() => setExperienceFor(null)} onChanged={() => setExperienceRound((n) => n + 1)} />
+      ) : null}
       {editing ? (
         <RosterDialog
           key={editing.contact?.id ?? "new"}
