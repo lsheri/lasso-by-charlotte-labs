@@ -7,7 +7,13 @@
  * Nothing here reads a fee, a person's words or anything about a person. Question words never go to analytics.
  */
 
-import { canAskTheFirm } from "./firm-ask-shared";
+import {
+  canAskTheFirm,
+  FIRM_ASK_QUESTION_MAX,
+  FIRM_ASK_STARTER_COPY,
+  startersFor,
+  type FirmAskStarter,
+} from "./firm-ask-shared";
 
 /** Shut (the pill), open (the helper panel) and full (a full screen chat). A drag moves through them in this order. */
 export const PILL_MODES = ["shut", "open", "full"] as const;
@@ -229,8 +235,12 @@ export const PILL_COPY = {
   send: "Ask",
   footer: "Question words never go to analytics.",
   /** Said in the chat as the question goes to the Firm brain canvas. */
-  toCanvas:
-    "Looking across the past work shared with the firm. The answer opens on the Firm brain canvas, beside the engagements it came from.",
+  /** Said above an answer as it builds. */
+  looking:
+    "Looking across the past work shared with the firm. Each line links to the engagement it came from.",
+  openOnCanvas: "Open on the canvas",
+  /** The toast as an answer lands on the canvas (the prototype's words). */
+  movedToCorner: "We moved the chat to the corner so you can see the threads.",
   tooShort: "Ask a little more, so there is something to look for.",
   failed: "That did not go through. Nothing was asked. Try again in a moment.",
 } as const;
@@ -240,4 +250,27 @@ export function pillQuestion(text: string, max: number): string | null {
   const clean = text.replace(/\s+/g, " ").trim();
   if (clean.length < 3) return null;
   return clean.slice(0, max);
+}
+
+/** How long a card flies, by distance: the prototype's 600 to 1200ms, a little longer the further it goes. */
+export function flightMs(distancePx: number): number {
+  return clamp(Math.abs(distancePx) / 0.85, 600, 1200);
+}
+
+export type PillStarter = { text: string; starter: FirmAskStarter };
+
+/**
+ * The pill's starters: Ask the firm's own starters for this role ("What we charged" for admins and leads only), made
+ * from the person's latest board, each carrying its starter key (QA L4 of PR 290). None without a board.
+ */
+export function pillStarters(
+  role: string | null | undefined,
+  recentBoard: string | null | undefined,
+): PillStarter[] {
+  const board = (recentBoard ?? "").trim();
+  if (!board) return [];
+  return startersFor(role).map((starter) => ({
+    text: `${FIRM_ASK_STARTER_COPY[starter].stem}${board}?`.slice(0, FIRM_ASK_QUESTION_MAX),
+    starter,
+  }));
 }

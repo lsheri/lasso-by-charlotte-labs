@@ -50,6 +50,7 @@ export function CanvasAnswerCard({
   onRetry,
   onMeasured,
   onBuilt,
+  inline = false,
 }: {
   answer: CanvasAnswer;
   focused: boolean;
@@ -60,6 +61,11 @@ export function CanvasAnswerCard({
   onRetry: (answer: CanvasAnswer) => void;
   onMeasured: (id: string, height: number, lineCentres: number[]) => void;
   onBuilt: (id: string) => void;
+  /**
+   * 20 Nov 2026, chat pill PR 1b (D-97): the same card inside the chat ("chat and canvas share it"). In flow rather than
+   * placed on the map, full width, and marked with the answer's status once it is in, as Home's in-place answer was.
+   */
+  inline?: boolean;
 }) {
   const card = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -111,7 +117,8 @@ export function CanvasAnswerCard({
       ? FIRM_ASK_COPY.pending
       : pendingCaption(elapsed)
     : answer.status === "failed"
-      ? FIRM_CANVAS_COPY.failed
+      ? // QA L1 of PR 290: the failure is said once, in the line with Try again under it, not again in the caption.
+        FIRM_CANVAS_COPY.notRead
       : revealing
         ? FIRM_CANVAS_COPY.writing
         : result?.status === "answered"
@@ -121,18 +128,20 @@ export function CanvasAnswerCard({
   return (
     <div
       ref={card}
-      data-testid="canvas-answer"
+      data-testid={inline ? "chat-answer" : "canvas-answer"}
       data-answer-status={answer.status}
+      data-firm-answer={inline && result && !pending && !revealing ? result.status : undefined}
       data-canvas-no-pan=""
       className={cn(
-        "fc-answer ph-no-autocapture absolute flex flex-col gap-3 rounded-[var(--radius-card)] border bg-card p-4 shadow-card",
+        "fc-answer ph-no-autocapture flex flex-col gap-3 rounded-[var(--radius-card)] border bg-card p-4",
+        inline ? "relative w-full" : "absolute shadow-card",
         focused ? "border-(--live-edge)" : "border-border",
         dimmed && "opacity-70",
         pending && "fc-building",
         done && "fc-done",
       )}
       data-ph-no-autocapture=""
-      style={{ left: answer.x, top: answer.y, width: CANVAS_SIZES.answerW }}
+      style={inline ? undefined : { left: answer.x, top: answer.y, width: CANVAS_SIZES.answerW }}
     >
       <span aria-hidden className="fc-scan" />
       <span aria-hidden className="fc-sweep" />

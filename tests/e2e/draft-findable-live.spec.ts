@@ -51,8 +51,11 @@ async function ask(page: Page, question: string): Promise<Answer> {
   await page.goto("/home", { waitUntil: "domcontentloaded" });
   const box = page.getByTestId("ask-the-firm");
   await box.waitFor({ timeout: 30_000 });
+  // 20 Nov 2026 (D-97): Ask the firm is the chat pill, on every page. Open it first; the answer builds in the chat.
+  if ((await box.getAttribute("data-mode")) === "shut") await box.getByRole("button", { name: /^Open the .+ helper$/ }).click();
+  await box.getByLabel("Question for the firm").waitFor({ state: "visible", timeout: 10_000 });
   await box.getByLabel("Question for the firm").fill(question);
-  await box.getByRole("button", { name: "Ask" }).click();
+  await box.getByRole("button", { name: "Ask", exact: true }).click();
   const answer = box.locator("[data-firm-answer]");
   await answer.waitFor({ timeout: 120_000 });
   const status = (await answer.getAttribute("data-firm-answer")) ?? "";

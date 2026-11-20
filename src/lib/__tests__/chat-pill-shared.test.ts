@@ -240,3 +240,26 @@ describe("the demo story and the pill", () => {
     );
   });
 });
+
+describe("QA of PR 290", () => {
+  it("starters carry their key, and What we charged is for admins and leads only", async () => {
+    const { pillStarters } = await import("@/lib/chat-pill-shared");
+    expect(pillStarters("em", "Marrowfield").map((s) => s.starter)).toEqual([
+      "similar",
+      "went_wrong",
+    ]);
+    expect(pillStarters("admin", "Marrowfield").map((s) => s.starter)).toContain("charged");
+    expect(pillStarters("lead", "Marrowfield")[0]).toEqual({
+      text: "Which past engagements are most like Marrowfield?",
+      starter: "similar",
+    });
+    expect(pillStarters("admin", "  ")).toEqual([]);
+  });
+
+  it("a card flies for 600 to 1200ms, by distance", async () => {
+    const { flightMs } = await import("@/lib/chat-pill-shared");
+    expect(flightMs(0)).toBe(600);
+    expect(flightMs(850)).toBe(1000);
+    expect(flightMs(5000)).toBe(1200);
+  });
+});

@@ -151,7 +151,7 @@ describe("who sees the map", () => {
   it("shows to a firm member, with Ask the firm beside it", async () => {
     wrap(<FirmBrainMap profile={member} />);
     expect(screen.getByTestId("firm-brain-map")).toBeTruthy();
-    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+    expect(screen.getByTestId("firm-view-ask")).toBeTruthy();
     await waitFor(() => expect(m.getMap).toHaveBeenCalledWith({ data: { profile_id: "p1" } }));
   });
 
@@ -171,7 +171,7 @@ describe("who sees the map", () => {
     m.getMap.mockRejectedValue(new Response("Forbidden", { status: 403 }));
     wrap(<FirmBrainMap profile={member} />);
     await waitFor(() => expect(screen.queryByTestId("firm-brain-map")).toBeNull());
-    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+    expect(screen.getByTestId("firm-view-ask")).toBeTruthy();
   });
 });
 
@@ -253,7 +253,7 @@ describe("without WebGL, or before the 3D map loads", () => {
         screen.getByText("The map could not be loaded. Ask the firm still works."),
       ).toBeTruthy(),
     );
-    expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
+    expect(screen.getByTestId("firm-view-ask")).toBeTruthy();
   });
 
   it("says so plainly when nothing is shared yet", async () => {
