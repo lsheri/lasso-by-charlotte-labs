@@ -510,10 +510,15 @@ describe("past work beside each name (Q-68)", () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]?.closest("[data-lead-person]")?.getAttribute("data-lead-person")).toBe("c2");
     expect(lines[0]?.textContent).toBe(
-      `${SHEET_COPY.ledBefore} Client A, Review; Client B, Review; Client C, Review`,
+      `${SHEET_COPY.ledBefore} Client A; Client B`,
     );
-    expect(PAST_WORK_SHOWN).toBe(3);
+    // D-86, few words: client names only, two at most.
+    expect(PAST_WORK_SHOWN).toBe(2);
     expect(lines[0]?.textContent).not.toMatch(/\d|best|match|top|score|rank|%/i);
+    // D-86 (Liam): beside a person with none, a few plain words instead of a blank.
+    const none = sheet().querySelector('[data-lead-person="c1"] [data-no-past]');
+    expect(none?.textContent).toBe(SHEET_COPY.noPast);
+    expect(sheet().querySelector('[data-lead-person="c2"] [data-no-past]')).toBeNull();
     // The list keeps its ordinary order: the person with past work is not moved up.
     expect(
       [...sheet().querySelectorAll("[data-lead-person]")].map((row) =>
