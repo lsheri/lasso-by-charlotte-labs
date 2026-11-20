@@ -174,6 +174,7 @@ export function ProposalsPage() {
         clients={clients.data}
         clientsLoading={clients.isLoading}
         canAddClient={desk.data?.canAddClient ?? false}
+        clientsOff={desk.data?.clientsOff ?? false}
         profileId={profileId}
         capture={(files) => captureWithResult(files, { channel: "upload" })}
         discard={async (ids) => {

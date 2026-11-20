@@ -74,6 +74,7 @@ import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
 import { Route as AuthenticatedFounderCostsRouteImport } from './routes/_authenticated/founder.costs'
+import { Route as AuthenticatedFounderPilotsRouteImport } from './routes/_authenticated/founder.pilots'
 import { Route as AuthenticatedQaSeedRouteImport } from './routes/_authenticated/qa.seed'
 import { Route as AuthenticatedSharedBoardIdRouteImport } from './routes/_authenticated/shared.$boardId'
 import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.stream'
@@ -424,6 +425,12 @@ const AuthenticatedFounderCostsRoute =
     path: '/founder/costs',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFounderPilotsRoute =
+  AuthenticatedFounderPilotsRouteImport.update({
+    id: '/founder/pilots',
+    path: '/founder/pilots',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedQaSeedRoute = AuthenticatedQaSeedRouteImport.update({
   id: '/qa/seed',
   path: '/qa/seed',
@@ -570,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/founder/costs': typeof AuthenticatedFounderCostsRoute
+  '/founder/pilots': typeof AuthenticatedFounderPilotsRoute
   '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/shared/$boardId': typeof AuthenticatedSharedBoardIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -651,6 +659,7 @@ export interface FileRoutesByTo {
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/founder/costs': typeof AuthenticatedFounderCostsRoute
+  '/founder/pilots': typeof AuthenticatedFounderPilotsRoute
   '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/shared/$boardId': typeof AuthenticatedSharedBoardIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -734,6 +743,7 @@ export interface FileRoutesById {
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/_authenticated/founder/costs': typeof AuthenticatedFounderCostsRoute
+  '/_authenticated/founder/pilots': typeof AuthenticatedFounderPilotsRoute
   '/_authenticated/qa/seed': typeof AuthenticatedQaSeedRoute
   '/_authenticated/shared/$boardId': typeof AuthenticatedSharedBoardIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -817,6 +827,7 @@ export interface FileRouteTypes {
     | '/design/icons'
     | '/engagements/$id'
     | '/founder/costs'
+    | '/founder/pilots'
     | '/qa/seed'
     | '/shared/$boardId'
     | '/api/analysis/stream'
@@ -898,6 +909,7 @@ export interface FileRouteTypes {
     | '/design/icons'
     | '/engagements/$id'
     | '/founder/costs'
+    | '/founder/pilots'
     | '/qa/seed'
     | '/shared/$boardId'
     | '/api/analysis/stream'
@@ -980,6 +992,7 @@ export interface FileRouteTypes {
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
     | '/_authenticated/founder/costs'
+    | '/_authenticated/founder/pilots'
     | '/_authenticated/qa/seed'
     | '/_authenticated/shared/$boardId'
     | '/api/analysis/stream'
@@ -1502,6 +1515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFounderCostsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/founder/pilots': {
+      id: '/_authenticated/founder/pilots'
+      path: '/founder/pilots'
+      fullPath: '/founder/pilots'
+      preLoaderRoute: typeof AuthenticatedFounderPilotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/qa/seed': {
       id: '/_authenticated/qa/seed'
       path: '/qa/seed'
@@ -1640,6 +1660,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDesignIconsRoute: typeof AuthenticatedDesignIconsRoute
   AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
   AuthenticatedFounderCostsRoute: typeof AuthenticatedFounderCostsRoute
+  AuthenticatedFounderPilotsRoute: typeof AuthenticatedFounderPilotsRoute
   AuthenticatedQaSeedRoute: typeof AuthenticatedQaSeedRoute
   AuthenticatedSharedBoardIdRoute: typeof AuthenticatedSharedBoardIdRoute
   AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
@@ -1677,6 +1698,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDesignIconsRoute: AuthenticatedDesignIconsRoute,
   AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
   AuthenticatedFounderCostsRoute: AuthenticatedFounderCostsRoute,
+  AuthenticatedFounderPilotsRoute: AuthenticatedFounderPilotsRoute,
   AuthenticatedQaSeedRoute: AuthenticatedQaSeedRoute,
   AuthenticatedSharedBoardIdRoute: AuthenticatedSharedBoardIdRoute,
   AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,

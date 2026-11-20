@@ -39,6 +39,7 @@ export function NewProposalDialog({
   clients,
   clientsLoading,
   canAddClient = true,
+  clientsOff = false,
   profileId,
   capture,
   discard,
@@ -53,6 +54,8 @@ export function NewProposalDialog({
   clientsLoading: boolean;
   /** False for someone who may not add a client: they choose an existing one, and are told so before anything is uploaded. */
   canAddClient?: boolean | undefined;
+  /** An admin whose workspace has clients switched off: the note says where to switch them on. */
+  clientsOff?: boolean | undefined;
   profileId: string | undefined;
   capture: CaptureFiles;
   /** Removes documents uploaded here when the start is given up, so a proposal that was never made leaves nothing in the person's work. */
@@ -202,7 +205,7 @@ export function NewProposalDialog({
           <fieldset className="space-y-2" disabled={busy}>
             <legend className="micro-label">{copy.clientLegend}</legend>
             {!canAddClient ? (
-              <p data-new-proposal-clients-note className="text-sm text-muted-foreground">{stuck ? copy.noClientsForMember : copy.adminAddsClients}</p>
+              <p data-new-proposal-clients-note className="text-sm text-muted-foreground">{clientsOff ? copy.clientsOffForAdmin : stuck ? copy.noClientsForMember : copy.adminAddsClients}</p>
             ) : noClients ? (
               <p className="text-sm text-muted-foreground">{copy.noClients}</p>
             ) : (
