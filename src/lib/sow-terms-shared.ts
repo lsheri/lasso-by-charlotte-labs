@@ -119,7 +119,7 @@ export function checkSuggestion(document: string, suggestion: { fee_text?: unkno
 }
 
 /**
- * F2 (QA of #273, 20 Nov): the money in a SOW's terms. These two fields never sit in work_items.meta, which every
+ * F2 (QA of PR 273, 20 Nov): the money in a SOW's terms. These two fields never sit in work_items.meta, which every
  * member's browser reads; they live in a table only the server can read, and are put back
  * together on the server for admins and leads.
  */

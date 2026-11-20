@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { feesOf, metaWithFees, termsWithoutFees, type FeeFields } from "./sow-terms-shared";
 
 /**
- * F2 (QA of #273, 20 Nov): SOW fee figures live in public.work_item_fee_terms, which has row security on and no
+ * F2 (QA of PR 273, 20 Nov): SOW fee figures live in public.work_item_fee_terms, which has row security on and no
  * policy for signed-in people, so only the server (service role) can read it. work_items.meta.sow_facts keeps the
  * length, the basis and who confirmed it, never the money, so a member's own reads of work_items carry no fee.
  *

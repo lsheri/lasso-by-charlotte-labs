@@ -6,7 +6,7 @@ import { carriesFees, feesOf, metaWithFees, termsWithoutFees } from "@/lib/sow-t
 import { readFeeTerms, storeSowTerms, withFeeTerms } from "@/lib/fee-terms.server";
 import { sowFacts } from "@/lib/demo-firm/plan";
 
-/** F2 (QA of #273): Members never receive a fee figure; the server puts fees back only for its own gated readers. */
+/** F2 (QA of PR 273): Members never receive a fee figure; the server puts fees back only for its own gated readers. */
 
 type Call = { table: string; op: string; args: unknown[] };
 
