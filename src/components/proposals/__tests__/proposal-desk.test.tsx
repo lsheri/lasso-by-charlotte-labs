@@ -619,6 +619,20 @@ describe("20 Nov: who adds a client, said before any upload", () => {
     expect((within(form).getByRole("button", { name: INTAKE_COPY.create }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("an admin whose workspace has clients switched off is told where to switch them on, not to ask an admin", () => {
+    openDialog({ canAddClient: false, clientsOff: true, clients: [] });
+    const form = screen.getByTestId("new-proposal");
+    expect(within(form).getByText(INTAKE_COPY.clientsOffForAdmin)).toBeTruthy();
+    expect(within(form).queryByText(INTAKE_COPY.noClientsForMember)).toBeNull();
+  });
+
+  it("a new pilot's admin with no clients yet types the first one in the sheet", () => {
+    openDialog({ canAddClient: true, clients: [] });
+    const form = screen.getByTestId("new-proposal");
+    expect(within(form).getByText(INTAKE_COPY.noClients)).toBeTruthy();
+    expect(within(form).getByLabelText(INTAKE_COPY.clientName)).toBeTruthy();
+  });
+
   it("giving up removes what was uploaded here, and so does taking a document off the list", async () => {
     const discard = vi.fn(async () => undefined);
     const props = openDialog({ discard });
