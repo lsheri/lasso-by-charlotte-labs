@@ -21,8 +21,12 @@ describe("j1 · existing account signup", () => {
     expect(isExistingAccountSignup({ user: { identities: [] }, session: { access_token: "t" } }, null)).toBe(false);
   });
 
-  it("is false when an error is set", () => {
+  it("is false when an unrelated error is set", () => {
     expect(isExistingAccountSignup({ user: { identities: [] }, session: null }, new Error("nope"))).toBe(false);
+  });
+
+  it("20 Nov: is true for the error form live returns, User already registered", () => {
+    expect(isExistingAccountSignup({ user: null, session: null }, { message: "User already registered", code: "user_already_exists" })).toBe(true);
   });
 
   it("is false when user is null", () => {

@@ -22,7 +22,7 @@ import type { IntentParam } from "@/lib/org-type";
 import { aliasSignupVisitor, emitClientEvent } from "@/lib/client-telemetry";
 import { identifyPostHog } from "@/lib/posthog-client";
 import { parseFunnelSource, type FunnelSource } from "@/lib/funnel-source";
-import { EXISTING_ACCOUNT_INVITED, EXISTING_ACCOUNT_OPEN, isExistingAccountSignup } from "@/lib/signup-existing";
+import { EXISTING_ACCOUNT_OPEN, EXISTING_ACCOUNT_WRONG_PASSWORD, isExistingAccountSignup } from "@/lib/signup-existing";
 import { FORGOT_LINK } from "@/lib/password-reset";
 import { isSendCooldown, SIGN_IN_LINK_COPY, signInLinkOptions } from "@/lib/sign-in-link";
 import { fetchProfile } from "@/hooks/use-profile";
@@ -406,10 +406,19 @@ function AuthPage() {
       });
 
       if (isExistingAccountSignup(data, signUpError)) {
+        emitClientEvent("signup.existing_account", { via: inviteCode ? "invite" : "open" }, { stableVisitor: true });
+        // 20 Nov 2026: "Already have an account? The same button signs you in" (the invite page's promise). The
+        // password just typed is tried as a sign-in; if it is the account's, they go straight on to the invite.
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!signInError) {
+          if (!key) clearActivationKey();
+          setPending(false);
+          goOn();
+          return;
+        }
         setMode("signin");
         setPassword("");
-        setMessage(copy(inviteCode ? EXISTING_ACCOUNT_INVITED : EXISTING_ACCOUNT_OPEN));
-        emitClientEvent("signup.existing_account", { via: inviteCode ? "invite" : "open" }, { stableVisitor: true });
+        setMessage(copy(inviteCode ? EXISTING_ACCOUNT_WRONG_PASSWORD : EXISTING_ACCOUNT_OPEN));
         setPending(false);
         return;
       }
