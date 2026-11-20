@@ -8,6 +8,7 @@
 import { containsVerbatim } from "@/lib/span-provenance-shared";
 
 import type { FirmCorpus, FirmGrade } from "./firm-corpus-shared";
+import { hasMoney, maskMoney } from "./money-mask-shared";
 
 export const FIRM_ASK_QUESTION_MAX = 500;
 /** Call A may pick this many items; call B reads at most FIRM_ASK_READ_MAX of them. */
@@ -105,8 +106,12 @@ const MONEY = new RegExp(`${MONEY_SOURCE}(?:\\s*(?:\\/|per|a)\\s*month)?`, "gi")
 
 const HAS_MONEY = new RegExp(MONEY.source, "i");
 
+/**
+ * Every money figure marked "[fee]" before text reaches a model or a Member. Since D-91 it reads money with the one
+ * shared pattern (money-mask-shared), so "2,5 Mio €" or "CHF 1'200'000" is masked here exactly as everywhere else.
+ */
 export function maskFees(text: string): string {
-  return text.replace(MONEY, "[fee]");
+  return maskMoney(text, "[fee]");
 }
 
 /**
@@ -244,7 +249,7 @@ export function checkClaims(raw: unknown, read: readonly ReadSource[]): { claims
     const source = byId.get(item_id);
     if (!source || !containsVerbatim(source.text, quote)) continue;
     const said = `${text} ${quote}`;
-    if (HAS_MONEY.test(said) || said.includes("[fee]") || holdsOpinion(said)) continue;
+    if (HAS_MONEY.test(said) || hasMoney(said) || said.includes("[fee]") || holdsOpinion(said)) continue;
     claims.push({
       text: text.trim().slice(0, 400),
       itemId: source.itemId,

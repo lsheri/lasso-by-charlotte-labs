@@ -27,7 +27,7 @@ export const getItemTextPane = createServerFn({ method: "POST" })
     const { ITEM_TEXT_COLUMNS, getItemText } = await import("./item-text.server");
     const { data: item, error } = await context.supabase
       .from("work_items")
-      .select(ITEM_TEXT_COLUMNS)
+      .select(`${ITEM_TEXT_COLUMNS}, org_id`)
       .eq("id", data.work_item_id)
       .maybeSingle();
     // Unreadable is a normal outcome (signed out, or no access): answer plainly
@@ -37,8 +37,12 @@ export const getItemTextPane = createServerFn({ method: "POST" })
     }
 
     const result = await getItemText(context.supabase, item as unknown as TextItem);
+    // D-91: a Member reads a SOW with every money figure withheld, on the server, before the text leaves.
+    const { moneyViewFor, viewText } = await import("./money-view.server");
+    const view = await moneyViewFor(context.supabase, context.userId, item as never);
+    const text = result.text ? viewText(view, result.text).slice(0, 200_000) : null;
     return {
-      text: result.text ? result.text.slice(0, 200_000) : null,
+      text,
       status: result.status,
       note: result.note ?? null,
       reason: result.reason ?? null,

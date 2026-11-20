@@ -18,6 +18,10 @@ export const getRenditionUrl = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }): Promise<Rendition> => {
     const { resolveRendition, RENDITION_BUCKET } = await import("./rendition.server");
+    // D-91: a SOW's rendered PDF carries its figures, so a Member gets none; the reader shows its masked text.
+    const { data: item } = await context.supabase.from("work_items").select("org_id, title, type, meta").eq("id", data.work_item_id).maybeSingle();
+    const { moneyViewFor } = await import("./money-view.server");
+    if (item && (await moneyViewFor(context.supabase, context.userId, item)).mask) return { kind: "none" };
     return resolveRendition(context.supabase, data.work_item_id, async (path) => {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: signed } = await supabaseAdmin.storage

@@ -14,11 +14,17 @@ export const getWorkFileUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ url: string }> => {
     const { data: item, error } = await context.supabase
       .from("work_items")
-      .select("id, title, content_ref, source_meta")
+      .select("id, org_id, title, type, meta, content_ref, source_meta")
       .eq("id", data.work_item_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!item?.content_ref) throw new Error("This item has no stored file.");
+    // D-91: a Member never gets a SOW's original file, which carries its figures. The reader shows its text instead.
+    const { moneyViewFor } = await import("./money-view.server");
+    if ((await moneyViewFor(context.supabase, context.userId, item)).mask) {
+      const { SOW_TEXT_ONLY } = await import("./money-mask-shared");
+      throw new Error(SOW_TEXT_ONLY);
+    }
 
     const meta = (item.source_meta ?? {}) as { filename?: string };
     const filename = meta.filename ?? item.title;
@@ -53,6 +59,16 @@ export const getVersionFileUrl = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!version?.content_ref) throw new Error("That version has no stored file.");
+    const { data: parent } = await context.supabase
+      .from("work_items")
+      .select("org_id, title, type, meta")
+      .eq("id", version.work_item_id)
+      .maybeSingle();
+    const { moneyViewFor } = await import("./money-view.server");
+    if (!parent || (await moneyViewFor(context.supabase, context.userId, parent)).mask) {
+      const { SOW_TEXT_ONLY } = await import("./money-mask-shared");
+      throw new Error(parent ? SOW_TEXT_ONLY : "That version is not available to you.");
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const signed = await supabaseAdmin.storage

@@ -99,10 +99,13 @@ export const getReferenceRenditionFn = createServerFn({ method: "POST" })
     const { renditionOf } = await import("@/lib/reference-rendition-shared");
     const { data: item, error } = await context.supabase
       .from("work_items")
-      .select("id, title, source_meta")
+      .select("id, org_id, title, type, meta, source_meta")
       .eq("id", data.work_item_id)
       .maybeSingle();
     if (error || !item) return { status: "unavailable" as const };
+    // D-91: a SOW's rendered file carries its figures; a Member never gets it.
+    const { moneyViewFor } = await import("./money-view.server");
+    if ((await moneyViewFor(context.supabase, context.userId, item)).mask) return { status: "unavailable" as const };
     const r = renditionOf(item);
     if (!r) return { status: "none" as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
