@@ -12,13 +12,14 @@ import {
 import {
   readyTextConfig,
   resetSenderRefusal,
+  numberApproved,
   sendText,
   senderRefusedRecently,
   type TextConfig,
 } from "@/lib/text-sender.server";
 
 const NOW = Date.parse("2026-11-20T12:00:00Z");
-const ENV = { BIRD_API_KEY: "bk_us1_testkey12345", BIRD_SMS_FROM: "+14255550100" };
+const ENV = { BIRD_API_KEY: "bk_us1_testkey12345", BIRD_SMS_FROM: "+14255550100", BIRD_NUMBER_APPROVED: "true" };
 const CONFIG: TextConfig = {
   apiKey: ENV.BIRD_API_KEY,
   from: ENV.BIRD_SMS_FROM,
@@ -156,5 +157,31 @@ describe("the words while texts have not started", () => {
       expect(readFileSync(file, "utf8")).not.toMatch(/Texting is not connected in this app yet/);
       expect(readFileSync(file, "utf8")).not.toMatch(/awaiting carrier approval/);
     }
+  });
+});
+
+// 20 Nov 2026 (Liam, D-106 / Q-101): "Hold until a setting says approved".
+describe("texts wait for the number to be approved", () => {
+  it("is not ready, whatever else is set, until BIRD_NUMBER_APPROVED is true", async () => {
+    const { BIRD_NUMBER_APPROVED: _, ...unapproved } = ENV;
+    expect(numberApproved(unapproved)).toBe(false);
+    expect(await readyTextConfig(null, new Date(), unapproved)).toBeNull();
+    for (const value of ["", "false", "yes", "1", "  "]) expect(await readyTextConfig(null, new Date(), { ...ENV, BIRD_NUMBER_APPROVED: value })).toBeNull();
+    for (const value of ["true", "TRUE", " true "]) expect(numberApproved({ BIRD_NUMBER_APPROVED: value })).toBe(true);
+    expect(await readyTextConfig(null, new Date(), ENV)).toEqual(CONFIG);
+  });
+
+  it("reads no table while unapproved, so a past refusal never decides anything", async () => {
+    const calls: string[] = [];
+    const db = { from: (t: string) => (calls.push(t), { select: () => db }) };
+    const { BIRD_NUMBER_APPROVED: _, ...unapproved } = ENV;
+    expect(await readyTextConfig(db as never, new Date(), unapproved)).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it("is read on the server: the ask, the won text and the desk all go through it", () => {
+    expect(readFileSync("src/lib/lead-ask.server.ts", "utf8")).toContain("numberApproved() ? textConfig() : null");
+    expect(readFileSync("src/lib/won-text.server.ts", "utf8")).toContain("readyTextConfig(");
+    expect(readFileSync("src/lib/proposal-desk.server.ts", "utf8")).toContain("readyTextConfig(");
   });
 });

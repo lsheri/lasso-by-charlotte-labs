@@ -55,7 +55,7 @@ import {
   type TextStatus,
 } from "./lead-ask-shared";
 import { canManageRoster } from "./roster-shared";
-import { senderRefusedRecently, textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
+import { numberApproved, senderRefusedRecently, textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
 import { isE164 } from "./won-text-shared";
 
 type Db = SupabaseClient<Database>;
@@ -527,7 +527,8 @@ export async function realAskStore(context: AskContext, profileId: string | null
       const { isDemoWorkspace } = await import("./demo-text-number-shared");
       return isDemoWorkspace(data?.settings);
     },
-    config: () => textConfig(),
+    // Ready to send only once the number is approved (D-106); until then a press never reaches the provider.
+    config: () => (numberApproved() ? textConfig() : null),
     refusedRecently: () => senderRefusedRecently(admin),
     async demoNumber(orgId) {
       const { demoRecipient } = await import("./demo-text-number.server");
