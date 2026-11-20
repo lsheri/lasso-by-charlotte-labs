@@ -488,7 +488,7 @@ describe("sharing turned off after an answer landed", () => {
 describe("arriving from Home's question box (PR B)", () => {
   it("asks the handed question once the map is ready, and offers Home to go back the same way", async () => {
     m.reduce = false;
-    handOffQuestion("What held up patient recruiting last time?");
+    handOffQuestion("What held up patient recruiting last time?", null, "p-em");
     m.getMap.mockResolvedValue(memberData());
     m.ask.mockResolvedValue(answer(["b8"]));
     mount(<FirmBrainCanvas profile={person("em")} />);
@@ -507,7 +507,7 @@ describe("arriving from Home's question box (PR B)", () => {
   });
 
   it("builds the answer Home already has (the orb turned to it) without asking the firm again", async () => {
-    handOffQuestion("How did we launch other health service lines?", answer(["b5", "b6"]));
+    handOffQuestion("How did we launch other health service lines?", answer(["b5", "b6"]), "p-em");
     m.getMap.mockResolvedValue(memberData());
     mount(<FirmBrainCanvas profile={person("em")} />);
     await ready();
@@ -522,6 +522,31 @@ describe("arriving from Home's question box (PR B)", () => {
     m.ask.mockResolvedValue(answer(["b7"]));
     askFor("And what about Willowmere?");
     await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1));
+  });
+
+  it("asks the handed question even when the map could not be read, so it is never lost (QA M4)", async () => {
+    handOffQuestion("What held up patient recruiting last time?", null, "p-em");
+    m.getMap.mockRejectedValue(new Error("down"));
+    m.ask.mockResolvedValue(answer(["b5"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1), { timeout: 4000 });
+    await waitFor(() =>
+      expect(screen.getByTestId("canvas-answer").getAttribute("data-answer-status")).toBe(
+        "answered",
+      ),
+    );
+    expect(screen.getByTestId("canvas-answer").textContent).toContain(
+      "What held up patient recruiting last time?",
+    );
+  });
+
+  it("never builds a question handed to someone else (QA H2)", async () => {
+    handOffQuestion("Someone else's question", null, "p-other");
+    m.getMap.mockResolvedValue(memberData());
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    expect(m.ask).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("firm-canvas-back")).toBeNull();
   });
 
   it("asks nothing and offers no Home button when opened from the menu", async () => {

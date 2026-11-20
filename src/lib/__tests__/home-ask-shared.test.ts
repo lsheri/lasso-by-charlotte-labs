@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { FIRM_ASK_STARTER_COPY } from "@/lib/firm-ask-shared";
 import {
   cameFromHome,
+  clearHandOff,
+  HAND_OFF_MS,
   firstNameOf,
   greetingFor,
   handOffQuestion,
@@ -80,19 +82,41 @@ describe("starters", () => {
 });
 
 describe("the hand-off", () => {
-  it("passes one question, taken once", () => {
-    expect(takeHandedQuestion()).toBeNull();
-    handOffQuestion("How did we launch health service lines?");
+  it("passes one question, taken once, by the person it was handed to", () => {
+    expect(takeHandedQuestion("p1")).toBeNull();
+    handOffQuestion("How did we launch health service lines?", null, "p1");
     expect(cameFromHome()).toBe(true);
-    expect(takeHandedQuestion()).toEqual({
+    expect(takeHandedQuestion("p1")).toEqual({
       question: "How did we launch health service lines?",
       result: null,
     });
-    expect(takeHandedQuestion()).toBeNull();
+    expect(takeHandedQuestion("p1")).toBeNull();
+  });
+
+  it("never hands a question to someone else signed in in the same tab, and clears it on that take (QA H2)", () => {
+    handOffQuestion("A private question", null, "p1");
+    expect(takeHandedQuestion("p2")).toBeNull();
+    expect(takeHandedQuestion("p1")).toBeNull();
+    handOffQuestion("A private question", null, "p1");
+    expect(takeHandedQuestion(null)).toBeNull();
+  });
+
+  it("lets a stale hand-off go: one left from a trip that did not happen is never built later (QA H2)", () => {
+    handOffQuestion("Old question", null, "p1", 1_000);
+    expect(takeHandedQuestion("p1", 1_000 + HAND_OFF_MS + 1)).toBeNull();
+    handOffQuestion("Fresh question", null, "p1", 1_000);
+    expect(takeHandedQuestion("p1", 1_000 + HAND_OFF_MS - 1)?.question).toBe("Fresh question");
+  });
+
+  it("is let go by Home when the person leaves before Firm brain opens (QA H2)", () => {
+    handOffQuestion("q", null, "p1");
+    clearHandOff();
+    expect(takeHandedQuestion("p1")).toBeNull();
+    expect(cameFromHome()).toBe(false);
   });
 
   it("passes where the box grows back from, taken once, and ends the trip", () => {
-    handOffQuestion("q");
+    handOffQuestion("q", null, "p1");
     startReturn({ left: 10, top: 20, width: 200, height: 40 });
     expect(cameFromHome()).toBe(false);
     expect(takeReturn()).toEqual({ left: 10, top: 20, width: 200, height: 40 });
@@ -100,7 +124,7 @@ describe("the hand-off", () => {
   });
 
   it("writes nothing to storage or the address", () => {
-    handOffQuestion("A private question");
+    handOffQuestion("A private question", null, "p1");
     expect(
       JSON.stringify({ ...globalThis.sessionStorage, ...globalThis.localStorage }),
     ).not.toContain("A private question");

@@ -11,7 +11,7 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { askTheFirm } from "@/lib/firm-ask.functions";
-import type { FirmCanvasData } from "@/lib/firm-canvas-shared";
+import { FIRM_MAP_HOME_CACHE, type FirmCanvasData } from "@/lib/firm-canvas-shared";
 import { getFirmMap } from "@/lib/firm-map.functions";
 import { homeAsksTheFirm } from "@/lib/home-ask-shared";
 import { orderHomeGrid } from "@/lib/home-grid";
@@ -52,7 +52,10 @@ function MiniFirmBrain({
   const ask = useServerFn(askTheFirm);
   const map = useQuery({
     queryKey: ["firm-map", profile.id ?? null],
-    staleTime: 0,
+    // Home is the landing page: it keeps the map for a minute and does not read it again on every focus (QA M3).
+    // Firm brain still reads it fresh when opened, and every answer is read live, so sharing turned off applies to
+    // answers at once and to the map within a minute.
+    ...FIRM_MAP_HOME_CACHE,
     retry: (count, error) => !(error instanceof Response) && count < 1,
     queryFn: (): Promise<FirmCanvasData> =>
       getFirmMap({ data: { profile_id: profile.id ?? null } }),
@@ -70,6 +73,7 @@ function MiniFirmBrain({
     <HomeAsk
       displayName={profile.display_name}
       role={profile.role}
+      profileId={profile.id ?? ""}
       recentBoard={recent?.title ?? null}
       map={map.data ?? null}
       mapLoading={map.isPending}

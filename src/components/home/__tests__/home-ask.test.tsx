@@ -19,6 +19,8 @@ const m = vi.hoisted(() => ({
   morphs: [] as { toRow: boolean; text: string }[],
   finish: null as null | (() => void),
   focus: vi.fn(async (_ids: string[]) => {}),
+  holdHalfway: false,
+  halfway: null as null | (() => void),
 }));
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => m.navigate }));
@@ -29,7 +31,8 @@ vi.mock("@/components/home/morph-ghost", () => ({
   topMiddle: () => ({ left: 0, top: 0, width: 160, height: 40 }),
   morph: (options: { toRow: boolean; text: string; onHalfway?: () => void }) => {
     m.morphs.push({ toRow: options.toRow, text: options.text });
-    options.onHalfway?.();
+    if (m.holdHalfway) m.halfway = options.onHalfway ?? null;
+    else options.onHalfway?.();
     return new Promise<void>((resolve) => (m.finish = resolve));
   },
 }));
@@ -78,6 +81,8 @@ beforeEach(() => {
   m.morphs = [];
   m.finish = null;
   m.focus.mockClear();
+  m.holdHalfway = false;
+  m.halfway = null;
   resetHomeHandOff();
 });
 afterEach(() => cleanup());
@@ -88,6 +93,7 @@ describe("Home's question box", () => {
   it("greets the person and offers starters made from their latest board", () => {
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif Yilmaz"
         role="em"
         recentBoard="Weight management service line"
@@ -103,10 +109,12 @@ describe("Home's question box", () => {
   });
 
   it("hands the question over and morphs into the menu row while Firm brain opens", () => {
-    render(<HomeAsk displayName="Elif" role="em" recentBoard={null} now={EVENING} />);
+    render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
     fireEvent.change(box(), { target: { value: "  What held up patient recruiting?  " } });
     fireEvent.keyDown(box(), { key: "Enter" });
-    expect(takeHandedQuestion()).toEqual({
+    expect(takeHandedQuestion("p-elif")).toEqual({
       question: "What held up patient recruiting?",
       result: null,
     });
@@ -117,6 +125,7 @@ describe("Home's question box", () => {
   it("asks a starter in one press", () => {
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Harper"
         role="em"
         recentBoard="Claims product operating model"
@@ -126,14 +135,16 @@ describe("Home's question box", () => {
     fireEvent.click(
       screen.getByText(`${FIRM_ASK_STARTER_COPY.went_wrong.stem}Claims product operating model?`),
     );
-    expect(takeHandedQuestion()?.question).toBe(
+    expect(takeHandedQuestion("p-elif")?.question).toBe(
       `${FIRM_ASK_STARTER_COPY.went_wrong.stem}Claims product operating model?`,
     );
     expect(m.navigate).toHaveBeenCalledTimes(1);
   });
 
   it("keeps Shift+Enter as a new line, ignores a question under three characters, and asks only once", () => {
-    render(<HomeAsk displayName="Elif" role="em" recentBoard={null} now={EVENING} />);
+    render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
     fireEvent.change(box(), { target: { value: "hi" } });
     fireEvent.keyDown(box(), { key: "Enter" });
     fireEvent.keyDown(box(), { key: "Enter", shiftKey: true });
@@ -146,7 +157,9 @@ describe("Home's question box", () => {
 
   it("opens Firm brain straight away under reduced motion, with nothing moving", () => {
     m.reduce = true;
-    render(<HomeAsk displayName="Elif" role="em" recentBoard={null} now={EVENING} />);
+    render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
     fireEvent.change(box(), { target: { value: "A real question" } });
     fireEvent.keyDown(box(), { key: "Enter" });
     expect(m.morphs).toEqual([]);
@@ -155,7 +168,9 @@ describe("Home's question box", () => {
 
   it("grows back out of the menu row when the person comes back from Firm brain", async () => {
     startReturn({ left: 20, top: 200, width: 220, height: 40 });
-    render(<HomeAsk displayName="Elif" role="em" recentBoard={null} now={EVENING} />);
+    render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
     expect(m.morphs).toEqual([{ toRow: false, text: HOME_ASK_COPY.placeholder }]);
     expect(box().closest("form")!.className).toContain("invisible");
     await act(async () => m.finish?.());
@@ -163,7 +178,9 @@ describe("Home's question box", () => {
   });
 
   it("keeps the question out of analytics", () => {
-    render(<HomeAsk displayName="Elif" role="em" recentBoard="Board" now={EVENING} />);
+    render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard="Board" now={EVENING} />,
+    );
     expect(box().closest("form")!.className).toContain("ph-no-autocapture");
   });
 });
@@ -171,10 +188,26 @@ describe("Home's question box", () => {
 describe("the orb at the centre of Home", () => {
   it("shows a quiet frame while the map loads, and the orb with what it does once it is here", () => {
     const { rerender } = render(
-      <HomeAsk displayName="Elif" role="em" recentBoard={null} mapLoading now={EVENING} />,
+      <HomeAsk
+        profileId="p-elif"
+        displayName="Elif"
+        role="em"
+        recentBoard={null}
+        mapLoading
+        now={EVENING}
+      />,
     );
     expect(screen.getByTestId("firm-orb-loading")).toBeTruthy();
-    rerender(<HomeAsk displayName="Elif" role="em" recentBoard={null} map={MAP} now={EVENING} />);
+    rerender(
+      <HomeAsk
+        profileId="p-elif"
+        displayName="Elif"
+        role="em"
+        recentBoard={null}
+        map={MAP}
+        now={EVENING}
+      />,
+    );
     expect(screen.getByTestId("firm-orb")).toBeTruthy();
     expect(screen.getByTestId("firm-orb-caption").textContent).toBe(ORB_COPY.hint);
   });
@@ -184,6 +217,7 @@ describe("the orb at the centre of Home", () => {
     const askFirm = vi.fn(() => new Promise<FirmAskResult>((resolve) => (reply = resolve)));
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif"
         role="em"
         recentBoard={null}
@@ -200,7 +234,7 @@ describe("the orb at the centre of Home", () => {
     const result = answered(["b5", "b6", "b5"]);
     await act(async () => reply(result));
     expect(m.focus).toHaveBeenCalledWith(["b5", "b6"]);
-    expect(takeHandedQuestion()).toEqual({
+    expect(takeHandedQuestion("p-elif")).toEqual({
       question: "How did we launch health service lines?",
       result,
     });
@@ -212,6 +246,7 @@ describe("the orb at the centre of Home", () => {
     const askFirm = vi.fn(async () => ({ ...answered([]), status: "not_found" as const }));
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif"
         role="em"
         recentBoard={null}
@@ -233,6 +268,7 @@ describe("the orb at the centre of Home", () => {
       .mockResolvedValueOnce(answered(["b5"]));
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif"
         role="em"
         recentBoard={null}
@@ -254,6 +290,7 @@ describe("the orb at the centre of Home", () => {
     const askFirm = vi.fn().mockRejectedValueOnce(new Response("limit", { status: 429 }));
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif"
         role="em"
         recentBoard={null}
@@ -271,6 +308,7 @@ describe("the orb at the centre of Home", () => {
     const askFirm = vi.fn();
     render(
       <HomeAsk
+        profileId="p-elif"
         displayName="Elif"
         role="em"
         recentBoard={null}
@@ -283,6 +321,70 @@ describe("the orb at the centre of Home", () => {
     fireEvent.change(box(), { target: { value: "A real question" } });
     fireEvent.keyDown(box(), { key: "Enter" });
     expect(askFirm).not.toHaveBeenCalled();
-    expect(takeHandedQuestion()).toEqual({ question: "A real question", result: null });
+    expect(takeHandedQuestion("p-elif")).toEqual({ question: "A real question", result: null });
+  });
+});
+
+describe("leaving Home part way (QA H2)", () => {
+  it("does not pull the person to Firm brain when they left while the firm was read, and keeps no question", async () => {
+    let reply!: (result: FirmAskResult) => void;
+    const askFirm = vi.fn(() => new Promise<FirmAskResult>((resolve) => (reply = resolve)));
+    const view = render(
+      <HomeAsk
+        profileId="p-elif"
+        displayName="Elif"
+        role="em"
+        recentBoard={null}
+        map={MAP}
+        askFirm={askFirm}
+        now={EVENING}
+      />,
+    );
+    fireEvent.change(box(), { target: { value: "A real question" } });
+    fireEvent.keyDown(box(), { key: "Enter" });
+    view.unmount();
+    await act(async () => reply(answered(["b5"])));
+    expect(m.focus).not.toHaveBeenCalled();
+    expect(m.navigate).not.toHaveBeenCalled();
+    expect(takeHandedQuestion("p-elif")).toBeNull();
+  });
+
+  it("does not open Firm brain halfway through the morph if the person already went elsewhere, and lets the question go", () => {
+    m.holdHalfway = true;
+    const view = render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
+    fireEvent.change(box(), { target: { value: "A real question" } });
+    fireEvent.keyDown(box(), { key: "Enter" });
+    view.unmount();
+    m.halfway?.();
+    expect(m.navigate).not.toHaveBeenCalled();
+    expect(takeHandedQuestion("p-elif")).toBeNull();
+  });
+
+  it("keeps the hand-off when it was Home itself that opened Firm brain", () => {
+    const view = render(
+      <HomeAsk profileId="p-elif" displayName="Elif" role="em" recentBoard={null} now={EVENING} />,
+    );
+    fireEvent.change(box(), { target: { value: "A real question" } });
+    fireEvent.keyDown(box(), { key: "Enter" });
+    expect(m.navigate).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(takeHandedQuestion("p-elif")?.question).toBe("A real question");
+  });
+});
+
+describe("the demo tour (QA H3)", () => {
+  it("gives a Lead's Home beats their Ask the firm anchor on the question box", () => {
+    render(
+      <HomeAsk
+        profileId="p-signe"
+        displayName="Signe"
+        role="lead"
+        recentBoard={null}
+        now={EVENING}
+      />,
+    );
+    expect(screen.getByTestId("ask-the-firm")).toBe(box().closest("form"));
   });
 });

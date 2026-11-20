@@ -12,6 +12,7 @@ import {
   easeFlow,
   edgeEnds,
   FIRM_CANVAS_COPY,
+  FIRM_MAP_HOME_CACHE,
   hasMoney,
   layoutCanvas,
   MAX_EDGES_DRAWN,
@@ -334,5 +335,23 @@ describe("motion and words", () => {
     const all = JSON.stringify(FIRM_CANVAS_COPY) + PENDING_STAGES.map((s) => s.text).join(" ");
     expect(all).not.toMatch(/—|–/);
     expect(all).not.toMatch(/audit|surveil|monitor|track/i);
+  });
+});
+
+describe("Home's copy of the map (QA M3)", () => {
+  it("is kept for a minute and not read again on every return to the tab", () => {
+    expect(FIRM_MAP_HOME_CACHE).toEqual({ staleTime: 60_000, refetchOnWindowFocus: false });
+  });
+
+  it("is what Home uses, while Firm brain still reads fresh when opened", async () => {
+    const { readFileSync } = await import("node:fs");
+    const path = await import("node:path");
+    const home = readFileSync(path.resolve(__dirname, "../../pages/HomePage.tsx"), "utf8");
+    expect(home).toContain("...FIRM_MAP_HOME_CACHE");
+    const canvas = readFileSync(
+      path.resolve(__dirname, "../../components/firm-brain/FirmBrainCanvas.tsx"),
+      "utf8",
+    );
+    expect(canvas).toMatch(/queryKey: \["firm-map", profile\.id \?\? null\],\s*staleTime: 0,/);
   });
 });

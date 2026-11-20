@@ -101,6 +101,12 @@ export function canvasDataFor(
   return { ...base, fees };
 }
 
+/**
+ * How long Home keeps the firm map before reading it again (QA M3). Home is the landing page, so a fresh read on every
+ * visit and every return to the tab would read the whole firm each time. Firm brain itself reads fresh when opened.
+ */
+export const FIRM_MAP_HOME_CACHE = { staleTime: 60_000, refetchOnWindowFocus: false } as const;
+
 /* ---------------------------------------------------------------------------------------------------------------
  * The layout: situations on the left, engagements in the middle, methods on the right
  * ------------------------------------------------------------------------------------------------------------- */

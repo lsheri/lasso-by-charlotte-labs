@@ -75,21 +75,43 @@ type Rect = { left: number; top: number; width: number; height: number };
 /** What Home hands over: the question, and the answer when Home already asked (the orb turns to it first). */
 export type HandedQuestion = { question: string; result: FirmAskResult | null };
 
-let handed: HandedQuestion | null = null;
+/** A hand-off older than this is never picked up: it belongs to a trip that did not happen (QA H2). */
+export const HAND_OFF_MS = 2 * 60_000;
+
+let handed: (HandedQuestion & { profileId: string; at: number }) | null = null;
 let fromHome = false;
 let returning: Rect | null = null;
 
 /** Home hands a question to Firm brain, with its answer when Home already has it, so it is never asked twice. */
-export function handOffQuestion(question: string, result: FirmAskResult | null = null): void {
-  handed = { question, result };
+export function handOffQuestion(
+  question: string,
+  result: FirmAskResult | null,
+  profileId: string,
+  now = Date.now(),
+): void {
+  handed = { question, result, profileId, at: now };
   fromHome = true;
 }
 
-/** Firm brain takes the handed question, once. */
-export function takeHandedQuestion(): HandedQuestion | null {
-  const question = handed;
+/**
+ * Firm brain takes the handed question, once, and only for the person it was handed to, only while it is fresh. Any
+ * other take clears it, so nothing is left in memory for someone else or for days later.
+ */
+export function takeHandedQuestion(
+  profileId: string | null | undefined,
+  now = Date.now(),
+): HandedQuestion | null {
+  const found = handed;
   handed = null;
-  return question;
+  if (!found || !profileId || found.profileId !== profileId || now - found.at > HAND_OFF_MS)
+    return null;
+  return { question: found.question, result: found.result };
+}
+
+/** Home lets go of a hand-off it made when the person left before Firm brain opened (QA H2). */
+export function clearHandOff(): void {
+  handed = null;
+  fromHome = false;
 }
 
 /** Whether Firm brain was opened from Home's question box, so Back can return the same way. */

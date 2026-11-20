@@ -218,7 +218,7 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   // A question handed over from Home's box (PR B), taken once, in memory only.
-  const [handed] = useState(() => takeHandedQuestion());
+  const [handed] = useState(() => takeHandedQuestion(profile.id));
   const handedResult = useRef(handed?.result ?? null);
   // Read fresh every time the page opens, so a board with sharing turned off is gone at the next load.
   const query = useQuery({
@@ -509,13 +509,16 @@ export function FirmBrainCanvasView({
   }
 
   // The question handed over from Home is asked once, as soon as the map is ready to take the answer.
+  // It waits only while the map is on its way, so the answer can land beside its threads; when the map failed it is
+  // asked anyway and lands in the plain column, never lost (QA M4). A refused person cannot ask at all.
   const askedHanded = useRef(false);
   useEffect(() => {
-    if (!layout || !initialQuestion || askedHanded.current) return;
+    if (!initialQuestion || askedHanded.current || map.refused) return;
+    if (!layout && map.pending) return;
     askedHanded.current = true;
     void run(initialQuestion, null);
-    // run reads the latest state through refs; only the map arriving should trigger this.
-  }, [layout, initialQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
+    // run reads the latest state through refs; only the map settling should trigger this.
+  }, [layout, initialQuestion, map.pending, map.refused]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function submit(event?: FormEvent) {
     event?.preventDefault();

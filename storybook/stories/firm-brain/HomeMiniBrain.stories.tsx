@@ -117,6 +117,7 @@ function Home({ name, role, data }: { name: string; role: string; data: FirmCanv
           <div className="min-h-screen bg-background px-4 pb-16 pt-10 md:pt-24">
             <div className="mx-auto w-full max-w-[720px]">
               <HomeAsk
+                profileId={`story-${role}`}
                 displayName={name}
                 role={role}
                 recentBoard={BOARDS[0]!.title}

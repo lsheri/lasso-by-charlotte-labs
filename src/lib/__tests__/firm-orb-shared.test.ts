@@ -3,7 +3,7 @@
 // only when the server sent them, so a member's sphere carries none.
 import { describe, expect, it } from "vitest";
 
-import { canvasDataFor, hasMoney } from "@/lib/firm-canvas-shared";
+import { canvasDataFor } from "@/lib/firm-canvas-shared";
 import {
   capThreads,
   facingAngle,
@@ -48,7 +48,8 @@ describe("the sphere", () => {
   it("gives a member's sphere no fee at all, and an admin's the fees the server sent", () => {
     const m = orbModel(member);
     expect(m.threads.every((thread) => thread.fee === null)).toBe(true);
-    expect(JSON.stringify(m).split('"').filter(hasMoney)).toEqual([]);
+    // Checked with a plain scan for currency signs and k/m figures, not with the stripping pattern (QA M2).
+    expect(JSON.stringify(m)).not.toMatch(/[$£€¥₹]|\d\s?(k|bn|million)\b/i);
     const a = orbModel(admin);
     expect(a.threads.filter((thread) => thread.fee).length).toBeGreaterThan(10);
   });

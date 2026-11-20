@@ -19,6 +19,7 @@ import { answerBoards, pendingCaption, type FirmCanvasData } from "@/lib/firm-ca
 import { ORB_COPY } from "@/lib/firm-orb-shared";
 import {
   firstNameOf,
+  clearHandOff,
   handOffQuestion,
   HOME_ASK_COPY,
   homeStarters,
@@ -41,6 +42,7 @@ import { firmBrainRow, morph, rectOf, topMiddle } from "./morph-ghost";
 export function HomeAsk({
   displayName,
   role,
+  profileId,
   recentBoard,
   map = null,
   mapLoading = false,
@@ -49,6 +51,8 @@ export function HomeAsk({
 }: {
   displayName: string | null | undefined;
   role: string | null | undefined;
+  /** Whose question it is: Firm brain picks a hand-off up only for the same person. */
+  profileId: string;
   recentBoard: string | null | undefined;
   /** The firm map for the orb, as the server sent it (fees for admins and leads only). Null while it loads. */
   map?: FirmCanvasData | null | undefined;
@@ -62,6 +66,26 @@ export function HomeAsk({
   const reduceMotion = useReducedMotion();
   const [question, setQuestion] = useState("");
   const [leaving, setLeaving] = useState(false);
+  // Home may be left while the firm is read or during the morph: nothing then pulls the person to Firm brain, and a
+  // hand-off made here that was never picked up is let go (QA H2).
+  const alive = useRef(true);
+  const handedHere = useRef(false);
+  const navigated = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      if (handedHere.current && !navigated.current) clearHandOff();
+    };
+  }, []);
+  const open = () => {
+    if (!alive.current) {
+      clearHandOff();
+      return;
+    }
+    navigated.current = true;
+    void navigate({ to: "/firm-brain" });
+  };
   const [hidden, setHidden] = useState(false);
   const box = useRef<HTMLFormElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
@@ -115,23 +139,27 @@ export function HomeAsk({
       try {
         result = await askFirm(clean);
       } catch (error) {
+        if (!alive.current) return;
         setReadingSince(null);
         setCaption(ORB_COPY.hint);
         setProblem(isFirmBrainLimit(error) ? FIRM_BRAIN_LIMIT_COPY.shown : ORB_COPY.failed);
         setLeaving(false);
         return;
       }
+      if (!alive.current) return;
       setReadingSince(null);
       const boards = result.status === "answered" ? answerBoards(result.claims) : [];
       setCaption(boards.length ? ORB_COPY.found(boards.length) : ORB_COPY.nothing);
       await orb.current?.focus(boards);
+      if (!alive.current) return;
       setCaption(ORB_COPY.opening);
     }
-    handOffQuestion(clean, result);
+    handOffQuestion(clean, result, profileId);
+    handedHere.current = true;
     const from = rectOf(box.current);
     const to = rectOf(firmBrainRow()) ?? topMiddle();
     if (!from || reduceMotion) {
-      void navigate({ to: "/firm-brain" });
+      open();
       return;
     }
     setHidden(true);
@@ -142,7 +170,7 @@ export function HomeAsk({
       label: FIRM_BRAIN_COPY.nav,
       toRow: true,
       reduceMotion,
-      onHalfway: () => void navigate({ to: "/firm-brain" }),
+      onHalfway: open,
     });
   }
 
@@ -189,6 +217,8 @@ export function HomeAsk({
       <form
         ref={box}
         onSubmit={submit}
+        // The demo tour's Home beats point here for a Lead, as they point at Ask the firm on an Admin's Home (QA H3).
+        data-testid="ask-the-firm"
         data-ph-no-autocapture=""
         className={cn(
           "ph-no-autocapture flex flex-col gap-2 rounded-[var(--radius-card)] border border-border bg-card p-3 shadow-card transition-opacity focus-within:border-foreground/40",
