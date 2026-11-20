@@ -6,7 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { ProposalGoalForm } from "@/components/settings/ProposalGoalCard";
-import { DESK_COPY, GOAL_COPY, INTAKE_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { DESK_COPY, GOAL_COPY, INTAKE_COPY, LEAD_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
+import { MESSAGE_EXAMPLES_COPY } from "@/lib/won-text-shared";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, params }: { children: ReactNode; params?: { id?: string } }) => <a href={`/engagements/${params?.id}/canvas-lab`}>{children}</a>,
@@ -20,7 +22,7 @@ const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
   id: "p", title: "Network redesign", clientName: "Marrowfield", ownerName: "Maren Hollis", mine: false, status: "open",
   receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, ...over,
 });
-const list = (proposals: DeskProposal[], goalHours = 72): DeskList => ({ goalHours, canSetGoal: false, proposals });
+const list = (proposals: DeskProposal[], goalHours = 72): DeskList => ({ goalHours, canSetGoal: false, canPickLead: false, proposals });
 
 describe("the Proposals dashboard", () => {
   it("shows open proposals with the time left against the workspace's own goal", () => {
@@ -299,5 +301,80 @@ describe("New proposal", () => {
     expect(create).toHaveBeenCalledTimes(1);
     finish({ ok: true, id: "new" });
     await waitFor(() => expect(props.onCreated).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe("picking the lead", () => {
+  const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", linkPath: "/texts?w=o&c=c1", ...over });
+  const roster = [person({}), person({ id: "c2", name: "Mina Okafor", role: null, texts: "none", agreedOn: null }), person({ id: "c3", name: "Zoë D'Arcy-Núñez", texts: "unknown", agreedOn: null })];
+  const WORDS = "Lasso for Kestrel Bay Advisory: the proposal you helped with has been won, and the team board is ready. Reply STOP to opt out.";
+  const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
+
+  it("shows nothing about a lead to someone who may not pick, even when a handler is passed", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true })])} roster={roster} leadWords={WORDS} onLead={vi.fn()} />);
+    expect(document.querySelector("[data-proposal-lead]")).toBeNull();
+    expect(screen.queryByText(LEAD_COPY.pick)).toBeNull();
+  });
+
+  it("names the lead with their text agreement on open rows only", () => {
+    render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "c1" }), proposal({ id: "b", leadContactId: null }), proposal({ id: "w", status: "won", decidedAt: hoursAgo(1), leadContactId: "c1" })])} roster={roster} leadWords={WORDS} onLead={vi.fn()} />);
+    const a = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
+    expect(within(a).getByText(LEAD_COPY.lead("Tom Reyes"))).toBeTruthy();
+    expect(within(a).getByText(ROSTER_COPY.texts.agreed)).toBeTruthy();
+    expect(within(a).getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
+    const b = document.querySelector('[data-proposal-row="b"]') as HTMLElement;
+    expect(within(b).getByText(LEAD_COPY.none)).toBeTruthy();
+    expect(within(b).getByRole("button", { name: LEAD_COPY.pick })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Won/ }));
+    expect(document.querySelector("[data-proposal-lead]")).toBeNull();
+  });
+
+  it("says plainly whether the person agreed to texts, shows the three examples, and saves once", async () => {
+    let finish: (value: { ok: true }) => void = () => {};
+    const onLead = vi.fn(() => new Promise<{ ok: true }>((resolve) => { finish = resolve; }));
+    render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "b" })])} roster={roster} leadWords={WORDS} onLead={onLead} />);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.pick }));
+    const dialog = await screen.findByTestId("pick-lead");
+    const save = within(dialog).getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    expect(within(dialog).getByText(WORDS)).toBeTruthy();
+    expect(dialog.querySelectorAll("[data-message-example]")).toHaveLength(3);
+    expect(within(dialog).getByText(MESSAGE_EXAMPLES_COPY.rcsState)).toBeTruthy();
+    const select = within(dialog).getByLabelText(LEAD_COPY.select);
+    fireEvent.change(select, { target: { value: "c2" } });
+    expect(within(dialog).getByText(LEAD_COPY.notAgreed("Mina Okafor"))).toBeTruthy();
+    fireEvent.change(select, { target: { value: "c3" } });
+    expect(within(dialog).getByText(LEAD_COPY.unknown("Zoë D'Arcy-Núñez"))).toBeTruthy();
+    fireEvent.change(select, { target: { value: "c1" } });
+    expect(within(dialog).getByText(LEAD_COPY.agreed("Tom Reyes"))).toBeTruthy();
+    expect(dialog.textContent).not.toMatch(/\+?1?\d{10}/);
+    fireEvent.click(save);
+    fireEvent.click(save);
+    expect(onLead).toHaveBeenCalledTimes(1);
+    expect(onLead).toHaveBeenCalledWith("b", "c1");
+    finish({ ok: true });
+    await waitFor(() => expect(screen.queryByTestId("pick-lead")).toBeNull());
+  });
+
+  it("clears a lead, keeps the dialog open with the server's line on a refusal, and copes with an empty or unread list", async () => {
+    const onLead = vi.fn().mockResolvedValueOnce({ ok: false, problem: LEAD_COPY.missing }).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce({ ok: true });
+    const view = render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "c1" })])} roster={roster} leadWords={WORDS} onLead={onLead} />);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.change }));
+    const dialog = await screen.findByTestId("pick-lead");
+    fireEvent.click(within(dialog).getByRole("button", { name: LEAD_COPY.clear }));
+    expect((await within(dialog).findByRole("alert")).textContent).toBe(LEAD_COPY.missing);
+    fireEvent.click(within(dialog).getByRole("button", { name: LEAD_COPY.clear }));
+    await waitFor(() => expect(within(dialog).getByRole("alert").textContent).toBe(LEAD_COPY.failed));
+    fireEvent.click(within(dialog).getByRole("button", { name: LEAD_COPY.clear }));
+    await waitFor(() => expect(screen.queryByTestId("pick-lead")).toBeNull());
+    expect(onLead).toHaveBeenLastCalledWith("a", null);
+    view.unmount();
+    render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a" })])} roster={[]} leadWords={WORDS} onLead={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.pick }));
+    expect(within(await screen.findByTestId("pick-lead")).getByText(LEAD_COPY.noPeople)).toBeTruthy();
+    cleanup();
+    render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "gone" })])} roster={undefined} leadWords={WORDS} onLead={vi.fn()} />);
+    expect(screen.getByText(LEAD_COPY.none)).toBeTruthy();
+    expect(screen.getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
   });
 });

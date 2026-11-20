@@ -19,6 +19,7 @@ import {
   countBand,
   goalHours,
   INTAKE_COPY,
+  LEAD_COPY,
   SENT_COPY,
   timeLeft,
   WIN_COPY,
@@ -36,7 +37,10 @@ import {
   type SentResult,
   type WinInput,
   type WinResult,
+  type LeadInput,
+  type LeadResult,
 } from "./proposal-desk-shared";
+import { canManageRoster } from "./roster-shared";
 
 type Db = SupabaseClient<Database>;
 /** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
@@ -55,6 +59,7 @@ export type ProposalRow = {
   status: string;
   decided_at: string | null;
   engagement_id: string | null;
+  lead_contact_id?: string | null;
 };
 
 export type DeskStore = {
@@ -82,6 +87,10 @@ export type DeskStore = {
   proposal: (id: string) => Promise<ProposalRow | null>;
   /** Sets or clears when the proposal went out. False when nothing changed. */
   setSent: (id: string, sentAt: string | null) => Promise<boolean>;
+  /** Whether this roster person is on this workspace's list. */
+  rosterHas: (orgId: string, contactId: string) => Promise<boolean>;
+  /** Sets or clears the lead on an open proposal. False when nothing changed. */
+  setLead: (id: string, contactId: string | null) => Promise<boolean>;
   /** The salesperson's notes on one proposal. */
   notes: (id: string) => Promise<string | null>;
   /** Makes the board, owned by this person and with them on it. Not shared with the firm. False when refused. */
@@ -96,7 +105,7 @@ export type DeskStore = {
   claimWin: (id: string, engagementId: string, decidedAt: string) => Promise<boolean>;
   /** Takes back a board this code just made and could not finish. */
   removeBoard: (id: string) => Promise<void>;
-  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won", dims: Record<string, string>) => Promise<void>;
+  record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won" | "proposal.lead_set", dims: Record<string, string>) => Promise<void>;
   now: () => Date;
   newId: () => string;
 };
@@ -107,6 +116,8 @@ const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES 
 export async function listDesk(store: DeskStore): Promise<DeskList> {
   const caller = await store.caller();
   const all = seesAllProposals(caller.role);
+  // The roster is for admins and leads, so only they are told who the lead is.
+  const pickers = canManageRoster(caller.role);
   const rows = await store.proposals(caller.orgId);
   if (rows === null) throw new Error("proposals_unreadable");
   // The database already decided; this is the same rule again, so a policy mistake cannot widen what is shown.
@@ -135,10 +146,11 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       engagementId: row.engagement_id,
       contextCount: items.length,
       canAct: own || all,
+      ...(pickers ? { leadContactId: row.lead_contact_id ?? null } : {}),
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
     };
   });
-  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", proposals };
+  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, proposals };
 }
 
 /** The clients a new proposal can be for. */
@@ -209,6 +221,28 @@ export async function createProposal(store: DeskStore, input: NewProposalInput):
 /** Whether this person may change this proposal: it is in their workspace, and they started it or are an admin or lead. */
 export function mayAct(caller: DeskCaller, row: ProposalRow | null): row is ProposalRow {
   return row !== null && row.org_id === caller.orgId && (row.owner_id === caller.profileId || seesAllProposals(caller.role));
+}
+
+/**
+ * Picks the lead on an open proposal from the workspace's roster, or clears it. Admins and leads only: they are the
+ * people who may see the roster. The person must be on this workspace's own list. Picking a lead sends nothing.
+ */
+export async function setProposalLead(store: DeskStore, input: LeadInput): Promise<LeadResult> {
+  const caller = await store.caller();
+  if (!canManageRoster(caller.role)) return { ok: false, problem: LEAD_COPY.notAllowed };
+  const row = await store.proposal(input.proposal_id);
+  // Another workspace's proposal and one that does not exist read the same.
+  if (!row || row.org_id !== caller.orgId) return { ok: false, problem: LEAD_COPY.notAllowed };
+  if (row.status !== "open") return { ok: false, problem: LEAD_COPY.closed };
+  if ((row.lead_contact_id ?? null) === input.lead_contact_id) return { ok: true };
+  if (input.lead_contact_id && !(await store.rosterHas(caller.orgId, input.lead_contact_id))) return { ok: false, problem: LEAD_COPY.missing };
+  if (!(await store.setLead(row.id, input.lead_contact_id))) return { ok: false, problem: LEAD_COPY.failed };
+  try {
+    await store.record(caller, "proposal.lead_set", { change: input.lead_contact_id ? "set" : "cleared" });
+  } catch {
+    /* the pick is saved; a recording fault never undoes it */
+  }
+  return { ok: true };
 }
 
 /** Marks an open proposal as gone out to the client, which stops the clock, or takes that back. */
@@ -306,7 +340,7 @@ export async function winProposal(store: DeskStore, input: WinInput): Promise<Wi
 
 export type DeskContext = { supabase: Db; userId: string };
 
-const PROPOSAL_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_at, status, decided_at, engagement_id";
+const PROPOSAL_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_at, status, decided_at, engagement_id, lead_contact_id";
 
 export async function realStore(context: DeskContext, profileId: string | null): Promise<DeskStore> {
   const { requireFirmMember } = await import("./firm-corpus.server");
@@ -386,6 +420,14 @@ export async function realStore(context: DeskContext, profileId: string | null):
       const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
       return !error && (data ?? []).length === 1;
     },
+    async rosterHas(orgId, contactId) {
+      const { data, error } = await adminLoose.from("roster_contacts").select("id").eq("id", contactId).eq("org_id", orgId).maybeSingle();
+      return !error && Boolean(data);
+    },
+    async setLead(id, contactId) {
+      const { data, error } = await adminLoose.from("proposals").update({ lead_contact_id: contactId }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      return !error && (data ?? []).length === 1;
+    },
     async notes(id) {
       const { data } = await adminLoose.from("proposals").select("notes").eq("id", id).eq("org_id", caller.orgId).maybeSingle();
       return ((data as { notes: string | null } | null)?.notes) ?? null;
@@ -439,6 +481,9 @@ export const deskHandlers = {
   },
   async sent(context: DeskContext, data: SentInput): Promise<SentResult> {
     return setProposalSent(await realStore(context, data.profile_id), data);
+  },
+  async lead(context: DeskContext, data: LeadInput): Promise<LeadResult> {
+    return setProposalLead(await realStore(context, data.profile_id), data);
   },
   async win(context: DeskContext, data: WinInput): Promise<WinResult> {
     return winProposal(await realStore(context, data.profile_id), data);

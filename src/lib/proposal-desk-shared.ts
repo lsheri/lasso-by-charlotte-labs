@@ -54,6 +54,30 @@ export const SENT_COPY = {
   closed: "This proposal is already decided.",
 } as const;
 
+/** 20 Nov: the lead on a proposal is a person from the roster. Admins and leads pick; nobody else sees the name. */
+export const LEAD_COPY = {
+  none: "No lead yet",
+  lead: (name: string) => `Lead: ${name}`,
+  pick: "Pick a lead",
+  change: "Change",
+  title: "Pick the lead",
+  intro: "The lead is the person who hears when this proposal is won. They come from People we work with.",
+  select: "Choose a person",
+  noPeople: "Nobody is on the list yet. Add people under the People tab first.",
+  agreed: (name: string) => `${name} agreed to texts, so they get the text below when the win is recorded and an admin sends it.`,
+  notAgreed: (name: string) => `${name} has not agreed to texts, so no text will be sent. Copy their link under the People tab and send it to them.`,
+  unknown: (name: string) => `We could not check whether ${name} agreed to texts. No text is sent without an agreement.`,
+  preview: "What the lead gets",
+  save: "Save lead",
+  saving: "Saving",
+  clear: "No lead",
+  cancel: "Cancel",
+  notAllowed: "Only an admin or a lead can pick the lead.",
+  closed: "This proposal is already decided.",
+  missing: "That person is not on this workspace's list.",
+  failed: "That could not be saved. Nothing changed. Try again in a moment.",
+} as const;
+
 export const WIN_COPY = {
   record: "Record the win",
   title: "Record the win",
@@ -163,12 +187,16 @@ export type DeskProposal = {
   contextTitles?: string[];
   /** May mark it sent: the person who started it, an admin or a lead. Recording the win is for `mine` only. */
   canAct: boolean;
+  /** The picked lead's roster id. Sent only to admins and leads, who are the only people who see the roster. */
+  leadContactId?: string | null;
 };
 
 export type DeskList = {
   goalHours: number;
   /** May change the workspace's turnaround goal. */
   canSetGoal: boolean;
+  /** May pick a proposal's lead from the roster: an admin or a lead. */
+  canPickLead: boolean;
   proposals: DeskProposal[];
 };
 
@@ -267,6 +295,20 @@ export function sentInput(raw: { profile_id?: string | null | undefined; proposa
 }
 
 export type SentResult = { ok: true } | { ok: false; problem: string };
+
+export type LeadInput = DeskProfileInput & { proposal_id: string; lead_contact_id: string | null };
+
+/** A lead pick. A null contact clears the lead; a contact that is not an id is refused rather than read as "clear". */
+export function leadInput(raw: { profile_id?: string | null | undefined; proposal_id: string; lead_contact_id: string | null }): LeadInput {
+  const loose = raw as Loose;
+  const id = uuidOrNull(loose?.["proposal_id"]);
+  const contact = loose?.["lead_contact_id"];
+  const contactId = contact === null ? null : uuidOrNull(contact);
+  if (!id || (contact !== null && !contactId)) throw new Error(LEAD_COPY.failed);
+  return { profile_id: uuidOrNull(loose?.["profile_id"]), proposal_id: id, lead_contact_id: contactId };
+}
+
+export type LeadResult = { ok: true } | { ok: false; problem: string };
 
 export type WinInput = DeskProfileInput & { proposal_id: string };
 

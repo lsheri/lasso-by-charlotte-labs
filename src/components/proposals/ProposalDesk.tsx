@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { LeadDialog, LeadLine } from "@/components/proposals/LeadPicker";
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,9 +19,11 @@ import {
   type DeskList,
   type DeskProposal,
   type DeskView,
+  type LeadResult,
   type SentResult,
   type WinResult,
 } from "@/lib/proposal-desk-shared";
+import type { RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,6 +36,9 @@ export function ProposalDesk({
   now,
   onSent,
   onWin,
+  roster,
+  leadWords,
+  onLead,
 }: {
   data: DeskList;
   now?: Date | undefined;
@@ -40,7 +46,14 @@ export function ProposalDesk({
   onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
   /** Records the win, which makes the team board. Offered only on the person's own open proposals. */
   onWin?: ((proposalId: string) => Promise<WinResult>) | undefined;
+  /** People we work with, for naming and picking a lead. Used only when the server says this person may pick. */
+  roster?: RosterContact[] | undefined;
+  /** The won text as it is sent, shown when picking a lead. */
+  leadWords?: string | undefined;
+  onLead?: ((proposalId: string, contactId: string | null) => Promise<LeadResult>) | undefined;
 }) {
+  const [leading, setLeading] = useState<DeskProposal | null>(null);
+  const picks = Boolean(data.canPickLead && onLead);
   const [view, setView] = useState<DeskView>("open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
@@ -76,11 +89,14 @@ export function ProposalDesk({
       ) : (
         <ul className="divide-y divide-border border-y border-border">
           {rows.map((proposal) => (
-            <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined} />
+            <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
+              lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => setLeading(proposal) } : undefined}
+            />
           ))}
         </ul>
       )}
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
+      {picks && onLead ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} onClose={() => setLeading(null)} onSave={onLead} /> : null}
     </section>
   );
 }
@@ -143,12 +159,14 @@ function ProposalRow({
   now,
   onSent,
   onWin,
+  lead,
 }: {
   proposal: DeskProposal;
   goalHours: number;
   now?: Date | undefined;
   onSent?: ((proposalId: string, sent: boolean) => Promise<SentResult>) | undefined;
   onWin?: (() => void) | undefined;
+  lead?: { person: RosterContact | undefined; onPick: () => void } | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -178,6 +196,7 @@ function ProposalRow({
           {proposal.mine ? <span className={tagVariants({ tone: "accent" })}>{DESK_COPY.yours}</span> : proposal.ownerName ? <span>{DESK_COPY.owner(proposal.ownerName)}</span> : null}
           <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
         </p>
+        {lead && proposal.status === "open" ? <LeadLine lead={lead.person} picked={Boolean(proposal.leadContactId)} onPick={lead.onPick} /> : null}
         {titles.length > 0 ? (
           <ul className="mt-1 text-sm text-muted-foreground" data-proposal-context-titles>
             {titles.map((title, index) => (

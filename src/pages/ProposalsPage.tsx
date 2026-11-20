@@ -11,8 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useProfile } from "@/hooks/use-profile";
+import { useBrandCopy } from "@/components/skin/use-skin";
 import { DESK_COPY, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
-import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
+import { createProposalFn, listProposalClientsFn, listProposalsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
+import { listRosterFn } from "@/lib/roster.functions";
+import { wonTextBody } from "@/lib/won-text-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 /**
@@ -45,6 +48,16 @@ export function ProposalsPage() {
     retry: false,
     queryFn: (): Promise<DeskClient[]> => listProposalClientsFn({ data: { profile_id: profileId as string } }),
   });
+
+  // The roster names the lead on each row and fills the pick list. Its server function refuses anyone but an admin or a lead.
+  const roster = useQuery({
+    queryKey: ["proposal-desk-roster", profileId],
+    enabled: Boolean(profileId) && showPeople,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: () => listRosterFn({ data: { profile_id: profileId as string } }),
+  });
+  const brand = useBrandCopy();
 
   if (profile && !allowed) {
     return (
@@ -83,6 +96,16 @@ export function ProposalsPage() {
           {desk.data ? (
             <ProposalDesk
               data={desk.data}
+              roster={roster.data?.allowed ? roster.data.contacts : undefined}
+              leadWords={wonTextBody({ brandName: brand("Lasso"), firmName: profile?.org_name ?? "" })}
+              onLead={async (proposalId, contactId) => {
+                const result = await setProposalLeadFn({ data: { profile_id: profileId as string, proposal_id: proposalId, lead_contact_id: contactId } });
+                if (result.ok) {
+                  await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                  void roster.refetch();
+                }
+                return result;
+              }}
               onSent={async (proposalId, sent) => {
                 const result = await setProposalSentFn({ data: { profile_id: profileId as string, proposal_id: proposalId, sent } });
                 if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });

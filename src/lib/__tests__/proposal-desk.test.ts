@@ -27,8 +27,10 @@ import {
   timeLeft,
   timeLeftLine,
   type DeskProposal,
+  LEAD_COPY,
+  leadInput,
 } from "@/lib/proposal-desk-shared";
-import { createProposal, listDesk, listDeskClients, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
+import { createProposal, listDesk, listDeskClients, setProposalLead, setProposalSent, winProposal, type DeskCaller, type DeskStore, type ProposalRow } from "@/lib/proposal-desk.server";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const ME = "22222222-2222-4222-8222-222222222222";
@@ -36,6 +38,8 @@ const OTHER = "33333333-3333-4333-8333-333333333333";
 const CLIENT = "44444444-4444-4444-8444-444444444444";
 const ITEM_A = "55555555-5555-4555-8555-555555555555";
 const ITEM_B = "66666666-6666-4666-8666-666666666666";
+const LEAD = "77777777-7777-4777-8777-777777777777";
+const STRANGER = "88888888-8888-4888-8888-888888888888";
 const NOW = new Date("2026-11-20T12:00:00Z");
 const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOString();
 
@@ -143,11 +147,11 @@ describe("what a person may type", () => {
 
 /* ------------------------------------------------------------------------- */
 
-type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[]; sent: { id: string; sentAt: string | null }[]; steps: string[]; boards: Record<string, unknown>[]; placed: { taskId: string; ids: string[] }[]; ledger: { kind: string; occurred_at: string }[]; claims: { id: string; engagementId: string }[]; removedBoards: string[] } };
+type Fake = DeskStore & { state: { proposals: Record<string, unknown>[]; context: Record<string, unknown>[]; clients: { id: string; name: string }[]; events: Record<string, string>[]; removedClients: string[]; sent: { id: string; sentAt: string | null }[]; steps: string[]; boards: Record<string, unknown>[]; placed: { taskId: string; ids: string[] }[]; ledger: { kind: string; occurred_at: string }[]; claims: { id: string; engagementId: string }[]; removedBoards: string[]; leads: { id: string; contactId: string | null }[] } };
 
 function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRow[]; owned?: string[] } = {}): Fake {
   const caller: DeskCaller = { profileId: ME, orgId: ORG, role: over.role ?? "manager", userId: "u" };
-  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [], sent: [], steps: [], boards: [], placed: [], ledger: [], claims: [], removedBoards: [] };
+  const state: Fake["state"] = { proposals: [], context: [], clients: [{ id: CLIENT, name: "Marrowfield" }], events: [], removedClients: [], sent: [], steps: [], boards: [], placed: [], ledger: [], claims: [], removedBoards: [], leads: [] };
   let next = 0;
   return {
     state,
@@ -167,6 +171,8 @@ function fakeStore(over: Partial<DeskStore> & { role?: string; rows?: ProposalRo
     removeProposal: async (id) => { state.proposals = state.proposals.filter((p) => p["id"] !== id); },
     proposal: async (id) => (over.rows ?? []).find((r) => r.id === id) ?? null,
     setSent: async (id, sentAt) => { state.sent.push({ id, sentAt }); return true; },
+    rosterHas: async (orgId, contactId) => orgId === ORG && contactId === LEAD,
+    setLead: async (id, contactId) => { state.leads.push({ id, contactId }); return true; },
     notes: async () => "  Met them at the conference.  ",
     makeBoard: async (board) => { state.steps.push("board"); state.boards.push(board); return true; },
     boardHome: async () => { state.steps.push("home"); return "task-1"; },
@@ -321,6 +327,75 @@ describe("marking a proposal as sent", () => {
     expect(await setProposalSent(store, P(UUIDS["p1"]!, true))).toEqual({ ok: false, problem: SENT_COPY.failed });
     expect(store.state.events).toEqual([]);
     expect(() => sentInput({ proposal_id: "x", sent: true })).toThrow();
+  });
+});
+
+describe("picking the lead", () => {
+  const P1 = "aaaaaaaa-0000-4000-8000-000000000001";
+  const rows = [row({ id: P1, owner_id: OTHER }), row({ id: "aaaaaaaa-0000-4000-8000-000000000002", org_id: "another-org" }), row({ id: "aaaaaaaa-0000-4000-8000-000000000003", status: "won", decided_at: hoursAgo(1) }), row({ id: "aaaaaaaa-0000-4000-8000-000000000004", lead_contact_id: LEAD })];
+  const pick = (id: string, contact: string | null) => leadInput({ profile_id: ME, proposal_id: id, lead_contact_id: contact });
+
+  it("lets an admin or a lead pick someone from the workspace's own list, and records only that a pick was made", async () => {
+    for (const role of ["admin", "lead"]) {
+      const store = fakeStore({ rows, role });
+      expect(await setProposalLead(store, pick(P1, LEAD))).toEqual({ ok: true });
+      expect(store.state.leads).toEqual([{ id: P1, contactId: LEAD }]);
+      expect(store.state.events).toEqual([{ event: "proposal.lead_set", change: "set" }]);
+      expect(JSON.stringify(store.state.events)).not.toContain(LEAD);
+    }
+  });
+
+  it("refuses everyone else, even on their own proposal, and writes nothing", async () => {
+    for (const role of ["manager", "em", "analyst", "coach"]) {
+      const store = fakeStore({ rows: [row({ id: P1 })], role });
+      expect(await setProposalLead(store, pick(P1, LEAD))).toEqual({ ok: false, problem: LEAD_COPY.notAllowed });
+      expect(store.state.leads).toEqual([]);
+    }
+  });
+
+  it("refuses another workspace's proposal, a decided one, a missing one and a person not on the list", async () => {
+    const store = fakeStore({ rows, role: "admin" });
+    expect(await setProposalLead(store, pick(rows[1]!.id, LEAD))).toEqual({ ok: false, problem: LEAD_COPY.notAllowed });
+    expect(await setProposalLead(store, pick("aaaaaaaa-0000-4000-8000-00000000ffff", LEAD))).toEqual({ ok: false, problem: LEAD_COPY.notAllowed });
+    expect(await setProposalLead(store, pick(rows[2]!.id, LEAD))).toEqual({ ok: false, problem: LEAD_COPY.closed });
+    expect(await setProposalLead(store, pick(P1, STRANGER))).toEqual({ ok: false, problem: LEAD_COPY.missing });
+    expect(store.state.leads).toEqual([]);
+    expect(store.state.events).toEqual([]);
+  });
+
+  it("clears a lead, does nothing when nothing changes, and says so when the write fails", async () => {
+    const store = fakeStore({ rows, role: "lead" });
+    expect(await setProposalLead(store, pick(rows[3]!.id, null))).toEqual({ ok: true });
+    expect(store.state.leads).toEqual([{ id: rows[3]!.id, contactId: null }]);
+    expect(store.state.events).toEqual([{ event: "proposal.lead_set", change: "cleared" }]);
+    expect(await setProposalLead(store, pick(rows[3]!.id, LEAD))).toEqual({ ok: true });
+    expect(await setProposalLead(store, pick(P1, null))).toEqual({ ok: true });
+    expect(store.state.leads).toHaveLength(1);
+    const broken = fakeStore({ rows, role: "admin", setLead: async () => false });
+    expect(await setProposalLead(broken, pick(P1, LEAD))).toEqual({ ok: false, problem: LEAD_COPY.failed });
+    expect(broken.state.events).toEqual([]);
+    const quiet = fakeStore({ rows, role: "admin", record: async () => { throw new Error("down"); } });
+    expect(await setProposalLead(quiet, pick(P1, LEAD))).toEqual({ ok: true });
+  });
+
+  it("reads the input strictly: junk is refused, never read as a clear", () => {
+    expect(() => leadInput({ proposal_id: "nope", lead_contact_id: LEAD })).toThrow(LEAD_COPY.failed);
+    expect(() => leadInput({ proposal_id: P1, lead_contact_id: "nope" })).toThrow(LEAD_COPY.failed);
+    expect(() => leadInput({ proposal_id: P1, lead_contact_id: undefined as never })).toThrow(LEAD_COPY.failed);
+    expect(leadInput({ proposal_id: P1, lead_contact_id: null })).toEqual({ profile_id: null, proposal_id: P1, lead_contact_id: null });
+  });
+
+  it("tells only admins and leads who the lead is", async () => {
+    const mine = [row({ lead_contact_id: LEAD })];
+    const member = await listDesk(fakeStore({ rows: mine }));
+    expect(member.canPickLead).toBe(false);
+    expect(JSON.stringify(member)).not.toContain(LEAD);
+    for (const role of ["admin", "lead"]) {
+      const list = await listDesk(fakeStore({ rows: [...mine, row({ id: "p2", owner_id: OTHER })], role }));
+      expect(list.canPickLead).toBe(true);
+      expect(list.proposals.map((p) => p.leadContactId)).toEqual([LEAD, null]);
+    }
+    expect(EVENT_DIM_KEYS["proposal.lead_set"]).toEqual(["change"]);
   });
 });
 
