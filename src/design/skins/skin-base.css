@@ -4,6 +4,7 @@
    six type hues (--t-talk, --t-words, --t-numbers, --t-slides, --t-visual, --t-code), and the attention wash and edge
    (--skin-attention-wash, --skin-attention-edge).
    Lime-style live colours are for fill and decoration only: --skin-live never reaches focus, text or state here.
+   Its tints (--skin-live-tint, --skin-live-wash) are separate values that mean good news; they are never text either.
    Lasso keeps its own hand-picked values in styles.css. A skin can still override any name here. */
 [data-skin] [data-lasso="on"],
 [data-skin] body:has([data-lasso="on"]) > [role="dialog"],
@@ -16,6 +17,22 @@
   --skin-sunk-2:color-mix(in srgb, var(--skin-ink) 10%, var(--skin-page));
   --skin-hairline:color-mix(in srgb, var(--skin-ink) 14%, var(--skin-page));
   --skin-pencil:color-mix(in srgb, var(--skin-ink) 30%, var(--skin-page));
+
+  /* Action, good news and paper (20 Nov 2026, design review, Liam's D-74). A skin may set any of these; unset, they
+     fall back to what the skin showed before, so a skin that names none of them does not change.
+     Action: the one filled button, links and the focus ring. Never body text, never a page, never a state.
+     Good news: tints of the live colour for a yes, a win or a finished bar. They are their own values, so the
+     full-strength live colour still means working now and nothing else. Never text.
+     Paper: the ground of a document being read. Never chrome. */
+  --skin-action:var(--skin-ink);
+  --skin-action-deep:var(--skin-ink);
+  --skin-action-wash:var(--skin-sunk);
+  --skin-action-edge:var(--skin-pencil);
+  --skin-live-tint:color-mix(in srgb, var(--skin-live) 22%, var(--skin-raised));
+  --skin-live-wash:color-mix(in srgb, var(--skin-live) 11%, var(--skin-raised));
+  --skin-live-deep:color-mix(in srgb, var(--skin-live) 45%, var(--skin-ink));
+  --skin-paper:var(--skin-raised);
+  --skin-paper-deep:var(--skin-sunk);
 
   /* Worked out at :root from the old values and inherited frozen, so they are re-derived here (reskin audit, 18 Nov). */
   --nb-scrim:color-mix(in oklab, var(--skin-ink) 28%, transparent);
@@ -46,10 +63,24 @@
   --action-primary:var(--skin-ink);
   --action-primary-fg:var(--skin-page);
   --action-primary-shadow:var(--skin-ink);
-  --action-secondary:var(--skin-ink);
+  --action-secondary:var(--skin-action);
   --action-secondary-underline:var(--skin-live);
-  --focus-ring-new:var(--skin-ink);
-  --focus-ring:var(--skin-ink);
+  --focus-ring-new:var(--skin-action);
+  --focus-ring:var(--skin-action);
+  /* The one filled button per view. --action-primary stays ink: it also feeds --primary, which colours text. */
+  --action-fill:var(--skin-action);
+  --action-fill-hover:var(--skin-action-deep);
+  --action-wash:var(--skin-action-wash);
+  --action-edge:var(--skin-action-edge);
+  --ember:var(--action-fill);
+  --ember-deep:var(--action-fill-hover);
+  --ember-deep-foreground:var(--action-primary-fg);
+  --accent-soft:var(--action-wash);
+  --good-tint:var(--skin-live-tint);
+  --good-wash:var(--skin-live-wash);
+  --good-mark:var(--skin-live-deep);
+  --paper:var(--skin-paper);
+  --paper-deep:var(--skin-paper-deep);
 
   --hand-ink:var(--skin-ink);
   --hand-live:var(--skin-live);
@@ -197,7 +228,7 @@
   --border:var(--line-hairline);
   --ring:var(--focus-ring-new);
   --destructive:var(--state-destructive-new);
-  --ember:var(--action-primary);
+  --ember:var(--action-fill);
   --ember-foreground:var(--action-primary-fg);
   --electric:var(--action-secondary);
   --accent-deep:var(--action-secondary);
