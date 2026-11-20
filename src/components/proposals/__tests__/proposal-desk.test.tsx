@@ -455,6 +455,13 @@ describe("picking the lead", () => {
     render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "gone" })])} roster={undefined} leadWords={WORDS} onLead={vi.fn()} />);
     expect(screen.getByText(LEAD_COPY.none)).toBeTruthy();
     expect(screen.getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
+    // QA L4: while the list loads or cannot be read, one plain line sits where the list would be.
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.change }));
+    const noList = await screen.findByTestId("pick-lead");
+    expect(within(noList).getByRole("status").textContent).toBe(LEAD_COPY.noList);
+    expect(noList.querySelector("[data-lead-people]")).toBeNull();
+    expect(within(noList).queryByText(LEAD_COPY.noPeople)).toBeNull();
+    expect((within(noList).getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
