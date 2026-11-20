@@ -49,7 +49,8 @@ export const GOAL_COPY = {
 
 export const SENT_COPY = {
   mark: "Mark as sent",
-  undo: "Not sent yet",
+  /** Takes "sent" back. Says what the press does, so it cannot be read as the proposal's state. */
+  undo: "Undo sent",
   working: "Saving",
   failed: "That could not be saved. Nothing changed. Try again in a moment.",
   notYours: "Only the person who started this proposal, an admin or a lead can change it.",
