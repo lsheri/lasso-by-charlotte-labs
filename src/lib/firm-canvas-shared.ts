@@ -491,4 +491,5 @@ export const FIRM_CANVAS_COPY = {
     `${totals.engagements} engagements, ${totals.situations} situations, ${totals.methods} methods`,
   canvasLabel: "The firm map. Drag to move, pinch or use the buttons to zoom.",
   source: "Open the source",
+  backHome: "Home",
 } as const;

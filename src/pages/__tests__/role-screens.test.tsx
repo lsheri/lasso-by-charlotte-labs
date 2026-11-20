@@ -38,7 +38,13 @@ vi.mock("@/components/firm-brain/JuniorTools", () => ({ JuniorTools: () => <div 
 vi.mock("@/components/firm-brain/FirmBrainMap", () => ({ FirmBrainMap: () => <div data-testid="firm-brain-map" /> }));
 vi.mock("@/components/firm-brain/FirmBrainCanvas", () => ({ FirmBrainCanvas: ({ profile }: { profile: { role?: string } }) => <div data-testid="firm-brain-canvas" data-role={profile?.role} /> }));
 vi.mock("@/components/firm-brain/CommonQuestionsCard", () => ({ CommonQuestionsCard: () => null }));
-vi.mock("@/components/home/HomeBoard", () => ({ HomeBoard: () => <div data-testid="home-board" /> }));
+vi.mock("@/components/home/HomeBoard", () => ({ HomeBoard: ({ hero }: { hero?: ReactNode }) => <div data-testid="home-board">{hero}</div> }));
+vi.mock("@/components/home/HomeAsk", () => ({ HomeAsk: ({ role, recentBoard }: { role?: string; recentBoard?: string | null }) => <div data-testid="home-ask" data-role={role} data-recent={recentBoard ?? ""} /> }));
+vi.mock("@tanstack/react-start", async (original) => ({ ...(await original<object>()), useServerFn: (fn: unknown) => fn }));
+vi.mock("@/lib/firm-map.functions", () => ({ getFirmMap: vi.fn(() => new Promise(() => {})) }));
+vi.mock("@/lib/firm-ask.functions", () => ({ askTheFirm: vi.fn(), previewFirmSource: vi.fn(), keepOutOfFirmAnswers: vi.fn() }));
+vi.mock("@/hooks/use-engagements", () => ({ useEngagements: () => ({ data: [{ id: "e1", title: "Older board" }, { id: "e2", title: "Fairhaven digital product operating model" }] }) }));
+vi.mock("@/hooks/use-engagement-views", () => ({ useEngagementViews: () => ({ data: [{ engagement_id: "e1", last_viewed_at: "2026-11-01T00:00:00Z" }, { engagement_id: "e2", last_viewed_at: "2026-11-20T00:00:00Z" }] }) }));
 vi.mock("@/components/person/UsesHomeCard", () => ({ UsesHomeCard: () => null }));
 
 import { HomeProposals } from "@/components/home/HomeProposals";
@@ -127,8 +133,8 @@ describe("who gets what", () => {
   it("gives the map to admins and leads, the tools to everyone else in the firm, and nothing to a coach, a guest or another kind of workspace", () => {
     expect(firmBrainAccess(person("admin"))).toBe("map");
     expect(firmBrainAccess(person("lead"))).toBe("map");
-    // D-85: managers and analysts see the map too. Fees are kept from them on the server.
-    for (const role of ["em", "manager", "analyst"]) expect(firmBrainAccess(person(role))).toBe("map");
+    // D-85: members see the map too. Fees are kept from them on the server.
+    expect(firmBrainAccess(person("em"))).toBe("map");
     expect(firmBrainAccess(person("coach"))).toBe("none");
     expect(firmBrainAccess(person("admin", { is_guest: true }))).toBe("none");
     expect(firmBrainAccess(person("admin", { org_type: "personal", has_firm_view: false }))).toBe("none");
@@ -151,7 +157,7 @@ describe("who gets what", () => {
 
 describe("the Firm brain page", () => {
   it("shows everyone in the firm the canvas, the one place the map, the question and the tools live (D-85)", () => {
-    for (const role of ["admin", "lead", "em", "manager", "analyst"]) {
+    for (const role of ["admin", "lead", "em"]) {
       mocks.profile = person(role);
       mount(<FirmBrainPage />);
       expect(screen.getByTestId("firm-brain-canvas").getAttribute("data-role")).toBe(role);
@@ -231,14 +237,29 @@ describe("Home by role", () => {
     expect(mocks.list).toHaveBeenCalledWith({ data: { profile_id: person("admin").id } });
   });
 
-  it("leaves Home as it was for a lead, a manager, an analyst and a coach, and asks for no proposals on their behalf", async () => {
-    for (const role of ["lead", "em", "manager", "analyst", "coach"]) {
+  it("gives a lead and a member the mini firm brain over their boards, with no proposals asked for (D-85 PR B)", async () => {
+    for (const role of ["lead", "em"]) {
       mocks.profile = person(role);
       mount(<HomePage />);
-      expect(screen.queryByTestId("home-proposals")).toBeNull();
-      expect(order("ask-the-firm", "junior-tools", "home-board")).toEqual([0, 1, 2]);
+      const ask = screen.getByTestId("home-ask");
+      expect(ask.getAttribute("data-role")).toBe(role);
+      // The starters are made from the most recently opened board.
+      expect(ask.getAttribute("data-recent")).toBe("Fairhaven digital product operating model");
+      // The question box sits at the top of Home's board, above the boards as cards.
+      expect(screen.getByTestId("home-board").contains(ask)).toBe(true);
+      for (const id of ["home-proposals", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
       await Promise.resolve();
       expect(mocks.list).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it("leaves Home as it was for a coach and outside a company workspace", () => {
+    for (const profile of [person("coach"), person("em", { org_type: "personal", has_firm_view: false })]) {
+      mocks.profile = profile;
+      mount(<HomePage />);
+      expect(screen.queryByTestId("home-ask")).toBeNull();
+      expect(screen.getByTestId("home-board")).toBeTruthy();
       cleanup();
     }
   });

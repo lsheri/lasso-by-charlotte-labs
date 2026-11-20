@@ -1,6 +1,6 @@
 // 20 Nov, D-85: everyone in the firm sees the map, and fees reach admins and leads only. These tests call the real
 // server path behind getFirmMap (firmMapFor) with the Kestrel Bay demo corpus and inspect exactly what it would send to the browser, for a
-// manager, an analyst, an admin and a lead. A manager's or analyst's response must hold no fee and no money figure
+// member (role em), an admin and a lead. A member's response must hold no fee and no money figure
 // anywhere, not just a hidden one.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -58,9 +58,9 @@ beforeEach(() => {
 });
 
 describe("getFirmMap for someone who does not see fees", () => {
-  it("sends a manager and an analyst the whole map with no fee record and no money figure anywhere", async () => {
-    // Managers and analysts are both "em" in the database; each is checked as its own call.
-    for (const who of ["manager", "analyst"]) {
+  it("sends a member the whole map with no fee record and no money figure anywhere", async () => {
+    // Members are "em" in the database (the demo's Harper Quinn and Elif Yilmaz are both members); checked twice.
+    for (const who of ["member Harper Quinn", "member Elif Yilmaz"]) {
       h.role = "em";
       const data = await call();
       expect(data.fees, who).toBeNull();

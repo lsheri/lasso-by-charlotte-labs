@@ -16,6 +16,7 @@ import {
   type FirmCanvasData,
 } from "@/lib/firm-canvas-shared";
 import { FIRM_BRAIN_COPY } from "@/lib/role-screens-shared";
+import { handOffQuestion, resetHomeHandOff, takeReturn } from "@/lib/home-ask-shared";
 import { corpusOf, demoRows, graphOf, itemId } from "@/lib/__tests__/helpers/demo-firm-rows";
 
 const m = vi.hoisted(() => ({
@@ -24,9 +25,11 @@ const m = vi.hoisted(() => ({
   ask: vi.fn(),
   opened: [] as (string | null)[],
   capture: vi.fn(),
+  navigate: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+vi.mock("@tanstack/react-router", () => ({ useNavigate: () => m.navigate }));
 vi.mock("@/hooks/use-motion", () => ({ useReducedMotion: () => m.reduce }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/lib/firm-map.functions", () => ({ getFirmMap: (...a: unknown[]) => m.getMap(...a) }));
@@ -139,6 +142,8 @@ beforeEach(() => {
   m.capture.mockReset();
   m.opened = [];
   resetFirmCanvasMemory();
+  resetHomeHandOff();
+  m.navigate.mockReset();
 });
 
 afterEach(() => cleanup());
@@ -157,7 +162,7 @@ describe("the canvas at rest", () => {
     expect(screen.queryByText(FIRM_ASK_COPY.title)).toBeNull();
   });
 
-  it("shows a manager or analyst the map with no fee chip and no money anywhere", async () => {
+  it("shows a member the map with no fee chip and no money anywhere", async () => {
     m.getMap.mockResolvedValue(memberData());
     const { container } = mount(<FirmBrainCanvas profile={person("em")} />);
     await ready();
@@ -429,5 +434,53 @@ describe("sharing turned off after an answer landed", () => {
     ];
     expect(pruneAnswers(list, new Set(["b5"]))).toBe(list);
     expect(pruneAnswers(list, new Set<string>()).map((a) => a.id)).toEqual(["a"]);
+  });
+});
+
+describe("arriving from Home's question box (PR B)", () => {
+  it("asks the handed question once the map is ready, and offers Home to go back the same way", async () => {
+    m.reduce = false;
+    handOffQuestion("What held up patient recruiting last time?");
+    m.getMap.mockResolvedValue(memberData());
+    m.ask.mockResolvedValue(answer(["b8"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1));
+    expect(m.ask.mock.calls[0]![0].data.question).toBe(
+      "What held up patient recruiting last time?",
+    );
+    const back = screen.getByTestId("firm-canvas-back");
+    expect(back.textContent).toContain(FIRM_CANVAS_COPY.backHome);
+    fireEvent.click(back);
+    expect(m.navigate).toHaveBeenCalledWith({ to: "/home" });
+    // The way back starts from the top middle when there is no menu row on screen (jsdom has none); under reduced
+    // motion there is nothing to grow back from.
+    expect(takeReturn()).not.toBeNull();
+  });
+
+  it("builds the answer Home already has (the orb turned to it) without asking the firm again", async () => {
+    handOffQuestion("How did we launch other health service lines?", answer(["b5", "b6"]));
+    m.getMap.mockResolvedValue(memberData());
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    await waitFor(() =>
+      expect(screen.getByTestId("canvas-answer").getAttribute("data-answer-status")).toBe(
+        "answered",
+      ),
+    );
+    expect(m.ask).not.toHaveBeenCalled();
+    expect(screen.getByTestId("canvas-answer").textContent).toContain("Line 1 from b5.");
+    // A later question on the canvas is asked as normal.
+    m.ask.mockResolvedValue(answer(["b7"]));
+    askFor("And what about Willowmere?");
+    await waitFor(() => expect(m.ask).toHaveBeenCalledTimes(1));
+  });
+
+  it("asks nothing and offers no Home button when opened from the menu", async () => {
+    m.getMap.mockResolvedValue(memberData());
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    expect(m.ask).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("firm-canvas-back")).toBeNull();
   });
 });

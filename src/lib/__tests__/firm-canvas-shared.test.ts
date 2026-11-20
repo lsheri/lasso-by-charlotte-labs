@@ -57,7 +57,7 @@ describe("money figures", () => {
   it("sees fees only for admins and leads", () => {
     expect(canvasSeesFees("admin")).toBe(true);
     expect(canvasSeesFees("lead")).toBe(true);
-    for (const role of ["em", "coach", "manager", "analyst", null, undefined, ""])
+    for (const role of ["em", "coach", null, undefined, ""])
       expect(canvasSeesFees(role)).toBe(false);
   });
 });
