@@ -208,6 +208,16 @@ describe("QA H2 (PR 281), D-93: proposals are firm money", () => {
     [{ type: "email", title: "Proposal: Marrowfield", meta: {} }, false],
     [{ type: "document", title: "Harrowgate request for proposal summary", meta: {} }, false],
     [{ type: "document", title: "Harper's notes: Tarnhollow proposal", meta: {} }, false],
+    // QA of PR 281, open Medium and Low: titles the first rule missed, and one it over-matched.
+    [{ type: "document", title: "Artemis 3-month pilot — external proposal figures", meta: {} }, true],
+    [{ type: "document", title: "Draft proposal - Acme", meta: {} }, true],
+    [{ type: "document", title: "Acme proposal v3", meta: {} }, true],
+    [{ type: "document", title: "Re: Proposal", meta: {} }, true],
+    [{ type: "document", title: "1. Proposal", meta: {} }, true],
+    [{ type: "document", title: "Partner review notes on proposal draft v1", meta: {} }, false],
+    [{ type: "document", title: "Partner review notes on proposal draft v1", meta: { deliverable_kind: "proposal" } }, true],
+    [{ type: "document", title: "State board proposal: draft need, demand and duplication sections", meta: {} }, false],
+    [{ type: "document", title: "Harper's notes: Marrowfield proposal", meta: {} }, false],
   ])("%j is firm money: %s", (item, expected) => {
     expect(isProposalItem(item)).toBe(expected);
     expect(isFirmMoneyItem(item)).toBe(expected);
