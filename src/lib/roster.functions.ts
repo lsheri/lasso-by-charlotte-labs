@@ -6,6 +6,7 @@ import {
   rosterListInput,
   rosterSaveInput,
   type RosterChangeResult,
+  type RosterInviteResult,
   type RosterList,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
@@ -42,4 +43,15 @@ export const askNewNumberFn = createServerFn({ method: "POST" })
   .inputValidator(rosterChangeInput)
   .handler(async ({ data, context }): Promise<RosterChangeResult> =>
     (await import("./roster.server")).rosterHandlers.askNewNumber(context as never, data),
+  );
+
+/**
+ * 20 Nov 2026: emails one person their own text agreement link. Admins and leads only, at most once every ten minutes
+ * per person. The email asks; it agrees to nothing. Takes an id and nothing else; no address is typed or returned.
+ */
+export const sendRosterInviteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(rosterChangeInput)
+  .handler(async ({ data, context }): Promise<RosterInviteResult> =>
+    (await import("./roster.server")).rosterHandlers.invite(context as never, data),
   );

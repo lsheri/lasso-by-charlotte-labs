@@ -23,29 +23,21 @@ import { createInvite as createInviteFn, sendInviteEmail } from "@/lib/invites.f
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
-import { profileShowsAdminRole } from "@/lib/workspace-capabilities";
+import { invitableRoles, MEMBER_ROLE_LABELS, ROLE_COPY, type MemberRole } from "@/lib/member-roles-shared";
+import { profileHasFirmView, profileShowsAdminRole } from "@/lib/workspace-capabilities";
 import { tagVariants } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-type InviteRole = "coach" | "em" | "admin";
+type InviteRole = MemberRole;
 
-const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
-  {
-    value: "coach",
-    label: "Coach or manager",
-    hint: "Reviews the work you choose to share with them. Cannot see anything you have not shared.",
-  },
-  {
-    value: "em",
-    label: "Teammate",
-    hint: "Builds their own record in this workspace. Sees only their own work.",
-  },
-  {
-    value: "admin",
-    label: "Admin",
-    hint: "Manages people and invites for this organization, alongside their own work.",
-  },
-];
+/** 20 Nov 2026: the four roles in one vocabulary (Admin, Lead, Member, Coach); Lead only where proposals live. */
+function roleOptionsFor(profile: Parameters<typeof profileShowsAdminRole>[0]): { value: InviteRole; label: string; hint: string }[] {
+  return invitableRoles({ firmView: profileHasFirmView(profile), showsAdmin: profileShowsAdminRole(profile) }).map((value) => ({
+    value,
+    label: MEMBER_ROLE_LABELS[value],
+    hint: ROLE_COPY.hints[value],
+  }));
+}
 
 function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: string }) {
   const { data } = useQuery({
@@ -156,9 +148,7 @@ export function InviteDialog({
   // Admission is an admin act. Leads keep the console, they cannot mint links.
   const canInvite = profile?.role === "admin";
   // A personal workspace has no roster to administer, so it offers no admins.
-  const roleOptions = ROLE_OPTIONS.filter(
-    (option) => option.value !== "admin" || profileShowsAdminRole(profile),
-  );
+  const roleOptions = roleOptionsFor(profile);
   // Only ever the list this viewer may already read. It never answers whether
   // an address exists anywhere else.
   const { data: members } = useMembers(canInvite ? profile?.id : undefined);

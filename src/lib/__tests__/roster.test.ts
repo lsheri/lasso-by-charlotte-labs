@@ -1089,24 +1089,44 @@ describe("sendRosterInvite, with a stand-in sender that sends nothing", () => {
     });
   });
 
-  it("the real sender is one stubbed function that sends nothing, with no email service behind it", async () => {
-    const source = readFileSync("src/lib/roster-invite-sender.server.ts", "utf8");
-    expect(source.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(
-      /fetch\(|resend|sendVia|api\.|import\(/i,
-    );
+  it("20 Nov: the real sender goes through Resend from the invite address, says not_set_up with no key, and never logs", async () => {
+    const mail = { to: "dana@example.test", name: "Dana", workspace: "W", link: "https://lasso.example/texts?w=1&c=2" };
     const { sendRosterInviteMail } = await import("@/lib/roster-invite-sender.server");
-    expect(
-      await sendRosterInviteMail({
-        to: "dana@example.test",
-        name: "Dana",
-        workspace: "W",
-        link: "https://lasso.example/texts",
-      }),
-    ).toBe("not_set_up");
+    const saved = process.env["RESEND_API_KEY"];
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const logSpy = vi.spyOn(console, "log");
+    const errorSpy = vi.spyOn(console, "error");
+    try {
+      delete process.env["RESEND_API_KEY"];
+      expect(await sendRosterInviteMail(mail)).toBe("not_set_up");
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      process.env["RESEND_API_KEY"] = "re_test";
+      fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+      expect(await sendRosterInviteMail(mail)).toBe("sent");
+      const [url, init] = fetchSpy.mock.calls[0]!;
+      expect(url).toBe("https://api.resend.com/emails");
+      const body = JSON.parse(String((init as RequestInit).body));
+      expect(body.to).toEqual(["dana@example.test"]);
+      expect(body.subject).toBe(rosterInviteEmail(mail).subject);
+      expect(body.text).toContain(mail.link);
+
+      fetchSpy.mockResolvedValueOnce(new Response("nope", { status: 422 }));
+      expect(await sendRosterInviteMail(mail)).toBe("failed");
+      fetchSpy.mockRejectedValueOnce(new Error("offline"));
+      expect(await sendRosterInviteMail(mail)).toBe("failed");
+      for (const spy of [logSpy, errorSpy]) expect(JSON.stringify(spy.mock.calls)).not.toMatch(/dana|texts\?w=/);
+    } finally {
+      if (saved === undefined) delete process.env["RESEND_API_KEY"];
+      else process.env["RESEND_API_KEY"] = saved;
+      fetchSpy.mockRestore();
+      logSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+    // The rule stays in roster.server.ts; the service stays behind the one sender function.
     const server = readFileSync("src/lib/roster.server.ts", "utf8");
     expect(server).not.toMatch(/sendViaResend|resendApiKey|sendResendTemplate|api\.resend/);
-    // Nothing in the app can ask for the email yet: no server function wraps it.
-    expect(readFileSync("src/lib/roster.functions.ts", "utf8")).not.toMatch(/invite/i);
+    expect(readFileSync("src/lib/roster.functions.ts", "utf8")).toMatch(/rosterHandlers\.invite\(/);
   });
 
   it("writes a plain email: who asks, the link, that nothing is sent unless they agree, and typed text made safe", () => {
@@ -1304,9 +1324,9 @@ describe("the floors, read from the source", () => {
     expect(shared + fns + panel).not.toMatch(/console\./);
   });
 
-  it("puts sign-in in front of all three functions and takes no workspace from the browser", () => {
-    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(3);
-    expect(fns.match(/createServerFn\(/g)).toHaveLength(3);
+  it("puts sign-in in front of all four functions and takes no workspace from the browser", () => {
+    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(4);
+    expect(fns.match(/createServerFn\(/g)).toHaveLength(4);
     expect(
       Object.keys(
         rosterChangeInput({ id: DANA, profile_id: ORG, phone: SECRET_NUMBER, until: "2099-01-01" }),

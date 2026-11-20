@@ -170,3 +170,99 @@ export async function revokeInviteByCode(
   });
   return { ok: true };
 }
+
+/**
+ * 20 Nov 2026, chat pill build Phase 2: an admin changes a teammate's role between Admin, Lead and Member. The rules
+ * are roleChangeRefusal (member-roles-shared.ts), run here on the server with fresh reads. The write goes through the
+ * service role only after they pass, scoped to the workspace and to the role the rules saw, so a change made
+ * meanwhile by someone else is not overwritten. Demoting an admin is checked again after the write: if two admins
+ * demoted each other at once and none is left, this one is put back.
+ */
+export type RoleChangeDeps = {
+  caller: () => Promise<{ profileId: string; orgId: string; role: string; active: boolean } | null>;
+  target: (orgId: string, id: string) => Promise<{ id: string; orgId: string; role: string; active: boolean; isGuest: boolean } | null>;
+  workspace: (orgId: string) => Promise<{ firmView: boolean; showsAdmin: boolean } | null>;
+  activeAdmins: (orgId: string) => Promise<number | null>;
+  /** Writes the new role only if the row still has the old one; true when exactly one row changed. */
+  write: (orgId: string, id: string, from: string, to: string) => Promise<boolean>;
+  record: (orgId: string, from: string, to: string) => Promise<void>;
+};
+
+export async function changeMemberRole(
+  deps: RoleChangeDeps,
+  input: { member_id: string; role: string },
+): Promise<import("./member-roles-shared").RoleChangeResult> {
+  const { roleChangeRefusal } = await import("./member-roles-shared");
+  const caller = await deps.caller();
+  if (!caller) throw new Response("Forbidden", { status: 403 });
+  try {
+    const [target, workspace, admins] = await Promise.all([
+      deps.target(caller.orgId, input.member_id),
+      deps.workspace(caller.orgId),
+      deps.activeAdmins(caller.orgId),
+    ]);
+    if (!workspace || admins === null) return { ok: false, reason: "unavailable" };
+    const refusal = roleChangeRefusal({ caller, target, next: input.role, workspace, activeAdmins: admins });
+    if (refusal) return { ok: false, reason: refusal };
+    const from = target!.role;
+    const to = input.role as import("./member-roles-shared").MemberRole;
+    if (!(await deps.write(caller.orgId, target!.id, from, to))) return { ok: false, reason: "unavailable" };
+    if (from === "admin") {
+      const left = await deps.activeAdmins(caller.orgId);
+      if (left === null || left < 1) {
+        await deps.write(caller.orgId, target!.id, to, "admin");
+        return { ok: false, reason: "last_admin" };
+      }
+    }
+    await deps.record(caller.orgId, from, to).catch(() => undefined);
+    return { ok: true, role: to };
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
+}
+
+export async function realRoleChangeDeps(context: AuthedContext, profileId: string | null | undefined): Promise<RoleChangeDeps> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const admin = supabaseAdmin as unknown as SupabaseClient<Database>;
+  return {
+    async caller() {
+      const profile = await resolveProfile(context.supabase, context.userId, profileId);
+      if (!profile) return null;
+      const { data } = await admin.from("profiles").select("deactivated_at").eq("id", profile.id).maybeSingle();
+      return { profileId: profile.id, orgId: profile.org_id, role: profile.role, active: !data?.deactivated_at };
+    },
+    async target(orgId, id) {
+      const { data, error } = await admin.from("profiles").select("id, org_id, role, deactivated_at, is_guest").eq("id", id).eq("org_id", orgId).maybeSingle();
+      if (error) throw new Error("unreadable");
+      return data ? { id: data.id, orgId: data.org_id, role: data.role, active: !data.deactivated_at, isGuest: Boolean(data.is_guest) } : null;
+    },
+    async workspace(orgId) {
+      const { data } = await admin.from("orgs").select("has_firm_view, shows_admin_role").eq("id", orgId).maybeSingle();
+      return data ? { firmView: data.has_firm_view === true, showsAdmin: data.shows_admin_role === true } : null;
+    },
+    async activeAdmins(orgId) {
+      const { count, error } = await admin
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
+        .eq("role", "admin")
+        .is("deactivated_at", null)
+        .eq("is_guest", false);
+      return error ? null : (count ?? 0);
+    },
+    async write(orgId, id, from, to) {
+      const { data, error } = await admin
+        .from("profiles")
+        .update({ role: to as Database["public"]["Enums"]["app_role"] })
+        .eq("id", id)
+        .eq("org_id", orgId)
+        .eq("role", from as Database["public"]["Enums"]["app_role"])
+        .select("id");
+      return !error && (data ?? []).length === 1;
+    },
+    async record(orgId, from, to) {
+      const { recordEvent } = await import("./telemetry.server");
+      await recordEvent(context.supabase, { eventType: "member.role_changed", orgId, userId: context.userId, dims: { from, to } });
+    },
+  };
+}

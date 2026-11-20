@@ -501,7 +501,7 @@ export function useProfile() {
 
 
 export const ROLE_LABELS: Record<string, string> = {
-  em: "Engagement Mgr",
+  em: "Member",
   coach: "Coach",
   lead: "Lead",
   admin: "Admin",

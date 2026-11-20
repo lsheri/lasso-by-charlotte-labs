@@ -22,6 +22,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InviteDialog } from "@/components/invites/InviteDialog";
+import { MemberRoleDialog } from "@/components/members/MemberRoleDialog";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { changeMemberRoleFn } from "@/lib/members.functions";
+import { CHANGEABLE_ROLES, ROLE_COPY } from "@/lib/member-roles-shared";
+import { profileHasFirmView } from "@/lib/workspace-capabilities";
 import { COPY as DATA_COPY } from "@/components/settings/DataSection";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
@@ -67,6 +73,7 @@ function whatTheyCanSee(role: string, isYou: boolean) {
   if (isYou) return "Your own work, all of it";
   if (role === "coach") return "Work you shared, on their workboards";
   if (role === "admin") return "Firm counts only, never a person's work";
+  if (role === "lead") return "Every proposal and its fees, plus their own work";
   return "Their own work";
 }
 
@@ -152,6 +159,9 @@ function MembersConsole() {
   const [confirm, setConfirm] = useState<MemberRow | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [shareTarget, setShareTarget] = useState<MemberRow | null>(null);
+  const [roleTarget, setRoleTarget] = useState<MemberRow | null>(null);
+  const changeRole = useServerFn(changeMemberRoleFn);
+  const queryClient = useQueryClient();
 
   const isAdmin = data?.viewer_role === "admin";
   // Leads read the console and can withdraw a link. Only admins issue one.
@@ -319,6 +329,11 @@ function MembersConsole() {
                                   Reactivate
                                 </DropdownMenuItem>
                               ) : null}
+                              {isAdmin && business && !member.deactivated_at && member.id !== profile?.id && (CHANGEABLE_ROLES as readonly string[]).includes(member.role) ? (
+                                <DropdownMenuItem aria-label={ROLE_COPY.changeLabel(member.display_name)} onSelect={() => setRoleTarget(member)}>
+                                  {ROLE_COPY.change}
+                                </DropdownMenuItem>
+                              ) : null}
                               {isAdmin && !member.deactivated_at ? (
                                 <DropdownMenuItem onSelect={() => setConfirm(member)}>
                                   Deactivate
@@ -421,6 +436,18 @@ function MembersConsole() {
           viewerRole={profile.role}
         />
       ) : null}
+
+      <MemberRoleDialog
+        member={roleTarget}
+        firmView={profileHasFirmView(profile)}
+        change={(memberId, role) => changeRole({ data: { profile_id: profile?.id, member_id: memberId, role } })}
+        onChanged={(name, role) => {
+          toast.success(ROLE_COPY.done(name, role));
+          void queryClient.invalidateQueries({ queryKey: ["members"] });
+          void queryClient.invalidateQueries({ queryKey: ["profiles"] });
+        }}
+        onClose={() => setRoleTarget(null)}
+      />
 
       <AlertDialog open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)}>
         <AlertDialogContent>
