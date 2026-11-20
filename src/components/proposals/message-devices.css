@@ -1,0 +1,11 @@
+/* The phone a text arrives on. These are the device's own proportions, not interface corners, so they live here
+   rather than in the corner scale. */
+.message-phone{border-width:6px;border-style:solid;border-radius:2.4rem;padding:.5rem .25rem .25rem}
+.message-phone-island{width:4.75rem;height:1.25rem;border-radius:.625rem}
+.message-bubble{border-radius:1.15rem;border-bottom-left-radius:.3rem}
+/* One sheet, two steps: the list folds away and the confirm lines fold in, in one motion. */
+.lead-sheet-fold{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .5s cubic-bezier(.45,0,.2,1),opacity .45s cubic-bezier(.45,0,.2,1)}
+.lead-sheet-fold[data-folded="true"]{grid-template-rows:0fr;opacity:0;pointer-events:none}
+.lead-sheet-fold>*{overflow:hidden;min-height:0;margin:-.25rem;padding:.25rem}
+.lead-sheet-fold[data-folded="true"]>*{padding-block:0;margin-block:0}
+@media (prefers-reduced-motion:reduce){.lead-sheet-fold{transition:none}}
