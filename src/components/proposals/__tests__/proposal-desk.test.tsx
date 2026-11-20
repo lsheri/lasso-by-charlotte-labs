@@ -591,6 +591,17 @@ describe("20 Nov: the strip at the top of a board made by a win", () => {
     expect(within(strip).getByRole("button", { name: "Text the lead" })).toBeTruthy();
   });
 
+  it("marks a practice answer PRACTICE, in the desk row's words, and a real answer carries no tag", () => {
+    const { rerender } = render(<BoardWinLines win={{ won: true, decidedAt: "2026-11-19T18:00:00Z", leadName: "Christy Johnson", ask: { name: "", status: "practice", reply: "yes", practice: true, waiting: false } }} />);
+    const answer = screen.getByTestId("board-win-strip").querySelector("[data-board-lead-answer]")!;
+    expect(within(answer as HTMLElement).getByText("The lead said yes")).toBeTruthy();
+    expect(within(answer as HTMLElement).getByText(ASK_COPY.practiceTag)).toBeTruthy();
+    rerender(<BoardWinLines win={{ won: true, decidedAt: null, leadName: "Christy Johnson", ask: { name: "", status: "practice", reply: "no", practice: true, waiting: false } }} />);
+    expect(screen.getByTestId("board-win-strip").textContent).toContain("The lead said no");
+    rerender(<BoardWinLines win={{ won: true, decidedAt: null, leadName: "Christy Johnson", ask: { name: "Christy Johnson", status: "delivered", reply: "yes", practice: false, waiting: false } }} />);
+    expect(screen.getByTestId("board-win-strip").textContent).not.toContain(ASK_COPY.practiceTag);
+  });
+
   it("no lead, nothing about a lead; not a won board, nothing at all", () => {
     const { rerender } = render(<BoardWinLines win={{ won: true, decidedAt: null, leadName: null, ask: null }} />);
     const strip = screen.getByTestId("board-win-strip");

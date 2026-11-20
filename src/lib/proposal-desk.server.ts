@@ -358,9 +358,18 @@ export async function boardWin(store: DeskStore, input: BoardInput): Promise<Boa
   const contactId = row.lead_contact_id ?? null;
   const [names, asks] = await Promise.all([contactId ? store.leadNames(caller.orgId, [contactId]) : Promise.resolve(new Map<string, string>()), contactId ? store.asks(caller.orgId, [row.id]) : Promise.resolve([])]);
   const leadName = contactId ? (names.get(contactId) ?? null) : null;
-  // Only an answer from the person named, never a practice ask or one sent to a demo number.
+  // An answer from the person named comes first. A text sent to a demo number is never shown as theirs.
   const answered = asks.find((ask) => ask.contact_id === contactId && (ask.reply === "yes" || ask.reply === "no"));
-  const ask = leadName && answered ? (askViews([answered], names, store.now()).get(row.id) ?? null) : null;
+  let ask = leadName && answered ? (askViews([answered], names, store.now()).get(row.id) ?? null) : null;
+  // Otherwise, in a demo workspace while texting is not switched on, the latest practice answer, marked as practice
+  // and not put in the lead's name. Never in a real workspace, and never once the sender settings are in place.
+  if (leadName && !ask) {
+    const practised = asks.find((entry) => entry.status === "practice" && (entry.reply === "yes" || entry.reply === "no"));
+    if (practised) {
+      const texts = await store.texts(caller.orgId);
+      if (texts.demo && !texts.connected) ask = askViews([practised], names, store.now()).get(row.id) ?? null;
+    }
+  }
   return { won: true, decidedAt: row.decided_at, leadName, ask };
 }
 
