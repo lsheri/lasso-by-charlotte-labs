@@ -51,7 +51,7 @@ export const Route = createFileRoute("/join")({
 
 const ROLE_WORD: Record<string, string> = {
   coach: "coach",
-  em: "teammate",
+  em: "member",
   lead: "lead",
   admin: "admin",
 };
@@ -196,7 +196,9 @@ function JoinPage() {
           <p>
             {state.email
               ? `It is for ${state.email}. Share the link with them.`
-              : "It is an open link. Share it with the person you want to invite."}
+              : state.is_email_bound
+                ? `It is locked to ${state.email_hint ?? "one address"}. Share the link with that person.`
+                : "It is an open link. Share it with the person you want to invite."}
           </p>
           <p>Opening it yourself does nothing. You are already in {org}.</p>
           <div className="flex flex-wrap gap-2 pt-1">
