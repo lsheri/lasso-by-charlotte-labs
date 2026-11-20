@@ -15,7 +15,6 @@ vi.mock("@/hooks/use-profile", () => ({
 }));
 vi.mock("@/lib/workspace-capabilities", () => ({ profileHasFirmView: () => true }));
 vi.mock("@/hooks/use-firm-dashboard", () => ({ useFirmDashboard: () => mocks.dashboard }));
-vi.mock("@/hooks/use-firm-view-warmup", () => ({ useFirmViewWarmup: vi.fn() }));
 vi.mock("@/components/firm/ChecksLibrary", () => ({ ChecksLibrary: () => <div data-testid="stub-ChecksLibrary" /> }));
 vi.mock("@/components/firm/FirmArchive", () => ({ FirmArchive: () => <div data-testid="stub-FirmArchive" /> }));
 vi.mock("@/components/firm/FirmLiveBoards", () => ({ FirmLiveBoards: () => <div data-testid="stub-FirmLiveBoards" /> }));

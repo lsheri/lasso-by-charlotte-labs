@@ -9,13 +9,14 @@ describe("PERF-4 wiring", () => {
     expect(read("src/pages/CanvasLabPage.tsx").match(/useRecordEngagementView\(engagementId\)/g)).toHaveLength(1);
   });
 
-  it("reads the firm record's item rows together, with the same filters as before", () => {
+  it("reads the firm record and the firm gate one read after another, as before #273 (D-90)", () => {
     const source = read("src/lib/firm-corpus.server.ts");
-    const block = source.slice(source.indexOf("const [items, extracts, showings, exemplars"), source.indexOf("const peopleIds"));
-    expect(block).toMatch(/Promise\.all\(\[/);
-    expect(block).toMatch(/from\("work_items"\)\.select\("id, owner_id, type, title, display_title, visibility, work_date, meta"\)\.eq\("org_id", orgId\)/);
-    expect(block).toMatch(/from\("client_showings"\)[^\n]*\.eq\("org_id", orgId\)/);
-    expect(block).toMatch(/from\("engagement_members"\)\.select\("engagement_id"\)\.eq\("profile_id", asker\.id\)/);
+    expect(source).not.toMatch(/Promise\.all/);
+  });
+
+  it("starts the Firm view cards after the counts, as before #273 (D-90)", () => {
+    const source = read("src/pages/FirmDashboardPage.tsx");
+    expect(source).not.toMatch(/useFirmViewWarmup|prefetchQuery/);
   });
 
   it("still refuses a guest, a deactivated seat and a non-firm workspace in the firm gate", () => {
