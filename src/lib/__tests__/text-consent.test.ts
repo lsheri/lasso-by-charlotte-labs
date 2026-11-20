@@ -67,6 +67,13 @@ describe("the wording", () => {
     expect(TEXT_CONSENT_VERSION).toBe("tc-v1");
   });
 
+  it("says above the tick box what the texts are for: being asked for a part, and news of work you helped with (Q-49)", () => {
+    expect(TEXT_CONSENT_COPY.intro).toBe(
+      "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when a firm asks for your part of a proposal, or when something you helped with moves, like a proposal you worked on being won. Only the moments that matter to you, never marketing.",
+    );
+    expect(TEXT_CONSENT_COPY.intro).not.toMatch(/[!—–]/);
+  });
+
   it("has no em dash anywhere in the page's copy", () => {
     expect(JSON.stringify(TEXT_CONSENT_COPY) + TEXT_CONSENT_WORDING).not.toMatch(/[—–]/);
   });

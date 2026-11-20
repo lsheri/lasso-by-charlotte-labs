@@ -102,7 +102,8 @@ export const TEXT_CONSENT_COPY = {
   label: "Text messages",
   heading: "Get texts from Lasso",
   intro:
-    "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when something you helped with moves, for example when a proposal you worked on is won.",
+    // Liam, card Q-49, 19 Nov: "Yes, add the words", and "it must be Lasso helpful and not corporate stuck up".
+    "A firm you work with uses Lasso to run its proposals and projects. If you agree, Lasso can text you when a firm asks for your part of a proposal, or when something you helped with moves, like a proposal you worked on being won. Only the moments that matter to you, never marketing.",
   nameLabel: "Your name",
   phoneLabel: "Mobile number",
   phoneHint: "United States or Canada. For example (206) 555-0142.",
