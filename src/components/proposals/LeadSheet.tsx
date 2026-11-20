@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { PhoneBubble, PhoneDevice } from "@/components/proposals/MessageDevices";
 import { MessageExamples } from "@/components/proposals/MessageExamples";
+import { PROPOSAL_MORPH } from "@/lib/view-morph";
+
+import "./proposal-morph.css";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,7 +71,7 @@ export function LeadSheet({
   pastWork,
 }: {
   /** The proposal, and where the sheet starts: the list, or the confirm when a lead is already saved. */
-  target: { proposal: DeskProposal; start: LeadSheetStart } | null;
+  target: { proposal: DeskProposal; start: LeadSheetStart; /** Opened straight after New proposal saved it. */ fresh?: boolean } | null;
   /** Undefined while the list loads or when it could not be read. */
   roster: RosterContact[] | undefined;
   /** The won text, exactly as it is sent. */
@@ -86,7 +89,17 @@ export function LeadSheet({
   pastWork?: Record<string, readonly PastWork[]> | undefined;
 }) {
   const proposal = target?.proposal ?? null;
+  const fresh = Boolean(target?.fresh);
   const proposalId = proposal?.id ?? null;
+  // The morph name is carried only while it arrives, so a later view transition elsewhere cannot pick this box up.
+  // Worked out on render (the sheet stays mounted between uses), so it is on from the very first frame.
+  const [settled, setSettled] = useState<string | null>(null);
+  const arriving = fresh && proposalId !== null && settled !== proposalId;
+  useEffect(() => {
+    if (!arriving) return;
+    const settle = setTimeout(() => setSettled(proposalId), 700);
+    return () => clearTimeout(settle);
+  }, [arriving, proposalId]);
   const current = proposal?.leadContactId ?? "";
   const [choice, setChoice] = useState("");
   const [step, setStep] = useState<LeadSheetStart>("pick");
@@ -205,6 +218,12 @@ export function LeadSheet({
     >
       <DialogContent
         ref={box}
+        // Straight after New proposal, the form's box morphs into this one, so this one does not zoom in by itself.
+        // Its own entrance stays off for as long as it is open: turning it back on would replay the zoom. It closes
+        // normally, because the close clears `fresh` in the same render. The morph name is carried only while arriving.
+        style={fresh ? { animation: "none", ...(arriving ? { viewTransitionName: PROPOSAL_MORPH } : {}) } : undefined}
+        data-lead-fresh={fresh ? "" : undefined}
+        data-lead-arriving={arriving ? "" : undefined}
         className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
         data-testid={confirm ? "ask-lead" : "pick-lead"}
         data-lead-sheet={confirm ? "confirm" : "pick"}
@@ -222,7 +241,9 @@ export function LeadSheet({
                 : loaded
                   ? ""
                   : ASK_COPY.loading
-              : LEAD_COPY.intro}
+              : fresh
+                ? `${SHEET_COPY.started} ${LEAD_COPY.intro}`
+                : LEAD_COPY.intro}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-start">
@@ -402,8 +423,8 @@ export function LeadSheet({
             </>
           ) : (
             <>
-              <Button type="button" variant="ghost" disabled={working} onClick={onClose}>
-                {LEAD_COPY.cancel}
+              <Button type="button" variant="ghost" disabled={working} onClick={onClose} data-lead-later={fresh ? "" : undefined}>
+                {fresh ? SHEET_COPY.pickLater : LEAD_COPY.cancel}
               </Button>
               {current ? (
                 <Button

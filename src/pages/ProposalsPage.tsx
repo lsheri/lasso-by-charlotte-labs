@@ -19,6 +19,7 @@ import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functio
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
+import { morph } from "@/lib/view-morph";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 /**
@@ -57,6 +58,9 @@ export function ProposalsPage() {
     queryFn: () => listRosterFn({ data: { profile_id: profileId as string } }),
   });
   const brand = useBrandCopy();
+  const [startLead, setStartLead] = useState<string | null>(null);
+  // Who may pick a lead: the server says so for the desk, and the people list was readable.
+  const mayPickLead = Boolean(desk.data?.canPickLead && roster.data?.allowed);
 
   if (profile && !allowed) {
     return (
@@ -96,6 +100,8 @@ export function ProposalsPage() {
             <ProposalDesk
               data={desk.data}
               initialView={initialView}
+              startLead={startLead}
+              onStartLeadDone={() => setStartLead(null)}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
               leadWords={wonTextBody({ brandName: brand("Lasso"), firmName: profile?.org_name ?? "" })}
               onLead={async (proposalId, contactId) => {
@@ -161,10 +167,13 @@ export function ProposalsPage() {
           await Promise.all(ids.map((id) => deleteWorkItem({ data: { work_item_id: id, profile_id: profileId ?? null } })));
         }}
         create={(input) => createProposalFn({ data: input })}
-        onCreated={() => {
-          void queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+        onCreated={async (id) => {
           void queryClient.invalidateQueries({ queryKey: ["proposal-desk-clients"] });
           void queryClient.invalidateQueries({ queryKey: ["clients"] });
+          // 21 Nov 2026 (Liam): making a proposal begins lead picking. The desk is read again first, so the new
+          // row is there for the sheet; then the form morphs into the sheet. Only for people who may pick a lead.
+          await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+          if (mayPickLead) await morph(() => { setOpen(false); setStartLead(id); });
         }}
       />
     </div>

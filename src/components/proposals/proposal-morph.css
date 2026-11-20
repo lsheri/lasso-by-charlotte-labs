@@ -1,0 +1,6 @@
+/* New proposal becoming the lead sheet: one box changes shape, in the house curve, slow enough to follow. The page
+   behind does not cross-fade, and neither dialog's backdrop fades during the hand-over, so the dim stays steady. */
+::view-transition-group(proposal-morph){animation-duration:.55s;animation-timing-function:cubic-bezier(.45,0,.2,1)}
+::view-transition-old(proposal-morph),::view-transition-new(proposal-morph){animation-duration:.45s;animation-timing-function:cubic-bezier(.45,0,.2,1)}
+::view-transition-old(root),::view-transition-new(root){animation:none}
+[data-skin-overlay]:has(+ [data-proposal-handing]),[data-skin-overlay]:has(+ [data-lead-fresh]){animation:none}

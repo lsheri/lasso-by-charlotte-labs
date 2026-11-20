@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { chipVariants } from "@/components/ui/chip";
@@ -16,6 +17,9 @@ import {
   type NewProposalRaw,
   type NewProposalResult,
 } from "@/lib/proposal-desk-shared";
+import { PROPOSAL_MORPH } from "@/lib/view-morph";
+
+import "./proposal-morph.css";
 
 export type CaptureFiles = (files: File[]) => Promise<{ ids: string[]; failures: { name: string; reason: string }[] }>;
 
@@ -53,7 +57,8 @@ export function NewProposalDialog({
   /** Removes documents uploaded here when the start is given up, so a proposal that was never made leaves nothing in the person's work. */
   discard?: ((workItemIds: string[]) => Promise<void>) | undefined;
   create: (input: NewProposalRaw) => Promise<NewProposalResult>;
-  onCreated: (id: string) => void;
+  /** Told the new proposal's id. It may return a promise; the form waits for it, so a hand-over to the lead sheet is seamless. */
+  onCreated: (id: string) => void | Promise<void>;
 }) {
   const copy = INTAKE_COPY;
   const ids = useId();
@@ -67,6 +72,8 @@ export function NewProposalDialog({
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  /** Saved, and handing over to the lead sheet: the box carries the morph name and leaves without its own animation. */
+  const [handing, setHanding] = useState(false);
 
   const noClients = clients !== undefined && clients.length === 0;
   const effectiveMode = !canAddClient ? "existing" : noClients ? "new" : mode;
@@ -84,6 +91,7 @@ export function NewProposalDialog({
     setUploading(null);
     setPending(false);
     setProblem(null);
+    setHanding(false);
   }
 
   /** Giving up: what was uploaded here for this proposal is removed again, then the form is cleared. */
@@ -142,7 +150,14 @@ export function NewProposalDialog({
         setProblem(result.problem);
         return;
       }
-      onCreated(result.id);
+      // The proposal is made. From here nothing may say it failed: a hand-over that goes wrong just closes the form.
+      // Committed at once, so the box already carries the morph name when the browser takes its "before" picture.
+      flushSync(() => setHanding(true));
+      try {
+        await onCreated(result.id);
+      } catch {
+        // The proposal exists; the page shows it on its next read.
+      }
       reset();
       onOpenChange(false);
     } catch {
@@ -164,7 +179,12 @@ export function NewProposalDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-lg" data-testid="new-proposal">
+      <DialogContent
+        className="sm:max-w-lg"
+        data-testid="new-proposal"
+        style={handing ? { viewTransitionName: PROPOSAL_MORPH, animation: "none" } : undefined}
+        data-proposal-handing={handing ? "" : undefined}
+      >
         <DialogHeader>
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
           <DialogDescription>{copy.intro}</DialogDescription>
