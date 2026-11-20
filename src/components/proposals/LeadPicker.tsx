@@ -108,17 +108,17 @@ export function LeadDialog({
                   data-lead-person={person.id}
                   disabled={working}
                   className={cn(
-                    "flex items-center gap-3 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
+                    "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
                     on ? "border-[var(--action-edge)] bg-[var(--action-wash)]" : "border-transparent hover:bg-muted",
                   )}
                   onClick={() => { setChoice(person.id); setProblem(null); }}
                 >
                   <PersonFace name={person.name} />
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-[6.5rem] flex-1">
                     <span className="block break-words text-(length:--type-control) font-medium text-foreground [overflow-wrap:anywhere]">{person.name}</span>
                     {person.role ? <span className="block break-words text-(length:--type-small) text-muted-foreground [overflow-wrap:anywhere]">{person.role}</span> : null}
                   </span>
-                  <span className={tagVariants({ tone: person.texts === "agreed" ? "accent" : "outline" })}>{ROSTER_COPY.texts[person.texts]}</span>
+                  <span className={cn(tagVariants({ tone: person.texts === "agreed" ? "accent" : "outline" }), "ms-auto shrink-0")}>{ROSTER_COPY.texts[person.texts]}</span>
                 </button>
               );
             })}
