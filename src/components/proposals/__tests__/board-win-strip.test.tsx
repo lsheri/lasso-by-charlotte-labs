@@ -53,8 +53,34 @@ describe("the win strip keeps off the first card on a phone", () => {
     expect(block).toMatch(
       /\.canvas-lab-board-status \{[^}]*bottom: 16px;[^}]*flex-direction: column;[^}]*pointer-events: none;/,
     );
-    expect(block).toMatch(/\.canvas-lab-board-status > \* \{ pointer-events: auto; \}/);
-    expect(block).toMatch(/\.canvas-lab-board-status > \[data-board-win\] \{ margin-top: auto; \}/);
+    expect(block).toMatch(/\.canvas-lab-board-status > \[data-board-win\] \{ margin-top: auto; order: 1; \}/);
+  });
+
+  // 20 Nov 2026 (QA M1 on #266): "> * { pointer-events: auto }" switched the offline alert's own
+  // pointer-events: none back on, so below 768 it swallowed touches on the first card.
+  it("below 768 only the win strip and the save alerts take a touch; the offline alert never does", () => {
+    const rules = [...block.matchAll(/([^{}]+)\{([^}]*pointer-events:\s*auto[^}]*)\}/g)].map((m) => (m[1] as string).trim());
+    expect(rules).toHaveLength(1);
+    const selectors = (rules[0] as string).split(",").map((one) => one.trim());
+    expect(selectors).toEqual([
+      '[data-lasso="on"] .canvas-lab-board-status > .canvas-lab-banner',
+      '[data-lasso="on"] .canvas-lab-board-status > [data-board-win]',
+    ]);
+    // No rule in the phone block may reach every child, or the offline alert by name.
+    expect(block).not.toMatch(/canvas-lab-board-status > \*/);
+    expect(block).not.toMatch(/offline-pill/);
+    // The alert's own rule still lets touches through, and the alert is still a child of the column.
+    const pill = readFileSync("src/styles/02-icons-board-sidebar.css", "utf8");
+    expect(pill.slice(pill.indexOf(".canvas-lab-offline-pill {"), pill.indexOf("}", pill.indexOf(".canvas-lab-offline-pill {")))).toMatch(/pointer-events: none;/);
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const column = page.slice(page.indexOf('className="canvas-lab-board-status"'));
+    expect(column.indexOf("<BoardOfflineBanner")).toBeLessThan(column.indexOf("</div>\n          <BoardToolbarSurface"));
+    expect(readFileSync("src/components/canvas-lab/BoardOfflineBanner.tsx", "utf8")).toContain('className="canvas-lab-offline-pill"');
+  });
+
+  it("below 768 a save alert stays under the toolbar when there is a win strip: the strip is drawn last", () => {
+    expect(block).toMatch(/> \[data-board-win\] \{[^}]*order: 1;/);
+    expect(block).not.toMatch(/canvas-lab-banner[^{]*\{[^}]*order:/);
   });
 
   it("on a desktop nothing moved: the column is still the top-left box", () => {

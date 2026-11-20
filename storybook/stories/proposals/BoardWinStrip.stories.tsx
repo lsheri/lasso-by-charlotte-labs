@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AsShipped } from "./as-shipped";
 import { NOW } from "./kestrel-bay";
 
-function Shell({ alert }: { alert?: boolean }) {
+function Shell({ alert, offline }: { alert?: boolean; offline?: boolean }) {
   // Where the first card sat on the live won board: centred on a desktop, under the toolbar on a phone.
   const wide = typeof window !== "undefined" && window.innerWidth >= 768;
   return (
@@ -41,11 +41,10 @@ function Shell({ alert }: { alert?: boolean }) {
           Harrowgate discovery call notes.docx
         </div>
         <div className="canvas-lab-board-status">
-          {alert ? (
-            <div className="canvas-lab-banner" role="alert">
-              <p className="text-(length:--type-body) text-foreground">
-                Could not save your last change.
-              </p>
+          {/* The page's own order: offline alert, win strip, then save alerts. */}
+          {offline ? (
+            <div data-testid="board-offline-banner" className="canvas-lab-offline-pill" role="status">
+              <p>You are offline. Changes will save when you are back.</p>
             </div>
           ) : null}
           <BoardWinLines
@@ -67,6 +66,13 @@ function Shell({ alert }: { alert?: boolean }) {
               Text the lead
             </Button>
           </BoardWinLines>
+          {alert ? (
+            <div className="canvas-lab-banner" role="alert">
+              <p className="text-(length:--type-body) text-foreground">
+                Could not save your last change.
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
     </AsShipped>
@@ -83,3 +89,4 @@ type Story = StoryObj;
 
 export const WonBoard: Story = { render: () => <Shell /> };
 export const WonBoardWithASaveAlert: Story = { render: () => <Shell alert /> };
+export const WonBoardOfflineWithASaveAlert: Story = { render: () => <Shell alert offline /> };
