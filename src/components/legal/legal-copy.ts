@@ -27,8 +27,8 @@ export const LEGAL_FACTS: {
   updated: "19 November 2026",
   // Already public on the landing page. Liam to confirm it is the address he wants on legal pages.
   contactEmail: "liam@charlotte-labs.com",
-  // Liam, card Q-41 (D-43), 19 Nov: "Charlotte Labs doing business as Lasso - Washington State". No Inc. or LLC given.
-  legalEntity: "Charlotte Labs, doing business as Lasso",
+  // Liam, card Q-41 (D-43), 19 Nov: "Charlotte Labs doing business as Lasso - Washington State". Card Q-48: "Yes, add Inc."
+  legalEntity: "Charlotte Labs Inc., doing business as Lasso",
   postalAddress: null,
   governingState: "Washington",
   minimumAge: null,
