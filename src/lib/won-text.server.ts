@@ -23,7 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { launchBrand } from "@/design/brand/brand";
 import type { Database } from "@/integrations/supabase/types";
 
-import { textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
+import { readyTextConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
 import { canManageRoster } from "./roster-shared";
 import {
   isE164,
@@ -162,6 +162,7 @@ export async function realDeps(context: WonTextContext, profileId: string | null
     const { recordEvent } = await import("./telemetry.server");
     await recordEvent(admin, { eventType, orgId: who.orgId, userId: who.userId, profileId: who.profileId, dims });
   };
+  const ready = await readyTextConfig(admin as unknown as SupabaseClient);
   return {
     caller: async () => caller,
     async board(orgId, engagementId) {
@@ -199,7 +200,8 @@ export async function realDeps(context: WonTextContext, profileId: string | null
       const { liveConsentRecords } = await import("./text-consent.server");
       return (await liveConsentRecords()).numberFor(orgId, contactId);
     },
-    config: () => textConfig(),
+    // Ready means able to send (D-97): settings in place and no refusal in the pause window. Read once per call.
+    config: () => ready,
     recordPress: (who) => record(who, "proposal_text.pressed", { channel: "sms" }),
     recordResult: (who, outcome) => record(who, "proposal_text.result", { channel: "sms", outcome }),
     async pressesToday(orgId) {

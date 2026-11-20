@@ -16,7 +16,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
 import { afterCreate, DESK_COPY, deskLinkFromSearch, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
-import { askLeadFn, askPreviewFn, practiceReplyFn } from "@/lib/lead-ask.functions";
+import { askLeadFn, askPreviewFn, practiceReplyFn, recordAnswerFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
@@ -158,6 +158,11 @@ export function ProposalsPage() {
                 },
                 practiceReply: async (proposalId, reply) => {
                   const result = await practiceReplyFn({ data: { profile_id: profileId as string, proposal_id: proposalId, reply } });
+                  await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                  return result;
+                },
+                recordAnswer: async (proposalId, reply) => {
+                  const result = await recordAnswerFn({ data: { profile_id: profileId as string, proposal_id: proposalId, press_id: crypto.randomUUID(), reply } });
                   await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
                   return result;
                 },

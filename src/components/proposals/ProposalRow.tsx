@@ -50,7 +50,12 @@ export function ProposalRow({
   onWin?: (() => void) | undefined;
   lead?: { person: RosterContact | undefined; onPick: () => void } | undefined;
   ask?:
-    | { onAsk: () => void; onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult> }
+    | {
+        onAsk: () => void;
+        onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult>;
+        /** A real workspace whose texts have not started: record the lead's answer heard another way. */
+        onRecordAnswer?: ((reply: "yes" | "no") => Promise<PracticeReplyResult>) | undefined;
+      }
     | undefined;
   onClose?: ((change: "lost" | "archived") => void) | undefined;
   /** Up next: the one proposal on the page whose next step is the filled button. */
@@ -197,7 +202,7 @@ export function ProposalRow({
           <LeadChip name={leadName} texts={lead?.person?.texts} ask={word} picked={Boolean(proposal.leadContactId)} onPick={lead?.onPick} />
           {/* The line beneath the chip says the ask in full. When the answer changes it fades in fresh. */}
           <div key={proposal.ask ? `${proposal.ask.status}-${proposal.ask.reply ?? ""}` : "none"} className="animate-in fade-in-0 duration-500 motion-reduce:animate-none">
-            <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} />
+            <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} onRecordAnswer={ask?.onRecordAnswer} />
           </div>
         </div>
         <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />
