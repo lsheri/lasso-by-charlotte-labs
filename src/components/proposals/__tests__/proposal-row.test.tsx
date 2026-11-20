@@ -42,7 +42,9 @@ describe("the redrawn proposal row", () => {
     cleanup();
     row({ sentAt: hoursAgo(2) });
     expect(filled()).toEqual([WIN_COPY.record]);
-    expect(screen.getByRole("button", { name: SENT_COPY.undo })).toBeTruthy();
+    // Taking it back says what the press does, and sits with the quiet changes, not beside the status line.
+    expect(SENT_COPY.undo).toBe("Undo sent");
+    expect(within(document.querySelector("[data-proposal-close]") as HTMLElement).getByRole("button", { name: SENT_COPY.undo })).toBeTruthy();
     cleanup();
     // Someone else's proposal an admin may mark sent: no win button, and sending is the filled one.
     row({ mine: false });

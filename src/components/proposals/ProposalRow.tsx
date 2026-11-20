@@ -80,6 +80,7 @@ export function ProposalRow({
   const mayWin = Boolean(onWin && proposal.mine);
   // One filled button: sending it comes first, then recording the win.
   const next = maySend && !proposal.sentAt ? "send" : mayWin ? "win" : null;
+  const undo = maySend && Boolean(proposal.sentAt);
   const good = left.state === "sent" && left.withinGoal;
   return (
     <li
@@ -184,29 +185,18 @@ export function ProposalRow({
                 {problem}
               </p>
             ) : null}
-            {maySend || mayWin ? (
+            {(maySend && !proposal.sentAt) || mayWin ? (
               <div className="mt-2 flex flex-wrap items-center gap-2 sm:justify-end">
-                {maySend ? (
-                  proposal.sentAt ? (
-                    <button
-                      type="button"
-                      className="text-muted-foreground underline hover:text-foreground disabled:opacity-50"
-                      disabled={working}
-                      onClick={() => void press(false)}
-                    >
-                      {working ? SENT_COPY.working : SENT_COPY.undo}
-                    </button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={next === "send" ? "default" : "outline"}
-                      disabled={working}
-                      onClick={() => void press(true)}
-                    >
-                      {working ? SENT_COPY.working : SENT_COPY.mark}
-                    </Button>
-                  )
+                {maySend && !proposal.sentAt ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={next === "send" ? "default" : "outline"}
+                    disabled={working}
+                    onClick={() => void press(true)}
+                  >
+                    {working ? SENT_COPY.working : SENT_COPY.mark}
+                  </Button>
                 ) : null}
                 {mayWin ? (
                   <Button
@@ -220,12 +210,23 @@ export function ProposalRow({
                 ) : null}
               </div>
             ) : null}
-            {onClose && (proposal.canClose || proposal.canArchive) ? (
+            {undo || (onClose && (proposal.canClose || proposal.canArchive)) ? (
               <p
                 data-proposal-close
                 className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground sm:justify-end"
               >
-                {proposal.canClose ? (
+                {/* Taking "sent" back sits with the other quiet changes, away from the line that says it went out. */}
+                {undo ? (
+                  <button
+                    type="button"
+                    className="underline hover:text-foreground disabled:opacity-50"
+                    disabled={working}
+                    onClick={() => void press(false)}
+                  >
+                    {working ? SENT_COPY.working : SENT_COPY.undo}
+                  </button>
+                ) : null}
+                {onClose && proposal.canClose ? (
                   <button
                     type="button"
                     className="underline hover:text-foreground"
@@ -234,7 +235,7 @@ export function ProposalRow({
                     {CLOSE_COPY.lost}
                   </button>
                 ) : null}
-                {proposal.canArchive ? (
+                {onClose && proposal.canArchive ? (
                   <button
                     type="button"
                     className="underline hover:text-foreground"
