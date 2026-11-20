@@ -10,6 +10,7 @@ import { RosterView, type RosterViewProps } from "@/components/roster/RosterPane
 import {
   ROSTER_COPY as COPY,
   type RosterContact,
+  type RosterChangeResult,
   type RosterList,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
@@ -26,6 +27,9 @@ const person = (over: Partial<RosterContact> = {}): RosterContact => ({
   firm: null,
   texts: "none",
   agreedOn: null,
+  stoppedOn: null,
+  confirmed: false,
+  changeUntil: null,
   linkPath: `/texts?w=${ORG}&c=0000000c-0000-4000-8000-000000000007`,
   ...over,
 });
@@ -47,6 +51,10 @@ function setup(over: Partial<RosterViewProps> & { list?: RosterList } = {}) {
     save: vi.fn(async (): Promise<RosterSaveResult> => ({
       ok: true,
       contact: person({ id: "new", name: "New Person" }),
+    })),
+    askNewNumber: vi.fn(async (): Promise<RosterChangeResult> => ({
+      ok: true,
+      contact: { ...tomas, changeUntil: "2026-11-27" },
     })),
     copyText: vi.fn(async () => undefined),
     origin: ORIGIN,
@@ -287,5 +295,151 @@ describe("add and edit", () => {
     await Promise.resolve();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+});
+
+describe("at five firms' size", () => {
+  const many = Array.from({ length: 12 }, (_, n) =>
+    person({
+      id: `id-${n}`,
+      name: `Person ${String(n).padStart(2, "0")}`,
+      role: n % 2 ? "Pricing" : "Bid writer",
+      linkPath: `/texts?w=${ORG}&c=id-${n}`,
+    }),
+  );
+
+  it("has no search box for a short list, and shows how many people and how many agreed", async () => {
+    setup();
+    await screen.findAllByRole("listitem");
+    expect(screen.queryByLabelText(COPY.search)).toBeNull();
+    expect(screen.getByText(COPY.count(2, 2, 1))).toBeTruthy();
+  });
+
+  it("filters a long list by name, role or firm as you type, and counts what is shown", async () => {
+    setup({ list: { allowed: true, contacts: [...many, tomas] } });
+    expect(await screen.findAllByRole("listitem")).toHaveLength(13);
+    fireEvent.change(screen.getByLabelText(COPY.search), { target: { value: "brigid" } });
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByText(COPY.count(1, 13, 1))).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(COPY.search), { target: { value: "pricing" } });
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  });
+
+  it("says nobody matches, and clears the search in one press", async () => {
+    setup({ list: { allowed: true, contacts: many } });
+    await screen.findAllByRole("listitem");
+    fireEvent.change(screen.getByLabelText(COPY.search), { target: { value: "zzz" } });
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+    expect(screen.getByText(COPY.noMatch)).toBeTruthy();
+    expect(screen.queryByText(COPY.empty)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: COPY.clearSearch }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(12);
+  });
+
+  it("clears the search when the workspace changes", async () => {
+    const { view, props } = setup({ list: { allowed: true, contacts: many } });
+    await screen.findAllByRole("listitem");
+    fireEvent.change(screen.getByLabelText(COPY.search), { target: { value: "zzz" } });
+    view.rerender(<RosterView {...props} profileId="p2" />);
+    expect(await screen.findAllByRole("listitem")).toHaveLength(12);
+    expect((screen.getByLabelText(COPY.search) as HTMLInputElement).value).toBe("");
+  });
+});
+
+describe("what an admin sees about texts", () => {
+  it("says when someone stopped, and whether an agreed number is confirmed by a reply", async () => {
+    setup({
+      list: {
+        allowed: true,
+        contacts: [
+          person({ id: "a", name: "A Stopped", texts: "stopped", stoppedOn: "2026-11-20" }),
+          person({ id: "b", name: "B Agreed", texts: "agreed", agreedOn: "2026-11-19" }),
+          person({
+            id: "c",
+            name: "C Confirmed",
+            texts: "agreed",
+            agreedOn: "2026-11-19",
+            confirmed: true,
+          }),
+          person({
+            id: "d",
+            name: "D Waiting",
+            texts: "agreed",
+            agreedOn: "2026-11-19",
+            changeUntil: "2026-11-27",
+          }),
+        ],
+      },
+    });
+    const rows = await screen.findAllByRole("listitem");
+    expect(rows[0]?.textContent).toContain(COPY.texts.stopped);
+    expect(rows[0]?.textContent).toContain(COPY.stoppedOn("2026-11-20"));
+    expect(rows[1]?.textContent).toContain(COPY.notConfirmed);
+    expect(rows[2]?.textContent).toContain(COPY.confirmed);
+    expect(rows[2]?.textContent).not.toContain(COPY.notConfirmed);
+    expect(rows[3]?.textContent).toContain(COPY.changeOpen("2026-11-27"));
+  });
+
+  it("offers a new number only for someone who has agreed, and has no field anywhere to type one", async () => {
+    const { view } = setup();
+    await screen.findAllByRole("listitem");
+    expect(screen.queryByRole("button", { name: COPY.newNumberLabel("Dana Whitlock") })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: COPY.newNumberLabel("Tomás Ó Briain-Lee") }),
+    ).toBeTruthy();
+    expect(view.container.querySelector('input[type="tel"]')).toBeNull();
+    expect(view.container.textContent).not.toMatch(/\+1\d{10}|\(\d{3}\) \d{3}-\d{4}/);
+  });
+
+  it("asking for a new number opens the window, copies their link, and says what the link now does", async () => {
+    const { props } = setup();
+    fireEvent.click(
+      await screen.findByRole("button", { name: COPY.newNumberLabel("Tomás Ó Briain-Lee") }),
+    );
+    await waitFor(() => expect(props.copyText).toHaveBeenCalledWith(ORIGIN + tomas.linkPath));
+    expect(props.askNewNumber).toHaveBeenCalledWith("p1", tomas.id);
+    const row = screen.getAllByRole("listitem")[1]!;
+    expect(within(row).getByRole("status").textContent).toBe(COPY.newNumberDone("2026-11-27"));
+    expect(row.textContent).toContain(COPY.changeOpen("2026-11-27"));
+  });
+
+  it("still opens the window and shows the link when the clipboard refuses", async () => {
+    setup({ copyText: vi.fn(async () => Promise.reject(new Error("denied"))) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: COPY.newNumberLabel("Tomás Ó Briain-Lee") }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toBe(COPY.newNumberNoCopy("2026-11-27"));
+    expect(
+      (screen.getByLabelText(COPY.linkLabel("Tomás Ó Briain-Lee")) as HTMLInputElement).value,
+    ).toBe(ORIGIN + tomas.linkPath);
+  });
+
+  it.each([
+    [{ ok: false, reason: "not_agreed" } as RosterChangeResult, COPY.changeFailures.not_agreed],
+    [{ ok: false, reason: "missing" } as RosterChangeResult, COPY.changeFailures.missing],
+    [{ ok: false, reason: "unavailable" } as RosterChangeResult, COPY.changeFailures.unavailable],
+  ])("says plainly when the server answers %j, and copies nothing", async (answer, line) => {
+    const { props } = setup({ askNewNumber: vi.fn(async () => answer) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: COPY.newNumberLabel("Tomás Ó Briain-Lee") }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toBe(line);
+    expect(props.copyText).not.toHaveBeenCalled();
+  });
+
+  it("says nothing changed on a network error, and a second press while one is out does nothing", async () => {
+    let fail: (error: Error) => void = () => undefined;
+    const askNewNumber = vi.fn(
+      () => new Promise<RosterChangeResult>((_resolve, reject) => (fail = reject)),
+    );
+    setup({ askNewNumber });
+    const button = await screen.findByRole("button", {
+      name: COPY.newNumberLabel("Tomás Ó Briain-Lee"),
+    });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(askNewNumber).toHaveBeenCalledTimes(1);
+    fail(new Error("offline"));
+    expect((await screen.findByRole("alert")).textContent).toBe(COPY.changeFailures.unavailable);
   });
 });

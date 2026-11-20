@@ -5,15 +5,17 @@ import { useEffect } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { LegalLinks } from "@/components/legal/LegalPage";
 import { TextConsentForm } from "@/components/legal/TextConsentForm";
+import { TextStopForm } from "@/components/legal/TextStopForm";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { cleanWorkspace, TEXT_CONSENT_COPY as COPY } from "@/lib/text-consent-shared";
-import { recordTextConsentFn } from "@/lib/text-consent.functions";
+import { recordTextConsentFn, stopTextConsentFn } from "@/lib/text-consent.functions";
 
 /**
  * 19 Nov 2026: the public page where a person agrees to receive text messages from Lasso. No sign-in: the person
  * agreeing is usually a consultant who has no account. They reach it by a link a firm's admin sends them, either
  * /texts on its own, /texts?w=<workspace id>, which files the agreement under that workspace, or the link the roster
- * copies for one person, /texts?w=<workspace id>&c=<roster person id>, which also ties it to them. Screen replay is
+ * copies for one person, /texts?w=<workspace id>&c=<roster person id>, which also ties it to them. That link also
+ * offers a way to stop texts from that firm. Screen replay is
  * stopped while this page is open and the form is marked ph-no-capture, so a name or number typed here never
  * reaches analytics, masked or not.
  */
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/texts")({
 function TextsPage() {
   const { w, c } = Route.useSearch();
   const record = useServerFn(recordTextConsentFn);
+  const stop = useServerFn(stopTextConsentFn);
   useEffect(() => {
     stopSessionReplay();
     return () => startSessionReplay();
@@ -60,6 +63,11 @@ function TextsPage() {
               submit={(input) => record({ data: input })}
             />
           </div>
+          {w && c ? (
+            <div className="ph-no-capture mt-10 border-t border-border pt-6">
+              <TextStopForm workspace={w} contact={c} submit={(input) => stop({ data: input })} />
+            </div>
+          ) : null}
           <div className="mt-14 border-t border-border pt-6">
             <LegalLinks current="/texts" />
           </div>

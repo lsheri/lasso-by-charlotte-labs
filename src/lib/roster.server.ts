@@ -13,12 +13,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   canManageRoster,
+  changeOpenUntil,
   checkRosterContact,
+  NUMBER_CHANGE_DAYS,
   ROSTER_MAX_CONTACTS,
   rosterLinkPath,
   textsStatus,
   type ConsentMark,
   type RosterAffiliation,
+  type RosterChangeInput,
+  type RosterChangeResult,
   type RosterContact,
   type RosterFields,
   type RosterList,
@@ -35,6 +39,8 @@ export type RosterRow = {
   role_title: string | null;
   affiliation: string;
   firm_name: string | null;
+  /** When this person's link stops accepting a new number. Absent before that column exists. */
+  number_change_until?: string | null;
 };
 
 export type ConsentMarkRow = ConsentMark & { roster_contact_id: string };
@@ -53,15 +59,25 @@ export type RosterDeps = {
     id: string,
     fields: RosterFields,
   ) => Promise<RosterRow | "missing" | null>;
+  /** Opens the window for one new number, only on a row in this workspace. "missing" when it is not there. */
+  openChange: (orgId: string, id: string, until: string) => Promise<RosterRow | "missing" | null>;
+  /** One person, only if they are in this workspace. Null when the read failed. */
+  one: (orgId: string, id: string) => Promise<RosterRow | "missing" | null>;
   /** Agreement dates for these people in this workspace. Null when the read failed. Never a number. */
   consents: (orgId: string, contactIds: readonly string[]) => Promise<ConsentMarkRow[] | null>;
 };
 
-const COLUMNS = "id, org_id, full_name, role_title, affiliation, firm_name";
-/** The only columns the roster ever asks message_consents for. */
-export const CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at";
+const BASE_COLUMNS = "id, org_id, full_name, role_title, affiliation, firm_name";
+const COLUMNS = `${BASE_COLUMNS}, number_change_until`;
+/** The only columns the roster ever asks message_consents for: the person and three dates. */
+export const CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at, confirmed_at";
+const BASE_CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at";
 
-function toContact(row: RosterRow, marks: readonly ConsentMark[] | null): RosterContact {
+function toContact(
+  row: RosterRow,
+  marks: readonly ConsentMark[] | null,
+  now: Date = new Date(),
+): RosterContact {
   const affiliation: RosterAffiliation = row.affiliation === "firm" ? "firm" : "independent";
   return {
     id: row.id,
@@ -70,8 +86,40 @@ function toContact(row: RosterRow, marks: readonly ConsentMark[] | null): Roster
     affiliation,
     firm: affiliation === "firm" ? row.firm_name : null,
     ...textsStatus(marks),
+    changeUntil: changeOpenUntil(row.number_change_until, now),
     linkPath: rosterLinkPath(row.org_id, row.id),
   };
+}
+
+/**
+ * An admin or lead asks one person for a new number. Nobody types a number here: this only opens a window, a few
+ * days long, in which that person's own link accepts one new number and ends the old one. Outside a window the
+ * first number stays, so a link passed on later cannot swap it.
+ */
+export async function requestNumberChange(
+  deps: RosterDeps,
+  input: RosterChangeInput,
+  now: Date = new Date(),
+): Promise<RosterChangeResult> {
+  const caller = await deps.caller();
+  if (!canManageRoster(caller.role)) throw new Response("Forbidden", { status: 403 });
+  if (!input.id) return { ok: false, reason: "missing" };
+  try {
+    const found = await deps.one(caller.orgId, input.id);
+    if (found === "missing") return { ok: false, reason: "missing" };
+    if (!found || found.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
+    const marks = await deps.consents(caller.orgId, [found.id]).catch(() => null);
+    // Nothing to change without a live agreement, and no window is opened on a guess when the read failed.
+    if (marks === null) return { ok: false, reason: "unavailable" };
+    if (textsStatus(marks).texts !== "agreed") return { ok: false, reason: "not_agreed" };
+    const until = new Date(now.getTime() + NUMBER_CHANGE_DAYS * 86_400_000).toISOString();
+    const row = await deps.openChange(caller.orgId, found.id, until);
+    if (row === "missing") return { ok: false, reason: "missing" };
+    if (!row || row.org_id !== caller.orgId) return { ok: false, reason: "unavailable" };
+    return { ok: true, contact: toContact(row, marks, now) };
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
 }
 
 /** The list. Writes nothing. A person who may not see it gets `allowed: false` and no rows. */
@@ -168,20 +216,30 @@ export async function realDeps(
   // roster_contacts and message_consents are newer than the generated types.
   const admin = supabaseAdmin as unknown as SupabaseClient;
   const caller: RosterCaller = { profileId: profile.id, orgId: profile.org_id, role: profile.role };
+  // Before the number-change column exists, the same read or write runs with the columns that do. A request that
+  // names a missing column is refused whole by the database, so the retry never writes twice.
+  const withColumns = async <T extends { error: { code?: string } | null }>(
+    run: (columns: string) => PromiseLike<T>,
+  ): Promise<T> => {
+    const first = await run(COLUMNS);
+    return first.error?.code === "42703" ? run(BASE_COLUMNS) : first;
+  };
   return {
     caller: async () => caller,
     async list(orgId) {
-      const { data, error } = await admin
-        .from("roster_contacts")
-        .select(COLUMNS)
-        .eq("org_id", orgId)
-        .order("full_name", { ascending: true })
-        .limit(ROSTER_MAX_CONTACTS);
+      const { data, error } = await withColumns((columns) =>
+        admin
+          .from("roster_contacts")
+          .select(columns)
+          .eq("org_id", orgId)
+          .order("full_name", { ascending: true })
+          .limit(ROSTER_MAX_CONTACTS),
+      );
       if (error) {
         logFailure("list", error);
         return null;
       }
-      return (data ?? []) as RosterRow[];
+      return (data ?? []) as unknown as RosterRow[];
     },
     async count(orgId) {
       const { count, error } = await admin
@@ -195,45 +253,83 @@ export async function realDeps(
       return count;
     },
     async insert(orgId, fields) {
-      const { data, error } = await admin
-        .from("roster_contacts")
-        .insert({ org_id: orgId, ...columns(fields) })
-        .select(COLUMNS)
-        .maybeSingle();
+      const { data, error } = await withColumns((selected) =>
+        admin
+          .from("roster_contacts")
+          .insert({ org_id: orgId, ...columns(fields) })
+          .select(selected)
+          .maybeSingle(),
+      );
       if (error || !data) {
         logFailure("insert", error);
         return null;
       }
-      return data as RosterRow;
+      return data as unknown as RosterRow;
     },
     async update(orgId, id, fields) {
-      const { data, error } = await admin
-        .from("roster_contacts")
-        .update({ ...columns(fields), updated_at: new Date().toISOString() })
-        .eq("org_id", orgId)
-        .eq("id", id)
-        .select(COLUMNS)
-        .maybeSingle();
+      const { data, error } = await withColumns((selected) =>
+        admin
+          .from("roster_contacts")
+          .update({ ...columns(fields), updated_at: new Date().toISOString() })
+          .eq("org_id", orgId)
+          .eq("id", id)
+          .select(selected)
+          .maybeSingle(),
+      );
       if (error) {
         logFailure("update", error);
         return null;
       }
       // No row back with no error: the id is not in this workspace.
-      return data ? (data as RosterRow) : "missing";
+      return data ? (data as unknown as RosterRow) : "missing";
+    },
+    async one(orgId, id) {
+      const { data, error } = await withColumns((columns) =>
+        admin
+          .from("roster_contacts")
+          .select(columns)
+          .eq("org_id", orgId)
+          .eq("id", id)
+          .maybeSingle(),
+      );
+      if (error) {
+        logFailure("read", error);
+        return null;
+      }
+      return data ? (data as unknown as RosterRow) : "missing";
+    },
+    async openChange(orgId, id, until) {
+      const { data, error } = await admin
+        .from("roster_contacts")
+        .update({ number_change_until: until })
+        .eq("org_id", orgId)
+        .eq("id", id)
+        .select(COLUMNS)
+        .maybeSingle();
+      if (error) {
+        logFailure("number change", error);
+        return null;
+      }
+      return data ? (data as unknown as RosterRow) : "missing";
     },
     async consents(orgId, contactIds) {
       const marks: ConsentMarkRow[] = [];
       for (let at = 0; at < contactIds.length; at += ID_PAGE) {
-        const { data, error } = await admin
-          .from("message_consents")
-          .select(CONSENT_COLUMNS)
-          .eq("org_id", orgId)
-          .in("roster_contact_id", contactIds.slice(at, at + ID_PAGE));
+        const page = contactIds.slice(at, at + ID_PAGE);
+        const read = (columns: string) =>
+          admin
+            .from("message_consents")
+            .select(columns)
+            .eq("org_id", orgId)
+            .in("roster_contact_id", page);
+        let { data, error } = await read(CONSENT_COLUMNS);
+        // Before the confirmed date exists, read without it.
+        if (error?.code === "42703") ({ data, error } = await read(BASE_CONSENT_COLUMNS));
         if (error) {
           logFailure("consent read", error);
           return null;
         }
-        marks.push(...((data ?? []) as ConsentMarkRow[]));
+        marks.push(...((data ?? []) as unknown as ConsentMarkRow[]));
       }
       return marks;
     },
@@ -247,5 +343,8 @@ export const rosterHandlers = {
   },
   async save(context: RosterContext, data: RosterSaveInput): Promise<RosterSaveResult> {
     return saveRosterContact(await realDeps(context, data.profile_id), data);
+  },
+  async askNewNumber(context: RosterContext, data: RosterChangeInput): Promise<RosterChangeResult> {
+    return requestNumberChange(await realDeps(context, data.profile_id), data);
   },
 };
