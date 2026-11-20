@@ -120,7 +120,7 @@ export function checkSuggestion(document: string, suggestion: { fee_text?: unkno
 
 /**
  * F2 (QA of #273, 20 Nov): the money in a SOW's terms. These two fields never sit in work_items.meta, which every
- * member's browser reads; they live in work_item_fee_terms, a table only the server can read, and are put back
+ * member's browser reads; they live in a table only the server can read, and are put back
  * together on the server for admins and leads.
  */
 export const FEE_FIELDS = ["fee_text", "fee_amount"] as const;
@@ -128,7 +128,7 @@ export const FEE_FIELDS = ["fee_text", "fee_amount"] as const;
 export type FeeFields = { fee_text: string; fee_amount: number | null };
 
 /** The terms without their money: what may stay in meta (length, basis, who confirmed it and when). */
-export function withoutFees(facts: Record<string, unknown>): Record<string, unknown> {
+export function termsWithoutFees(facts: Record<string, unknown>): Record<string, unknown> {
   const rest = { ...facts };
   for (const key of FEE_FIELDS) delete rest[key];
   return rest;

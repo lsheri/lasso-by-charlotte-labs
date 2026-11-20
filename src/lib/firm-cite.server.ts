@@ -6,6 +6,7 @@
  * The corpus, the text loader and the item reads are passed in, so every rule is tested without a database.
  */
 
+import { maskFees } from "./firm-ask-shared";
 import { withoutFees, type FirmCorpus } from "./firm-corpus-shared";
 import {
   cardOf,
@@ -65,7 +66,7 @@ export async function citeLine(deps: CiteDeps, input: CiteInput): Promise<{ cita
   let words = sourceWords(cardOf(source.item), input.quote);
   if (!words && walkGrade(source.item, source.board) === "full") {
     const text = await deps.loadText(source.item.id);
-    if (text) words = sourceWords(deps.canSeeFees ? text : withoutFees(text), input.quote);
+    if (text) words = sourceWords(deps.canSeeFees ? text : maskFees(withoutFees(text)), input.quote);
   }
   if (!words || !citable(words)) throw unverified();
 

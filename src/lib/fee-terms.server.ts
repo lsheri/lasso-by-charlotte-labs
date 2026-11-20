@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { feesOf, metaWithFees, withoutFees, type FeeFields } from "./sow-terms-shared";
+import { feesOf, metaWithFees, termsWithoutFees, type FeeFields } from "./sow-terms-shared";
 
 /**
  * F2 (QA of #273, 20 Nov): SOW fee figures live in public.work_item_fee_terms, which has row security on and no
@@ -79,6 +79,6 @@ export async function storeSowTerms(
     return meta;
   }
   if (error) throw new Error(error.message);
-  meta["sow_facts"] = withoutFees(input.facts);
+  meta["sow_facts"] = termsWithoutFees(input.facts);
   return meta;
 }

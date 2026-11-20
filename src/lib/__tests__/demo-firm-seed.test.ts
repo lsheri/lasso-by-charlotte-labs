@@ -91,6 +91,14 @@ function fakeAdmin() {
         writes.push({ table, rows });
         return api;
       },
+      upsert(value: Record<string, unknown>) {
+        writes.push({ table, rows: [value] });
+        return Promise.resolve({ data: null, error: null });
+      },
+      update(value: Record<string, unknown>) {
+        writes.push({ table: `${table}:update`, rows: [value] });
+        return api;
+      },
       select() {
         return api;
       },
@@ -140,6 +148,11 @@ describe("the writer", () => {
     const metaOf = (title: string) => items.find((row) => row["title"] === title)!["meta"] as Record<string, unknown>;
     expect(metaOf(b05.items.find((item) => item.key === "sow")!.title)["sow_facts"]).toMatchObject({ fee_amount: 380000, fee_basis: "fixed", weeks: 16 });
     expect(metaOf(b05.items.find((item) => item.kind === "proposal")!.title)["deliverable_kind"]).toBe("proposal");
+    // F2: the fee then moves to the server-only table and the item's meta keeps no money.
+    expect(of("work_item_fee_terms")).toEqual([expect.objectContaining({ org_id: "org-demo", fee_text: "$380k", fee_amount: 380000 })]);
+    const metaUpdates = of("work_items:update").map((row) => row["meta"] as Record<string, unknown>);
+    expect(metaUpdates).toHaveLength(1);
+    expect(metaUpdates[0]!["sow_facts"]).toEqual({ fee_basis: "fixed", weeks: 16 });
     const loose = items.find((row) => row["title"] === "Unplaced note")!;
     expect(of("work_item_tasks").some((row) => row["work_item_id"] === loose["id"])).toBe(false);
 
