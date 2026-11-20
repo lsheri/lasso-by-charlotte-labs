@@ -52,8 +52,38 @@ describe("Slate tokens", () => {
     expect(value("--skin-text-2")).toBe("#545F69");
     expect(value("--skin-live")).toBe("#04F85B");
     const names = [...scope.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
-    const skinNames = readFileSync("src/design/skins/charlotte.css", "utf8");
+    // Every name is one the skin layer already declares: in the skin itself, or as a default in skin-base.css.
+    const skinNames =
+      readFileSync("src/design/skins/charlotte.css", "utf8") +
+      readFileSync("src/design/skins/skin-base.css", "utf8");
     for (const name of names) expect(skinNames, name).toContain(`${name}:`);
+  });
+
+  it("navy is what you press: it reads on every surface, and Slate stays the reading colour (20 Nov, D-74)", () => {
+    const surfaces = [value("--skin-page"), value("--skin-raised"), value("--skin-sunk")];
+    for (const bg of [...surfaces, value("--skin-action-wash"), value("--skin-paper")]) {
+      expect(contrast(value("--skin-action"), bg), `navy on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(value("--skin-action-deep"), bg), `deep navy on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(contrast(value("--skin-page"), value("--skin-action")), "button label").toBeGreaterThanOrEqual(7);
+    expect(value("--skin-action")).not.toBe(value("--skin-ink"));
+    const base = readFileSync("src/design/skins/skin-base.css", "utf8");
+    expect(base).toMatch(/--text-primary:var\(--skin-ink\);/);
+    expect(base).toMatch(/--action-primary:var\(--skin-ink\);/);
+    expect(base).toMatch(/--surface-page:var\(--skin-page\);/);
+  });
+
+  it("lime tints are their own values: ink reads on them, and the full-strength lime keeps its one meaning", () => {
+    for (const tint of [value("--skin-live-tint"), value("--skin-live-wash"), value("--skin-paper")]) {
+      expect(tint).not.toBe(value("--skin-live"));
+      expect(contrast(value("--skin-ink"), tint), `ink on ${tint}`).toBeGreaterThanOrEqual(7);
+    }
+    for (const bg of [value("--skin-page"), value("--skin-raised"), value("--skin-sunk"), value("--skin-live-tint")])
+      expect(contrast(value("--skin-live-deep"), bg), `deep lime glyph on ${bg}`).toBeGreaterThanOrEqual(3);
+    const base = readFileSync("src/design/skins/skin-base.css", "utf8");
+    const limeJobs = [...base.matchAll(/(--[a-z0-9-]+):var\(--skin-live(-tint|-wash|-deep)\);/g)].map((m) => m[1]);
+    expect(limeJobs.sort()).toEqual(["--good-mark", "--good-tint", "--good-wash"]);
+    for (const job of limeJobs) expect(job).not.toMatch(/text|focus|state|action/);
   });
 
   it("only applies where a skin applies: inside the app shell and its overlays", () => {

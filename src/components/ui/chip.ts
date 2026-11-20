@@ -1,10 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
-// G7 (17 Nov 2026): the small pill button with a mono uppercase label (Add, Remove, Share, scope and window toggles).
+// G7 (17 Nov 2026): the small pill button (Add, Remove, Share, scope and window toggles).
 // It was written out by hand in 15 places; this is the one place to change it.
 // quiet: a hairline chip in muted ink. accent: the chosen or primary chip, on the accent wash.
+// 20 Nov 2026 (design review, D-74): plain Archivo in sentence case. Mono capitals are for numbers and times only.
 export const chipVariants = cva(
-  "rounded-full px-3 py-1 font-mono text-(length:--type-label) uppercase tracking-[0.08em] disabled:opacity-50",
+  "rounded-full px-3 py-1 font-sans text-(length:--type-small) font-medium disabled:opacity-50",
   {
     variants: {
       tone: {

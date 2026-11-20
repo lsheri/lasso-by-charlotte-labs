@@ -22,7 +22,8 @@ import { useBrandCopy } from "@/components/skin/use-skin";
 const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
 const BOARD_FIT_PADDING = 32;
 export const HOME_CONTENT_WIDTH = 930;
-const HOME_CONTENT_TOP = 186;
+// 20 Nov 2026: was 186. The welcome starts just under the toolbar so the boards are on the first screen sooner.
+const HOME_CONTENT_TOP = 104;
 const HOME_FRAME_GAP = 24;
 // Measured in Chromium at the 150% type and control sizes below.
 export const HOME_HERO_CONTENT_HEIGHT = 286;
@@ -35,6 +36,8 @@ export function homeFramesForViewport(
   viewport: { width: number; height: number },
   cardCount: number,
   pendingHeight = 0,
+  /** The welcome's measured height. On a phone it wraps taller than the desktop measure, and the boards must start below it. */
+  heroContentHeight = HOME_HERO_CONTENT_HEIGHT,
 ): HomeFrame[] {
   const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
   const hero: HomeFrame = {
@@ -43,7 +46,7 @@ export function homeFramesForViewport(
     x: BOARD_FIT_PADDING,
     y: BOARD_FIT_PADDING,
     width,
-    height: HOME_HERO_FRAME_HEIGHT,
+    height: HOME_HERO_FRAME_HEIGHT + Math.max(0, heroContentHeight - HOME_HERO_CONTENT_HEIGHT),
   };
   const grid: HomeFrame = {
     id: "home-grid",
@@ -170,6 +173,22 @@ export function HomeBoard() {
   const { data: engagements } = useEngagements(profile?.id);
   const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
   const [pendingHeight, setPendingHeight] = useState(0);
+  // 20 Nov 2026: on a phone the welcome wraps taller than its desktop measure and the first board sat on top of the
+  // ideas note. The welcome is measured, and the boards start below it. It never measures shorter than the desktop.
+  const [heroEl, setHeroEl] = useState<HTMLElement | null>(null);
+  const [heroHeight, setHeroHeight] = useState(HOME_HERO_CONTENT_HEIGHT);
+  useEffect(() => {
+    if (!heroEl) return;
+    const measure = () => {
+      const next = Math.max(HOME_HERO_CONTENT_HEIGHT, Math.ceil(heroEl.getBoundingClientRect().height));
+      setHeroHeight((current) => (current === next ? current : next));
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(heroEl);
+    return () => observer.disconnect();
+  }, [heroEl]);
 
   // CS-1: one home.opened per mount and org, through the same signed-in
   // pipeline as nav.opened, and only once the acting profile has resolved.
@@ -205,7 +224,7 @@ export function HomeBoard() {
     workCount: null,
     shared: { hostOrg: board.host_org, addedAt: board.added_at },
   }))];
-  const frames = homeFramesForViewport(viewport, cards.length, pending.length > 0 ? pendingHeight : 0);
+  const frames = homeFramesForViewport(viewport, cards.length, pending.length > 0 ? pendingHeight : 0, heroHeight);
   const contentHeight = Math.max(...frames.map((frame) => frame.y + frame.height)) + BOARD_FIT_PADDING;
 
   return (
@@ -246,6 +265,7 @@ export function HomeBoard() {
         renderFrame={(currentFrame) => currentFrame.kind === "hero" ? (
           <section
             data-testid="home-hero-content"
+            ref={setHeroEl}
             aria-labelledby="home-title"
             className="absolute left-1/2 w-[930px] max-w-[calc(100%-32px)] -translate-x-1/2 text-center"
             style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
