@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Webhook } from "standardwebhooks";
 
 import { EVENT_DIM_KEYS, guardServerEventDims } from "@/lib/event-dim-allowlist";
-import { ASK_COPY, ASK_DAILY_CAP, ASK_WAIT_HOURS, askLine, askProposalInput, askSendInput, isWaiting, leadAskBody, practiceReplyInput, readReply, statusForReport, type AskView } from "@/lib/lead-ask-shared";
+import { ASK_COPY, ASK_DAILY_CAP, ASK_WAIT_HOURS, askLine, askPreviewInput, askProposalInput, askSendInput, isWaiting, leadAskBody, practiceReplyInput, readReply, statusForReport, type AskView } from "@/lib/lead-ask-shared";
 import { askLead, askPreview, handleTextEvent, inboundStoreOn, practiceReply, type AskCaller, type AskRow, type AskStore } from "@/lib/lead-ask.server";
 import { consentRecords } from "@/lib/text-consent.server";
 import { handleTextEventRequest, memoryLimiter, type TextEventDeps } from "@/lib/text-events.server";
@@ -909,5 +909,88 @@ describe("the migration", () => {
     expect(guard).toMatch(/\(new\.settings -> 'demo_firm'\) is distinct from \(was -> 'demo_firm'\)/);
     expect(guard).toMatch(/not \(new\.settings \? 'type'\) or \(was ->> 'type'\) in \('company', 'partner'\)/);
     expect(guard).toMatch(/create trigger orgs_guard_settings\s+before update on public\.orgs/);
+  });
+});
+
+describe("20 Nov (Q-67): a preview for a person not saved as the lead yet", () => {
+  const OTHER = "00000002-0000-4000-8000-000000000009";
+  const STRANGER = "00000002-0000-4000-8000-0000000000ff";
+  const two = () =>
+    world({
+      roster: {
+        [`${ORG_A}/${LEAD}`]: "Christy Johnson",
+        [`${ORG_A}/${OTHER}`]: "Ben Okoro",
+        [`${ORG_B}/${STRANGER}`]: "Someone Else",
+      },
+      agreed: { [`${ORG_A}/${LEAD}`]: PHONE },
+    });
+
+  it("shows that person's own words and whether they agreed, and writes and sends nothing", async () => {
+    const { store, sends, w, events } = two();
+    const preview = await askPreview(store, {
+      proposal_id: PROPOSAL,
+      profile_id: null,
+      lead_contact_id: OTHER,
+    });
+    expect(preview).toMatchObject({
+      ok: true,
+      name: "Ben Okoro",
+      mode: "real",
+      warning: ASK_COPY.notAgreedYet("Ben Okoro"),
+    });
+    expect(preview.ok && preview.words).toContain("hi Ben, Maren would love you to lead");
+    expect(sends).toHaveLength(0);
+    expect(w.rows).toHaveLength(0);
+    expect(events).toHaveLength(0);
+    expect(w.proposal?.lead_contact_id).toBe(LEAD);
+    // With no lead saved at all, a picked person still previews.
+    const none = world({
+      proposal: { id: PROPOSAL, org_id: ORG_A, status: "open", lead_contact_id: null },
+    });
+    expect(
+      await askPreview(none.store, {
+        proposal_id: PROPOSAL,
+        profile_id: null,
+        lead_contact_id: LEAD,
+      }),
+    ).toMatchObject({ ok: true, name: "Christy Johnson", warning: null });
+    expect(await askPreview(none.store, { proposal_id: PROPOSAL, profile_id: null })).toEqual({
+      ok: false,
+      problem: ASK_COPY.noLead,
+    });
+  });
+
+  it("a person on another workspace's list reads as not on the list, and a non-admin still sees nothing", async () => {
+    const { store } = two();
+    expect(
+      await askPreview(store, {
+        proposal_id: PROPOSAL,
+        profile_id: null,
+        lead_contact_id: STRANGER,
+      }),
+    ).toEqual({ ok: false, problem: ASK_COPY.missing });
+    const member = world({ role: "analyst" });
+    expect(
+      await askPreview(member.store, {
+        proposal_id: PROPOSAL,
+        profile_id: null,
+        lead_contact_id: LEAD,
+      }),
+    ).toEqual({ ok: false, problem: ASK_COPY.notAllowed });
+  });
+
+  it("a press never takes a person from the caller: it asks the saved lead only", async () => {
+    const { store, sends } = two();
+    const sneaky = { ...press, lead_contact_id: OTHER } as typeof press;
+    expect(await askLead(store, sneaky)).toEqual({ ok: true, practice: false });
+    expect(sends).toHaveLength(1);
+    expect(sends[0]?.text).toContain("hi Christy,");
+    expect(askSendInput(sneaky)).not.toHaveProperty("lead_contact_id");
+    expect(
+      askPreviewInput({ proposal_id: PROPOSAL, lead_contact_id: "not-an-id" }).lead_contact_id,
+    ).toBeNull();
+    expect(askPreviewInput({ proposal_id: PROPOSAL, lead_contact_id: OTHER }).lead_contact_id).toBe(
+      OTHER,
+    );
   });
 });
