@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 export function LeadLine({ lead, picked, onPick }: { lead: RosterContact | undefined; picked: boolean; onPick: () => void }) {
   return (
     <p data-proposal-lead className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+      {lead ? <PersonFace name={lead.name} size="sm" /> : null}
       <span>{lead ? LEAD_COPY.lead(lead.name) : LEAD_COPY.none}</span>
       {lead ? <span className={tagVariants({ tone: lead.texts === "agreed" ? "accent" : "outline" })}>{ROSTER_COPY.texts[lead.texts]}</span> : null}
       <button type="button" className="underline hover:text-foreground" onClick={onPick}>
