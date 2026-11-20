@@ -93,7 +93,11 @@ export function LeadDialog({
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
           <DialogDescription>{copy.intro}</DialogDescription>
         </DialogHeader>
-        {roster !== undefined && people.length === 0 ? (
+        {roster === undefined ? (
+          <p role="status" data-lead-no-list className="text-sm text-muted-foreground">
+            {copy.noList}
+          </p>
+        ) : people.length === 0 ? (
           <p className="text-sm text-muted-foreground">{copy.noPeople}</p>
         ) : (
           <div role="radiogroup" aria-label={copy.select} data-lead-people className="-m-1 flex max-h-64 flex-col gap-1 overflow-y-auto p-1">
