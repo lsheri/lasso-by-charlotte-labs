@@ -1,5 +1,5 @@
 // The Firm brain canvas (D-85) on the Kestrel Bay demo firm's real map, as the server would send it to each role:
-// with fees for an admin, with no fee record for a manager or analyst. Ask the firm is a stand-in that answers after
+// with fees for an admin, with no fee record for a member. Ask the firm is a stand-in that answers after
 // a short wait with lines on St. Brigid, Cedarmere and Willowmere; nothing is sent anywhere.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -47,7 +47,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Admin: Story = { render: () => <Canvas role="admin" data={K.admin} /> };
-export const Manager: Story = { render: () => <Canvas role="em" data={K.member} /> };
+export const Member: Story = { render: () => <Canvas role="em" data={K.member} /> };
 export const Loading: Story = {
   render: () => (
     <AsShipped>

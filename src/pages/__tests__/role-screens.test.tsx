@@ -127,8 +127,8 @@ describe("who gets what", () => {
   it("gives the map to admins and leads, the tools to everyone else in the firm, and nothing to a coach, a guest or another kind of workspace", () => {
     expect(firmBrainAccess(person("admin"))).toBe("map");
     expect(firmBrainAccess(person("lead"))).toBe("map");
-    // D-85: managers and analysts see the map too. Fees are kept from them on the server.
-    for (const role of ["em", "manager", "analyst"]) expect(firmBrainAccess(person(role))).toBe("map");
+    // D-85: members see the map too. Fees are kept from them on the server.
+    expect(firmBrainAccess(person("em"))).toBe("map");
     expect(firmBrainAccess(person("coach"))).toBe("none");
     expect(firmBrainAccess(person("admin", { is_guest: true }))).toBe("none");
     expect(firmBrainAccess(person("admin", { org_type: "personal", has_firm_view: false }))).toBe("none");
@@ -151,7 +151,7 @@ describe("who gets what", () => {
 
 describe("the Firm brain page", () => {
   it("shows everyone in the firm the canvas, the one place the map, the question and the tools live (D-85)", () => {
-    for (const role of ["admin", "lead", "em", "manager", "analyst"]) {
+    for (const role of ["admin", "lead", "em"]) {
       mocks.profile = person(role);
       mount(<FirmBrainPage />);
       expect(screen.getByTestId("firm-brain-canvas").getAttribute("data-role")).toBe(role);

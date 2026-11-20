@@ -157,7 +157,7 @@ describe("the canvas at rest", () => {
     expect(screen.queryByText(FIRM_ASK_COPY.title)).toBeNull();
   });
 
-  it("shows a manager or analyst the map with no fee chip and no money anywhere", async () => {
+  it("shows a member the map with no fee chip and no money anywhere", async () => {
     m.getMap.mockResolvedValue(memberData());
     const { container } = mount(<FirmBrainCanvas profile={person("em")} />);
     await ready();
@@ -191,7 +191,8 @@ describe("the canvas at rest", () => {
     m.getMap.mockReturnValue(new Promise((resolve) => (finish = resolve)));
     mount(<FirmBrainCanvas profile={person("em")} />);
     expect(screen.getByTestId("firm-canvas-skeleton")).toBeTruthy();
-    expect(screen.getByLabelText(FIRM_CANVAS_COPY.askLabel)).toHaveProperty("disabled", true);
+    // Ask the firm never waits on the map (QA M1).
+    expect(screen.getByLabelText(FIRM_CANVAS_COPY.askLabel)).toHaveProperty("disabled", false);
     await act(async () => finish(memberData()));
     await ready();
     expect(screen.queryByTestId("firm-canvas-skeleton")).toBeNull();
@@ -208,6 +209,53 @@ describe("the canvas at rest", () => {
     expect(alert.textContent).toContain(FIRM_CANVAS_COPY.mapLoadFailed);
     fireEvent.click(within(alert).getByRole("button", { name: FIRM_CANVAS_COPY.retry }));
     await ready();
+  });
+
+  it("answers while the map is still loading, and the answer stays when the map arrives (QA M1)", async () => {
+    let finish!: (data: FirmCanvasData) => void;
+    m.getMap.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    m.ask.mockResolvedValue(answer(["b5"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    askFor("How did we launch other health service lines?");
+    await waitFor(() =>
+      expect(screen.getByTestId("canvas-answer").getAttribute("data-answer-status")).toBe(
+        "answered",
+      ),
+    );
+    expect(m.ask).toHaveBeenCalledTimes(1);
+    await act(async () => finish(memberData()));
+    await ready();
+    expect(screen.getByTestId("canvas-answer").textContent).toContain("Line 1 from b5.");
+  });
+
+  it("still answers when the map could not be read, with the failure line out of the answer's way (QA M1)", async () => {
+    m.getMap.mockRejectedValue(new Error("down"));
+    m.ask.mockResolvedValue(answer(["b5"]));
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await screen.findByRole("alert", undefined, { timeout: 4000 });
+    askFor("What went wrong last time?");
+    await waitFor(() =>
+      expect(screen.getByTestId("canvas-answer").getAttribute("data-answer-status")).toBe(
+        "answered",
+      ),
+    );
+    const brigid = corpus.boards.find((b) => b.id === "b5")!.title;
+    expect(
+      within(screen.getByTestId("canvas-answer")).getByRole("button", {
+        name: `${FIRM_CANVAS_COPY.source}: ${brigid}`,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("gives the tour its anchor: the map is the page (QA H1)", async () => {
+    m.getMap.mockResolvedValue(memberData());
+    mount(<FirmBrainCanvas profile={person("em")} />);
+    await ready();
+    const anchor = document.querySelector('[data-testid="firm-brain-map"]')!;
+    expect(anchor).toBeTruthy();
+    // It holds the whole canvas, question box included, so the spotlight frames the page.
+    expect(anchor.contains(screen.getByLabelText(FIRM_CANVAS_COPY.askLabel))).toBe(true);
+    expect(anchor.contains(screen.getByTestId("firm-canvas-stage"))).toBe(true);
   });
 
   it("says so when nothing is shared with the firm yet", async () => {

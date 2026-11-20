@@ -25,6 +25,18 @@ describe("where the story card sits", () => {
     expect(storyCardPlacement({ top: 150, left: 314, width: 1070, height: 900 }, laptop)).toBe("bottom-start");
   });
 
+  it("goes to the corner a beat names on a wide screen, off the canvas's question box, and not on a phone", () => {
+    // The Firm brain canvas: the whole content area, question box at the bottom middle (21 Nov, beat 2).
+    const canvas = { top: 0, left: 256, width: 1184, height: 900 };
+    expect(storyCardPlacement(canvas, laptop, true, "top-end")).toBe("top-end");
+    const card = storyPlacementRect("top-end", laptop);
+    const askBox = { top: 900 - 20 - 120, left: 256 + (1184 - 640) / 2, width: 640, height: 120 };
+    const overlaps = card.left < askBox.left + askBox.width && card.left + card.width > askBox.left && card.top < askBox.top + askBox.height && card.top + card.height > askBox.top;
+    expect(overlaps).toBe(false);
+    expect(storyCardPlacement({ top: 61, left: 0, width: 390, height: 727 }, phone, true, "top-end")).toBe("top-start");
+    expect(storyCardPlacement(null, laptop, false, "top-end")).toBe("bottom-start");
+  });
+
   it("goes to the top on a phone when the beat asks for it, and ignores the ask on a wide screen", () => {
     const map = { top: 205, left: 16, width: 358, height: 1400 };
     expect(storyCardPlacement(map, phone)).toBe("bottom-start");

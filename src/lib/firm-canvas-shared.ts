@@ -23,17 +23,26 @@ export function canvasSeesFees(role: string | null | undefined): boolean {
   return role === "admin" || role === "lead";
 }
 
-const CURRENCY = "(?:USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|dollars?|pounds?|euros?)";
-const AMOUNT = "\\d[\\d,]*(?:\\.\\d+)?";
-const SCALE = "(?:\\s?(?:k|m|bn|million|thousand)\\b)";
-const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|year|yr|day))?";
-/** A money figure as people write it: "$45k/month", "£1.2m", "EUR 90,000", "120k", "90,000 dollars". */
+// Money as people write it in titles and client names (QA M2, 21 Nov): a symbol, with or without a country prefix
+// ("$45k", "US$ 45,000", "A$80k", "¥5,000,000", "₹40 lakh"); a code before or after ("USD 45 000", "45,000 EUR");
+// a symbol after ("45 000 €", "45,000€", "45.000 €"); dot, comma or space thousands ("€1.200.000"); scale words
+// ("1.2 million", "3.5MM", "$1.5B"); a bare "120k". A bare "5m" is left alone: it is as often a count ("Top 5m
+// customers") as a sum.
+const SYMBOL = "(?:(?:\\b(?:US|AU|A|CA|C|NZ|HK|SG|S|NT|R|MX))?[$£€¥₹₩₽₪₦₺฿])";
+const CODES = "USD|GBP|EUR|AUD|CAD|NZD|CHF|SGD|JPY|INR|CNY|RMB|HKD|SEK|NOK|DKK|ZAR|BRL|MXN|AED|SAR";
+const WORDS = "dollars?|pounds?|euros?|yen|rupees?|francs?";
+const NUMBER =
+  "(?:(?<![\\d.,])\\d{1,3}(?:[,.\\u00A0\\u202F ]\\d{3})+(?:[.,]\\d+)?|(?<![\\d.,])\\d+(?:[.,]\\d+)?)";
+const SCALE = "(?:\\s?(?:k|m|mm|mn|bn|b|million|billion|thousand|lakhs?|crores?)\\b)";
+const SCALE_WORD = "(?:million|billion|thousand|lakhs?|crores?|mm|mn|bn)\\b";
+const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)?";
 const MONEY = new RegExp(
   [
-    `[$£€]\\s?${AMOUNT}${SCALE}?${PER}`,
-    `\\b${CURRENCY}\\s?${AMOUNT}${SCALE}?${PER}`,
-    `\\b${AMOUNT}${SCALE}?\\s?${CURRENCY}\\b${PER}`,
-    `\\b${AMOUNT}\\s?(?:k|m|bn)\\b${PER}`,
+    `${SYMBOL}\\s?${NUMBER}${SCALE}?${PER}`,
+    `\\b(?:${CODES})\\s?${NUMBER}${SCALE}?${PER}`,
+    `${NUMBER}${SCALE}?\\s?(?:${SYMBOL}|\\b(?:${CODES}|${WORDS})\\b)${PER}`,
+    `${NUMBER}\\s?${SCALE_WORD}${PER}`,
+    `${NUMBER}\\s?k\\b${PER}`,
   ].join("|"),
   "gi",
 );
@@ -480,6 +489,8 @@ export const FIRM_CANVAS_COPY = {
   toolsTitle: "Prepare me and How we do this",
   list: "List",
   listTitle: "Every engagement on the map",
+  listHint:
+    "Every engagement shared with the firm, by the kind of problem it answered. Pick one to fly to it on the map.",
   zoomIn: "Zoom in",
   zoomOut: "Zoom out",
   fit: "Fit to screen",

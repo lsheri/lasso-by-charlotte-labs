@@ -11,7 +11,7 @@ type RoleProfile = { role?: string | null; has_firm_view?: boolean | null; org_t
 
 /**
  * What the Firm brain page shows this person. "map": the firm map as the page, with Ask the firm floating on it, for
- * everyone in the firm (20 Nov, D-85: managers and analysts see the map too; fees stay with admins and leads, and the
+ * everyone in the firm (20 Nov, D-85: members see the map too; fees stay with admins and leads, and the
  * server leaves them out for everyone else). "none": a coach, a guest, or a workspace that is not a company.
  */
 export function firmBrainAccess(profile: RoleProfile): "map" | "none" {
