@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { tagVariants } from "@/components/ui/tag";
-import { cleanPilotInput, PILOT_COPY as C, PILOT_NAME_MAX, type PilotRow, type PilotSetupResult } from "@/lib/pilot-setup-shared";
+import { cleanPilotInput, PILOT_COPY as C, type PilotRow, type PilotSetupResult } from "@/lib/pilot-setup-shared";
 import { listPilotsFn, setUpPilotFn } from "@/lib/pilot-setup.functions";
 
 /** A 403 from the founder gate, or no session at all. */
@@ -47,7 +47,12 @@ export function PilotSetupPage() {
     );
   }
 
+  // Nothing about the page shows until the server has said who this is (QA of #286, L4).
+  if (pilots.isPending) return null;
+
   const check = cleanPilotInput({ firm_name: firmName, admin_email: adminEmail });
+  // A long paste is not cut short in the box: the line says what is wrong (QA of #286, L5).
+  const nameWrong = firmName.trim() !== "" && !cleanPilotInput({ firm_name: firmName, admin_email: "a@b.co" }).ok;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -91,8 +96,13 @@ export function PilotSetupPage() {
       <form className="space-y-4" onSubmit={submit} aria-busy={busy}>
         <label className="flex flex-col gap-1 text-(length:--type-small) text-muted-foreground">
           {C.firmName}
-          <Input value={firmName} maxLength={PILOT_NAME_MAX} disabled={busy} onChange={(e) => setFirmName(e.target.value)} autoComplete="off" />
+          <Input value={firmName} aria-invalid={nameWrong} disabled={busy} onChange={(e) => setFirmName(e.target.value)} autoComplete="off" />
         </label>
+        {nameWrong ? (
+          <p data-pilot-name-problem className="text-(length:--type-small) text-destructive">
+            {C.invalid.firm_name}
+          </p>
+        ) : null}
         <label className="flex flex-col gap-1 text-(length:--type-small) text-muted-foreground">
           {C.adminEmail}
           <Input type="email" value={adminEmail} disabled={busy} onChange={(e) => setAdminEmail(e.target.value)} autoComplete="off" />
@@ -116,7 +126,7 @@ export function PilotSetupPage() {
               </div>
             </>
           ) : (
-            <p className="text-destructive">{result.reason === "invalid" ? C.invalid[result.field] : result.reason === "exists" ? C.exists : C.failed}</p>
+            <p className="text-destructive">{result.reason === "invalid" ? C.invalid[result.field] : result.reason === "exists" ? C.exists : result.reason === "stuck" ? C.stuck : C.failed}</p>
           )}
         </div>
       ) : null}

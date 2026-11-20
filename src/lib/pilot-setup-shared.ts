@@ -31,7 +31,9 @@ export type PilotSetupResult =
     }
   | { ok: false; reason: "invalid"; field: PilotSetupField }
   | { ok: false; reason: "exists" }
-  | { ok: false; reason: "failed" };
+  | { ok: false; reason: "failed" }
+  /** A step failed and the half-made workspace could not be removed either: it shows in the list as "No invite". */
+  | { ok: false; reason: "stuck" };
 
 export type PilotRow = {
   orgId: string;
@@ -46,12 +48,14 @@ export type PilotRow = {
 };
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
+// Invisible and direction-changing characters: dropped, so a lookalike of an existing firm cannot be made (QA of #286, L3).
+const INVISIBLE = /[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g;
 // One @, a dot in the domain, no spaces. The real proof is the person receiving the email.
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function oneLine(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const trimmed = value.replace(/\s+/g, " ").trim();
+  const trimmed = value.replace(INVISIBLE, "").replace(/\s+/g, " ").trim();
   return CONTROL.test(trimmed) ? null : trimmed;
 }
 
@@ -68,7 +72,7 @@ export function cleanPilotInput(input: unknown): { ok: true; value: PilotSetupCl
 
 /** Two names are the same workspace when they match ignoring case, spacing and a trailing full stop. */
 export function sameFirmName(a: string, b: string): boolean {
-  const key = (value: string) => value.replace(/\s+/g, " ").trim().replace(/\.$/, "").toLowerCase();
+  const key = (value: string) => value.replace(INVISIBLE, "").replace(/\s+/g, " ").trim().replace(/\.$/, "").toLowerCase();
   return key(a) === key(b);
 }
 
@@ -87,6 +91,7 @@ export const PILOT_COPY = {
   } satisfies Record<PilotSetupField, string>,
   exists: "A company workspace with that name already exists. Nothing was made.",
   failed: "The workspace could not be set up. Nothing was kept. Try again.",
+  stuck: "The workspace could not be set up, and the half-made one could not be removed. It is in the list below as No invite; ask Claude to remove it before trying this name again.",
   done: (name: string) => `${name} is set up.`,
   emailed: {
     sent: "The invite email went to the admin.",

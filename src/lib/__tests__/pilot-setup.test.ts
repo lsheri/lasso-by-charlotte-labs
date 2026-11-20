@@ -1,4 +1,5 @@
 // 20 Nov 2026, Set up a pilot: the shared rules, the founder gate and the server flow with plain dependencies.
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
@@ -18,6 +19,7 @@ function deps(over: Partial<PilotDeps> = {}) {
     createInvite: vi.fn(async () => "abc123def456"),
     removeOrg: vi.fn(async () => {
       calls.push("removed");
+      return true;
     }),
     sendInvite: vi.fn(async () => "sent" as const),
     joinUrl: (code) => `https://lasso.charlotte-labs.com/join?code=${code}`,
@@ -49,6 +51,12 @@ describe("cleanPilotInput", () => {
     [null, "firm_name"],
   ])("refuses %j on %s", (input, field) => {
     expect(cleanPilotInput(input)).toEqual({ ok: false, field });
+  });
+  it("drops invisible and direction-changing characters, so a lookalike name matches the real one (QA L3)", () => {
+    expect(cleanPilotInput({ firm_name: "Kestrel\u200bBay", admin_email: "a@b.co" })).toEqual({ ok: true, value: { firmName: "KestrelBay", adminEmail: "a@b.co" } });
+    expect(cleanPilotInput({ firm_name: "Acme\u202eevil", admin_email: "a@b.co" })).toMatchObject({ ok: true, value: { firmName: "Acmeevil" } });
+    expect(sameFirmName("Kestrel Bay", "Kestrel \u2060Bay\ufeff")).toBe(true);
+    expect(cleanPilotInput({ firm_name: "\u200b\u200b", admin_email: "a@b.co" })).toEqual({ ok: false, field: "firm_name" });
   });
   it("matches names ignoring case, spacing and a trailing full stop", () => {
     expect(sameFirmName("Alder Row Partners.", "  alder  row partners")).toBe(true);
@@ -120,6 +128,21 @@ describe("setUpPilot", () => {
     expect(d.record).not.toHaveBeenCalled();
   });
 
+  it("says the workspace is stuck when even the clean-up fails, never that nothing was kept (QA L1)", async () => {
+    const stuck = deps({ createInvite: vi.fn(async () => null), removeOrg: vi.fn(async () => false) });
+    expect(await setUpPilot(stuck.d, good, NOW)).toEqual({ ok: false, reason: "stuck" });
+    const thrown = deps({ createInvite: vi.fn(async () => null), removeOrg: vi.fn(async () => Promise.reject(new Error("x"))) });
+    expect(await setUpPilot(thrown.d, good, NOW)).toEqual({ ok: false, reason: "stuck" });
+    expect(PILOT_COPY.stuck).not.toMatch(/Nothing was kept/);
+  });
+
+  it("records pilot.set_up as a system event, never as the founder (QA M1)", () => {
+    const source = readFileSync("src/lib/pilot-setup.server.ts", "utf8");
+    const call = source.slice(source.indexOf('eventType: "pilot.set_up"') - 80, source.indexOf('eventType: "pilot.set_up"') + 120);
+    expect(call).toMatch(/userId: null/);
+    expect(call).not.toMatch(/userId,|userId: userId/);
+  });
+
   it("removes the workspace when clients cannot be switched on", async () => {
     const { d, calls } = deps({ ensureClientsOn: vi.fn(async () => false) });
     expect(await setUpPilot(d, good, NOW)).toEqual({ ok: false, reason: "failed" });
@@ -182,5 +205,54 @@ describe("requireFounder", () => {
     ["a failed row read", { email: "liam@charlotte-labs.com", rowError: true }, "u1"],
   ])("refuses %s with 403", async (_label, opts, user) => {
     await expect(requireFounder(gateAdmin(opts), user)).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+// QA of #286, L6: a mock that really filters, so a dropped user or active-row filter would fail these.
+type Row = { user_id: string; role: string; disabled_at: string | null };
+function filteringAdmin(email: string, rows: Row[]) {
+  const calls: string[] = [];
+  const admin = {
+    auth: { admin: { getUserById: async () => ({ data: { user: { email } }, error: null }) } },
+    from: (table: string) => {
+      calls.push(`from:${table}`);
+      let left = rows;
+      const chain = {
+        select: () => chain,
+        eq: (key: keyof Row, value: unknown) => {
+          calls.push(`eq:${key}`);
+          left = left.filter((row) => row[key] === value);
+          return chain;
+        },
+        is: (key: keyof Row, value: unknown) => {
+          calls.push(`is:${key}`);
+          left = left.filter((row) => row[key] === value);
+          return chain;
+        },
+        limit: async () => ({ data: left, error: null }),
+      };
+      return chain;
+    },
+  };
+  return { calls, admin: admin as never };
+}
+
+describe("requireFounder, with a mock that filters", () => {
+  it("refuses a disabled founder row", async () => {
+    const { admin } = filteringAdmin("liam@charlotte-labs.com", [{ user_id: "u1", role: "founder", disabled_at: "2026-01-01" }]);
+    await expect(requireFounder(admin, "u1")).rejects.toMatchObject({ status: 403 });
+  });
+  it("does not count another person's founder row", async () => {
+    const { admin } = filteringAdmin("x@charlotte-labs.com", [{ user_id: "other", role: "founder", disabled_at: null }]);
+    await expect(requireFounder(admin, "u1")).rejects.toMatchObject({ status: 403 });
+  });
+  it("refuses an empty user id", async () => {
+    const { admin } = filteringAdmin("liam@charlotte-labs.com", [{ user_id: "", role: "founder", disabled_at: null }]);
+    await expect(requireFounder(admin, "")).rejects.toMatchObject({ status: 403 });
+  });
+  it("lets an active founder through, reading by user and active row", async () => {
+    const { admin, calls } = filteringAdmin("liam@charlotte-labs.com", [{ user_id: "u1", role: "founder", disabled_at: null }]);
+    await expect(requireFounder(admin, "u1")).resolves.toBeUndefined();
+    expect(calls).toEqual(["from:platform_admins", "eq:user_id", "is:disabled_at"]);
   });
 });

@@ -24,8 +24,8 @@ export type PilotDeps = {
   ensureClientsOn: (orgId: string) => Promise<boolean>;
   /** An email-bound admin invite; returns its code, or null. */
   createInvite: (orgId: string, email: string, expiresAt: string) => Promise<string | null>;
-  /** Removes a workspace this call made, when a later step failed. */
-  removeOrg: (orgId: string) => Promise<void>;
+  /** Removes a workspace this call made, when a later step failed. True only once the workspace row is gone. */
+  removeOrg: (orgId: string) => Promise<boolean>;
   sendInvite: (mail: { to: string; code: string; orgName: string }) => Promise<"sent" | "not_configured" | "failed">;
   joinUrl: (code: string) => string;
   record: (orgId: string, emailed: "sent" | "not_configured" | "failed") => Promise<void>;
@@ -49,9 +49,9 @@ export async function setUpPilot(deps: PilotDeps, input: unknown, now: Date = ne
     ? await deps.createInvite(orgId, adminEmail, expiresAt).catch(() => null)
     : null;
   if (!code) {
-    // Nothing half made is left behind: a workspace nobody can join is removed.
-    await deps.removeOrg(orgId).catch(() => undefined);
-    return { ok: false, reason: "failed" };
+    // Nothing half made is left behind: a workspace nobody can join is removed. If even that fails, say so.
+    const removed = await deps.removeOrg(orgId).catch(() => false);
+    return { ok: false, reason: removed ? "failed" : "stuck" };
   }
 
   const emailed = await deps.sendInvite({ to: adminEmail, code, orgName: firmName }).catch(() => "failed" as const);
@@ -108,6 +108,8 @@ export async function realPilotDeps(userId: string | null | undefined): Promise<
       await admin.from("data_consent_ledger").delete().eq("org_id", orgId);
       await admin.from("data_consent_state").delete().eq("org_id", orgId);
       await admin.from("orgs").delete().eq("id", orgId);
+      const { data, error } = await admin.from("orgs").select("id").eq("id", orgId).maybeSingle();
+      return !error && !data;
     },
     async sendInvite(mail) {
       const { sendInviteEmail } = await import("./invites.server");
@@ -124,7 +126,9 @@ export async function realPilotDeps(userId: string | null | undefined): Promise<
     joinUrl: (code) => buildJoinUrl(code),
     async record(orgId, emailed) {
       const { recordEvent } = await import("./telemetry.server");
-      await recordEvent(supabaseAdmin, { eventType: "pilot.set_up", orgId, userId, dims: { emailed } });
+      // A system event (no user): the founder is never sent to PostHog as a person in the pilot's workspace,
+      // and so never with their email or sign-up source (QA of #286, M1). Who set it up is on the founder list.
+      await recordEvent(supabaseAdmin, { eventType: "pilot.set_up", orgId, userId: null, dims: { emailed } });
     },
   };
 }

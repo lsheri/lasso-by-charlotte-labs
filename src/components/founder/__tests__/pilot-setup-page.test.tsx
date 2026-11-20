@@ -48,15 +48,30 @@ describe("PilotSetupPage", () => {
     expect(screen.queryByLabelText(C.firmName)).toBeNull();
   });
 
+  it("shows nothing at all until the server has answered who this is (QA L4)", () => {
+    m.list.mockReturnValue(new Promise(() => {}));
+    const view = renderPage();
+    expect(view.container.innerHTML).toBe("");
+  });
+
+  it("does not cut a long pasted name short: it says what is wrong and keeps the button off (QA L5)", async () => {
+    renderPage();
+    await screen.findByText(C.listEmpty);
+    fill("x".repeat(200), "jo@alderrow.com");
+    expect((screen.getByLabelText(C.firmName) as HTMLInputElement).value).toHaveLength(200);
+    expect(screen.getByText(C.invalid.firm_name)).toBeTruthy();
+    expect((screen.getByRole("button", { name: C.submit }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("keeps the button off until the name and email are usable", async () => {
     renderPage();
+    await screen.findByText(C.listEmpty);
     const button = screen.getByRole("button", { name: C.submit }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     fill("Alder Row Partners", "not an email");
     expect(button.disabled).toBe(true);
     fill("Alder Row Partners", "jo@alderrow.com");
     expect(button.disabled).toBe(false);
-    expect(await screen.findByText(C.listEmpty)).toBeTruthy();
   });
 
   it("sends one call for a double press and shows the join link and the email outcome", async () => {
@@ -83,6 +98,7 @@ describe("PilotSetupPage", () => {
   it("says plainly when the name already exists", async () => {
     m.setUp.mockResolvedValue({ ok: false, reason: "exists" });
     renderPage();
+    await screen.findByText(C.listEmpty);
     fill("Kestrel Bay Advisory", "jo@alderrow.com");
     fireEvent.click(screen.getByRole("button", { name: C.submit }));
     expect(await screen.findByText(C.exists)).toBeTruthy();
@@ -92,6 +108,7 @@ describe("PilotSetupPage", () => {
   it("turns a refused press into the refused line", async () => {
     m.setUp.mockRejectedValue(new Response("Forbidden", { status: 403 }));
     renderPage();
+    await screen.findByText(C.listEmpty);
     fill("Alder Row Partners", "jo@alderrow.com");
     fireEvent.click(screen.getByRole("button", { name: C.submit }));
     expect(await screen.findByText(C.refused)).toBeTruthy();
@@ -100,6 +117,7 @@ describe("PilotSetupPage", () => {
   it("turns a network error into the failed line and keeps the form", async () => {
     m.setUp.mockRejectedValue(new Error("network"));
     renderPage();
+    await screen.findByText(C.listEmpty);
     fill("Alder Row Partners", "jo@alderrow.com");
     fireEvent.click(screen.getByRole("button", { name: C.submit }));
     expect(await screen.findByText(C.failed)).toBeTruthy();
