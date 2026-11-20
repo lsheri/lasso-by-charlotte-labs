@@ -51,7 +51,7 @@ export const Route = createFileRoute("/join")({
 
 const ROLE_WORD: Record<string, string> = {
   coach: "coach",
-  em: "teammate",
+  em: "member",
   lead: "lead",
   admin: "admin",
 };

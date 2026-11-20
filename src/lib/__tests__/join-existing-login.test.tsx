@@ -184,3 +184,12 @@ describe("the creator's own view of a locked invite", () => {
     expect(creator.indexOf("state.is_email_bound")).toBeLessThan(creator.indexOf("It is an open link"));
   });
 });
+
+describe("the join page names the four roles", () => {
+  it("calls a Member invite a member, not a teammate", () => {
+    const join = readFileSync("src/routes/join.tsx", "utf8");
+    expect(join).toMatch(/em: "member"/);
+    expect(join).not.toMatch(/em: "teammate"/);
+  });
+});
+
