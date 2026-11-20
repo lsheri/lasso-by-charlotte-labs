@@ -121,6 +121,8 @@ export const FIRM_STORY_SCRIPT = {
       place: "firm",
       anchor: "firm-canvas-fees",
       ask: null,
+      // The Fees chip sits top left and the question box bottom middle: top right keeps both clear on a wide screen.
+      wideCardAt: "top-end",
     },
     {
       n: 4,
