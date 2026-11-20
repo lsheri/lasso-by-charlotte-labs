@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { askProposalInput, askSendInput, practiceReplyInput, type AskPreview, type AskResult, type PracticeReplyResult } from "@/lib/lead-ask-shared";
+import { askPreviewInput, askSendInput, practiceReplyInput, type AskPreview, type AskResult, type PracticeReplyResult } from "@/lib/lead-ask-shared";
 
 /**
  * 20 Nov 2026, Proposal Desk: asking a proposal's lead by text. Each function is requireSupabaseAuth, then its
@@ -12,7 +12,7 @@ import { askProposalInput, askSendInput, practiceReplyInput, type AskPreview, ty
 /** The exact words and anything that would stop the text. Writes nothing. */
 export const askPreviewFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(askProposalInput)
+  .inputValidator(askPreviewInput)
   .handler(async ({ data, context }): Promise<AskPreview> => (await import("./lead-ask.server")).askHandlers.preview(context, data));
 
 /** One press of Send. An admin or a lead, never automatic. */
