@@ -159,9 +159,6 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
           >
             {FIRM_MAP_COPY.title}
           </h2>
-          <p className="mt-1 max-w-prose text-(length:--type-small) text-muted-foreground">
-            {FIRM_MAP_COPY.hint}
-          </p>
         </div>
         {drawn && !reduceMotion ? (
           <Button
@@ -179,9 +176,9 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
         ) : null}
       </div>
 
-      {askBox}
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {/* 20 Nov 2026: the map comes first. Its one line of explanation is a caption under it, and the question sits
+          directly beneath, so the map is on the first screen of a phone and the answer has something to point at. */}
+      <div data-firm-map-first className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className={FIRM_MAP_STAGE_CLASS}>
           {query.isPending ? (
             <p role="status" className="p-4 text-(length:--type-small) text-muted-foreground">
@@ -214,7 +211,7 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
               <p
                 data-testid="firm-map-totals"
                 data-map-keep-clear=""
-                className="pointer-events-none absolute left-4 top-3 font-mono text-(length:--type-label) uppercase tracking-wider text-muted-foreground"
+                className="pointer-events-none absolute left-4 top-3 text-(length:--type-small) text-muted-foreground"
               >
                 {`${layout!.totals.engagements} ${FIRM_MAP_COPY.engagements} · ${layout!.totals.situations} ${FIRM_MAP_COPY.situations} · ${layout!.totals.methods} ${FIRM_MAP_COPY.methods}`}
               </p>
@@ -255,6 +252,12 @@ function FirmBrainMapView({ profile }: { profile: MapProfile }) {
           ) : null}
         </aside>
       </div>
+
+      <p data-firm-map-hint className="max-w-prose text-(length:--type-small) text-muted-foreground">
+        {FIRM_MAP_COPY.hint}
+      </p>
+
+      {askBox}
 
       {drawn ? (
         <details className="text-(length:--type-small)">

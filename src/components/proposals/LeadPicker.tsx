@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { MessageExamples } from "@/components/proposals/MessageExamples";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { NativeSelect } from "@/components/ui/native-select";
+import { PersonFace } from "@/components/ui/person-face";
 import { tagVariants } from "@/components/ui/tag";
 import { useBackCloses } from "@/hooks/use-back-closes";
 import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
 import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
+import { cn } from "@/lib/utils";
 
 /** One line under an open proposal: who the lead is and whether they agreed to texts. Admins and leads only. */
 export function LeadLine({ lead, picked, onPick }: { lead: RosterContact | undefined; picked: boolean; onPick: () => void }) {
@@ -23,8 +24,8 @@ export function LeadLine({ lead, picked, onPick }: { lead: RosterContact | undef
 }
 
 /**
- * 20 Nov 2026 (Liam): pick the lead for a proposal from "People we work with", and see the message as it will
- * read. Says plainly whether the person agreed to texts, and where a text would go: saving the pick sends nothing; a real
+ * 20 Nov 2026 (Liam): pick the lead for a proposal from "People we work with", as rows you can see (a face, a role, whether they agreed to texts),
+ * and see the message as it will read, in the device it arrives on. Says plainly whether the person agreed to texts, and where a text would go: saving the pick sends nothing; a real
  * workspace texts the person picked once they have agreed, and a demo workspace texts its demo number.
  * No phone number is ever on this page.
  */
@@ -92,17 +93,40 @@ export function LeadDialog({
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
           <DialogDescription>{copy.intro}</DialogDescription>
         </DialogHeader>
-        {roster !== undefined && people.length === 0 ? (
+        {roster === undefined ? (
+          <p role="status" data-lead-no-list className="text-sm text-muted-foreground">
+            {copy.noList}
+          </p>
+        ) : people.length === 0 ? (
           <p className="text-sm text-muted-foreground">{copy.noPeople}</p>
         ) : (
-          <NativeSelect aria-label={copy.select} value={choice} disabled={working || roster === undefined} onChange={(event) => { setChoice(event.target.value); setProblem(null); }}>
-            <option value="">{copy.select}</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.role ? `${person.name}, ${person.role}` : person.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <div role="radiogroup" aria-label={copy.select} data-lead-people className="-m-1 flex max-h-64 flex-col gap-1 overflow-y-auto p-1">
+            {people.map((person) => {
+              const on = person.id === choice;
+              return (
+                <button
+                  key={person.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  data-lead-person={person.id}
+                  disabled={working}
+                  className={cn(
+                    "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
+                    on ? "border-[var(--action-edge)] bg-[var(--action-wash)]" : "border-transparent hover:bg-muted",
+                  )}
+                  onClick={() => { setChoice(person.id); setProblem(null); }}
+                >
+                  <PersonFace name={person.name} />
+                  <span className="min-w-[6.5rem] flex-1">
+                    <span className="block break-words text-(length:--type-control) font-medium text-foreground [overflow-wrap:anywhere]">{person.name}</span>
+                    {person.role ? <span className="block break-words text-(length:--type-small) text-muted-foreground [overflow-wrap:anywhere]">{person.role}</span> : null}
+                  </span>
+                  <span className={cn(tagVariants({ tone: person.texts === "agreed" ? "accent" : "outline" }), "ms-auto shrink-0")}>{ROSTER_COPY.texts[person.texts]}</span>
+                </button>
+              );
+            })}
+          </div>
         )}
         {chosen ? (
           <p data-lead-texts={chosen.texts} className="text-sm text-foreground">

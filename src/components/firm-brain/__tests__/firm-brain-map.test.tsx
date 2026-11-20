@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEMO_BOARDS } from "@/lib/demo-firm";
 import type { FirmAskResult } from "@/lib/firm-ask-shared";
-import { forMap } from "@/lib/firm-map-shared";
+import { FIRM_MAP_COPY, forMap } from "@/lib/firm-map-shared";
 import {
   corpusOf,
   demoRows,
@@ -153,6 +153,22 @@ describe("who sees the map", () => {
     expect(screen.getByTestId("firm-brain-map")).toBeTruthy();
     expect(screen.getByTestId("ask-the-firm")).toBeTruthy();
     await waitFor(() => expect(m.getMap).toHaveBeenCalledWith({ data: { profile_id: "p1" } }));
+  });
+
+  // 20 Nov 2026, redraw step 6: the map is the first thing in its card; its one line and the question come after it.
+  it("puts the map first, then its one line, then the question", async () => {
+    wrap(<FirmBrainMap profile={member} />);
+    const card = screen.getByTestId("firm-brain-map");
+    const stage = card.querySelector("[data-firm-map-first]") as HTMLElement;
+    const hint = card.querySelector("[data-firm-map-hint]") as HTMLElement;
+    const ask = screen.getByTestId("ask-the-firm");
+    const after = (one: Node, two: Node) => Boolean(one.compareDocumentPosition(two) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(after(card.querySelector("h2") as HTMLElement, stage)).toBe(true);
+    expect(after(stage, hint)).toBe(true);
+    expect(after(hint, ask)).toBe(true);
+    expect(hint.textContent).toBe(FIRM_MAP_COPY.hint);
+    expect(card.querySelectorAll("[data-firm-map-hint]")).toHaveLength(1);
+    await waitFor(() => expect(m.getMap).toHaveBeenCalled());
   });
 
   it("is absent for a guest and a coach, and never asks the server", () => {
@@ -386,6 +402,8 @@ describe("privacy on screen", () => {
     expect(screen.getByTestId("firm-map-totals").textContent).toContain(
       `${shared.length} engagements`,
     );
+    // The count line is plain words, not spaced capitals in mono.
+    expect(screen.getByTestId("firm-map-totals").className).not.toMatch(/font-mono|uppercase|tracking-wider/);
     expect(document.querySelector('[data-total="engagements"] dd')!.textContent).toBe(
       String(shared.length),
     );

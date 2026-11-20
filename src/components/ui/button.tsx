@@ -10,9 +10,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Ember is the one filled action per screen, warm, obvious, AA on white.
-        // Flat, no inner shadow (reference Button, decided 15 Oct): --btn-shadow is none.
-        default:
-          "bg-ember text-ember-foreground shadow-[var(--btn-shadow)] hover:bg-ember-deep hover:text-ember-deep-foreground",
+        // Flat, no shadow (reference Button, decided 15 Oct). It carries no shadow class at all: a shadow whose
+        // value is "none" (the old shadow-[var(--btn-shadow)]) cancelled the keyboard focus ring, which is drawn
+        // as a box shadow too.
+        default: "bg-ember text-ember-foreground hover:bg-ember-deep hover:text-ember-deep-foreground",
         ink: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:

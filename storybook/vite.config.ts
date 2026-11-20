@@ -18,6 +18,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(app, "src"),
+      // The app's skin module imports TanStack Start, whose server half cannot be bundled for a browser.
+      "@tanstack/react-start/server": path.resolve(here, "start-stub.ts"),
+      "@tanstack/react-start": path.resolve(here, "start-stub.ts"),
       // One React: the copy the app ships, not the one Storybook's packages pull in.
       react: path.resolve(app, "node_modules/react"),
       "react-dom": path.resolve(app, "node_modules/react-dom"),

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { PhoneBubble, PhoneDevice } from "@/components/proposals/MessageDevices";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { tagVariants } from "@/components/ui/tag";
@@ -150,9 +151,14 @@ export function AskDialog({
           <DialogDescription>{ready ? (ready.mode === "practice" ? ASK_COPY.practiceHelper : ASK_COPY.helper) : preview ? "" : ASK_COPY.loading}</DialogDescription>
         </DialogHeader>
         {ready ? (
-          <p data-ask-words className="rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground">
-            {ready.words}
-          </p>
+          <div className="flex flex-col items-center gap-2">
+            <p data-ask-gets className="micro-label self-start">
+              {ASK_COPY.gets(ready.name, ready.mode === "real")}
+            </p>
+            <PhoneDevice kind="text">
+              <PhoneBubble data-ask-words="">{ready.words}</PhoneBubble>
+            </PhoneDevice>
+          </div>
         ) : null}
         {ready?.mode === "demo" ? <p className="text-sm text-muted-foreground">{ASK_COPY.demoHelper}</p> : null}
         {ready?.warning ? (
