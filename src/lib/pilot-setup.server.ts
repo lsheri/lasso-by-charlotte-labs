@@ -127,7 +127,7 @@ export async function realPilotDeps(userId: string | null | undefined): Promise<
     async record(orgId, emailed) {
       const { recordEvent } = await import("./telemetry.server");
       // A system event (no user): the founder is never sent to PostHog as a person in the pilot's workspace,
-      // and so never with their email or sign-up source (QA of #286, M1). Who set it up is on the founder list.
+      // and so never with their email or sign-up source (QA of PR 286, M1). Who set it up is on the founder list.
       await recordEvent(supabaseAdmin, { eventType: "pilot.set_up", orgId, userId: null, dims: { emailed } });
     },
   };

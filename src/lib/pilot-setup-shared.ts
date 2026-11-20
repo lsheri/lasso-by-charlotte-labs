@@ -48,7 +48,7 @@ export type PilotRow = {
 };
 
 const CONTROL = /[\u0000-\u001f\u007f]/;
-// Invisible and direction-changing characters: dropped, so a lookalike of an existing firm cannot be made (QA of #286, L3).
+// Invisible and direction-changing characters: dropped, so a lookalike of an existing firm cannot be made (QA of PR 286, L3).
 const INVISIBLE = /[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g;
 // One @, a dot in the domain, no spaces. The real proof is the person receiving the email.
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

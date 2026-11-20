@@ -208,7 +208,7 @@ describe("requireFounder", () => {
   });
 });
 
-// QA of #286, L6: a mock that really filters, so a dropped user or active-row filter would fail these.
+// QA of PR 286, L6: a mock that really filters, so a dropped user or active-row filter would fail these.
 type Row = { user_id: string; role: string; disabled_at: string | null };
 function filteringAdmin(email: string, rows: Row[]) {
   const calls: string[] = [];

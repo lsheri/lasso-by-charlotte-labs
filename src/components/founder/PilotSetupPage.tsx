@@ -47,11 +47,11 @@ export function PilotSetupPage() {
     );
   }
 
-  // Nothing about the page shows until the server has said who this is (QA of #286, L4).
+  // Nothing about the page shows until the server has said who this is (QA of PR 286, L4).
   if (pilots.isPending) return null;
 
   const check = cleanPilotInput({ firm_name: firmName, admin_email: adminEmail });
-  // A long paste is not cut short in the box: the line says what is wrong (QA of #286, L5).
+  // A long paste is not cut short in the box: the line says what is wrong (QA of PR 286, L5).
   const nameWrong = firmName.trim() !== "" && !cleanPilotInput({ firm_name: firmName, admin_email: "a@b.co" }).ok;
 
   async function submit(event: FormEvent) {
