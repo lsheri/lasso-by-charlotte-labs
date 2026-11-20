@@ -217,7 +217,7 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
 
   // PERF-4: these five reads need only the board and item ids already in hand, so they run together instead of one
   // after another. The same rows are read with the same filters; only the waiting changed.
-  const [items, extracts, showings, exemplars, { data: memberships }] = await Promise.all([
+  const [itemRows, extracts, showings, exemplars, { data: memberships }] = await Promise.all([
     inPages(itemIds, (page) =>
       admin.from("work_items").select("id, owner_id, type, title, display_title, visibility, work_date, meta").eq("org_id", orgId).in("id", page),
     ),
@@ -230,6 +230,9 @@ export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise
     readExemplarMarks(admin, orgId, boardIds, itemIds),
     admin.from("engagement_members").select("engagement_id").eq("profile_id", asker.id).in("engagement_id", boardIds),
   ]);
+  // F2: SOW fees live in a table only the server reads; put them back here, where pastFees and Ask decide who sees them.
+  const { withFeeTerms } = await import("./fee-terms.server");
+  const items = await withFeeTerms(admin, itemRows);
   const peopleIds = [...new Set([...items.map((item) => item.owner_id), ...boardRows.map((board) => board.owner_id)].filter((id): id is string => Boolean(id)))];
   const people = await inPages(peopleIds, (page) => admin.from("profiles").select("id, display_name, is_guest").eq("org_id", orgId).in("id", page));
   const askerBoards = [

@@ -117,3 +117,41 @@ export function checkSuggestion(document: string, suggestion: { fee_text?: unkno
     Number.isInteger(weeks) && weeks >= 1 && weeks <= MAX_WEEKS && new RegExp(`\\b${weeks}[\\s-]*weeks?\\b`).test(doc);
   return { feeText: keepFee ? fee : "", weeks: keepWeeks ? String(weeks) : "" };
 }
+
+/**
+ * F2 (QA of #273, 20 Nov): the money in a SOW's terms. These two fields never sit in work_items.meta, which every
+ * member's browser reads; they live in work_item_fee_terms, a table only the server can read, and are put back
+ * together on the server for admins and leads.
+ */
+export const FEE_FIELDS = ["fee_text", "fee_amount"] as const;
+
+export type FeeFields = { fee_text: string; fee_amount: number | null };
+
+/** The terms without their money: what may stay in meta (length, basis, who confirmed it and when). */
+export function withoutFees(facts: Record<string, unknown>): Record<string, unknown> {
+  const rest = { ...facts };
+  for (const key of FEE_FIELDS) delete rest[key];
+  return rest;
+}
+
+/** The money out of a set of terms, or null when it carries none. */
+export function feesOf(facts: Record<string, unknown>): FeeFields | null {
+  if (typeof facts["fee_text"] !== "string") return null;
+  return { fee_text: facts["fee_text"], fee_amount: typeof facts["fee_amount"] === "number" ? facts["fee_amount"] : null };
+}
+
+/** An item's meta with its fees put back from the protected row. The row wins over anything left in meta. */
+export function metaWithFees(meta: unknown, fees: FeeFields | null | undefined): unknown {
+  if (!fees || !meta || typeof meta !== "object" || Array.isArray(meta)) return meta;
+  const record = meta as Record<string, unknown>;
+  const facts = record["sow_facts"];
+  if (!facts || typeof facts !== "object" || Array.isArray(facts)) return meta;
+  return { ...record, sow_facts: { ...(facts as Record<string, unknown>), ...fees } };
+}
+
+/** True for any key path in a value that carries money from SOW terms. Used by tests that inspect what roles receive. */
+export function carriesFees(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some(carriesFees);
+  return Object.entries(value as Record<string, unknown>).some(([key, inner]) => (FEE_FIELDS as readonly string[]).includes(key) || carriesFees(inner));
+}

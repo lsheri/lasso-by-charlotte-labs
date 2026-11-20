@@ -57,9 +57,11 @@ export const readSowTermsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateItem)
   .handler(async ({ data, context }): Promise<SowTerms | null> => {
-    const { item } = await gate(context, data);
+    const { admin, item } = await gate(context, data);
     const { sowTermsOf } = await import("./sow-terms-shared");
-    return sowTermsOf(item["meta"]);
+    const { withFeeTerms } = await import("./fee-terms.server");
+    const [withFees] = await withFeeTerms(admin, [{ id: data.item_id, meta: item["meta"] }]);
+    return sowTermsOf(withFees?.meta);
   });
 
 /** One fast-tier read of the SOW. Code keeps only a fee and length found word for word; nothing is saved. */
@@ -103,16 +105,20 @@ export const saveSowTermsFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<SowTerms | null> => {
     const { profile, admin, item } = await gate(context, data);
     const { buildSowTerms, validateSowTerms } = await import("./sow-terms-shared");
-    const meta = { ...((item["meta"] ?? {}) as Record<string, unknown>) };
     let terms: SowTerms | null = null;
-    if (data.clear) {
-      delete meta["sow_facts"];
-    } else {
+    if (!data.clear) {
       const problem = validateSowTerms({ feeText: data.fee_text, weeks: data.weeks });
       if (problem) throw new Response(problem, { status: 400 });
       terms = buildSowTerms({ feeText: data.fee_text, weeks: data.weeks }, profile.id);
-      meta["sow_facts"] = terms;
     }
+    // F2: the fee goes to the server-only table; meta keeps the length and who confirmed it.
+    const { storeSowTerms } = await import("./fee-terms.server");
+    const meta = await storeSowTerms(admin, {
+      itemId: data.item_id,
+      orgId: profile.org_id,
+      meta: (item["meta"] ?? {}) as Record<string, unknown>,
+      facts: terms as Record<string, unknown> | null,
+    });
     const { error } = await admin.from("work_items").update({ meta: meta as never }).eq("id", data.item_id).eq("org_id", profile.org_id);
     if (error) throw new Response("Could not save.", { status: 500 });
     const { recordEvent } = await import("./telemetry.server");
