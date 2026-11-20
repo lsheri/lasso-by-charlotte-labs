@@ -112,8 +112,18 @@ describe("the three views", () => {
     expect(rows.map((p) => p.id)).toEqual(before);
   });
 
-  it("writes dates the same everywhere", () => {
-    expect(deskDate("2026-11-20T09:00:00Z")).toBe("Fri 20 Nov");
+  it("writes dates the same everywhere, with the year only when it is not this year", () => {
+    const now = new Date("2026-11-21T12:00:00Z");
+    expect(deskDate("2026-11-20T09:00:00Z", now)).toBe("Fri 20 Nov");
+    expect(deskDate("2026-01-01T00:00:00Z", now)).toBe("Thu 1 Jan");
+    expect(deskDate("2025-08-04T08:59:59.983Z", now)).toBe("Mon 4 Aug 2025");
+    expect(deskDate("2023-01-09T08:59:59Z", now)).toBe("Mon 9 Jan 2023");
+    // The year is read in UTC, as the day is: the last second of a year belongs to that year wherever the reader sits.
+    expect(deskDate("2025-12-31T23:59:59Z", now)).toBe("Wed 31 Dec 2025");
+    expect(deskDate("2026-12-31T23:59:59Z", new Date("2027-01-01T00:00:00Z"))).toBe("Thu 31 Dec 2026");
+    // A date ahead of this year says so too.
+    expect(deskDate("2027-02-01T09:00:00Z", now)).toBe("Mon 1 Feb 2027");
+    expect(deskDate("2026-11-20T09:00:00Z")).toMatch(/^Fri 20 Nov( 2026)?$/);
     expect(deskDate(null)).toBe("");
     expect(deskDate("junk")).toBe("");
   });

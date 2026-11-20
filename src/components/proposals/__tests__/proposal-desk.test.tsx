@@ -56,6 +56,55 @@ describe("the Proposals dashboard", () => {
     expect(screen.getByRole("link", { name: DESK_COPY.openBoard }).getAttribute("href")).toBe("/engagements/board-1/canvas-lab");
   });
 
+  it("shows the year on a win or a loss from another year, and not on this year's", () => {
+    render(
+      <ProposalDesk
+        now={NOW}
+        data={list([
+          proposal({ id: "new", status: "won", decidedAt: "2026-11-02T08:59:59Z" }),
+          proposal({ id: "old", status: "won", decidedAt: "2025-08-04T08:59:59Z" }),
+          proposal({ id: "gone", status: "lost", decidedAt: "2024-10-22T16:00:00Z" }),
+          proposal({ id: "gone-now", status: "lost", decidedAt: "2026-08-27T16:00:00Z" }),
+        ])}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Won 2" }));
+    expect(screen.getByText("Won Mon 2 Nov")).toBeTruthy();
+    expect(screen.getByText("Won Mon 4 Aug 2025")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Lost 2" }));
+    expect(screen.getByText("Lost Tue 22 Oct 2024")).toBeTruthy();
+    expect(screen.getByText("Lost Thu 27 Aug")).toBeTruthy();
+  });
+
+  it("says No documents yet only on an open proposal; a decided one with none says nothing, and one with some still counts them", () => {
+    render(
+      <ProposalDesk
+        now={NOW}
+        data={list([
+          proposal({ id: "open-none" }),
+          proposal({ id: "won-none", status: "won", decidedAt: hoursAgo(5) }),
+          proposal({ id: "won-two", status: "won", decidedAt: hoursAgo(6), contextCount: 2 }),
+          proposal({ id: "lost-none", status: "lost", decidedAt: hoursAgo(7) }),
+        ])}
+      />,
+    );
+    const context = (id: string) => document.querySelector(`[data-proposal-row="${id}"] [data-proposal-context]`)?.textContent ?? null;
+    expect(context("open-none")).toBe(DESK_COPY.context(0));
+    fireEvent.click(screen.getByRole("button", { name: "Won 2" }));
+    expect(context("won-none")).toBeNull();
+    expect(document.querySelector('[data-proposal-row="won-none"]')?.textContent).toContain(DESK_COPY.owner("Maren Hollis"));
+    expect(context("won-two")).toBe(DESK_COPY.context(2));
+    fireEvent.click(screen.getByRole("button", { name: "Lost 1" }));
+    expect(context("lost-none")).toBeNull();
+  });
+
+  it("the board strip shows the year of a win from another year", () => {
+    const { rerender } = render(<BoardWinLines now={NOW} win={{ won: true, decidedAt: "2025-08-04T08:59:59Z", leadName: "Odette Lambrecht", ask: null }} />);
+    expect(screen.getByTestId("board-win-strip").textContent).toBe(`${BOARD_WIN_COPY.won("Mon 4 Aug 2025")}${BOARD_WIN_COPY.lead("Odette Lambrecht")}`);
+    rerender(<BoardWinLines now={NOW} win={{ won: true, decidedAt: "2026-11-20T01:09:12Z", leadName: null, ask: null }} />);
+    expect(screen.getByTestId("board-win-strip").textContent).toBe(BOARD_WIN_COPY.won("Fri 20 Nov"));
+  });
+
   it("says so plainly when a view is empty", () => {
     render(<ProposalDesk now={NOW} data={list([])} />);
     expect(screen.getByText(DESK_COPY.empty.open)).toBeTruthy();

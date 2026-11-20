@@ -8,11 +8,11 @@ import { BOARD_WIN_COPY, deskDate, type BoardWin } from "@/lib/proposal-desk-sha
 import { boardWinFn } from "@/lib/proposal-desk.functions";
 
 /** The strip's words. Plain values in, so it is tested without a server. */
-export function BoardWinLines({ win, children }: { win: BoardWin; children?: React.ReactNode }) {
+export function BoardWinLines({ win, children, now }: { win: BoardWin; children?: React.ReactNode; now?: Date | undefined }) {
   if (!win.won) return null;
   return (
     <div data-testid="board-win-strip" role="status" className="flex flex-col gap-1 rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-(length:--type-small) shadow-card">
-      <p className="font-medium text-foreground">{BOARD_WIN_COPY.won(deskDate(win.decidedAt))}</p>
+      <p className="font-medium text-foreground">{BOARD_WIN_COPY.won(deskDate(win.decidedAt, now))}</p>
       {win.leadName ? (
         <p data-board-lead className="break-words text-muted-foreground [overflow-wrap:anywhere]">
           {BOARD_WIN_COPY.lead(win.leadName)}
