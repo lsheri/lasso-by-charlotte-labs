@@ -411,8 +411,18 @@ describe("the practice path, before the carriers approve the number", () => {
     // A demo workspace with texting on: the ask on the row is a real one, and a practice answer cannot touch it.
     const live = world({ demo: true, demoNumber: OTHER_PHONE });
     await askLead(live.store, press);
-    expect(await practiceReply(live.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceGone });
+    expect(await practiceReply(live.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
     expect(live.w.rows[0]?.reply).toBeNull();
+
+    // A practice ask made before texting was switched on cannot be answered once it is on.
+    const before = practice();
+    await askLead(before.store, press);
+    expect(before.w.rows[0]?.status).toBe("practice");
+    const after = world({ ...before.w, config: world({ demo: true, demoNumber: OTHER_PHONE }).w.config });
+    expect(await practiceReply(after.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
+    expect(after.w.rows[0]?.reply).toBeNull();
+    // And it does not hold up the real ask.
+    expect(await askLead(after.store, { ...press, press_id: "99999999-9999-4999-8999-999999999999" })).toEqual({ ok: true, practice: false });
 
     const elsewhere = world({ demo: true, config: null, proposal: { id: PROPOSAL, org_id: ORG_B, status: "open", lead_contact_id: LEAD } });
     expect(await practiceReply(elsewhere.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });

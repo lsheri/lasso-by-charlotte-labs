@@ -174,7 +174,8 @@ export async function askLead(store: AskStore, input: AskSendInput): Promise<Ask
   }
 
   if (!same) {
-    const toThisPerson = asks.filter((ask) => (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
+    // Once texting is on, a practice ask left over from before neither blocks a real ask nor counts as an answer.
+    const toThisPerson = asks.filter((ask) => (practice || ask.status !== "practice") && (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
     if (toThisPerson.some((ask) => isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now))) return { ok: false, problem: ASK_COPY.alreadyWaiting };
     // In a real workspace a person who has answered is not asked again about the same proposal.
     if (!state.demo && toThisPerson.some((ask) => ask.reply)) return { ok: false, problem: ASK_COPY.alreadyAnswered(state.name) };
@@ -244,6 +245,8 @@ async function safely(run: () => Promise<void>): Promise<void> {
 export async function practiceReply(store: AskStore, input: PracticeReplyInput): Promise<PracticeReplyResult> {
   const caller = await store.caller();
   if (!canManageRoster(caller.role) || !(await store.demo(caller.orgId))) return { ok: false, problem: ASK_COPY.practiceOnly };
+  // Practice ends the moment texting is switched on: a practice ask left over from before can no longer be answered.
+  if (store.config()) return { ok: false, problem: ASK_COPY.practiceOnly };
   const row = await store.proposal(input.proposal_id);
   if (!row || row.org_id !== caller.orgId) return { ok: false, problem: ASK_COPY.practiceOnly };
   const reply = readReply(input.reply);

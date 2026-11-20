@@ -145,7 +145,7 @@ export type DeskStore = {
 const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
 
 /** The latest ask per proposal, as the page draws it. */
-function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date): Map<string, AskView> {
+function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false): Map<string, AskView> {
   const views = new Map<string, AskView>();
   for (const ask of asks) {
     if (views.has(ask.proposal_id)) continue;
@@ -154,7 +154,8 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date): Map<s
       status: ask.status as TextStatus,
       reply: (ask.reply as Reply | null) ?? null,
       practice: ask.status === "practice",
-      waiting: isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
+      // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
+      waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
     });
   }
   return views;
@@ -187,7 +188,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
     store.texts(caller.orgId),
     mayAddClient(store, caller),
   ]);
-  const askByProposal = askViews(asks, leadNames, store.now());
+  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
   const proposals: DeskProposal[] = mine.map((row) => {

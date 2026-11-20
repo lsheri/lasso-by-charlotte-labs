@@ -592,6 +592,14 @@ describe("20 Nov: the lead's name and the ask on the page", () => {
     expect(JSON.stringify(list.proposals.map((p) => p.ask))).not.toMatch(/created_at|replied_at|minutes|seconds|\d{4}-\d{2}/);
   });
 
+  it("a practice ask stops waiting once texting is switched on", async () => {
+    const practice = async () => [{ proposal_id: "p1", contact_id: null, to_demo: true, status: "practice", reply: null, created_at: hoursAgo(1) }];
+    const off = await listDesk(fakeStore({ rows, asks: practice, role: "admin", texts: async () => ({ demo: true, connected: false }) }));
+    expect(off.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ practice: true, waiting: true });
+    const on = await listDesk(fakeStore({ rows, asks: practice, role: "admin", texts: async () => ({ demo: true, connected: true }) }));
+    expect(on.proposals.find((p) => p.id === "p1")?.ask).toMatchObject({ practice: true, waiting: false });
+  });
+
   it("says where the workspace's texts go", async () => {
     expect((await listDesk(fakeStore({ texts: async () => ({ demo: true, connected: false }) }))).texts).toEqual({ demo: true, connected: false });
   });
