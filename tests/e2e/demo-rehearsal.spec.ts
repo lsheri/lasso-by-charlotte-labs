@@ -56,23 +56,20 @@ async function openProposalPanel(page: Page) {
 const ASK_STATUS = /"k":\["status","summary"[^\]]*\],"v":\[\{"t":1,"s":"(\w+)"/;
 
 /**
- * Asks the way the person does. For a lead or a member, Home turns the orb and opens the answer on the Firm brain
- * canvas (D-85, #279). An admin's Home is the operating picture (D-82), so an admin asks on the Firm brain canvas
- * itself. Either way the status is read from the server's reply and the words from the canvas answer card once they
- * stop changing.
+ * Asks from Home the way the person does: through the chat pill (D-97), where the answer builds in place
+ * (`data-firm-answer` once it is in). The canvas path is kept for an answer that opens there instead; the status is
+ * read from the server's reply either way.
  */
 async function ask(page: Page, question: string): Promise<{ status: string; text: string }> {
   await page.goto("/home", { waitUntil: "domcontentloaded" });
   const box = page.getByTestId("ask-the-firm");
-  const adminHome = page.getByTestId("admin-home");
-  await box.or(adminHome).first().waitFor({ timeout: 30_000 });
-  if (await adminHome.isVisible()) {
-    await page.goto("/firm-brain", { waitUntil: "domcontentloaded" });
-    await box.waitFor({ timeout: 30_000 });
-  }
+  await box.waitFor({ timeout: 30_000 });
+  // 20 Nov 2026 (D-97): Ask the firm is the chat pill, on every page. Open it first; the answer builds in the chat.
+  if ((await box.getAttribute("data-mode")) === "shut") await box.getByRole("button", { name: /^Open the .+ helper$/ }).click();
+  await box.getByLabel("Question for the firm").waitFor({ state: "visible", timeout: 10_000 });
   const reply = page.waitForResponse(async (res) => res.url().includes("_serverFn") && ASK_STATUS.test(await res.text().catch(() => "")), { timeout: 120_000 });
   await box.getByLabel("Question for the firm").fill(question);
-  await box.getByRole("button", { name: "Ask" }).click();
+  await box.getByRole("button", { name: "Ask", exact: true }).click();
   const status = (await reply.then((res) => res.text())).match(ASK_STATUS)?.[1] ?? "";
   const inPlace = box.locator("[data-firm-answer]");
   const onCanvas = page.getByTestId("canvas-answer").last();

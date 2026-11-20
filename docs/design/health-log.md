@@ -81,6 +81,9 @@ Every PR was checked against main with the full test suite, lint, and the design
 
 - **Skeleton frames for slow sections (20 Nov, demo speed PR).** New primitive `SkeletonFrame` in src/components/ui, made only of the existing `Skeleton` bar and token classes (border-border, corner-card); seven loading lines swapped for it. No literals added, health counts unchanged, no ceiling raised.
 
+- **The chat pill (20 Nov, D-97, PR 1a).** One fixed element on every signed-in page in the app shell: a pill that morphs into the helper panel, a phone bottom sheet and a full screen chat, with the page behind softened while full. Shape is set by code from the prototype's numbers (chat-pill-shared.ts); everything else is skin tokens in src/components/pill/chat-pill.css (card, border, foreground, muted, skin-action, skin-live-wash, corner and type roles), layer calc(--layer-tabbar + 1). Feedback moves to the bottom left beside the menu. No colour or font literals, no new `!important`, health counts unchanged, no ceiling raised.
+
+- **Firm brain by chat (20 Nov, D-97, PR 1b).** The canvas answer card gains an inline placement (in flow, full width, no float shadow) so the chat and the canvas share one card; the pill adds one outline action style from skin tokens. Home's question box and the admin's Ask the firm box leave Home. No literals added, health counts unchanged, no ceiling raised.
 - **Admin Home "what changed" (21 Nov, D-82).** New AdminHome composition from existing primitives (SkeletonFrame, Skeleton, Button, RollDown) and token classes only; the arrival motion is a small `ah-*` block in 05-motion-and-public-pages.css using `--live-edge` and `--ease-flow`, with a reduced-motion block. The admin's Boards section reuses `nb-group-header` and `nb-roll-chevron`. No literals added, no ceiling raised.
 
 ## Health counts

@@ -11,6 +11,7 @@ import {
   ROSTER_COPY as COPY,
   type RosterContact,
   type RosterChangeResult,
+  type RosterInviteResult,
   type RosterList,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
@@ -598,5 +599,49 @@ describe("contact details", () => {
     expect(askNewNumber).toHaveBeenCalledTimes(1);
     fail(new Error("offline"));
     expect((await screen.findByRole("alert")).textContent).toBe(COPY.changeFailures.unavailable);
+  });
+});
+
+describe("20 Nov: Email the link", () => {
+  const withEmail = person({ email: "dana@example.test" });
+  it("shows only for someone with an email and no live agreement, and says plainly that nothing is agreed yet", async () => {
+    const sendInvite = vi.fn(async (): Promise<RosterInviteResult> => ({ ok: true, contact: { ...withEmail, invitedOn: "2026-11-20" } }));
+    setup({ list: { allowed: true, contacts: [withEmail, person({ id: "x2", name: "No Email" }), { ...tomas, email: "t@example.test" }] }, sendInvite });
+    await screen.findAllByRole("listitem");
+    expect(screen.getAllByRole("button", { name: /^Email the text agreement link/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: COPY.emailLabel("Dana Whitlock") }));
+    fireEvent.click(screen.getByRole("button", { name: COPY.emailLabel("Dana Whitlock") }));
+    expect(await screen.findByText(COPY.emailed("dana@example.test"))).toBeTruthy();
+    expect(sendInvite).toHaveBeenCalledTimes(1);
+    expect(sendInvite).toHaveBeenCalledWith("p1", withEmail.id);
+    expect(screen.getByText(new RegExp(COPY.emailedOn("2026-11-20")))).toBeTruthy();
+  });
+
+  it.each(["no_email", "recent", "unavailable", "missing"] as const)("says why when the server answers %s", async (reason) => {
+    setup({ list: { allowed: true, contacts: [withEmail] }, sendInvite: vi.fn(async () => ({ ok: false, reason }) as RosterInviteResult) });
+    await screen.findAllByRole("listitem");
+    fireEvent.click(screen.getByRole("button", { name: COPY.emailLabel("Dana Whitlock") }));
+    expect((await screen.findByRole("alert")).textContent).toBe(COPY.emailFailures[reason]);
+  });
+
+  it("when email is not set up, says so and shows the link to copy", async () => {
+    setup({ list: { allowed: true, contacts: [withEmail] }, sendInvite: vi.fn(async () => ({ ok: false, reason: "not_set_up" }) as RosterInviteResult) });
+    await screen.findAllByRole("listitem");
+    fireEvent.click(screen.getByRole("button", { name: COPY.emailLabel("Dana Whitlock") }));
+    expect((await screen.findByRole("alert")).textContent).toBe(COPY.emailFailures.not_set_up);
+    expect((screen.getByLabelText(COPY.linkLabel("Dana Whitlock")) as HTMLInputElement).value).toBe(ORIGIN + withEmail.linkPath);
+  });
+
+  it("a thrown call reads as not sent", async () => {
+    setup({ list: { allowed: true, contacts: [withEmail] }, sendInvite: vi.fn(async () => Promise.reject(new Error("down"))) });
+    await screen.findAllByRole("listitem");
+    fireEvent.click(screen.getByRole("button", { name: COPY.emailLabel("Dana Whitlock") }));
+    expect((await screen.findByRole("alert")).textContent).toBe(COPY.emailFailures.unavailable);
+  });
+
+  it("has no button when the page gives no sender", async () => {
+    setup({ list: { allowed: true, contacts: [withEmail] } });
+    await screen.findAllByRole("listitem");
+    expect(screen.queryByRole("button", { name: COPY.emailLabel("Dana Whitlock") })).toBeNull();
   });
 });

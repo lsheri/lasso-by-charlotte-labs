@@ -52,7 +52,7 @@ import {
 } from "@/lib/firm-canvas-shared";
 import { layoutFirmMap } from "@/lib/firm-map-shared";
 import { getFirmMap } from "@/lib/firm-map.functions";
-import { startReturn, takeHandedQuestion } from "@/lib/home-ask-shared";
+import { cameFromHome, startReturn, subscribeHandOff, takeHandedQuestion } from "@/lib/home-ask-shared";
 import { FIRM_BRAIN_COPY } from "@/lib/role-screens-shared";
 import { cn } from "@/lib/utils";
 
@@ -218,8 +218,23 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   // A question handed over from Home's box (PR B), taken once, in memory only.
+  // Whether the question came from Home's box (Back returns there) or from the chat pill (no Back): read before taking.
+  const [fromHome] = useState(() => cameFromHome());
   const [handed] = useState(() => takeHandedQuestion(profile.id));
   const handedResult = useRef(handed?.result ?? null);
+  // 20 Nov, chat pill: a question handed over while this page is already open (asked from the pill here).
+  const [live, setLive] = useState<{ question: string; n: number } | null>(null);
+  const liveResult = useRef<{ question: string; result: FirmAskResult } | null>(null);
+  useEffect(
+    () =>
+      subscribeHandOff(() => {
+        const got = takeHandedQuestion(profile.id);
+        if (!got) return;
+        liveResult.current = got.result ? { question: got.question, result: got.result } : null;
+        setLive((prev) => ({ question: got.question, n: (prev?.n ?? 0) + 1 }));
+      }),
+    [profile.id],
+  );
   // Read fresh every time the page opens, so a board with sharing turned off is gone at the next load.
   const query = useQuery({
     queryKey: ["firm-map", profile.id ?? null],
@@ -245,11 +260,17 @@ export function FirmBrainCanvas({ profile }: { profile: CanvasProfile }) {
           handedResult.current = null;
           return Promise.resolve(ready);
         }
+        const kept = liveResult.current;
+        if (kept && kept.question === question) {
+          liveResult.current = null;
+          return Promise.resolve(kept.result);
+        }
         return ask({ data: { question, starter, profile_id: profile.id ?? null } });
       }}
       initialQuestion={handed?.question ?? null}
+      liveQuestion={live}
       onBack={
-        handed
+        handed && fromHome
           ? () => {
               // Back the same way: Home's box grows out of the menu row the question went into.
               startReturn(reduceMotion ? null : (rectOf(firmBrainRow()) ?? topMiddle()));
@@ -276,6 +297,7 @@ export function FirmBrainCanvasView({
   map,
   ask,
   initialQuestion = null,
+  liveQuestion = null,
   onBack,
 }: {
   profile: CanvasProfile;
@@ -283,6 +305,8 @@ export function FirmBrainCanvasView({
   ask: (question: string, starter: FirmAskStarter | null) => Promise<FirmAskResult>;
   /** Asked as soon as the map is ready: the question handed over from Home. */
   initialQuestion?: string | null;
+  /** A question handed over while the page is open (the chat pill); each new `n` is asked once. */
+  liveQuestion?: { question: string; n: number } | null;
   /** Shown as a Home button when the page was opened from Home's question box. */
   onBack?: (() => void) | undefined;
 }) {
@@ -519,6 +543,15 @@ export function FirmBrainCanvasView({
     void run(initialQuestion, null);
     // run reads the latest state through refs; only the map settling should trigger this.
   }, [layout, initialQuestion, map.pending, map.refused]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A question from the chat pill while this page is open: asked once per hand-off, as soon as the map can take it.
+  const askedLive = useRef(0);
+  useEffect(() => {
+    if (!liveQuestion || askedLive.current >= liveQuestion.n || map.refused) return;
+    if (!layout && map.pending) return;
+    askedLive.current = liveQuestion.n;
+    void run(liveQuestion.question, null);
+  }, [layout, liveQuestion, map.pending, map.refused]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function submit(event?: FormEvent) {
     event?.preventDefault();
@@ -903,11 +936,7 @@ export function FirmBrainCanvasView({
         </div>
 
         {!refused ? (
-          <div
-            // 21 Nov (D-82): the tour's Ask beats point here. Ask the firm left an admin's Home for this canvas.
-            data-testid="ask-the-firm"
-            className="absolute bottom-4 left-1/2 flex w-[min(640px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2 md:bottom-5 md:w-[min(640px,calc(100%-160px))]"
-          >
+          <div className="absolute bottom-4 left-1/2 flex w-[min(640px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2 md:bottom-5 md:w-[min(640px,calc(100%-160px))]">
             {!answers.length ? (
               <div className="flex flex-wrap justify-center gap-2">
                 {startersFor(profile.role).map((key) => (

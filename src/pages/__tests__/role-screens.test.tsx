@@ -249,10 +249,7 @@ describe("Home by role", () => {
       mocks.profile = person(role);
       mount(<HomePage />);
       const ask = screen.getByTestId("home-ask");
-      expect(ask.getAttribute("data-role")).toBe(role);
-      // The starters are made from the most recently opened board.
-      expect(ask.getAttribute("data-recent")).toBe("Fairhaven digital product operating model");
-      // The question box sits at the top of Home's board, above the boards as cards.
+      // The greeting and the orb sit at the top of Home's board, above the boards as cards. Asking is the pill's.
       expect(screen.getByTestId("home-board").contains(ask)).toBe(true);
       for (const id of ["home-proposals", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
       await Promise.resolve();

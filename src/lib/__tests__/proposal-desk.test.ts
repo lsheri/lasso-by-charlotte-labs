@@ -571,6 +571,17 @@ describe("20 Nov: who adds a client", () => {
     expect((await listDesk(off)).canAddClient).toBe(false);
     expect(await createProposal(off, newProposalInput({ title: "Audit", new_client_name: "Quillbrook" }))).toEqual({ ok: false, problem: INTAKE_COPY.problems.adminAddsClients });
   });
+
+  it("tells only an admin that clients are switched off; others never see it", async () => {
+    expect((await listDesk(fakeStore({ role: "admin", clientsOn: async () => false }))).clientsOff).toBe(true);
+    expect((await listDesk(fakeStore({ role: "admin" }))).clientsOff).toBe(false);
+    expect((await listDesk(fakeStore({ role: "lead", clientsOn: async () => false }))).clientsOff).toBe(false);
+  });
+
+  it("a new pilot's admin adds the first client from the sheet itself", async () => {
+    const store = fakeStore({ role: "admin" });
+    expect(await createProposal(store, newProposalInput({ title: "First brief", new_client_name: "Brand New Client" }))).toMatchObject({ ok: true });
+  });
 });
 
 describe("20 Nov: the lead's name and the ask on the page", () => {

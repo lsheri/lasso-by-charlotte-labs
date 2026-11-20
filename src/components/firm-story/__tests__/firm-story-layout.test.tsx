@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ access: vi.fn(), navigate: vi.fn(), log: vi.fn(), path: "/firm-brain" }));
+const m = vi.hoisted(() => ({ access: vi.fn(), navigate: vi.fn(), log: vi.fn(), path: "/home" }));
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@tanstack/react-router", () => ({
@@ -19,8 +19,7 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: "Lasso" }) }));
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
-import { FIRM_STORY_SCRIPT } from "@/lib/firm-story-script";
-import { KESTREL_BAY_ORG_ID, STORY_DONE, storyStorageKey } from "@/lib/firm-story-shared";
+import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
 
 // The page as the browser would lay it out: 1440 x 900, the card 416 x 340 at the bottom past the sidebar.
 const page = { askTop: 480, scrollY: 0, maxScroll: 2000 };
@@ -29,8 +28,7 @@ const rectOf = (top: number, left: number, width: number, height: number) => ({ 
 function layOut() {
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
     const id = this.getAttribute("data-testid");
-    // 21 Nov (D-82): beats 1 and 3 point at the question box and the Fees chip on the Firm brain canvas.
-    if (id === "ask-the-firm" || id === "firm-canvas-fees") return rectOf(page.askTop - page.scrollY, 338, 1022, 172);
+    if (id === "ask-the-firm") return rectOf(page.askTop - page.scrollY, 338, 1022, 172);
     if (id === "firm-story-card") {
       const frame = this.closest('[data-testid="firm-story"]') as HTMLElement | null;
       const top = frame?.style.top ? Number.parseFloat(frame.style.top) : 900 - 16 - 340;
@@ -53,7 +51,6 @@ async function toBeatOne() {
   render(
     <QueryClientProvider client={client}>
       <div data-testid="ask-the-firm" />
-      <div data-testid="firm-canvas-fees" />
       <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
     </QueryClientProvider>,
   );
@@ -72,7 +69,7 @@ beforeEach(() => {
   window.sessionStorage.clear();
   m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
   m.navigate.mockReset();
-  m.path = "/firm-brain";
+  m.path = "/home";
   Object.assign(page, { askTop: 480, scrollY: 0, maxScroll: 2000 });
   layOut();
 });
@@ -143,8 +140,10 @@ describe("the demo story keeps its target in sight", () => {
     await tick();
     fireEvent.wheel(window);
     page.scrollY = 0;
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, the map
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, the Fees chip
+    m.path = "/firm-brain";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, on Firm brain
+    m.path = "/home";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, Home again
     await tick();
     expect(page.scrollY).toBe(468);
   });
@@ -176,16 +175,18 @@ describe("the demo story keeps its target in sight", () => {
       await vi.advanceTimersByTimeAsync(10);
     });
     fireEvent.click(screen.getByTestId("firm-story-launcher"));
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 1, the question box
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 1, Home
     await tick(700);
     expect(placement()).toBe("bottom-start");
+    m.path = "/firm-brain";
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2, Firm brain
     await tick(700);
     expect(screen.getByTestId("firm-story-card").getAttribute("data-story-beat")).toBe("2");
     expect(placement()).toBe("top-start");
     expect(screen.getByTestId("firm-story").style.top).toBe("16px");
     expect(window.scrollBy).not.toHaveBeenCalled(); // the map is read from its top, with the page where it is
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, no Fees chip on this page
+    m.path = "/home";
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3, Home again
     await tick(700);
     expect(placement()).toBe("bottom-start");
     expect(screen.getByTestId("firm-story").style.top).toBe("");
@@ -196,71 +197,5 @@ describe("the demo story keeps its target in sight", () => {
     await tick(1000);
     expect(m.access).toHaveBeenCalledTimes(1);
     expect(Object.keys(window.sessionStorage)).toHaveLength(1);
-  });
-});
-
-describe("QA M4 on PR 285: cards with no target of their own on Firm brain", () => {
-  it("moves the hand-off card off the question box, without outlining it", async () => {
-    page.maxScroll = 0; // the canvas page does not scroll
-    await toBeatOne();
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 2
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 3
-    fireEvent.click(screen.getByRole("button", { name: "Next" })); // beat 4 belongs to the other window: the hand-off
-    await tick(700);
-    expect(screen.getByTestId("firm-story").textContent).toContain("Hand over to the");
-    expect(placement()).toBe("top-end");
-    expect(screen.queryByTestId("firm-story-spotlight")).toBeNull();
-  });
-
-  it("moves the closing card off the question box", async () => {
-    page.maxScroll = 0;
-    window.sessionStorage.setItem(storyStorageKey("p1")!, String(STORY_DONE));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <div data-testid="ask-the-firm" />
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
-      </QueryClientProvider>,
-    );
-    await tick(700);
-    expect(screen.getByTestId("firm-story").textContent).toContain(FIRM_STORY_SCRIPT.closing);
-    expect(placement()).toBe("top-end");
-  });
-
-  it("leaves the cards where they were on any other page", async () => {
-    page.maxScroll = 0;
-    m.path = "/home";
-    window.sessionStorage.setItem(storyStorageKey("p1")!, String(STORY_DONE));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <div data-testid="ask-the-firm" />
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
-      </QueryClientProvider>,
-    );
-    await tick(700);
-    expect(placement()).toBe("bottom-start");
-  });
-});
-
-describe("QA N4 on PR 285: a beat whose target did not load", () => {
-  it("keeps beat 3's card clear of the question box when the Fees chip is not on the page", async () => {
-    page.maxScroll = 0;
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <div data-testid="ask-the-firm" />
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
-      </QueryClientProvider>,
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(10);
-    });
-    fireEvent.click(screen.getByTestId("firm-story-launcher"));
-    for (let i = 0; i < 3; i += 1) fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByTestId("firm-story-card").getAttribute("data-story-beat")).toBe("3");
-    await tick(700);
-    expect(placement()).toBe("top-end");
-    expect(screen.queryByTestId("firm-story-spotlight")).toBeNull();
   });
 });

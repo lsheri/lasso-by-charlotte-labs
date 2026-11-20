@@ -195,6 +195,7 @@ export const INTAKE_COPY = {
   /** Shown before anything is uploaded, to someone who may not add a client. */
   adminAddsClients: "An admin adds new clients. Choose an existing client, or ask an admin to add this one first.",
   noClientsForMember: "There are no clients yet, and only an admin can add one. Ask an admin to add this client first.",
+  clientsOffForAdmin: "Clients are switched off for this workspace. Turn on Use clients in Settings, then add this one here.",
   clientName: "Client name",
   titleLabel: "What they asked for",
   titleHint: "A short name, such as Network redesign.",
@@ -262,6 +263,8 @@ export type DeskList = {
   canPickLead: boolean;
   /** May add a new client while starting a proposal: an admin, in a workspace with clients switched on. */
   canAddClient: boolean;
+  /** An admin whose workspace has clients switched off: told where to switch them on, not to ask an admin. */
+  clientsOff?: boolean | undefined;
   /** Where this workspace's texts go, and whether texting is switched on. */
   texts: TextsState;
   proposals: DeskProposal[];

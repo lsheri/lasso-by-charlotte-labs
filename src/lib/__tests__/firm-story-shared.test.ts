@@ -260,14 +260,13 @@ describe("the tour link", () => {
 describe("the words the story borrows from the product", () => {
   // Presenter notes tell a person to press controls by name. If a control is renamed, its note must change too.
   const NAMED_CONTROLS: Record<string, string> = {
-    "Ask the firm": "src/lib/firm-ask-shared.ts",
+    // 20 Nov 2026 (QA L3 of PR 290): "Ask the firm" and "What we charged" left the notes; asking is the chat pill.
     "What it read": "src/lib/firm-ask-shared.ts",
-    // 21 Nov (D-82): beat 3 presses the Fees chip on the Firm brain canvas.
-    Fees: "src/lib/firm-canvas-shared.ts",
     "More tools": "src/components/canvas-lab/BoardToolbarSurface.tsx",
     "Start a proposal": "src/lib/proposal-shared.ts",
     "Red pen": "src/lib/red-pen-shared.ts",
     "Share with firm": "src/lib/firm-share-copy.ts",
+    "Firm brain": "src/lib/role-screens-shared.ts",
   };
 
   it("takes the Ask the firm label from the product's own copy", () => {
@@ -288,22 +287,6 @@ describe("the words the story borrows from the product", () => {
     const listed = Object.keys(NAMED_CONTROLS);
     const unlisted = told.filter((label) => !listed.includes(label) && !["Share", "Then"].includes(label));
     expect(unlisted).toEqual([]);
-  });
-});
-
-describe("Ask beats on Firm brain (21 Nov, D-82)", () => {
-  it("plays every Ask beat on the Firm brain canvas, since an admin's Home no longer has Ask the firm", () => {
-    const asks = STORY_BEATS.filter((beat) => beat.anchor === "ask-the-firm" || beat.anchor === "firm-canvas-fees");
-    expect(asks.map((beat) => beat.n)).toEqual([1, 3, 7, 8]);
-    for (const beat of asks) expect(beat.place, `beat ${beat.n}`).toBe("firm");
-    expect(STORY_BEATS.some((beat) => beat.place === "home")).toBe(false);
-  });
-
-  it("points beat 3 at the Fees chip, which only admins and leads see, and keeps it on the Partner's window", () => {
-    expect(STORY_BEATS[3]!.anchor).toBe("firm-canvas-fees");
-    expect(STORY_BEATS[3]!.window).toBe("partner");
-    expect(readFileSync("src/components/firm-brain/FirmBrainCanvas.tsx", "utf8")).toContain('data-testid="firm-canvas-fees"');
-    expect(readFileSync("src/components/firm-brain/FirmBrainCanvas.tsx", "utf8")).toContain('data-testid="ask-the-firm"');
   });
 });
 
@@ -328,8 +311,8 @@ describe("beat 2 matches the menu (20 Nov)", () => {
     expect(STORY_BEATS.filter((beat) => beat.phoneCardAtTop).map((beat) => beat.n)).toEqual([2]);
   });
 
-  it("names the top right corner on a wide screen for beats 2 and 3, where the canvas fills the page (QA M4)", () => {
-    expect(STORY_BEATS.filter((beat) => beat.wideCardAt).map((beat) => [beat.n, beat.wideCardAt])).toEqual([[2, "top-end"], [3, "top-end"]]);
+  it("names the top right corner on a wide screen for beat 2 only, where the canvas fills the page", () => {
+    expect(STORY_BEATS.filter((beat) => beat.wideCardAt).map((beat) => [beat.n, beat.wideCardAt])).toEqual([[2, "top-end"]]);
   });
 
   it("is a new version of the script", () => {
