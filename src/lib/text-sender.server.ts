@@ -9,6 +9,10 @@
  * words or the provider's reply body: an error line carries a status and a short code and that is all.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { SENDER_PAUSE_MS, senderPaused } from "./text-readiness-shared";
+
 export type TextSendResult =
   /** `id` is the sender's own id for the message, used to match delivery reports. Absent when none came back. */
   | { outcome: "accepted"; id?: string | undefined }
@@ -77,6 +81,50 @@ function codeOf(body: unknown): string | null {
   return null;
 }
 
+/*
+ * 20 Nov 2026, chat pill Phase 0 (Liam, D-97): ready means able to send. A refusal from the provider pauses sending
+ * for SENDER_PAUSE_MS. This copy of the server remembers its own last refusal; the database remembers everyone's,
+ * through the lead asks it marked rejected, so another copy of the server learns of it too.
+ */
+let lastRefusal: number | null = null;
+
+/** Notes that the provider refused a send just now. sendText calls it; tests may too. */
+export function noteSenderRefused(nowMs: number = Date.now()): void {
+  lastRefusal = nowMs;
+}
+
+/** For tests: forget this copy's last refusal. */
+export function resetSenderRefusal(): void {
+  lastRefusal = null;
+}
+
+/**
+ * Whether a send was refused in the pause window, by this copy or (from the asks table) by any copy. A table that
+ * cannot be read counts as no refusal: the press then tries, and a refusal pauses again.
+ */
+export async function senderRefusedRecently(admin: SupabaseClient | null, now: Date = new Date()): Promise<boolean> {
+  if (senderPaused(lastRefusal, now.getTime())) return true;
+  if (!admin) return false;
+  try {
+    const since = new Date(now.getTime() - SENDER_PAUSE_MS).toISOString();
+    const { data, error } = await admin.from("proposal_texts").select("status_at").eq("status", "rejected").gte("status_at", since).order("status_at", { ascending: false }).limit(1);
+    if (error) return false;
+    const stamp = Date.parse(String((data ?? [])[0]?.status_at ?? ""));
+    if (!Number.isFinite(stamp)) return false;
+    lastRefusal = Math.max(lastRefusal ?? 0, Math.min(stamp, now.getTime()));
+    return senderPaused(lastRefusal, now.getTime());
+  } catch {
+    return false;
+  }
+}
+
+/** The sender's settings only when it can send now: settings in place and no refusal in the pause window. */
+export async function readyTextConfig(admin: SupabaseClient | null, now: Date = new Date(), env: Record<string, string | undefined> = process.env): Promise<TextConfig | null> {
+  const config = textConfig(env);
+  if (!config) return null;
+  return (await senderRefusedRecently(admin, now)) ? null : config;
+}
+
 /** Sends one plain text to one person. Never throws. */
 export async function sendText(
   config: TextConfig,
@@ -129,6 +177,7 @@ export async function sendText(
     } catch {
       /* not JSON: the status alone is the answer */
     }
+    noteSenderRefused();
     return { outcome: "refused", status: response.status, code };
   } catch {
     return { outcome: "failed", status: null };

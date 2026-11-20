@@ -236,6 +236,19 @@ describe("the dashboard read", () => {
     }
   });
 
+  // 20 Nov 2026, chat pill Phase 0: "Led before" on the lead sheet, from the workspace's own won proposals.
+  it("gives admins and leads what each person led before, and nobody else", async () => {
+    const won = [row({ id: "w1", status: "won", decided_at: hoursAgo(2), lead_contact_id: "c1", title: "Workforce plan" }), row({ id: "w2", status: "won", decided_at: hoursAgo(3), lead_contact_id: "c1", archived_at: hoursAgo(1) })];
+    for (const role of ["admin", "lead"]) {
+      const list = await listDesk(fakeStore({ rows: [...rows, ...won], role }));
+      expect(list.pastWork).toEqual({ c1: [{ client: "Marrowfield", title: "Workforce plan" }] });
+    }
+    for (const role of ["manager", "em", "coach"]) {
+      const list = await listDesk(fakeStore({ rows: [...rows, ...won], role }));
+      expect("pastWork" in list).toBe(false);
+    }
+  });
+
   it("fails loudly when the read fails, and refuses whoever the caller check refuses", async () => {
     await expect(listDesk(fakeStore({ proposals: async () => null }))).rejects.toThrow();
     const refused = fakeStore({ caller: async () => { throw new Response("Forbidden", { status: 403 }); } });

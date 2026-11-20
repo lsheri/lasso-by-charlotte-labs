@@ -15,7 +15,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
-import { isWaiting, type AskView, type TextsState, type TextStatus, type Reply } from "./lead-ask-shared";
+import { isPracticeAsk, isRecordedAnswer, isWaiting, type AskView, type TextsState, type TextStatus, type Reply } from "./lead-ask-shared";
 import {
   CLOSE_COPY,
   GOAL_COPY,
@@ -28,6 +28,7 @@ import {
   type GoalResult,
   countBand,
   goalHours,
+  pastWorkByLead,
   INTAKE_COPY,
   LEAD_COPY,
   SENT_COPY,
@@ -153,7 +154,8 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connec
       name: ask.contact_id ? (names.get(ask.contact_id) ?? "") : "",
       status: ask.status as TextStatus,
       reply: (ask.reply as Reply | null) ?? null,
-      practice: ask.status === "practice",
+      practice: isPracticeAsk(ask),
+      recorded: isRecordedAnswer(ask),
       // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
       waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
     });
@@ -214,7 +216,16 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
     };
   });
-  return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, canAddClient, texts, proposals };
+  return {
+    goalHours: goalHours(settings),
+    canSetGoal: caller.role === "admin",
+    canPickLead: pickers,
+    canAddClient,
+    texts,
+    proposals,
+    // Only people who pick a lead see what each person led before.
+    ...(pickers ? { pastWork: pastWorkByLead(mine, clientNames) } : {}),
+  };
 }
 
 /** The clients a new proposal can be for. */
@@ -604,8 +615,9 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async texts(orgId) {
       const { data } = await supabaseAdmin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
-      const [{ isDemoWorkspace }, { textConfig }] = await Promise.all([import("./demo-text-number-shared"), import("./text-sender.server")]);
-      return { demo: isDemoWorkspace(data?.settings), connected: textConfig() !== null };
+      const [{ isDemoWorkspace }, { readyTextConfig }] = await Promise.all([import("./demo-text-number-shared"), import("./text-sender.server")]);
+      // Connected means able to send now (D-97), not just settings in place.
+      return { demo: isDemoWorkspace(data?.settings), connected: (await readyTextConfig(adminLoose)) !== null };
     },
     async clientsOn(orgId) {
       const { data } = await supabaseAdmin.from("orgs").select("clients_enabled").eq("id", orgId).maybeSingle();

@@ -61,7 +61,12 @@ export function ProposalRow({
   onWin?: (() => void) | undefined;
   lead?: { person: RosterContact | undefined; onPick: () => void } | undefined;
   ask?:
-    | { onAsk: () => void; onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult> }
+    | {
+        onAsk: () => void;
+        onPracticeReply: (reply: Reply) => Promise<PracticeReplyResult>;
+        /** A real workspace whose texts have not started: record the lead's answer heard another way. */
+        onRecordAnswer?: ((reply: "yes" | "no") => Promise<PracticeReplyResult>) | undefined;
+      }
     | undefined;
   onClose?: ((change: "lost" | "archived") => void) | undefined;
 }) {
@@ -154,6 +159,7 @@ export function ProposalRow({
             canAsk={Boolean(ask && proposal.leadContactId)}
             onAsk={() => ask?.onAsk()}
             onPracticeReply={ask?.onPracticeReply}
+            onRecordAnswer={ask?.onRecordAnswer}
           />
         ) : null}
         {titles.length > 0 ? (

@@ -7,6 +7,7 @@
  * text, never how fast anyone answered.
  */
 
+import { TEXTS_NOT_STARTED_COPY } from "./text-readiness-shared";
 import { plainForSms, SMS_ONE_SEGMENT } from "./won-text-shared";
 
 /** The most asks one workspace may send in a UTC day. */
@@ -96,6 +97,11 @@ export type AskView = {
   reply: Reply | null;
   /** A practice ask: nothing was sent. Demo workspaces only, while texting is not switched on. */
   practice: boolean;
+  /**
+   * An answer an admin or lead recorded by hand, heard some other way. Real workspaces only, while texts have not
+   * started (D-97). Nothing was sent; the answer is the lead's.
+   */
+  recorded?: boolean | undefined;
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
 };
@@ -105,7 +111,7 @@ export const ASK_COPY = {
   again: "Ask again",
   title: "Ask them to lead",
   helper: "One text, sent once you press Send. They answer by replying YES or NO, and can reply STOP at any time.",
-  practiceHelper: "Texting is not connected in this app yet, so this is a practice ask. Nothing is sent to any phone. You can then answer it here as the lead would.",
+  practiceHelper: TEXTS_NOT_STARTED_COPY.practiceThenAnswer,
   demoHelper: "This is a demo workspace, so the text goes to the demo number, not to the person picked.",
   send: "Send",
   sendPractice: "Start practice ask",
@@ -129,6 +135,12 @@ export const ASK_COPY = {
   practiceNo: "NO",
   practiceStop: "STOP",
   practiceStopNote: "In a real text, STOP also ends their agreement to be texted.",
+  /* Recording an answer heard some other way, while texts have not started. Real workspaces only. */
+  recordPrompt: "Heard back from them? Record their answer:",
+  recordYes: "They said yes",
+  recordNo: "They said no",
+  recordedTag: "Recorded",
+  recordOnly: "Recording an answer is for a workspace whose texts have not started yet.",
   /* Why nothing was sent. */
   notAllowed: "Only an admin or a lead can ask by text.",
   closed: "This proposal is already decided.",
@@ -138,14 +150,14 @@ export const ASK_COPY = {
   notAgreedYet: (name: string) => `${name} has not agreed to texts, so nothing will be sent. Copy their link under the People tab and send it to them.`,
   noDemoNumber: "No number is set for this demo workspace, so nothing was sent. An admin sets one under the People tab.",
   noDemoNumberYet: "No number is set for this demo workspace, so nothing will be sent. An admin sets one under the People tab.",
-  notConnected: "Texting is not connected in this app yet, so nothing was sent.",
-  notConnectedYet: "Texting is not connected in this app yet, so nothing will be sent.",
+  notConnected: TEXTS_NOT_STARTED_COPY.nothingSent,
+  notConnectedYet: TEXTS_NOT_STARTED_COPY.nothingWillBeSent,
   alreadyWaiting: "They have already been asked and have not replied yet. Nothing was sent.",
   alreadyAnswered: (name: string) => `${name} has already answered. Nothing was sent.`,
   busy: "A text to this person is still waiting for an answer, so nothing was sent. Try again later.",
   capped: "That is the limit for asks today. Nothing was sent.",
   optedOut: "They have opted out of texts. Nothing was sent.",
-  refused: "The text was not accepted, so nothing was sent. The number may still be awaiting carrier approval.",
+  refused: TEXTS_NOT_STARTED_COPY.nothingSent,
   failed: "The text could not be sent. Try again in a moment.",
   notRecorded: "We could not record this, so nothing was sent.",
   notReady: "Asking by text is not set up in this workspace yet. Nothing was sent.",
@@ -190,10 +202,7 @@ export const SHEET_COPY = {
    * Texting is not switched on. Said once on the list, in place of the line about where texts go, so nothing there
    * says or implies a text is sent. The confirm says the same through goes("practice").
    */
-  off: (demo: boolean) =>
-    demo
-      ? "Texting is not connected in this app yet, so this is a practice ask. Nothing is sent to any phone."
-      : "Texting is not connected in this app yet. Nothing is sent.",
+  off: (demo: boolean) => (demo ? TEXTS_NOT_STARTED_COPY.practice : TEXTS_NOT_STARTED_COPY.sheet),
   /** The words for this person did not arrive. Said before anyone can press Send, and it is not a failed text. */
   wordsFailed: "The text for this person could not be loaded, so nothing can be sent yet. Pick them again, or close this and try again.",
   /** The lead was not saved, so nothing was sent either. */
@@ -240,6 +249,25 @@ export function askSendInput(raw: { profile_id?: string | null | undefined; prop
   const press = id((raw as Loose)?.["press_id"]);
   if (!press) throw new Error(ASK_COPY.failed);
   return { ...askProposalInput(raw), press_id: press };
+}
+
+export type RecordAnswerInput = AskProposalInput & { press_id: string; reply: "yes" | "no" };
+
+/** An answer recorded by hand is YES or NO. STOP is a reply to a text, and nobody records it for someone else. */
+export function recordAnswerInput(raw: { profile_id?: string | null | undefined; proposal_id: string; press_id: string; reply: string }): RecordAnswerInput {
+  const reply = (raw as Loose)?.["reply"];
+  if (reply !== "yes" && reply !== "no") throw new Error(ASK_COPY.failed);
+  return { ...askSendInput(raw), reply };
+}
+
+/** Whether a stored ask row is an answer recorded by hand: a practice row in a real workspace. */
+export function isRecordedAnswer(row: { status: string; to_demo: boolean }): boolean {
+  return row.status === "practice" && !row.to_demo;
+}
+
+/** Whether a stored ask row is a practice ask: a practice row in a demo workspace. */
+export function isPracticeAsk(row: { status: string; to_demo: boolean }): boolean {
+  return row.status === "practice" && row.to_demo;
 }
 
 export type PracticeReplyInput = AskProposalInput & { reply: Reply };

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { askPreviewInput, askSendInput, practiceReplyInput, type AskPreview, type AskResult, type PracticeReplyResult } from "@/lib/lead-ask-shared";
+import { askPreviewInput, askSendInput, practiceReplyInput, recordAnswerInput, type AskPreview, type AskResult, type PracticeReplyResult } from "@/lib/lead-ask-shared";
 
 /**
  * 20 Nov 2026, Proposal Desk: asking a proposal's lead by text. Each function is requireSupabaseAuth, then its
@@ -26,3 +26,9 @@ export const practiceReplyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(practiceReplyInput)
   .handler(async ({ data, context }): Promise<PracticeReplyResult> => (await import("./lead-ask.server")).askHandlers.practiceReply(context, data));
+
+/** A lead's answer heard some other way, recorded by an admin or lead. Real workspaces only, while texts have not started. */
+export const recordAnswerFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(recordAnswerInput)
+  .handler(async ({ data, context }): Promise<PracticeReplyResult> => (await import("./lead-ask.server")).askHandlers.recordAnswer(context, data));

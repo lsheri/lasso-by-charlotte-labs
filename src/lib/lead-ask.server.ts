@@ -22,6 +22,12 @@
  * a press makes a practice ask (nothing is sent) and an admin or lead can answer it as the lead would. That answer
  * runs the same recogniser and the same write as a real reply. A practice answer can only touch a practice ask in
  * the caller's own demo workspace, and it never ends anyone's agreement.
+ *
+ * 20 Nov 2026, chat pill Phase 0 (Liam, D-97): "switched on" means able to send, not just settings in place. A
+ * refusal from the provider pauses sending (text-readiness-shared.ts). While paused, a demo workspace gets practice
+ * asks again, including for the press that met the refusal, and a real workspace is told "Texts start once our
+ * number is approved. Nothing was sent." and may record the lead's answer by hand (`recordAnswer`). A recorded
+ * answer is a practice row in a real workspace: nothing was sent, and the answer counts as the lead's.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -41,13 +47,15 @@ import {
   type AskProposalInput,
   type AskResult,
   type AskSendInput,
+  isRecordedAnswer,
   type PracticeReplyInput,
+  type RecordAnswerInput,
   type PracticeReplyResult,
   type Reply,
   type TextStatus,
 } from "./lead-ask-shared";
 import { canManageRoster } from "./roster-shared";
-import { textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
+import { senderRefusedRecently, textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
 import { isE164 } from "./won-text-shared";
 
 type Db = SupabaseClient<Database>;
@@ -79,7 +87,10 @@ export type AskStore = {
   firmName: (orgId: string) => Promise<string>;
   brandName: () => string;
   demo: (orgId: string) => Promise<boolean>;
+  /** The sender's settings, or null when they are not in place. */
   config: () => TextConfig | null;
+  /** Whether a send was refused recently, which pauses sending: the sender is not ready. */
+  refusedRecently: () => Promise<boolean>;
   /** The demo workspace's one number, or null. Server only. */
   demoNumber: (orgId: string) => Promise<string | null>;
   /** The number this roster person agreed with in this workspace, or null. Server only. */
@@ -113,6 +124,22 @@ type Target = {
   config: TextConfig | null;
 };
 
+/** The sender's settings only when it can send now. */
+async function readyConfig(store: AskStore): Promise<TextConfig | null> {
+  const config = store.config();
+  if (!config) return null;
+  return (await store.refusedRecently()) ? null : config;
+}
+
+/**
+ * A second press id for the practice ask that stands in for a refused one. Worked out from the first, so a retry of
+ * the same press finds the same practice ask instead of making another.
+ */
+export function practicePressId(pressId: string): string {
+  const head = Number.parseInt(pressId.charAt(0), 16);
+  return `${((head + 8) % 16).toString(16)}${pressId.slice(1)}`;
+}
+
 /** The checks a preview and a press share. */
 async function target(store: AskStore, proposalId: string, candidate?: string | null): Promise<Target | { problem: string }> {
   const caller = await store.caller();
@@ -127,7 +154,7 @@ async function target(store: AskStore, proposalId: string, candidate?: string | 
   const name = await store.leadName(caller.orgId, contactId);
   if (!name) return { problem: ASK_COPY.missing };
   const words = leadAskBody({ brandName: store.brandName(), firmName: await store.firmName(caller.orgId), leadName: name, askerName: caller.name });
-  return { caller, proposalId: row.id, contactId, name, words, demo: await store.demo(caller.orgId), config: store.config() };
+  return { caller, proposalId: row.id, contactId, name, words, demo: await store.demo(caller.orgId), config: await readyConfig(store) };
 }
 
 /** The exact words, and anything that would stop the text, before a press. Writes nothing and sends nothing. */
@@ -173,13 +200,16 @@ export async function askLead(store: AskStore, input: AskSendInput): Promise<Ask
   if (same && same.status !== "queued") {
     // The same press again: say what it came to, send nothing more.
     if (same.status === "practice") return { ok: true, practice: true };
+    // A demo press the provider refused stood in for by a practice ask: the retry says the same.
+    if (same.status === "rejected" && state.demo && asks.some((ask) => ask.press_id === practicePressId(input.press_id) && ask.status === "practice")) return { ok: true, practice: true };
     if (same.status === "opted_out") return { ok: false, problem: ASK_COPY.optedOut };
     return ["accepted", "sent", "delivered"].includes(same.status) ? { ok: true, practice: false } : { ok: false, problem: ASK_COPY.failed };
   }
 
   if (!same) {
     // Once texting is on, a practice ask left over from before neither blocks a real ask nor counts as an answer.
-    const toThisPerson = asks.filter((ask) => (practice || ask.status !== "practice") && (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
+    // An answer recorded by hand in a real workspace always counts: it is the lead's answer, heard another way.
+    const toThisPerson = asks.filter((ask) => (practice || ask.status !== "practice" || isRecordedAnswer(ask)) && (state.demo ? ask.to_demo : ask.contact_id === state.contactId));
     if (toThisPerson.some((ask) => isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now))) return { ok: false, problem: ASK_COPY.alreadyWaiting };
     // In a real workspace a person who has answered is not asked again about the same proposal.
     if (!state.demo && toThisPerson.some((ask) => ask.reply)) return { ok: false, problem: ASK_COPY.alreadyAnswered(state.name) };
@@ -229,7 +259,28 @@ export async function askLead(store: AskStore, input: AskSendInput): Promise<Ask
   if (sent.outcome === "opted_out" && !state.demo) await store.stop(to);
   await safely(() => store.record(who(caller), "lead_ask.result", { mode: mode(state, false), outcome: sent.outcome }));
   if (sent.outcome === "accepted") return { ok: true, practice: false };
+  // The provider refused: the number is not accepted yet, so sending pauses. A demo workspace gets the practice ask
+  // this press would have made had the pause already been known, so the demo still goes on.
+  if (sent.outcome === "refused" && state.demo) return practiceInstead(store, state, input.press_id);
   return { ok: false, problem: sent.outcome === "opted_out" ? ASK_COPY.optedOut : sent.outcome === "refused" ? ASK_COPY.refused : ASK_COPY.failed };
+}
+
+/** The practice ask that stands in for a refused one in a demo workspace. Nothing is sent. */
+async function practiceInstead(store: AskStore, state: Target, pressId: string): Promise<AskResult> {
+  const { caller } = state;
+  const made = await store.insert({
+    id: store.newId(),
+    org_id: caller.orgId,
+    proposal_id: state.proposalId,
+    contact_id: null,
+    to_demo: true,
+    press_id: practicePressId(pressId),
+    sent_by: caller.profileId,
+    status: "practice",
+  });
+  if (made === "failed") return { ok: false, problem: ASK_COPY.refused };
+  if (made === "made") await safely(() => store.record(who(caller), "lead_ask.result", { mode: "practice", outcome: "accepted" }));
+  return { ok: true, practice: true };
 }
 
 const who = (caller: AskCaller) => ({ orgId: caller.orgId, userId: caller.userId, profileId: caller.profileId });
@@ -250,7 +301,7 @@ export async function practiceReply(store: AskStore, input: PracticeReplyInput):
   const caller = await store.caller();
   if (!canManageRoster(caller.role) || !(await store.demo(caller.orgId))) return { ok: false, problem: ASK_COPY.practiceOnly };
   // Practice ends the moment texting is switched on: a practice ask left over from before can no longer be answered.
-  if (store.config()) return { ok: false, problem: ASK_COPY.practiceOnly };
+  if (await readyConfig(store)) return { ok: false, problem: ASK_COPY.practiceOnly };
   const row = await store.proposal(input.proposal_id);
   if (!row || row.org_id !== caller.orgId) return { ok: false, problem: ASK_COPY.practiceOnly };
   const reply = readReply(input.reply);
@@ -261,6 +312,48 @@ export async function practiceReply(store: AskStore, input: PracticeReplyInput):
   if (!waiting) return { ok: false, problem: ASK_COPY.practiceGone };
   if (!(await store.setReply(caller.orgId, waiting.id, reply, now))) return { ok: false, problem: ASK_COPY.practiceGone };
   await safely(() => store.record(who(caller), "lead_ask.replied", { mode: "practice", reply }));
+  return { ok: true };
+}
+
+/**
+ * An answer an admin or lead heard some other way (a call, a message), recorded on the proposal while texts have not
+ * started. Real workspaces only: a demo workspace has practice asks. YES or NO only. One answer per lead per proposal,
+ * as with a text: someone who has answered is not asked or recorded again. Nothing is sent and no agreement changes.
+ */
+export async function recordAnswer(store: AskStore, input: RecordAnswerInput): Promise<PracticeReplyResult> {
+  const caller = await store.caller();
+  if (!canManageRoster(caller.role)) return { ok: false, problem: ASK_COPY.notAllowed };
+  const row = await store.proposal(input.proposal_id);
+  if (!row || row.org_id !== caller.orgId) return { ok: false, problem: ASK_COPY.notAllowed };
+  if (await store.demo(caller.orgId)) return { ok: false, problem: ASK_COPY.recordOnly };
+  if (await readyConfig(store)) return { ok: false, problem: ASK_COPY.recordOnly };
+  if (row.status !== "open") return { ok: false, problem: ASK_COPY.closed };
+  const contactId = row.lead_contact_id;
+  if (!contactId) return { ok: false, problem: ASK_COPY.noLead };
+  const name = await store.leadName(caller.orgId, contactId);
+  if (!name) return { ok: false, problem: ASK_COPY.missing };
+  const asks = await store.asks(caller.orgId, row.id);
+  if (asks === null) return { ok: false, problem: ASK_COPY.notRecorded };
+  const now = store.now();
+  const same = asks.find((ask) => ask.press_id === input.press_id && ask.contact_id === contactId);
+  // The same press again, already recorded: say it went through, write nothing more.
+  if (same && same.reply) return isRecordedAnswer(same) ? { ok: true } : { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
+  const toThisPerson = asks.filter((ask) => ask.contact_id === contactId && !ask.to_demo);
+  if (toThisPerson.some((ask) => ask.reply)) return { ok: false, problem: ASK_COPY.alreadyAnswered(name) };
+  // A real text still waiting is answered by its reply, not by hand.
+  if (toThisPerson.some((ask) => ask.status !== "practice" && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now))) return { ok: false, problem: ASK_COPY.alreadyWaiting };
+  let rowId = same?.id ?? null;
+  if (!rowId) {
+    rowId = store.newId();
+    const made = await store.insert({ id: rowId, org_id: caller.orgId, proposal_id: row.id, contact_id: contactId, to_demo: false, press_id: input.press_id, sent_by: caller.profileId, status: "practice" });
+    if (made !== "made") return { ok: false, problem: ASK_COPY.notRecorded };
+  }
+  if (!(await store.setReply(caller.orgId, rowId, input.reply, now))) {
+    // Never leave an unanswered row behind: it would read as an ask.
+    if (!same) await store.remove(caller.orgId, rowId);
+    return { ok: false, problem: ASK_COPY.notRecorded };
+  }
+  await safely(() => store.record(who(caller), "lead_ask.replied", { mode: "recorded", reply: input.reply }));
   return { ok: true };
 }
 
@@ -428,6 +521,7 @@ export async function realAskStore(context: AskContext, profileId: string | null
       return isDemoWorkspace(data?.settings);
     },
     config: () => textConfig(),
+    refusedRecently: () => senderRefusedRecently(admin),
     async demoNumber(orgId) {
       const { demoRecipient } = await import("./demo-text-number.server");
       return demoRecipient(supabaseAdmin, orgId);
@@ -446,7 +540,7 @@ export async function realAskStore(context: AskContext, profileId: string | null
       return open.some((ask) => ask.status !== "practice" && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now));
     },
     async askedToday(orgId, now) {
-      const { count, error } = await admin.from("proposal_texts").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("kind", "lead_ask").neq("status", "practice").gte("created_at", startOfUtcDay(now));
+      const { count, error } = await admin.from("proposal_texts").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("kind", "lead_ask").neq("status", "practice").or("status.neq.rejected,provider_id.not.is.null").gte("created_at", startOfUtcDay(now));
       return error || typeof count !== "number" ? null : count;
     },
     async insert(row) {
@@ -531,5 +625,8 @@ export const askHandlers = {
   },
   async practiceReply(context: AskContext, data: PracticeReplyInput): Promise<PracticeReplyResult> {
     return practiceReply(await realAskStore(context, data.profile_id), data);
+  },
+  async recordAnswer(context: AskContext, data: RecordAnswerInput): Promise<PracticeReplyResult> {
+    return recordAnswer(await realAskStore(context, data.profile_id), data);
   },
 };

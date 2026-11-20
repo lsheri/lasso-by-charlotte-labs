@@ -17,27 +17,37 @@ export function AskLine({
   canAsk,
   onAsk,
   onPracticeReply,
+  onRecordAnswer,
 }: {
   proposal: DeskProposal;
   /** An admin or a lead, with a lead picked on an open proposal. */
   canAsk: boolean;
   onAsk: () => void;
   onPracticeReply?: ((reply: Reply) => Promise<PracticeReplyResult>) | undefined;
+  /**
+   * 20 Nov 2026 (D-97): given only in a real workspace whose texts have not started. The lead's answer, heard some
+   * other way, recorded by hand. While it is offered, asking by text is not: a press could only say nothing was sent.
+   */
+  onRecordAnswer?: ((reply: "yes" | "no") => Promise<PracticeReplyResult>) | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const ask = proposal.ask ?? null;
   const answering = Boolean(ask && ask.practice && ask.waiting && !ask.reply && onPracticeReply);
   // Asking again is offered once nothing is waiting: the text did not arrive, nobody replied, or (in practice) it was answered.
-  const mayAsk = canAsk && (!ask || !ask.waiting) && !(ask && ask.reply && !ask.practice && ask.name);
-  if (!ask && !mayAsk) return null;
+  const mayAsk = !onRecordAnswer && canAsk && (!ask || !ask.waiting) && !(ask && ask.reply && !ask.practice && ask.name);
+  // One answer per lead, as with a text: once they have answered, there is nothing to record.
+  const recording = Boolean(onRecordAnswer && canAsk && !(ask && (ask.reply || ask.waiting)));
+  if (!ask && !mayAsk && !recording) return null;
 
   async function answer(reply: Reply) {
-    if (!onPracticeReply || working) return;
+    const run = recording && reply !== "stop" ? () => onRecordAnswer?.(reply) : onPracticeReply ? () => onPracticeReply(reply) : null;
+    if (!run || working) return;
     setWorking(true);
     setProblem(null);
     try {
-      const result = await onPracticeReply(reply);
+      const result = await run();
+      if (!result) return;
       if (!result.ok) setProblem(result.problem);
     } catch {
       setProblem(ASK_COPY.failed);
@@ -55,6 +65,7 @@ export function AskLine({
           </span>
         ) : null}
         {ask?.practice ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.practiceTag}</span> : null}
+        {ask?.recorded ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedTag}</span> : null}
         {mayAsk ? (
           <button type="button" className="underline hover:text-foreground" onClick={onAsk}>
             {ask ? ASK_COPY.again : ASK_COPY.open(proposal.leadName ?? "")}
@@ -67,6 +78,16 @@ export function AskLine({
           {(["yes", "no", "stop"] as const).map((reply) => (
             <Button key={reply} type="button" size="sm" variant="outline" disabled={working} onClick={() => void answer(reply)}>
               {reply === "yes" ? ASK_COPY.practiceYes : reply === "no" ? ASK_COPY.practiceNo : ASK_COPY.practiceStop}
+            </Button>
+          ))}
+        </p>
+      ) : null}
+      {recording ? (
+        <p data-record-answer className="flex flex-wrap items-center gap-2">
+          <span>{ASK_COPY.recordPrompt}</span>
+          {(["yes", "no"] as const).map((reply) => (
+            <Button key={reply} type="button" size="sm" variant="outline" disabled={working} onClick={() => void answer(reply)}>
+              {reply === "yes" ? ASK_COPY.recordYes : ASK_COPY.recordNo}
             </Button>
           ))}
         </p>

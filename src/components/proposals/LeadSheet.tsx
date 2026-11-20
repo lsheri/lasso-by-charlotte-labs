@@ -16,12 +16,12 @@ import {
 import { PersonFace } from "@/components/ui/person-face";
 import { tagVariants } from "@/components/ui/tag";
 import { ASK_COPY, SHEET_COPY, type AskPreview, type AskResult } from "@/lib/lead-ask-shared";
-import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
+import { LEAD_COPY, type DeskProposal, type LeadResult, type PastWork } from "@/lib/proposal-desk-shared";
 import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
-/** One piece of past work a person led: who it was for and what it was. Never a fee, a value or a score. */
-export type PastWork = { client: string; title: string };
+/** One piece of past work a person led. The type lives with the desk's data, which now carries it. */
+export type { PastWork };
 /** The most past work one row shows. */
 export const PAST_WORK_SHOWN = 3;
 

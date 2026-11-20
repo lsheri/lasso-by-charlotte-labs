@@ -566,7 +566,7 @@ export type TelemetryEvent =
   | "proposal_text.result"
   /** 20 Nov, Proposal Desk: what a press of "Ask them to lead" came to. Dims: mode (real | demo | practice), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */
   | "lead_ask.result"
-  /** 20 Nov, Proposal Desk: a lead answered an ask. Dims: mode (real | demo | practice), reply (yes | no | stop). Never who, never how long it took. Portal registration required. */
+  /** 20 Nov, Proposal Desk: a lead answered an ask. Dims: mode (real | demo | practice | recorded, the last an answer an admin or lead recorded by hand while texts have not started), reply (yes | no | stop). Never who, never how long it took. Portal registration required. */
   | "lead_ask.replied"
   /** 20 Nov, Proposal Desk: an open proposal was closed as lost, or archived as made by mistake. Dim: change (lost | archived). Never a title, a client or a person. Portal registration required. */
   | "proposal.closed"

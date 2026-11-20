@@ -254,7 +254,33 @@ export type DeskList = {
   /** Where this workspace's texts go, and whether texting is switched on. */
   texts: TextsState;
   proposals: DeskProposal[];
+  /**
+   * For people who may pick a lead only: the won proposals each roster person led, newest first, keyed by their
+   * roster id. Shown beside their name on the lead sheet ("Led before"). Never a fee, a count or a score.
+   */
+  pastWork?: Record<string, PastWork[]> | undefined;
 };
+
+/** One piece of past work a person led: who it was for and what it was. Never a fee, a value or a score. */
+export type PastWork = { client: string; title: string };
+
+/** The won proposals each lead led, newest decision first, at most `limit` each. Archived and unnamed rows are left out. */
+export function pastWorkByLead(
+  rows: readonly { status: string; lead_contact_id?: string | null; archived_at?: string | null; decided_at: string | null; client_id: string; title: string }[],
+  clientNames: ReadonlyMap<string, string>,
+  limit = 3,
+): Record<string, PastWork[]> {
+  const won = rows
+    .filter((row) => row.status === "won" && !row.archived_at && row.lead_contact_id)
+    .sort((a, b) => (b.decided_at ?? "").localeCompare(a.decided_at ?? ""));
+  const out: Record<string, PastWork[]> = {};
+  for (const row of won) {
+    const id = row.lead_contact_id as string;
+    const list = (out[id] ??= []);
+    if (list.length < limit) list.push({ client: clientNames.get(row.client_id) ?? "", title: row.title });
+  }
+  return out;
+}
 
 export type DeskClient = { id: string; name: string };
 

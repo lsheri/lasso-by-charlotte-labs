@@ -38,6 +38,9 @@ export function BoardWinLines({
           {win.ask.practice ? (
             <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.practiceTag}</span>
           ) : null}
+          {win.ask.recorded ? (
+            <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.recordedTag}</span>
+          ) : null}
         </p>
       ) : null}
       {children}

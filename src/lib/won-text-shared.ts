@@ -6,6 +6,8 @@
  * So nothing in this file, and nothing a caller can send, carries a phone number.
  */
 
+import { TEXTS_NOT_STARTED_COPY } from "./text-readiness-shared";
+
 /** The most texts one workspace may send in a UTC day. A demo button must not become a way to pester someone. */
 export const WON_TEXT_DAILY_CAP = 3;
 
@@ -54,8 +56,8 @@ export const WON_TEXT_COPY = {
   cancel: "Cancel",
   sent: "Sent. It is on its way to the lead's phone.",
   /** Shown under the words before a press, while the app has no text sender set up. */
-  awaiting: "Texting is not connected in this app yet, so Send will not send anything.",
-  notConnected: "Texting is not connected in this app yet, so nothing was sent.",
+  awaiting: TEXTS_NOT_STARTED_COPY.nothingWillBeSent,
+  notConnected: TEXTS_NOT_STARTED_COPY.nothingSent,
   /** The board was archived after the button was drawn. */
   archived: "This board is archived, so nothing was sent.",
   /** No recipient is set for this demo workspace. Shown before a press and as the answer to one. */
@@ -67,7 +69,7 @@ export const WON_TEXT_COPY = {
   optedOut: "They have opted out of texts. Nothing was sent.",
   capped: "That is the limit for texts today. Nothing was sent.",
   notWon: "Mark this proposal as won first.",
-  refused: "The text was not accepted, so nothing was sent. The number may still be awaiting carrier approval.",
+  refused: TEXTS_NOT_STARTED_COPY.nothingSent,
   failed: "The text could not be sent. Try again in a moment.",
   notRecorded: "We could not record this, so nothing was sent.",
 } as const;

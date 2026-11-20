@@ -75,6 +75,8 @@ export function ProposalDesk({
         preview: (proposalId: string, contactId?: string) => Promise<AskPreview>;
         send: (proposalId: string, pressId: string) => Promise<AskResult>;
         practiceReply: (proposalId: string, reply: Reply) => Promise<PracticeReplyResult>;
+        /** A lead's answer heard another way. Used only in a real workspace whose texts have not started (D-97). */
+        recordAnswer?: ((proposalId: string, reply: "yes" | "no") => Promise<PracticeReplyResult>) | undefined;
       }
     | undefined;
   /** Closes an open proposal as lost, or archives one made by mistake. */
@@ -95,6 +97,8 @@ export function ProposalDesk({
   const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);
+  // Texts have not started in a real workspace: the lead's answer is recorded by hand instead of asked by text.
+  const recordAnswer = ask?.recordAnswer && !data.texts.demo && !data.texts.connected ? ask.recordAnswer : undefined;
   const all = deskView(data.proposals, view);
   const rows = limit ? all.slice(0, limit) : all;
 
@@ -130,7 +134,15 @@ export function ProposalDesk({
           {rows.map((proposal) => (
             <ProposalRow key={proposal.id} proposal={proposal} goalHours={data.goalHours} now={now} onSent={onSent} onWin={onWin ? () => setWinning(proposal) : undefined}
               lead={picks ? { person: roster?.find((person) => person.id === proposal.leadContactId), onPick: () => (ask ? setSheet({ proposal, start: "pick" }) : setLeading(proposal)) } : undefined}
-              ask={picks && ask ? { onAsk: () => setSheet({ proposal, start: "confirm" }), onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply) } : undefined}
+              ask={
+                picks && ask
+                  ? {
+                      onAsk: () => setSheet({ proposal, start: "confirm" }),
+                      onPracticeReply: (reply) => ask.practiceReply(proposal.id, reply),
+                      onRecordAnswer: recordAnswer ? (reply) => recordAnswer(proposal.id, reply) : undefined,
+                    }
+                  : undefined
+              }
               onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
             />
           ))}
@@ -146,7 +158,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
+        <LeadSheet target={sheetTarget} roster={roster} pastWork={data.pastWork} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>

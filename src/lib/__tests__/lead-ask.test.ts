@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Webhook } from "standardwebhooks";
 
 import { EVENT_DIM_KEYS, guardServerEventDims } from "@/lib/event-dim-allowlist";
-import { ASK_COPY, ASK_DAILY_CAP, ASK_WAIT_HOURS, askLine, askPreviewInput, askProposalInput, askSendInput, isWaiting, leadAskBody, practiceReplyInput, readReply, statusForReport, type AskView } from "@/lib/lead-ask-shared";
-import { askLead, askPreview, handleTextEvent, inboundStoreOn, practiceReply, type AskCaller, type AskRow, type AskStore } from "@/lib/lead-ask.server";
+import { ASK_COPY, ASK_DAILY_CAP, ASK_WAIT_HOURS, askLine, askPreviewInput, askProposalInput, askSendInput, isWaiting, leadAskBody, practiceReplyInput, readReply, recordAnswerInput, statusForReport, type AskView } from "@/lib/lead-ask-shared";
+import { askLead, askPreview, handleTextEvent, inboundStoreOn, practicePressId, practiceReply, recordAnswer, type AskCaller, type AskRow, type AskStore } from "@/lib/lead-ask.server";
 import { consentRecords } from "@/lib/text-consent.server";
 import { handleTextEventRequest, memoryLimiter, type TextEventDeps } from "@/lib/text-events.server";
 import { sendText, type TextConfig, type TextSendResult } from "@/lib/text-sender.server";
@@ -129,6 +129,8 @@ type World = {
   countWorks: boolean;
   send: TextSendResult;
   madeToday: number;
+  /** A send was refused in the pause window: settings are in place but the sender cannot send. */
+  refused?: boolean;
 };
 
 function world(over: Partial<World> = {}) {
@@ -153,6 +155,7 @@ function world(over: Partial<World> = {}) {
     brandName: () => "Lasso",
     demo: async () => w.demo,
     config: () => w.config,
+    refusedRecently: async () => w.refused === true,
     demoNumber: async (orgId) => (orgId === w.orgId ? w.demoNumber : null),
     agreedNumber: async (orgId, contactId) => w.agreed[`${orgId}/${contactId}`] ?? null,
     asks: async (orgId, proposalId) => w.rows.filter((row) => row.org_id === orgId && row.proposal_id === proposalId),
@@ -506,6 +509,128 @@ describe("the practice path, before the carriers approve the number", () => {
 
     const elsewhere = world({ demo: true, config: null, proposal: { id: PROPOSAL, org_id: ORG_B, status: "open", lead_contact_id: LEAD } });
     expect(await practiceReply(elsewhere.store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: false, problem: ASK_COPY.practiceOnly });
+  });
+});
+
+/* ---------------------------------------------------------------------------
+ * 20 Nov 2026, chat pill Phase 0 (D-97): ready means able to send
+ * ------------------------------------------------------------------------- */
+
+const REFUSED: TextSendResult = { outcome: "refused", status: 422, code: "SMSSenderNotApproved" };
+
+describe("while the provider refuses sends, texts have not started", () => {
+  it("a demo workspace gets practice asks again, though the settings are in place", async () => {
+    const { store, sends, w } = world({ demo: true, demoNumber: OTHER_PHONE, refused: true });
+    expect(await askPreview(store, press)).toMatchObject({ ok: true, mode: "practice", warning: null });
+    expect(await askLead(store, press)).toEqual({ ok: true, practice: true });
+    expect(sends).toHaveLength(0);
+    expect(w.rows[0]).toMatchObject({ status: "practice", to_demo: true });
+    // And the practice answer works, as before texting had settings.
+    expect(await practiceReply(store, { proposal_id: PROPOSAL, profile_id: null, reply: "yes" })).toEqual({ ok: true });
+  });
+
+  it("a real workspace is told plainly, before and after a press, and nothing is sent or kept", async () => {
+    const { store, sends, w } = world({ refused: true });
+    expect(await askPreview(store, press)).toMatchObject({ ok: true, mode: "real", warning: "Texts start once our number is approved, so nothing will be sent yet." });
+    expect(await askLead(store, press)).toEqual({ ok: false, problem: "Texts start once our number is approved. Nothing was sent." });
+    expect(sends).toHaveLength(0);
+    expect(w.rows).toHaveLength(0);
+  });
+
+  it("the demo press that meets the refusal still becomes a practice ask, and its retry sends nothing more", async () => {
+    const { store, sends, w, events } = world({ demo: true, demoNumber: OTHER_PHONE, send: REFUSED });
+    expect(await askLead(store, press)).toEqual({ ok: true, practice: true });
+    expect(sends).toHaveLength(1);
+    const refused = w.rows.find((row) => row.press_id === PRESS);
+    const stand = w.rows.find((row) => row.press_id === practicePressId(PRESS));
+    expect(refused?.status).toBe("rejected");
+    expect(stand).toMatchObject({ status: "practice", to_demo: true, reply: null });
+    expect(events.map((e) => e.dims)).toEqual([{ mode: "demo", outcome: "refused" }, { mode: "practice", outcome: "accepted" }]);
+    // The same press again: the same answer, no second send, no second practice ask.
+    expect(await askLead(store, press)).toEqual({ ok: true, practice: true });
+    expect(sends).toHaveLength(1);
+    expect(w.rows).toHaveLength(2);
+  });
+
+  it("a real press that meets the refusal says texts have not started, and makes no practice ask", async () => {
+    const { store, w } = world({ send: REFUSED });
+    expect(await askLead(store, press)).toEqual({ ok: false, problem: "Texts start once our number is approved. Nothing was sent." });
+    expect(w.rows.map((row) => row.status)).toEqual(["rejected"]);
+  });
+
+  it("the stand-in press id is fixed by the press id, differs from it and stays an id", () => {
+    const id = practicePressId(PRESS);
+    expect(id).not.toBe(PRESS);
+    expect(practicePressId(PRESS)).toBe(id);
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(practicePressId(id)).toBe(PRESS);
+  });
+});
+
+describe("recording a lead's answer heard another way", () => {
+  const notStarted = (over: Partial<World> = {}) => world({ refused: true, ...over });
+  const answer = (reply: "yes" | "no", pressId = PRESS) => ({ proposal_id: PROPOSAL, profile_id: null, press_id: pressId, reply });
+
+  it.each(["yes", "no"] as const)("an admin records %s: the lead's own answer, nothing sent, no agreement touched", async (reply) => {
+    const { store, sends, stops, w, events } = notStarted();
+    expect(await recordAnswer(store, answer(reply))).toEqual({ ok: true });
+    expect(w.rows).toHaveLength(1);
+    expect(w.rows[0]).toMatchObject({ status: "practice", to_demo: false, contact_id: LEAD, reply, sent_by: "p1" });
+    expect(sends).toHaveLength(0);
+    expect(stops).toHaveLength(0);
+    expect(events).toEqual([{ event: "lead_ask.replied", dims: { mode: "recorded", reply }, who: expect.anything() }]);
+  });
+
+  it("works with texts never set up at all, as on a new pilot's first day", async () => {
+    const { store } = world({ config: null });
+    expect(await recordAnswer(store, answer("yes"))).toEqual({ ok: true });
+  });
+
+  it("is one answer per lead: a second recording, a retry and a later text are all refused", async () => {
+    const { store, w, sends } = notStarted();
+    await recordAnswer(store, answer("yes"));
+    // The same press again: it went through, nothing more is written.
+    expect(await recordAnswer(store, answer("yes"))).toEqual({ ok: true });
+    expect(await recordAnswer(store, answer("no", PRESS_2))).toEqual({ ok: false, problem: ASK_COPY.alreadyAnswered("Christy Johnson") });
+    expect(w.rows).toHaveLength(1);
+    // Texts start: the recorded answer still counts, so the lead is not asked again.
+    w.refused = false;
+    expect(await askLead(store, { ...press, press_id: "99999999-9999-4999-8999-999999999999" })).toEqual({ ok: false, problem: ASK_COPY.alreadyAnswered("Christy Johnson") });
+    expect(sends).toHaveLength(0);
+  });
+
+  it("is refused in a demo workspace, once texts have started, for a member or a coach, and on another workspace's proposal", async () => {
+    expect(await recordAnswer(notStarted({ demo: true }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.recordOnly });
+    expect(await recordAnswer(world().store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.recordOnly });
+    for (const role of ["em", "coach"]) expect(await recordAnswer(notStarted({ role }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.notAllowed });
+    expect(await recordAnswer(notStarted({ proposal: { id: PROPOSAL, org_id: ORG_B, status: "open", lead_contact_id: LEAD } }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.notAllowed });
+  });
+
+  it("is refused on a decided proposal, with no lead, or for a lead no longer on the list", async () => {
+    for (const status of ["won", "lost"]) expect(await recordAnswer(notStarted({ proposal: { id: PROPOSAL, org_id: ORG_A, status, lead_contact_id: LEAD } }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.closed });
+    expect(await recordAnswer(notStarted({ proposal: { id: PROPOSAL, org_id: ORG_A, status: "open", lead_contact_id: null } }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.noLead });
+    expect(await recordAnswer(notStarted({ roster: {} }).store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.missing });
+  });
+
+  it("leaves nothing behind when the answer cannot be written, and says so", async () => {
+    const failed = notStarted({ insertWorks: false });
+    expect(await recordAnswer(failed.store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.notRecorded });
+    const half = notStarted();
+    half.store.setReply = async () => false;
+    expect(await recordAnswer(half.store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.notRecorded });
+    expect(half.w.rows).toHaveLength(0);
+  });
+
+  it("does not answer for a real text still waiting", async () => {
+    const { store, w } = notStarted();
+    w.rows.push({ id: "t1", org_id: ORG_A, proposal_id: PROPOSAL, contact_id: LEAD, to_demo: false, press_id: PRESS_2, status: "accepted", reply: null, created_at: hoursAgo(1) });
+    expect(await recordAnswer(store, answer("yes"))).toEqual({ ok: false, problem: ASK_COPY.alreadyWaiting });
+  });
+
+  it("takes YES or NO only, and ids only", () => {
+    expect(() => recordAnswerInput({ proposal_id: PROPOSAL, press_id: PRESS, reply: "stop" })).toThrow();
+    expect(() => recordAnswerInput({ proposal_id: PROPOSAL, press_id: PHONE, reply: "yes" })).toThrow();
+    expect(recordAnswerInput({ proposal_id: PROPOSAL, press_id: PRESS, reply: "no" })).toEqual({ proposal_id: PROPOSAL, profile_id: null, press_id: PRESS, reply: "no" });
   });
 });
 
@@ -925,8 +1050,8 @@ describe("wiring", () => {
   const functions = readFileSync("src/lib/lead-ask.functions.ts", "utf8");
 
   it("every server function is signed in first, and the real store starts with the firm member check", () => {
-    expect(functions.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(3);
-    expect(functions.match(/createServerFn\(/g)).toHaveLength(3);
+    expect(functions.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(4);
+    expect(functions.match(/createServerFn\(/g)).toHaveLength(4);
     const real = server.slice(server.indexOf("export async function realAskStore"));
     expect(real.indexOf("requireFirmMember(")).toBeGreaterThan(-1);
     expect(real.indexOf("requireFirmMember(")).toBeLessThan(real.indexOf('.from("'));
