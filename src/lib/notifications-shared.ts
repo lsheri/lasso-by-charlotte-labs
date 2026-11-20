@@ -27,6 +27,9 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "firm_share_changed",
 ];
 
+/** 21 Nov (D-82): a window event that opens the bell on screen, sent by an admin's Home for an invite to approve. */
+export const OPEN_NOTIFICATIONS_EVENT = "lasso:open-notifications";
+
 export type NotificationRow = {
   id: string;
   org_id: string | null;

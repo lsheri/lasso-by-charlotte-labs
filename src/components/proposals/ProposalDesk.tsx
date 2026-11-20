@@ -58,6 +58,7 @@ export function ProposalDesk({
   limit,
   initialView,
   startLead,
+  startLeadFresh = true,
   onStartLeadDone,
 }: {
   data: DeskList;
@@ -88,6 +89,8 @@ export function ProposalDesk({
   onClose?: ((proposalId: string, change: "lost" | "archived") => Promise<CloseResult>) | undefined;
   /** A proposal just made by New proposal: the lead sheet opens on it at once, for people who may pick a lead. */
   startLead?: string | null | undefined;
+  /** False when the sheet opens from a link (an admin's Home), not straight after New proposal: no "just started" words. */
+  startLeadFresh?: boolean | undefined;
   /** The sheet opened for a new proposal has closed, saved or not. */
   onStartLeadDone?: (() => void) | undefined;
 }) {
@@ -98,7 +101,7 @@ export function ProposalDesk({
   const picks = Boolean(data.canPickLead && onLead);
   // Worked out from the props, not set in an effect, so the sheet is there in the same render as the form leaves.
   const startProposal = startLead && picks && ask ? data.proposals.find((proposal) => proposal.id === startLead && proposal.status === "open") : undefined;
-  const sheetTarget = sheet ?? (startProposal ? { proposal: startProposal, start: "pick" as const, fresh: true } : null);
+  const sheetTarget = sheet ?? (startProposal ? { proposal: startProposal, start: "pick" as const, fresh: startLeadFresh } : null);
   const [view, setView] = useState<DeskView>(initialView ?? "open");
   const [winning, setWinning] = useState<DeskProposal | null>(null);
   const counts = deskCounts(data.proposals);

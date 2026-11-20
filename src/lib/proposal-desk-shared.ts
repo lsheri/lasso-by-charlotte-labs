@@ -123,6 +123,17 @@ export function deskViewFromSearch(value: unknown): Exclude<DeskView, "open"> | 
   return value === "mine" || value === "won" || value === "lost" ? value : null;
 }
 
+/** 21 Nov (D-82): what an admin's Home may ask the Proposals page to open. Ids are checked for shape only. */
+export type DeskLink = { proposal?: string; lead?: string; tab?: "people" };
+
+export function deskLinkFromSearch(search: Record<string, unknown> | URLSearchParams): DeskLink {
+  const read = (key: string): unknown => (search instanceof URLSearchParams ? search.get(key) : search[key]);
+  const id = (value: unknown) => (typeof value === "string" && UUID.test(value) ? value.toLowerCase() : undefined);
+  const proposal = id(read("proposal"));
+  const lead = id(read("lead"));
+  return { ...(proposal ? { proposal } : {}), ...(lead ? { lead } : {}), ...(read("tab") === "people" ? { tab: "people" as const } : {}) };
+}
+
 export const DESK_COPY = {
   nav: "Proposals",
   title: "Proposals",

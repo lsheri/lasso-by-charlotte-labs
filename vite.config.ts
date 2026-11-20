@@ -34,6 +34,8 @@ export default defineConfig({
           "dist/**",
           ".output/**",
           "storybook/storybook-static/**",
+          // Pane scratch space can hold whole worktree copies (QA L6 on #285).
+          ".pane/**",
         ],
         setupFiles: ["./tests/setup.ts"],
         testTimeout: 15000,

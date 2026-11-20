@@ -19,13 +19,13 @@ export function firmBrainAccess(profile: RoleProfile): "map" | "none" {
   return "map";
 }
 
-/** Home leads with the proposals picture for an admin of a company workspace. Everyone else keeps Home as it was. */
+/**
+ * An admin of a company workspace gets the operating picture as Home (D-82: what waits on them, then earlier today).
+ * Everyone else keeps their own Home.
+ */
 export function homeShowsProposals(profile: RoleProfile): boolean {
   return canAskTheFirm(profile) && profile?.is_guest !== true && profile?.role === "admin";
 }
-
-/** How many proposals Home shows before it points to the Proposals page. */
-export const HOME_PROPOSAL_ROWS = 3;
 
 export const FIRM_BRAIN_COPY = {
   nav: "Firm brain",

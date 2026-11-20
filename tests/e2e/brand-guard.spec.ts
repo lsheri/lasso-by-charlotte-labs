@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { firstBoardCanvasHref } from "./board-link";
 
 /**
  * Phase 4 PR6, the brand guard: under Charlotte no surface shows the Lasso name or the Lasso loop mark
@@ -100,9 +101,8 @@ const SURFACES: Surface[] = [
 ];
 
 async function openFirstBoard(page: Page): Promise<void> {
-  const board = page.locator('a[href*="/canvas-lab"]').first();
-  await board.waitFor({ state: "attached", timeout: 30_000 });
-  await page.goto((await board.getAttribute("href")) ?? "/home", { waitUntil: "domcontentloaded" });
+  const href = await firstBoardCanvasHref(page);
+  await page.goto(href, { waitUntil: "domcontentloaded" });
   await page
     .locator(`[data-toolbar-control], [aria-label="${LOOK.askLabel}"]`)
     .first()

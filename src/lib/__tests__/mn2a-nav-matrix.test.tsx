@@ -127,6 +127,18 @@ function withProposals(layout: string, shown: boolean): string {
   return lines.join("\n");
 }
 
+/**
+ * 21 Nov, D-82: an admin of a company workspace has Boards as a lower section that starts closed, drawn as its toggle
+ * button (which holds the heading) just above the rail's foot.
+ */
+function withBoardsBelow(layout: string, below: boolean): string {
+  if (!below) return layout;
+  const lines = layout.split("\n").filter((line) => line !== "# Boards");
+  const foot = lines.indexOf("Sources -> /connectors");
+  lines.splice(foot < 0 ? lines.length : foot, 0, "Boards [button]", "# Boards");
+  return lines.join("\n");
+}
+
 function keyOf(c: Combo): string {
   return [
     c.type,
@@ -494,14 +506,14 @@ describe("MN-2a navigation matrix", () => {
       const [sidebarId] = expected;
       // 19 Nov, layout A: every member of a company workspace has a Firm brain row and a Proposals row, above
       // Boards. No other workspace type has either.
-      const layout = withProposals(SIDEBAR_LAYOUTS[sidebarId] ?? "", c.type === "company" && c.role !== "coach");
+      const layout = withBoardsBelow(withProposals(SIDEBAR_LAYOUTS[sidebarId] ?? "", c.type === "company" && c.role !== "coach"), c.type === "company" && c.role === "admin");
       expect(sidebarFor(c)).toBe(layout);
       // NAV-3: the phone More sheet is a decided flat list for workers: no
       // headings, no Create, no All work, then the switcher rows. The guest
       // sheet still mirrors its sidebar under a Workspace heading.
       const guest = c.role === "coach";
       const moreLines = layout.split("\n").filter((line) =>
-        guest || (!line.startsWith("# ") && line !== "All work -> /work" && line !== "Create [button]"));
+        guest || (!line.startsWith("# ") && line !== "All work -> /work" && line !== "Create [button]" && line !== "Boards [button]"));
       const workspaceRows = navFor({ ...c, hasCoachLink: c.coachLink, workItemCount: 0,
         canManageMembers: c.role === "admin" || c.role === "lead",
         canSeeFirmView: c.type === "company" && (c.role === "admin" || c.role === "lead") },
