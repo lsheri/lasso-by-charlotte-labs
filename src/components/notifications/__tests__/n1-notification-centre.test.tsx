@@ -45,7 +45,7 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => m.navigate }));
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NotificationPanel } from "@/components/notifications/NotificationPanel";
-import { unreadCount, type NotificationRow } from "@/lib/notifications-shared";
+import { OPEN_NOTIFICATIONS_EVENT, unreadCount, type NotificationRow } from "@/lib/notifications-shared";
 
 function row(over: Partial<NotificationRow>): NotificationRow {
   return {
@@ -89,6 +89,21 @@ describe("N1 unread count", () => {
     expect(screen.getByTestId("notification-count").textContent).toBe("2");
     fireEvent.click(bell);
     await waitFor(() => expect(m.mark).toHaveBeenCalledWith({ data: { ids: ["s1", "u2"], acted: false } }));
+  });
+});
+
+describe("21 Nov (D-82): an admin's Home opens the bell", () => {
+  it("opens the bell on screen when Home sends the event, and a hidden bell stays shut", async () => {
+    m.rows = [row({ id: "u1", kind: "invite_needs_approval", section: "needs_you", payload: { by: "Ana", email: "a@b.co", board: "Pricing" } })];
+    mount(<NotificationBell />);
+    const bell = await screen.findByRole("button", { name: /Notifications/ });
+    // jsdom lays nothing out, so the bell reads as hidden until it is given a box.
+    window.dispatchEvent(new Event(OPEN_NOTIFICATIONS_EVENT));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(m.mark).not.toHaveBeenCalled();
+    bell.getClientRects = () => [{ width: 20, height: 20 }] as unknown as DOMRectList;
+    window.dispatchEvent(new Event(OPEN_NOTIFICATIONS_EVENT));
+    await waitFor(() => expect(m.mark).toHaveBeenCalledWith({ data: { ids: ["u1"], acted: false } }));
   });
 });
 

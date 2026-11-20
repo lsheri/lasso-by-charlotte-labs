@@ -98,6 +98,12 @@ export type AskView = {
   practice: boolean;
   /** Still inside the waiting time with no reply. */
   waiting: boolean;
+  /**
+   * 21 Nov (D-82, QA H1 and N1): true when the ask last changed (its reply, else its delivery report, else when it was
+   * sent) within the last day, by a window the server alone sets, so an admin's Home can list it under "Earlier". Sent
+   * to admins only. No time leaves the server, so nothing can work out how long anyone took.
+   */
+  recent?: true;
 };
 
 export const ASK_COPY = {

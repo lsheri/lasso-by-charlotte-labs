@@ -734,10 +734,10 @@ export function SidebarNav({
           return null;
         }
 
-        return (
+        const section = (
           <Fragment key={group.label}>
           <div data-nav-placement={group.placement} {...(group.id === "sources" ? { "data-nav-footer": "true" } : {})} className={group.id === "sources" ? "lasso-sidebar-footer shrink-0" : isEngagementGroup ? "flex shrink-0 flex-col" : "shrink-0"}>
-            {isEngagementGroup && everyCollapsibleId.length > 0 && !allCollapsed && !filtering ? (
+            {group.lower ? null : isEngagementGroup && everyCollapsibleId.length > 0 && !allCollapsed && !filtering ? (
               <div className="flex items-center justify-between gap-2 px-2">
                 <div className="nb-group-header">{groupLabel}</div>
                 <span className="ml-auto flex items-center gap-2">
@@ -847,8 +847,61 @@ export function SidebarNav({
           ) : null}
           </Fragment>
         );
+        // D-82: an admin's boards sit in a lower section that starts closed; on a board it opens, so they see where they are.
+        return group.lower ? (
+          <LowerBoards key={group.label} label={groupLabel} profileId={profile?.id} onBoard={Boolean(activeEngagementId)}>
+            {section}
+          </LowerBoards>
+        ) : (
+          section
+        );
       })}
     </nav>
+  );
+}
+
+/**
+ * 21 Nov, D-82: Boards as a lower menu section for an admin, closed until opened. Whether it is open is a per-viewer
+ * convenience kept in this tab only; it is never written anywhere else.
+ */
+export function LowerBoards({ label, profileId, onBoard, children }: { label: string; profileId: string | undefined; onBoard: boolean; children: ReactNode }) {
+  const key = `lasso.nav.boards-open.${profileId ?? "anon"}`;
+  // null: the person has not chosen in this tab, so the section follows where they are (open on a board, else closed).
+  // QA L1: once they press it, their choice wins, on a board too.
+  const [open, setOpen] = useState<boolean | null>(() => {
+    try {
+      const saved = globalThis.sessionStorage?.getItem(key);
+      return saved === "1" ? true : saved === "0" ? false : null;
+    } catch {
+      return null;
+    }
+  });
+  const shown = open ?? onBoard;
+  const toggle = () => {
+    const next = !shown;
+    setOpen(next);
+    try {
+      globalThis.sessionStorage?.setItem(key, next ? "1" : "0");
+    } catch {
+      // Storage refused (a private window): the section still opens and closes for this page.
+    }
+  };
+  return (
+    <div data-nav-lower-boards className="mb-2 flex shrink-0 flex-col">
+      <button
+        type="button"
+        aria-expanded={shown}
+        data-testid="nav-boards-toggle"
+        onClick={toggle}
+        className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-2 py-1 text-left transition-colors hover:text-foreground"
+      >
+        <span className="nb-group-header">{label}</span>
+        <GraphiteIcon name="chevron-right" size={14} className={`nb-roll-chevron${shown ? " rotate-90" : ""}`} />
+      </button>
+      <RollDown open={shown}>
+        <div className="mt-2">{children}</div>
+      </RollDown>
+    </div>
   );
 }
 

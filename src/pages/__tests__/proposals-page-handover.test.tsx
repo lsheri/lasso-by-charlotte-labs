@@ -217,3 +217,57 @@ describe("afterCreate", () => {
     expect(afterCreate(list([{ id: "n", status: "won" }]), "n", true)).toBe("notRefreshed");
   });
 });
+
+describe("21 Nov (D-82): links from an admin's Home", () => {
+  const ID = "55555555-5555-4555-8555-555555555555";
+  const open = { id: ID, title: "Network redesign", clientName: "Pellham", ownerName: "QA", mine: false, status: "open", receivedAt: new Date().toISOString(), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: true, canClose: true, canArchive: true, leadContactId: null, leadName: null, ask: null };
+  const at = (search: string) => window.history.replaceState(null, "", `/proposals${search}`);
+  afterEach(() => at(""));
+
+  it("opens the lead sheet on the linked proposal, without saying it was just started", async () => {
+    h.rows = [open];
+    at(`?lead=${ID}`);
+    await page();
+    const sheet = await screen.findByTestId("pick-lead");
+    expect(sheet.hasAttribute("data-lead-fresh")).toBe(false);
+    expect(sheet.textContent).not.toContain(SHEET_COPY.started);
+    fireEvent.click(within(sheet).getByRole("button", { name: LEAD_COPY.cancel }));
+    await waitFor(() => expect(screen.queryByTestId("pick-lead")).toBeNull());
+    expect(h.setLead).not.toHaveBeenCalled();
+  });
+
+  it("opens no sheet for a member, or for a proposal that is not open", async () => {
+    h.rows = [{ ...open, status: "won", decidedAt: new Date().toISOString() }];
+    at(`?lead=${ID}`);
+    await page();
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(screen.queryByTestId("pick-lead")).toBeNull();
+    cleanup();
+    h.role = "analyst";
+    h.rows = [open];
+    await page();
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(screen.queryByTestId("pick-lead")).toBeNull();
+  });
+
+  it("opens on the People tab for an admin, and on Proposals for anyone who has no People tab", async () => {
+    at("?tab=people");
+    await page();
+    expect(screen.getByRole("tab", { name: DESK_COPY.tabs.people }).getAttribute("aria-selected")).toBe("true");
+    cleanup();
+    h.role = "analyst";
+    await page();
+    expect(screen.queryByRole("tab", { name: DESK_COPY.tabs.people })).toBeNull();
+    expect(screen.getByRole("tab", { name: DESK_COPY.tabs.proposals }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("brings the linked proposal into view and marks it for a moment", async () => {
+    h.rows = [open];
+    at(`?proposal=${ID}`);
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    await page();
+    await waitFor(() => expect(document.querySelector(`[data-proposal-row="${ID}"]`)?.getAttribute("data-linked")).toBe("true"));
+    expect(scrolled).toHaveBeenCalledTimes(1);
+  });
+});

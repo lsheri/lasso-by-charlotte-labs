@@ -74,7 +74,7 @@ export type ProposalRow = {
 };
 
 /** The latest ask on a proposal, as stored. */
-export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string };
+export type DeskAsk = { proposal_id: string; contact_id: string | null; to_demo: boolean; status: string; reply: string | null; created_at: string; status_at?: string | null; replied_at?: string | null };
 
 export type DeskStore = {
   /** An active, non-guest member of a company workspace, or a thrown 403. */
@@ -144,8 +144,21 @@ export type DeskStore = {
 
 const isStatus = (value: string): value is ProposalStatus => (PROPOSAL_STATUSES as readonly string[]).includes(value);
 
+/**
+ * QA H1 and N1 on PR 285: whether the ask's latest change (reply, else delivery report, else sending) came within the
+ * last day, by a window the server alone sets: from the top of the hour 24 hours ago until now. Nothing from the
+ * browser moves its edges, so no read can be shaped to narrow a reply down, and because the window's start only moves
+ * on the hour, the flag dropping off later says no more than the hour of the reply. A rolling window follows every
+ * time zone alike, so a morning yes does not drop off at UTC midnight.
+ */
+export function changedInLastDay(ask: Pick<DeskAsk, "replied_at" | "status_at" | "created_at">, now: Date): boolean {
+  const at = Date.parse(ask.replied_at ?? ask.status_at ?? ask.created_at);
+  const start = Math.floor(now.getTime() / 3_600_000) * 3_600_000 - 86_400_000;
+  return Number.isFinite(at) && at >= start && at <= now.getTime();
+}
+
 /** The latest ask per proposal, as the page draws it. */
-function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false): Map<string, AskView> {
+function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connected = false, flagRecent = false): Map<string, AskView> {
   const views = new Map<string, AskView>();
   for (const ask of asks) {
     if (views.has(ask.proposal_id)) continue;
@@ -156,6 +169,7 @@ function askViews(asks: DeskAsk[], names: Map<string, string>, now: Date, connec
       practice: ask.status === "practice",
       // A practice ask stops waiting the moment texting is switched on: it can no longer be answered.
       waiting: !(connected && ask.status === "practice") && isWaiting({ status: ask.status, reply: ask.reply, createdAt: ask.created_at }, now),
+      ...(flagRecent && changedInLastDay(ask, now) ? { recent: true as const } : {}),
     });
   }
   return views;
@@ -189,7 +203,8 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
     caller.role === "admin" ? store.clientsOn(caller.orgId) : Promise.resolve(false),
   ]);
   const canAddClient = caller.role === "admin" && clientsOn;
-  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected);
+  // The "recent" flag is for an admin's Home only (D-82): nobody else is told even that much about when a lead answered.
+  const askByProposal = askViews(asks, leadNames, store.now(), texts.connected, caller.role === "admin");
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
   const proposals: DeskProposal[] = mine.map((row) => {
@@ -600,7 +615,7 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];
-      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
+      const { data, error } = await adminLoose.from("proposal_texts").select("proposal_id, contact_id, to_demo, status, reply, created_at, status_at, replied_at").eq("org_id", orgId).eq("kind", "lead_ask").in("proposal_id", proposalIds).order("created_at", { ascending: false }).limit(1000);
       return error ? [] : ((data ?? []) as DeskAsk[]);
     },
     async texts(orgId) {
