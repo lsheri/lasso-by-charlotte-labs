@@ -1759,3 +1759,11 @@ body:has([data-lasso="on"]) > :is([role="dialog"], [role="alertdialog"], [data-r
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* 20 Nov 2026 (design review, D-74): a page title in the app is Archivo, bold. One reading family; the second sans
+   (Instrument Sans) leaves titles first. */
+[data-lasso="on"] .page-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
