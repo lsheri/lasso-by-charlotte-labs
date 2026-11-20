@@ -502,6 +502,10 @@ export function ChatPill({
         ref={panel}
         className="chat-pill__panel ph-no-autocapture"
         role="dialog"
+        // Open or closed in the shared dialogs' own words, so anything that watches the page for open dialogs (the demo
+        // story collapses its card under one) reads the shut pill as closed. Without it a hand-built dialog counts as
+        // open whenever it is in the page, and the story never showed its card (live check of PR 290, 20 Nov 2026).
+        data-state={open ? "open" : "closed"}
         tabIndex={-1}
         aria-modal={mode === "full" || undefined}
         aria-label={PILL_COPY.panel(brandName)}

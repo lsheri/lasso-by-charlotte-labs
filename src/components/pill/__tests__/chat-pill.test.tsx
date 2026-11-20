@@ -429,3 +429,17 @@ describe("dragging", () => {
     expect(el.getAttribute("data-mode")).toBe("open");
   });
 });
+
+// Live check of PR 290 (20 Nov 2026): the demo story watches the page for open dialogs and collapses its card under one.
+// The shut pill must read as closed, the open pill as open.
+describe("the pill and the demo story's dialog watch", () => {
+  it("reads as no open dialog while shut, and as one while open", async () => {
+    const { anyDialogOpen } = await import("@/components/firm-story/measure-anchor");
+    const { shut } = pill();
+    expect(anyDialogOpen()).toBe(false);
+    fireEvent.click(shut());
+    expect(anyDialogOpen()).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: PILL_COPY.close }));
+    expect(anyDialogOpen()).toBe(false);
+  });
+});
