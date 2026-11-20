@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/roster.functions", () => ({ listRosterFn: vi.fn(), saveRosterContactFn: vi.fn() }));
+vi.mock("@/lib/roster-experience.functions", () => ({}));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import { RosterView, type RosterViewProps } from "@/components/roster/RosterPanel";
 import {
