@@ -731,6 +731,45 @@ describe("20 Nov: the strip at the top of a board made by a win", () => {
     expect(await boardWin(fakeStore({ rows: won(), asks: practice }), board)).toMatchObject({ leadName: "Christy Johnson", ask: null });
   });
 
+  describe("a practice answer on the board", () => {
+    const practice = (reply: string | null, hours = 5) => ({ proposal_id: "p1", contact_id: null, to_demo: true, status: "practice", reply, created_at: hoursAgo(hours) });
+    const demoOff = async () => ({ demo: true, connected: false });
+
+    it("a demo workspace with texting off shows a practice yes, marked as practice and not in the lead's name", async () => {
+      const win = await boardWin(fakeStore({ rows: won(), asks: async () => [practice("yes")], texts: demoOff }), board);
+      expect(win).toMatchObject({ won: true, leadName: "Christy Johnson", ask: { name: "", reply: "yes", practice: true, waiting: false } });
+    });
+
+    it("shows a practice no the same way, and the latest answer when there are several", async () => {
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice("no")], texts: demoOff }), board)).toMatchObject({ ask: { reply: "no", practice: true } });
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice(null, 1), practice("no", 2), practice("yes", 3)], texts: demoOff }), board)).toMatchObject({ ask: { reply: "no", practice: true } });
+    });
+
+    it("never shows a practice STOP, or a practice ask nobody answered", async () => {
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice("stop")], texts: demoOff }), board)).toMatchObject({ ask: null });
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice(null)], texts: demoOff }), board)).toMatchObject({ ask: null });
+    });
+
+    it("never in a real workspace", async () => {
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice("yes")], texts: async () => ({ demo: false, connected: false }) }), board)).toMatchObject({ leadName: "Christy Johnson", ask: null });
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice("yes")] }), board)).toMatchObject({ ask: null });
+    });
+
+    it("never once the sender settings are in place", async () => {
+      expect(await boardWin(fakeStore({ rows: won(), asks: async () => [practice("yes")], texts: async () => ({ demo: true, connected: true }) }), board)).toMatchObject({ leadName: "Christy Johnson", ask: null });
+    });
+
+    it("a real reply from the lead always takes its place, even when the practice answer is newer", async () => {
+      const real = { proposal_id: "p1", contact_id: LEAD, to_demo: false, status: "delivered", reply: "no", created_at: hoursAgo(9) };
+      const win = await boardWin(fakeStore({ rows: won(), asks: async () => [practice("yes", 1), real], texts: demoOff }), board);
+      expect(win).toMatchObject({ ask: { name: "Christy Johnson", reply: "no", practice: false } });
+    });
+
+    it("no lead, no practice answer either", async () => {
+      expect(await boardWin(fakeStore({ rows: won({ lead_contact_id: null }), asks: async () => [practice("yes")], texts: demoOff }), board)).toMatchObject({ leadName: null, ask: null });
+    });
+  });
+
   it("no lead, nothing about a lead", async () => {
     expect(await boardWin(fakeStore({ rows: won({ lead_contact_id: null }) }), board)).toEqual({ won: true, decidedAt: hoursAgo(2), leadName: null, ask: null });
     // A lead who is no longer on this workspace's list is not named.

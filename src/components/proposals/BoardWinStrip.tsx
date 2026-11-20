@@ -2,7 +2,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { WonTextButton } from "@/components/firm-brain/WonTextButton";
-import { askLine } from "@/lib/lead-ask-shared";
+import { tagVariants } from "@/components/ui/tag";
+import { ASK_COPY, askLine } from "@/lib/lead-ask-shared";
 import { BOARD_WIN_COPY, deskDate, type BoardWin } from "@/lib/proposal-desk-shared";
 import { boardWinFn } from "@/lib/proposal-desk.functions";
 
@@ -18,8 +19,9 @@ export function BoardWinLines({ win, children }: { win: BoardWin; children?: Rea
         </p>
       ) : null}
       {win.ask ? (
-        <p data-board-lead-answer className="text-muted-foreground">
-          {askLine(win.ask)}
+        <p data-board-lead-answer className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
+          <span>{askLine(win.ask)}</span>
+          {win.ask.practice ? <span className={tagVariants({ tone: "outline" })}>{ASK_COPY.practiceTag}</span> : null}
         </p>
       ) : null}
       {children}
