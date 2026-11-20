@@ -229,7 +229,6 @@ describe("resetDemoFirm", () => {
     db.rows("proposal_texts").push({ id: "t1", org_id: ORG, proposal_id: db.rows("proposals").find((r) => r["org_id"] === ORG)!["id"] });
     db.rows("message_consents").push({ id: "mc1", org_id: ORG, roster_contact_id: "x" }, { id: "mc2", org_id: OTHER });
     db.rows("demo_text_recipients").push({ org_id: ORG });
-    db.rows("roster_contact_details").push({ roster_contact_id: "x", org_id: ORG });
     const result = await resetDemoFirm(db.admin);
     expect(result.problems).toEqual([]);
     expect(result.removed).toBe(true);

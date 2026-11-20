@@ -711,7 +711,7 @@ export async function resetDemoFirm(admin: Db): Promise<{ removed: boolean; prob
   await step("proposals", () => loose.from("proposals").delete().eq("org_id", orgId));
   await step("agreements to texts", () => loose.from("message_consents").delete().eq("org_id", orgId));
   await step("demo text number", () => loose.from("demo_text_recipients").delete().eq("org_id", orgId));
-  await step("contact details", () => loose.from("roster_contact_details").delete().eq("org_id", orgId));
+  // Their contact details go with them (on delete cascade); only roster.server.ts ever names that table.
   await step("people we work with", () => loose.from("roster_contacts").delete().eq("org_id", orgId));
   await step("invites", () => admin.from("invites").delete().eq("org_id", orgId));
   await step("client marks", () => admin.from("client_showings").delete().eq("org_id", orgId));
