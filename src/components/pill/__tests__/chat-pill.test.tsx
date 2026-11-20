@@ -6,8 +6,58 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatPill } from "@/components/pill/ChatPill";
 import { PILL_COPY } from "@/lib/chat-pill-shared";
+import { FIRM_CANVAS_COPY } from "@/lib/firm-canvas-shared";
+import { FIRM_ASK_COPY, type FirmAskResult } from "@/lib/firm-ask-shared";
+import { FIRM_BRAIN_LIMIT_COPY } from "@/lib/firm-brain-limit-shared";
 
 vi.mock("@/components/layout/BrandLockup", () => ({ BrandMark: () => <i data-mark="" /> }));
+vi.mock("@/components/firm-brain/CiteThis", () => ({
+  CiteThis: () => <span data-testid="cite-this" />,
+}));
+
+const ANSWER: FirmAskResult = {
+  status: "answered",
+  summary: null,
+  claims: [
+    {
+      text: "Staffing reviews ran long when the client's data came late.",
+      itemId: "i1",
+      boardId: "b1",
+      quote: "data came late",
+      grade: "from_summary",
+    },
+    {
+      text: "A weekly check-in with the sponsor kept them on time.",
+      itemId: "i2",
+      boardId: "b2",
+      quote: "weekly check-in",
+      grade: "from_summary",
+    },
+  ],
+  facts: [],
+  nearest: null,
+  read: { full: [], summary: ["i1", "i2"] },
+  sources: {
+    i1: {
+      title: "Close-out notes",
+      type: "document",
+      date: null,
+      boardId: "b1",
+      boardTitle: "Larkspur Senior Living",
+      shownOn: null,
+    },
+    i2: {
+      title: "Kickoff notes",
+      type: "document",
+      date: null,
+      boardId: "b2",
+      boardTitle: "Harrow Water District",
+      shownOn: null,
+    },
+  },
+  coverage: "Read 2 of 26 engagements.",
+  oneSource: false,
+};
 
 beforeEach(() => {
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
@@ -20,7 +70,9 @@ afterEach(() => {
 });
 
 function pill(over: Partial<Parameters<typeof ChatPill>[0]> = {}) {
-  const onAsk = vi.fn(async () => ({ ok: true as const }));
+  const onAsk = vi.fn(async (_question: string): Promise<FirmAskResult> => ANSWER);
+  const onOpenOnCanvas = vi.fn(async () => {});
+  const onOpenSource = vi.fn();
   const onOpened = vi.fn();
   const onExpanded = vi.fn();
   const props = {
@@ -32,6 +84,8 @@ function pill(over: Partial<Parameters<typeof ChatPill>[0]> = {}) {
     questionMax: 500,
     starters: ["Which past engagements are most like Marrowfield?"],
     onAsk,
+    onOpenOnCanvas,
+    onOpenSource,
     onOpened,
     onExpanded,
     reduceMotion: true,
@@ -44,7 +98,7 @@ function pill(over: Partial<Parameters<typeof ChatPill>[0]> = {}) {
     </div>,
   );
   const root = view.container.querySelector('[data-lasso="on"]') as HTMLElement;
-  const el = screen.getByTestId("chat-pill");
+  const el = screen.getByTestId("ask-the-firm");
   return {
     ...props,
     view,
@@ -100,17 +154,54 @@ describe("the shut pill", () => {
 });
 
 describe("asking", () => {
-  it("sends the question, says where the answer opens, and tucks itself away", async () => {
-    const { el, shut, onAsk } = pill();
-    fireEvent.click(shut());
-    fireEvent.change(screen.getByLabelText(PILL_COPY.label), {
-      target: { value: "  How did we run staffing reviews?  " },
-    });
+  const send = (text: string) => {
+    fireEvent.change(screen.getByLabelText(PILL_COPY.label), { target: { value: text } });
     fireEvent.click(screen.getByRole("button", { name: PILL_COPY.send }));
+  };
+
+  it("builds the answer in the chat with the canvas's own card, each line with its source", async () => {
+    const { shut, onAsk, onOpenSource } = pill();
+    fireEvent.click(shut());
+    send("  How did we run staffing reviews?  ");
     await waitFor(() => expect(onAsk).toHaveBeenCalledWith("How did we run staffing reviews?"));
-    expect(await screen.findByText(PILL_COPY.toCanvas)).toBeTruthy();
-    expect(screen.getByText("How did we run staffing reviews?")).toBeTruthy();
+    expect(screen.getByText(PILL_COPY.looking)).toBeTruthy();
+    const card = await screen.findByTestId("chat-answer");
+    await waitFor(() => expect(card.getAttribute("data-firm-answer")).toBe("answered"));
+    expect(card.textContent).toContain("Staffing reviews ran long");
+    expect(card.textContent).toContain(FIRM_CANVAS_COPY.done(2, 2));
+    fireEvent.click(
+      screen.getByRole("button", { name: `${FIRM_CANVAS_COPY.source}: Larkspur Senior Living` }),
+    );
+    expect(onOpenSource).toHaveBeenCalledWith("i1");
+  });
+
+  it("opens the finished answer on the canvas without asking again, and tucks the chat away", async () => {
+    const { el, shut, onAsk, onOpenOnCanvas } = pill();
+    fireEvent.click(shut());
+    send("How did we run staffing reviews?");
+    fireEvent.click(await screen.findByRole("button", { name: PILL_COPY.openOnCanvas }));
+    await waitFor(() =>
+      expect(onOpenOnCanvas).toHaveBeenCalledWith("How did we run staffing reviews?", ANSWER),
+    );
+    expect(onAsk).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(el.getAttribute("data-mode")).toBe("shut"));
+  });
+
+  it("offers no canvas for an answer that found nothing, and says so", async () => {
+    const empty: FirmAskResult = {
+      ...ANSWER,
+      status: "not_found",
+      claims: [],
+      sources: {},
+      nearest: "Larkspur Senior Living",
+    };
+    const { shut } = pill({ onAsk: vi.fn(async () => empty) });
+    fireEvent.click(shut());
+    send("How did we price a lunar habitat?");
+    const card = await screen.findByTestId("chat-answer");
+    await waitFor(() => expect(card.getAttribute("data-firm-answer")).toBe("not_found"));
+    expect(card.textContent).toContain(FIRM_ASK_COPY.notFound);
+    expect(screen.queryByRole("button", { name: PILL_COPY.openOnCanvas })).toBeNull();
   });
 
   it("asks a starter with one press", async () => {
@@ -130,7 +221,7 @@ describe("asking", () => {
     const box = screen.getByLabelText(PILL_COPY.label);
     fireEvent.change(box, { target: { value: "ok" } });
     fireEvent.keyDown(box, { key: "Enter" });
-    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect((await screen.findByRole("alert")).textContent).toBe(PILL_COPY.tooShort);
     expect(onAsk).not.toHaveBeenCalled();
     fireEvent.change(box, { target: { value: "What went wrong last time?" } });
     fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
@@ -139,28 +230,46 @@ describe("asking", () => {
     await waitFor(() => expect(onAsk).toHaveBeenCalledTimes(1));
   });
 
-  it("keeps the chat open with a plain line when asking is refused or fails", async () => {
-    const refused = pill({
-      onAsk: vi.fn(async () => ({
-        ok: false as const,
-        problem: "Today's limit for the firm brain has been reached.",
-      })),
+  it("keeps the failed card open with a plain line and tries the same question again", async () => {
+    const onAsk = vi
+      .fn<(q: string) => Promise<FirmAskResult>>()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce(ANSWER);
+    const { el, shut } = pill({ onAsk });
+    fireEvent.click(shut());
+    send("What went wrong last time?");
+    expect((await screen.findByRole("alert")).textContent).toContain(FIRM_CANVAS_COPY.failed);
+    expect(el.getAttribute("data-mode")).toBe("open");
+    fireEvent.click(screen.getByRole("button", { name: FIRM_CANVAS_COPY.tryAgain }));
+    await waitFor(() => expect(onAsk).toHaveBeenCalledTimes(2));
+    expect(onAsk.mock.calls[1]![0]).toBe("What went wrong last time?");
+    await waitFor(() =>
+      expect(screen.getByTestId("chat-answer").getAttribute("data-firm-answer")).toBe("answered"),
+    );
+  });
+
+  it("says the daily limit was reached, with no Try again", async () => {
+    const { shut } = pill({
+      onAsk: vi.fn(async () => Promise.reject(new Response("limit", { status: 429 }))),
     });
-    fireEvent.click(refused.shut());
-    fireEvent.change(screen.getByLabelText(PILL_COPY.label), {
-      target: { value: "What went wrong last time?" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: PILL_COPY.send }));
-    expect((await screen.findByRole("alert")).textContent).toContain("Today's limit");
-    expect(refused.el.getAttribute("data-mode")).toBe("open");
-    cleanup();
-    const failed = pill({ onAsk: vi.fn(async () => Promise.reject(new Error("offline"))) });
-    fireEvent.click(failed.shut());
-    fireEvent.change(screen.getByLabelText(PILL_COPY.label), {
-      target: { value: "What went wrong last time?" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: PILL_COPY.send }));
-    expect((await screen.findByRole("alert")).textContent).toBe(PILL_COPY.failed);
+    fireEvent.click(shut());
+    send("What went wrong last time?");
+    expect((await screen.findByRole("alert")).textContent).toContain(FIRM_BRAIN_LIMIT_COPY.shown);
+    expect(screen.queryByRole("button", { name: FIRM_CANVAS_COPY.tryAgain })).toBeNull();
+  });
+
+  it("takes no second question while one is being read", async () => {
+    let finish: (value: FirmAskResult) => void = () => {};
+    const onAsk = vi.fn(() => new Promise<FirmAskResult>((resolve) => (finish = resolve)));
+    const { shut } = pill({ onAsk });
+    fireEvent.click(shut());
+    send("What went wrong last time?");
+    await waitFor(() => expect(onAsk).toHaveBeenCalledTimes(1));
+    expect((screen.getByLabelText(PILL_COPY.label) as HTMLTextAreaElement).disabled).toBe(true);
+    finish(ANSWER);
+    await waitFor(() =>
+      expect((screen.getByLabelText(PILL_COPY.label) as HTMLTextAreaElement).disabled).toBe(false),
+    );
   });
 
   it("offers no question box to someone who may not ask the firm", () => {

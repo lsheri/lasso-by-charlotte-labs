@@ -224,16 +224,16 @@ describe("Firm view by its address", () => {
 });
 
 describe("Home by role", () => {
-  it("leads an admin's Home with proposals, then Ask the firm, the tools and the boards", async () => {
+  it("leads an admin's Home with proposals, then the tools and the boards; asking is the chat pill's (D-97)", async () => {
     mocks.profile = person("admin");
     mocks.list.mockResolvedValue(desk([proposal({ id: "a" })]));
     mount(<HomePage />);
     await waitFor(() => expect(document.querySelector('[data-proposal-row="a"]')).toBeTruthy());
-    const [proposals, ask, tools, boards] = order("home-proposals", "ask-the-firm", "junior-tools", "home-board") as [number, number, number, number];
+    const [proposals, tools, boards] = order("home-proposals", "junior-tools", "home-board") as [number, number, number];
     expect(proposals).toBeGreaterThanOrEqual(0);
-    expect(proposals).toBeLessThan(ask);
-    expect(ask).toBeLessThan(tools);
+    expect(proposals).toBeLessThan(tools);
     expect(tools).toBeLessThan(boards);
+    expect(screen.queryByTestId("ask-the-firm")).toBeNull();
     expect(mocks.list).toHaveBeenCalledWith({ data: { profile_id: person("admin").id } });
   });
 
@@ -242,10 +242,7 @@ describe("Home by role", () => {
       mocks.profile = person(role);
       mount(<HomePage />);
       const ask = screen.getByTestId("home-ask");
-      expect(ask.getAttribute("data-role")).toBe(role);
-      // The starters are made from the most recently opened board.
-      expect(ask.getAttribute("data-recent")).toBe("Fairhaven digital product operating model");
-      // The question box sits at the top of Home's board, above the boards as cards.
+      // The greeting and the orb sit at the top of Home's board, above the boards as cards. Asking is the pill's.
       expect(screen.getByTestId("home-board").contains(ask)).toBe(true);
       for (const id of ["home-proposals", "ask-the-firm", "junior-tools"]) expect(screen.queryByTestId(id)).toBeNull();
       await Promise.resolve();

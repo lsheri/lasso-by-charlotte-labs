@@ -9,8 +9,11 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
+import { CanvasAnswerCard, type CanvasAnswer } from "@/components/firm-brain/CanvasAnswerCard";
 import { BrandMark } from "@/components/layout/BrandLockup";
-import { ArrowUp, ChevronDown, Maximize2, Minimize2 } from "@/design/brand/icons";
+import { ArrowUp, ArrowUpRight, ChevronDown, Maximize2, Minimize2 } from "@/design/brand/icons";
+import { isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
+import type { FirmAskResult } from "@/lib/firm-ask-shared";
 import {
   behindAt,
   dragPull,
@@ -31,7 +34,10 @@ import {
 
 import "./chat-pill.css";
 
-export type ChatPillMessage = { id: number; kind: "person" | "note" | "alert"; text: string };
+export type ChatPillMessage =
+  | { id: number; kind: "person" | "note" | "alert"; text: string }
+  /** An answer from the firm, drawn with the canvas's own card, and the one action it offers once it is in. */
+  | { id: number; kind: "answer"; answer: CanvasAnswer };
 
 /**
  * 20 Nov 2026, chat pill PR 1a (Liam, D-97). The one place to ask, on every signed-in page: a pill that says where
@@ -40,6 +46,8 @@ export type ChatPillMessage = { id: number; kind: "person" | "note" | "alert"; t
  * opens that board's own chat instead. Props in, effects out: the container (ChatPillMount) owns the route, the
  * person and what asking does.
  */
+const noop = () => {};
+
 export function ChatPill({
   brandName,
   askLabel,
@@ -49,6 +57,9 @@ export function ChatPill({
   questionMax,
   starters,
   onAsk,
+  onOpenOnCanvas,
+  onOpenSource,
+  profileId,
   boardChat,
   onOpened,
   onExpanded,
@@ -64,8 +75,14 @@ export function ChatPill({
   canAsk: boolean;
   questionMax: number;
   starters: readonly string[];
-  /** What asking does. Resolves once the question has gone; a refusal comes back as a line to show. */
-  onAsk: (question: string) => Promise<{ ok: true } | { ok: false; problem: string }>;
+  /** Asks the firm. Resolves with the answer; a thrown error is a failure (the daily limit says so). */
+  onAsk: (question: string) => Promise<FirmAskResult>;
+  /** Opens a finished answer on the Firm brain canvas, beside its threads, without asking again. */
+  onOpenOnCanvas: (question: string, result: FirmAskResult) => void | Promise<void>;
+  /** Opens a line's source, as the canvas does. */
+  onOpenSource: (itemId: string) => void;
+  /** Whose answer it is, for "Cite this" on each line. */
+  profileId?: string | null | undefined;
   /** On a board: the board's own chat. The pill opens it instead of the panel. */
   boardChat?: (() => void) | null | undefined;
   onOpened?: ((place: PillPlace) => void) | undefined;
@@ -205,8 +222,9 @@ export function ChatPill({
     () => () => {
       clearBehind();
       root()?.removeAttribute("data-pill-full");
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // Only on leaving: both read the element through its ref at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -333,6 +351,27 @@ export function ChatPill({
 
   /* ----- asking ----- */
 
+  const updateAnswer = (id: string, patch: Partial<CanvasAnswer>) =>
+    setMessages((list) =>
+      list.map((message) =>
+        message.kind === "answer" && message.answer.id === id
+          ? { ...message, answer: { ...message.answer, ...patch } }
+          : message,
+      ),
+    );
+
+  async function read(answer: CanvasAnswer) {
+    setBusy(true);
+    try {
+      const result = await onAsk(answer.question);
+      updateAnswer(answer.id, { status: "answered", result, limited: false });
+    } catch (error) {
+      updateAnswer(answer.id, { status: "failed", result: null, limited: isFirmBrainLimit(error) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function ask(text: string) {
     if (busy) return;
     const clean = pillQuestion(text, questionMax);
@@ -344,31 +383,47 @@ export function ChatPill({
       return;
     }
     setQuestion("");
-    setBusy(true);
-    setMessages((list) => [...list, { id: nextId.current++, kind: "person", text: clean }]);
-    try {
-      const result = await onAsk(clean);
-      if (result.ok) {
-        setMessages((list) => [
-          ...list,
-          { id: nextId.current++, kind: "note", text: PILL_COPY.toCanvas },
-        ]);
-        // The answer opens on the canvas: the chat tucks itself away so the threads can be seen.
-        window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250);
-      } else {
-        setMessages((list) => [
-          ...list,
-          { id: nextId.current++, kind: "alert", text: result.problem },
-        ]);
-      }
-    } catch {
-      setMessages((list) => [
-        ...list,
-        { id: nextId.current++, kind: "alert", text: PILL_COPY.failed },
-      ]);
-    } finally {
-      setBusy(false);
-    }
+    const answer: CanvasAnswer = {
+      id: `pill-${nextId.current}`,
+      question: clean,
+      starter: null,
+      status: "pending",
+      result: null,
+      limited: false,
+      x: 0,
+      y: 0,
+      h: 0,
+      startedAt: Date.now(),
+      built: false,
+    };
+    setMessages((list) => [
+      ...list,
+      { id: nextId.current++, kind: "person", text: clean },
+      { id: nextId.current++, kind: "note", text: PILL_COPY.looking },
+      { id: nextId.current++, kind: "answer", answer },
+    ]);
+    await read(answer);
+  }
+
+  async function retry(answer: CanvasAnswer) {
+    if (busy) return;
+    const fresh = {
+      ...answer,
+      status: "pending" as const,
+      result: null,
+      limited: false,
+      startedAt: Date.now(),
+      built: false,
+    };
+    updateAnswer(answer.id, fresh);
+    await read(fresh);
+  }
+
+  async function openOnCanvas(answer: CanvasAnswer) {
+    if (!answer.result) return;
+    await onOpenOnCanvas(answer.question, answer.result);
+    // The chat moves to the corner so the threads can be seen.
+    window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250);
   }
 
   function submit(event: FormEvent) {
@@ -392,7 +447,8 @@ export function ChatPill({
       ref={el}
       className="chat-pill"
       data-mode={mode}
-      data-testid="chat-pill"
+      data-testid="ask-the-firm"
+      data-chat-pill=""
       data-ph-no-autocapture=""
     >
       <button
@@ -465,7 +521,36 @@ export function ChatPill({
             </p>
           </div>
           {messages.map((message) =>
-            message.kind === "person" ? (
+            message.kind === "answer" ? (
+              <div key={message.id} className="chat-pill__msg">
+                <CanvasAnswerCard
+                  inline
+                  answer={message.answer}
+                  focused={message.answer.status !== "failed"}
+                  dimmed={false}
+                  reduceMotion={reduceMotion}
+                  profileId={profileId}
+                  onOpenSource={onOpenSource}
+                  onRetry={(failed) => void retry(failed)}
+                  onMeasured={noop}
+                  onBuilt={(id) => updateAnswer(id, { built: true })}
+                />
+                {message.answer.status === "answered" &&
+                (message.answer.built || reduceMotion) &&
+                message.answer.result?.status === "answered" ? (
+                  <div className="chat-pill__acts">
+                    <button
+                      type="button"
+                      className="chat-pill__act"
+                      onClick={() => void openOnCanvas(message.answer)}
+                    >
+                      <ArrowUpRight className="size-[16px]" aria-hidden />
+                      {PILL_COPY.openOnCanvas}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : message.kind === "person" ? (
               <div key={message.id} className="chat-pill__msg chat-pill__msg--person">
                 {message.text}
               </div>

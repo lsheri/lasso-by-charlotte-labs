@@ -227,8 +227,10 @@ export const PILL_COPY = {
   send: "Ask",
   footer: "Question words never go to analytics.",
   /** Said in the chat as the question goes to the Firm brain canvas. */
-  toCanvas:
-    "Looking across the past work shared with the firm. The answer opens on the Firm brain canvas, beside the engagements it came from.",
+  /** Said above an answer as it builds. */
+  looking:
+    "Looking across the past work shared with the firm. Each line links to the engagement it came from.",
+  openOnCanvas: "Open on the canvas",
   tooShort: "Ask a little more, so there is something to look for.",
   failed: "That did not go through. Nothing was asked. Try again in a moment.",
 } as const;
