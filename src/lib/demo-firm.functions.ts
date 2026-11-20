@@ -59,18 +59,25 @@ export const seedDemoFirmBoard = createServerFn({ method: "POST" })
 export const finishDemoFirmSeed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: Input) => input)
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; proposals: import("./demo-firm/seed.server").ProposalSeedResult | null }> => {
     const admin = await founderOnly(context, data.profile_id);
     const { finishDemoSeed } = await import("./demo-firm/seed.server");
-    await finishDemoSeed(admin);
-    return { ok: true };
+    return { ok: true, proposals: await finishDemoSeed(admin) };
   });
 
+/**
+ * Reset removes the whole demo workspace, and since 20 Nov it can finish while proposals exist. So it takes the
+ * founder gate from Set up a pilot (charlotte-labs.com email and an active founder row), not only the QA seed admin
+ * gate: a QA admin account cannot wipe the buyer demo (QA of PR 291, M3). Seeding keeps the QA gate.
+ */
 export const resetDemoFirmFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: Input) => input)
   .handler(async ({ data, context }): Promise<{ removed: boolean; problems: string[] }> => {
-    const admin = await founderOnly(context, data.profile_id);
+    await founderOnly(context, data.profile_id);
+    const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+    const { requireFounder } = await import("./founder-gate.server");
+    await requireFounder(admin, context.userId);
     const { resetDemoFirm } = await import("./demo-firm/seed.server");
     return resetDemoFirm(admin);
   });

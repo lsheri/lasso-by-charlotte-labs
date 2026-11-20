@@ -23,7 +23,8 @@ vi.mock("@/lib/telemetry", () => ({ logEvent: (...a: unknown[]) => m.log(...a) }
 vi.mock("@/components/skin/use-skin", () => ({ useBrand: () => ({ name: "Charlotte" }) }));
 
 import { FirmStory } from "@/components/firm-story/FirmStory";
-import { KESTREL_BAY_ORG_ID } from "@/lib/firm-story-shared";
+/** Any demo workspace: found by its settings marker now, never by this id. */
+const KESTREL_BAY_ORG_ID = "demo-org";
 
 const KEY = "lasso.firm-story.beat.v1";
 const keyFor = (profileId: string) => `${KEY}.${profileId}`;
@@ -32,7 +33,7 @@ function mount(profileId = "p1") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <FirmStory profile={{ id: profileId, org_id: KESTREL_BAY_ORG_ID }} />
+      <FirmStory profile={{ id: profileId, org_id: KESTREL_BAY_ORG_ID, demo_firm: true }} />
     </QueryClientProvider>,
   );
 }
@@ -49,7 +50,7 @@ const next = () => fireEvent.click(screen.getByRole("button", { name: /^(Next|Fi
 beforeEach(() => {
   m.path = "/home";
   at("");
-  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner" });
+  m.access.mockReset().mockResolvedValue({ allowed: true, window: "partner", boardId: "story-board" });
   m.navigate.mockReset();
   m.log.mockReset();
   window.sessionStorage.clear();
@@ -72,7 +73,7 @@ describe("S1: the entry is opt-in", () => {
     at("?tour=1");
     view.rerender(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID, demo_firm: true }} />
       </QueryClientProvider>,
     );
     await waitFor(() => expect(m.access).toHaveBeenCalledTimes(1));
@@ -125,7 +126,7 @@ describe("S1: the entry is opt-in", () => {
     at("");
     view.rerender(
       <QueryClientProvider client={new QueryClient()}>
-        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID }} />
+        <FirmStory profile={{ id: "p1", org_id: KESTREL_BAY_ORG_ID, demo_firm: true }} />
       </QueryClientProvider>,
     );
     expect(await screen.findByTestId("firm-story-launcher")).toBeTruthy();
@@ -145,7 +146,7 @@ describe("S1: the entry is opt-in", () => {
 
   it("sits past the narrow rail on the board page, which has no sidebar", async () => {
     at("?tour=1");
-    m.path = "/engagements/4a4abc70-32af-4cdb-8772-3850f9d673bc/canvas-lab";
+    m.path = "/engagements/story-board/canvas-lab";
     mount();
     await screen.findByTestId("firm-story-launcher");
     expect(screen.getByTestId("firm-story").className).toContain("md:pl-[calc(52px+1rem)]");
@@ -199,7 +200,7 @@ describe("S2: ending, restarting and changing person", () => {
   });
 
   it("the Engagement lead's last card has a way out, and the lead can then start again at its first beat", async () => {
-    m.access.mockResolvedValue({ allowed: true, window: "lead" });
+    m.access.mockResolvedValue({ allowed: true, window: "lead", boardId: "story-board" });
     window.sessionStorage.setItem(keyFor("p1"), "7");
     mount();
     await waitFor(() => expect(card().getAttribute("data-story-view")).toBe("handoff"));
@@ -225,7 +226,7 @@ describe("S2: ending, restarting and changing person", () => {
     window.sessionStorage.setItem(keyFor("partner-profile"), "5");
     window.sessionStorage.setItem(KEY, "5"); // the key the first build of #240 used
     window.sessionStorage.setItem("something.else", "kept");
-    m.access.mockResolvedValue({ allowed: true, window: "lead" });
+    m.access.mockResolvedValue({ allowed: true, window: "lead", boardId: "story-board" });
     mount("lead-profile");
     await settle();
     expect(m.access).not.toHaveBeenCalled();
