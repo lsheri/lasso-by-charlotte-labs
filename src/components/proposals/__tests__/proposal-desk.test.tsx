@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
+import { AskDialog } from "@/components/proposals/AskLead";
+import { BoardWinLines } from "@/components/proposals/BoardWinStrip";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
+import { ASK_COPY, type AskView } from "@/lib/lead-ask-shared";
 import { ProposalGoalForm } from "@/components/settings/ProposalGoalCard";
-import { DESK_COPY, GOAL_COPY, INTAKE_COPY, LEAD_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { BOARD_WIN_COPY, CLOSE_COPY, DESK_COPY, GOAL_COPY, INTAKE_COPY, LEAD_COPY, SENT_COPY, WIN_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
 import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
 import { MESSAGE_EXAMPLES_COPY } from "@/lib/won-text-shared";
 
@@ -20,9 +24,9 @@ const NOW = new Date("2026-11-20T12:00:00Z");
 const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOString();
 const proposal = (over: Partial<DeskProposal>): DeskProposal => ({
   id: "p", title: "Network redesign", clientName: "Marrowfield", ownerName: "Maren Hollis", mine: false, status: "open",
-  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, ...over,
+  receivedAt: hoursAgo(10), sentAt: null, decidedAt: null, engagementId: null, contextCount: 0, canAct: false, canClose: false, canArchive: false, ...over,
 });
-const list = (proposals: DeskProposal[], goalHours = 72): DeskList => ({ goalHours, canSetGoal: false, canPickLead: false, proposals });
+const list = (proposals: DeskProposal[], goalHours = 72): DeskList => ({ goalHours, canSetGoal: false, canPickLead: false, canAddClient: true, texts: { demo: false, connected: false }, proposals });
 
 describe("the Proposals dashboard", () => {
   it("shows open proposals with the time left against the workspace's own goal", () => {
@@ -304,8 +308,18 @@ describe("New proposal", () => {
   });
 });
 
+describe("long words", () => {
+  it("lets a title made of one very long word wrap in the row and in the win dialog", () => {
+    const long = "W".repeat(200);
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, title: long })])} onWin={vi.fn()} />);
+    expect(document.querySelector("[data-proposal-title]")?.className).toContain("[overflow-wrap:anywhere]");
+    fireEvent.click(screen.getByRole("button", { name: WIN_COPY.record }));
+    expect(within(screen.getByTestId("win-proposal")).getByText(long, { exact: false }).className).toContain("[overflow-wrap:anywhere]");
+  });
+});
+
 describe("picking the lead", () => {
-  const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", linkPath: "/texts?w=o&c=c1", ...over });
+  const person = (over: Partial<RosterContact>): RosterContact => ({ id: "c1", name: "Tom Reyes", role: "Network lead", affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, linkPath: "/texts?w=o&c=c1", ...over });
   const roster = [person({}), person({ id: "c2", name: "Mina Okafor", role: null, texts: "none", agreedOn: null }), person({ id: "c3", name: "Zoë D'Arcy-Núñez", texts: "unknown", agreedOn: null })];
   const WORDS = "Lasso for Kestrel Bay Advisory: good news. The proposal you helped with has been won, and the team board is ready for you. Reply STOP to opt out.";
   const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
@@ -338,8 +352,8 @@ describe("picking the lead", () => {
     const save = within(dialog).getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
     expect(within(dialog).getByText(WORDS)).toBeTruthy();
-    // The page says what is true today: nothing here promises the picked lead a text.
-    expect(within(dialog).getByText(LEAD_COPY.today)).toBeTruthy();
+    // The page says where a text would go, before anyone presses anything.
+    expect(within(dialog).getByText(LEAD_COPY.where(false))).toBeTruthy();
     expect(within(dialog).getByText(LEAD_COPY.intro).textContent).toContain("sends nothing");
     expect(`${LEAD_COPY.agreed("x")} ${LEAD_COPY.intro}`).not.toMatch(/they get|will get|hears when/);
     expect(dialog.querySelectorAll("[data-message-example]")).toHaveLength(3);
@@ -380,5 +394,216 @@ describe("picking the lead", () => {
     render(<ProposalDesk now={NOW} data={pickers([proposal({ id: "a", leadContactId: "gone" })])} roster={undefined} leadWords={WORDS} onLead={vi.fn()} />);
     expect(screen.getByText(LEAD_COPY.none)).toBeTruthy();
     expect(screen.getByRole("button", { name: LEAD_COPY.change })).toBeTruthy();
+  });
+});
+
+describe("20 Nov: asking the lead, on the page", () => {
+  const WORDS = "Lasso for Kestrel Bay Advisory: hi Christy, Maren would love you to lead a new proposal. Are you in? Reply YES or NO. Reply STOP to opt out.";
+  const person: RosterContact = { id: "c1", name: "Christy Johnson", role: null, affiliation: "independent", firm: null, texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false, changeUntil: null, linkPath: "/texts?w=o&c=c1" };
+  const pickers = (proposals: DeskProposal[]): DeskList => ({ ...list(proposals), canPickLead: true });
+  const view = (over: Partial<AskView>): AskView => ({ name: "Christy Johnson", status: "accepted", reply: null, practice: false, waiting: true, ...over });
+  const ask = () => ({ preview: vi.fn(async () => ({ ok: true as const, words: WORDS, name: "Christy Johnson", mode: "real" as const, warning: null })), send: vi.fn(async () => ({ ok: true as const, practice: false })), practiceReply: vi.fn(async () => ({ ok: true as const })) });
+  const desk = (proposals: DeskProposal[], handlers = ask()) => {
+    render(<ProposalDesk now={NOW} data={pickers(proposals)} roster={[person]} leadWords={WORDS} onLead={vi.fn()} ask={handlers} />);
+    return handlers;
+  };
+
+  it("an admin or lead sees the exact words, presses Send once, and the dialog closes", async () => {
+    const handlers = desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson" })]);
+    fireEvent.click(screen.getByRole("button", { name: ASK_COPY.open("Christy Johnson") }));
+    const dialog = await screen.findByTestId("ask-lead");
+    expect(await within(dialog).findByText(WORDS)).toBeTruthy();
+    const send = within(dialog).getByRole("button", { name: ASK_COPY.send });
+    fireEvent.click(send);
+    fireEvent.click(send);
+    await waitFor(() => expect(screen.queryByTestId("ask-lead")).toBeNull());
+    expect(handlers.send).toHaveBeenCalledTimes(1);
+    expect(handlers.send.mock.calls[0]).toEqual(["a", expect.stringMatching(/^[0-9a-f-]{36}$/)]);
+  });
+
+  it("with no agreement the screen says so plainly and Send is not offered", async () => {
+    const handlers = ask();
+    handlers.preview.mockResolvedValue({ ok: true, words: WORDS, name: "Christy Johnson", mode: "real", warning: ASK_COPY.notAgreedYet("Christy Johnson") } as never);
+    desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson" })], handlers);
+    fireEvent.click(screen.getByRole("button", { name: ASK_COPY.open("Christy Johnson") }));
+    const dialog = await screen.findByTestId("ask-lead");
+    expect(await within(dialog).findByText(ASK_COPY.notAgreedYet("Christy Johnson"))).toBeTruthy();
+    expect((within(dialog).getByRole("button", { name: ASK_COPY.send }) as HTMLButtonElement).disabled).toBe(true);
+    expect(handlers.send).not.toHaveBeenCalled();
+  });
+
+  it("a refused send keeps the dialog open with the plain line", async () => {
+    const handlers = ask();
+    handlers.send.mockResolvedValue({ ok: false, problem: ASK_COPY.capped } as never);
+    desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson" })], handlers);
+    fireEvent.click(screen.getByRole("button", { name: ASK_COPY.open("Christy Johnson") }));
+    const dialog = await screen.findByTestId("ask-lead");
+    fireEvent.click(await within(dialog).findByRole("button", { name: ASK_COPY.send }));
+    expect(await within(dialog).findByText(ASK_COPY.capped)).toBeTruthy();
+  });
+
+  it("a failed load of the words says so and offers no Send", async () => {
+    render(<AskDialog proposal={proposal({ id: "a" })} load={async () => { throw new Error("down"); }} send={vi.fn()} onClose={vi.fn()} />);
+    const dialog = await screen.findByTestId("ask-lead");
+    expect(await within(dialog).findByText(ASK_COPY.failed)).toBeTruthy();
+    expect((within(dialog).getByRole("button", { name: ASK_COPY.send }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it.each([
+    [view({}), "Asked by text. Waiting for a reply", false],
+    [view({ status: "delivered" }), "Delivered. Waiting for a reply", false],
+    [view({ reply: "yes", waiting: false }), "Christy Johnson said yes", false],
+    [view({ reply: "no", waiting: false }), "Christy Johnson said no", false],
+    [view({ status: "undelivered", waiting: false }), "The text did not arrive", true],
+    [view({ waiting: false }), "Asked by text. No reply", true],
+  ] as [AskView, string, boolean][])("shows %j as its one line", (state, line, again) => {
+    desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson", ask: state })]);
+    const row = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
+    expect(within(row).getByText(line)).toBeTruthy();
+    expect(within(row).queryByRole("button", { name: ASK_COPY.again }) !== null).toBe(again);
+    expect(within(row).queryByRole("button", { name: ASK_COPY.open("Christy Johnson") })).toBeNull();
+  });
+
+  it("a practice ask is marked as practice and answered with YES, NO or STOP as the lead would", async () => {
+    const handlers = desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson", ask: view({ name: "", status: "practice", practice: true }) })]);
+    const row = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
+    expect(within(row).getByText(ASK_COPY.practiceWaiting)).toBeTruthy();
+    expect(within(row).getByText(ASK_COPY.practiceTag)).toBeTruthy();
+    fireEvent.click(within(row).getByRole("button", { name: "YES" }));
+    await waitFor(() => expect(handlers.practiceReply).toHaveBeenCalledWith("a", "yes"));
+    expect(within(row).getByRole("button", { name: "NO" })).toBeTruthy();
+    expect(within(row).getByRole("button", { name: "STOP" })).toBeTruthy();
+  });
+
+  it("no practice buttons on a real ask, and no ask button without a lead", () => {
+    desk([proposal({ id: "a", leadContactId: "c1", leadName: "Christy Johnson", ask: view({}) }), proposal({ id: "b" })]);
+    expect(document.querySelector("[data-practice-reply]")).toBeNull();
+    expect(within(document.querySelector('[data-proposal-row="b"]') as HTMLElement).queryByRole("button", { name: /Ask/ })).toBeNull();
+  });
+
+  it("the person who started a proposal sees the lead's name and answer, with no button to ask or pick", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, leadName: "Christy Johnson", ask: view({ reply: "yes", waiting: false }) })])} />);
+    const row = document.querySelector('[data-proposal-row="a"]') as HTMLElement;
+    expect(within(row).getByText(LEAD_COPY.lead("Christy Johnson"))).toBeTruthy();
+    expect(within(row).getByText("Christy Johnson said yes")).toBeTruthy();
+    expect(within(row).queryByRole("button", { name: /Ask|Pick|Change/ })).toBeNull();
+  });
+
+  it("the pick dialog says where a text goes, for a real and a demo workspace", async () => {
+    render(<ProposalDesk now={NOW} data={{ ...pickers([proposal({ id: "a" })]), texts: { demo: true, connected: false } }} roster={[person]} leadWords={WORDS} onLead={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.pick }));
+    expect(within(await screen.findByTestId("pick-lead")).getByText(LEAD_COPY.where(true))).toBeTruthy();
+    expect(LEAD_COPY.where(false)).toContain("only once they have agreed");
+  });
+});
+
+describe("20 Nov: closing as lost and archiving, on the page", () => {
+  it("offers each only where the server allows it, says what it does, and does it once", async () => {
+    const onClose = vi.fn(async () => ({ ok: true as const }));
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", mine: true, canClose: true, canArchive: true }), proposal({ id: "b", canClose: true }), proposal({ id: "c" })])} onClose={onClose} />);
+    const row = (id: string) => document.querySelector(`[data-proposal-row="${id}"]`) as HTMLElement;
+    expect(within(row("b")).queryByRole("button", { name: CLOSE_COPY.archive })).toBeNull();
+    expect(within(row("c")).queryByRole("button", { name: CLOSE_COPY.lost })).toBeNull();
+    fireEvent.click(within(row("a")).getByRole("button", { name: CLOSE_COPY.lost }));
+    const dialog = await screen.findByTestId("close-proposal");
+    expect(within(dialog).getByText(CLOSE_COPY.lostBody)).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+    const confirm = within(dialog).getByRole("button", { name: CLOSE_COPY.confirmLost });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    await waitFor(() => expect(screen.queryByTestId("close-proposal")).toBeNull());
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith("a", "lost");
+  });
+
+  it("archive says nothing is deleted, and a refusal keeps the dialog open with the plain line", async () => {
+    const onClose = vi.fn(async () => ({ ok: false as const, problem: CLOSE_COPY.adminOnly }));
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canArchive: true })])} onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: CLOSE_COPY.archive }));
+    const dialog = await screen.findByTestId("close-proposal");
+    expect(within(dialog).getByText(CLOSE_COPY.archiveBody).textContent).toContain("Nothing is deleted");
+    fireEvent.click(within(dialog).getByRole("button", { name: CLOSE_COPY.confirmArchive }));
+    expect(await within(dialog).findByText(CLOSE_COPY.adminOnly)).toBeTruthy();
+  });
+
+  it("without a handler the rows offer neither, and lost proposals have their own view", () => {
+    render(<ProposalDesk now={NOW} data={list([proposal({ id: "a", canClose: true, canArchive: true }), proposal({ id: "l", status: "lost", decidedAt: hoursAgo(3) })])} />);
+    expect(screen.queryByRole("button", { name: CLOSE_COPY.lost })).toBeNull();
+    fireEvent.click(document.querySelector('[data-desk-view="lost"]') as HTMLElement);
+    expect(document.querySelector('[data-proposal-row="l"]')).toBeTruthy();
+    expect(document.querySelector('[data-proposal-row="a"]')).toBeNull();
+    expect(document.querySelector("[data-desk-no-board]")).toBeNull();
+  });
+});
+
+describe("20 Nov: who adds a client, said before any upload", () => {
+  it("a member is told an admin adds new clients, picks an existing one, and has no new-client field", () => {
+    openDialog({ canAddClient: false });
+    const form = screen.getByTestId("new-proposal");
+    expect(within(form).getByText(INTAKE_COPY.adminAddsClients)).toBeTruthy();
+    expect(within(form).queryByLabelText(/new client/i)).toBeNull();
+  });
+
+  it("with no clients at all a member cannot upload or start, and is told why", () => {
+    openDialog({ canAddClient: false, clients: [] });
+    const form = screen.getByTestId("new-proposal");
+    expect(within(form).getByText(INTAKE_COPY.noClientsForMember)).toBeTruthy();
+    expect((within(form).getByRole("button", { name: INTAKE_COPY.create }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("giving up removes what was uploaded here, and so does taking a document off the list", async () => {
+    const discard = vi.fn(async () => undefined);
+    const props = openDialog({ discard });
+    const input = screen.getByTestId("new-proposal").querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file("brief.txt")] } });
+    await screen.findByText("brief.txt");
+    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.remove("brief.txt") }));
+    expect(discard).toHaveBeenCalledWith([ITEM]);
+    fireEvent.change(input, { target: { files: [file("rfp.txt")] } });
+    await screen.findByText("rfp.txt");
+    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.cancel }));
+    expect(discard).toHaveBeenCalledTimes(2);
+    expect(props.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("a proposal that is made keeps its documents", async () => {
+    const discard = vi.fn(async () => undefined);
+    const props = openDialog({ discard });
+    const form = screen.getByTestId("new-proposal");
+    fireEvent.change(form.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [file("brief.txt")] } });
+    await screen.findByText("brief.txt");
+    fireEvent.change(within(form).getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
+    fireEvent.change(form.querySelector("select") as HTMLSelectElement, { target: { value: props.clients?.[0]?.id } });
+    fireEvent.click(within(form).getByRole("button", { name: INTAKE_COPY.create }));
+    await waitFor(() => expect(props.create).toHaveBeenCalled());
+    await waitFor(() => expect(props.onCreated).toHaveBeenCalled());
+    expect(discard).not.toHaveBeenCalled();
+  });
+});
+
+describe("20 Nov: the strip at the top of a board made by a win", () => {
+  it("says it was won and when, names the lead, and gives the lead's answer once there is one", () => {
+    render(<BoardWinLines win={{ won: true, decidedAt: "2026-11-19T18:00:00Z", leadName: "Christy Johnson", ask: { name: "Christy Johnson", status: "delivered", reply: "yes", practice: false, waiting: false } }}><button type="button">Text the lead</button></BoardWinLines>);
+    const strip = screen.getByTestId("board-win-strip");
+    expect(strip.textContent).toContain(BOARD_WIN_COPY.won("Thu 19 Nov"));
+    expect(within(strip).getByText("Lead: Christy Johnson")).toBeTruthy();
+    expect(within(strip).getByText("Christy Johnson said yes")).toBeTruthy();
+    expect(within(strip).getByRole("button", { name: "Text the lead" })).toBeTruthy();
+  });
+
+  it("no lead, nothing about a lead; not a won board, nothing at all", () => {
+    const { rerender } = render(<BoardWinLines win={{ won: true, decidedAt: null, leadName: null, ask: null }} />);
+    const strip = screen.getByTestId("board-win-strip");
+    expect(strip.textContent).toBe("Proposal won");
+    expect(strip.querySelector("[data-board-lead]")).toBeNull();
+    rerender(<BoardWinLines win={{ won: false }} />);
+    expect(screen.queryByTestId("board-win-strip")).toBeNull();
+  });
+
+  it("is its own component, mounted once on the signed-in board for the board's own workspace only", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    expect(page.match(/<BoardWinStrip /g)).toHaveLength(1);
+    expect(page).toContain('{firmBrainScope === "own" ? <BoardWinStrip engagementId={engagementId} profileId={profile?.id} /> : null}');
+    for (const surface of ["src/components/proposals/BoardWinStrip.tsx"]) expect(readFileSync(surface, "utf8")).not.toMatch(/posthog|featureFlag|useFlag/i);
   });
 });

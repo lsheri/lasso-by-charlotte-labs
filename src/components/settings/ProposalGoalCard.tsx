@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
-import { GOAL_COPY, GOAL_SETTING_KEY, goalChoices, goalHours, goalLabel, goalToSave } from "@/lib/proposal-desk-shared";
+import { GOAL_COPY, goalChoices, goalHours, goalLabel, goalToSave } from "@/lib/proposal-desk-shared";
+import { setProposalGoalFn } from "@/lib/proposal-desk.functions";
 import { settingsChangedDims } from "@/lib/settings-events";
 import { logEvent } from "@/lib/telemetry";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -90,7 +91,8 @@ export function ProposalGoalForm({
 
 /**
  * The card in Settings, Workspace. Company workspaces only. An admin picks; everyone else in the workspace reads the
- * goal. It is saved the way the other workspace settings are, so the same rule decides who may write it.
+ * goal. It is saved through a server function that touches only this setting (QA, 19 Nov), never by writing the
+ * whole settings object from the browser.
  */
 export function ProposalGoalCard() {
   const { data: profile } = useProfile();
@@ -112,13 +114,9 @@ export function ProposalGoalCard() {
 
   async function save(hours: number): Promise<boolean> {
     if (!orgId) return false;
-    // Read again just before writing, so a setting someone else changed a moment ago is not written over.
-    const fresh = await supabase.from("orgs").select("settings").eq("id", orgId).maybeSingle();
-    if (fresh.error || !fresh.data) return false;
-    const merged = { ...((fresh.data.settings as Record<string, unknown> | null) ?? {}), [GOAL_SETTING_KEY]: hours };
-    const written = await supabase.from("orgs").update({ settings: merged as never }).eq("id", orgId).select("id");
-    // Zero rows back means the database refused it without an error.
-    if (written.error || (written.data ?? []).length !== 1) return false;
+    // Saved by the server, which changes this one setting and no other.
+    const result = await setProposalGoalFn({ data: { profile_id: profile?.id ?? null, hours } });
+    if (!result.ok) return false;
     await queryClient.invalidateQueries({ queryKey: ["org-settings", orgId] });
     await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
     const dims = settingsChangedDims({ section: "workspace", setting: "proposal_goal", change: "updated" });

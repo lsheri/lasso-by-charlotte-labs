@@ -55,6 +55,10 @@ export const WON_TEXT_COPY = {
   notConnected: "The number is awaiting carrier approval, so nothing was sent.",
   /** No recipient is set for this demo workspace. Shown before a press and as the answer to one. */
   noNumber: "No number is set for this demo workspace, so nothing will be sent. An admin sets one on the Proposals page, under People.",
+  /** A real workspace, and no lead was picked on the proposal. */
+  noLead: "No lead was picked on this proposal, so there is nobody to text.",
+  /** A real workspace, and the picked lead has no live agreement. */
+  notAgreed: (name: string) => `${name} has not agreed to texts, so nothing will be sent. Copy their link under People on the Proposals page and send it to them.`,
   optedOut: "They have opted out of texts. Nothing was sent.",
   capped: "That is the limit for texts today. Nothing was sent.",
   notWon: "Mark this proposal as won first.",
@@ -114,7 +118,7 @@ export function isE164(value: unknown): value is string {
 export type WonTextStatus =
   /** Nothing to show: not an admin, not the workspace whose lead agreed to texts, not won, or nobody to text. */
   | { show: false }
-  | { show: true; connected: boolean; needsNumber: boolean; preview: string };
+  | { show: true; connected: boolean; needsNumber: boolean; preview: string; /** A real workspace with nobody to text: the plain reason. */ blocked?: string | undefined };
 
 export type WonTextResult = { ok: true } | { ok: false; problem: string };
 

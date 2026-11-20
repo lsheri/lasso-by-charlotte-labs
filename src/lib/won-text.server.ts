@@ -1,12 +1,14 @@
 /**
  * 19 Nov, Proposal Desk, first live slice (Liam, D-37 and D-39): "Text the lead" on a won proposal board.
  *
- * No flag sits in front of it. What decides whether a workspace has the button is whether it has someone who agreed
- * to be texted. Today that is demo workspaces only (Liam, D-50): an admin of a workspace carrying the demo marker
- * types the one number on the Proposals page and ticks that the person agreed. Every other workspace is answered
- * `show: false` and refused on a direct call, before any send; real workspaces will send only to a person who agreed
- * on the public page with their own number. Until a number and an approved sender are both set, the demo
- * workspace's admins see the words and a press answers that nothing was sent (Liam, D-40).
+ * No flag sits in front of it. Who the text goes to depends on the workspace:
+ *  - A demo workspace (Liam, D-50): an admin types the one number on the Proposals page and ticks that the person
+ *    agreed. The text goes there, whoever the lead is.
+ *  - Every other workspace (20 Nov): an admin or a lead presses, and the text goes to the lead picked on the
+ *    proposal the board came from, when and only when that person has a live agreement tied to their roster entry.
+ *    No lead, or no agreement: nothing is sent and the screen says so plainly. A board that did not come from a
+ *    proposal has no button.
+ * Until an approved sender is set, the words still show and a press answers that nothing was sent (Liam, D-40).
  *
  * Order of a press: who is asking, which workspace, is the board theirs and won, is there someone to text, record the
  * press, count today's presses, send, record what happened. If the press cannot be recorded nothing is sent, so the
@@ -22,6 +24,7 @@ import { launchBrand } from "@/design/brand/brand";
 import type { Database } from "@/integrations/supabase/types";
 
 import { textConfig, type TextConfig, type TextSendResult } from "./text-sender.server";
+import { canManageRoster } from "./roster-shared";
 import {
   isE164,
   WON_TEXT_COPY,
@@ -49,8 +52,12 @@ export type WonTextDeps = {
   brandName: () => string;
   /** Whether this workspace carries the demo marker. Only demo workspaces have the button today. */
   demo: (orgId: string) => Promise<boolean>;
-  /** The one number this workspace may text, or null when none is set. Server only. */
+  /** The one number this demo workspace may text, or null when none is set. Server only. */
   recipient: (orgId: string) => Promise<string | null>;
+  /** The proposal this board came from, in this workspace: its lead, by roster id and name. Null when it came from none. */
+  lead: (orgId: string, engagementId: string) => Promise<{ contactId: string | null; name: string | null } | null>;
+  /** The number this roster person agreed with in this workspace, or null. Server only. */
+  agreedNumber: (orgId: string, contactId: string) => Promise<string | null>;
   config: () => TextConfig | null;
   recordPress: (caller: WonTextCaller) => Promise<void>;
   recordResult: (caller: WonTextCaller, outcome: WonTextOutcome) => Promise<void>;
@@ -59,12 +66,13 @@ export type WonTextDeps = {
   send: (config: TextConfig, message: { to: string; text: string; idempotencyKey: string }) => Promise<TextSendResult>;
 };
 
-type Ready = { caller: WonTextCaller; to: string | null; preview: string };
+type Ready = { caller: WonTextCaller; to: string | null; preview: string; demo: boolean; /** Why nobody can be texted, in a real workspace. */ blocked: string | null };
 
 /** The checks a status read and a send share. Null means "nothing here for this person", whatever the reason. */
 async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): Promise<Ready | "not_won" | null> {
   const caller = await deps.caller();
-  const allowed = caller.role === "admin" && (await deps.demo(caller.orgId));
+  const demo = await deps.demo(caller.orgId);
+  const allowed = demo ? caller.role === "admin" : canManageRoster(caller.role);
   if (!allowed) {
     if (strict) throw new Response("Forbidden", { status: 403 });
     return null;
@@ -76,9 +84,21 @@ async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): 
   }
   if (board.archived) return null;
   if (!board.won) return "not_won";
-  const number = await deps.recipient(caller.orgId);
   const preview = wonTextBody({ brandName: deps.brandName(), firmName: await deps.firmName(caller.orgId) });
-  return { caller, to: isE164(number) ? number : null, preview };
+  if (demo) {
+    const number = await deps.recipient(caller.orgId);
+    return { caller, to: isE164(number) ? number : null, preview, demo, blocked: null };
+  }
+  // A real workspace: the lead picked on the proposal, and only with their own live agreement.
+  const lead = await deps.lead(caller.orgId, engagementId);
+  if (!lead) {
+    // A board that did not come from a proposal has nobody to text: no button, and a direct call is refused.
+    if (strict) throw new Response("Forbidden", { status: 403 });
+    return null;
+  }
+  if (!lead.contactId || !lead.name) return { caller, to: null, preview, demo, blocked: WON_TEXT_COPY.noLead };
+  const number = await deps.agreedNumber(caller.orgId, lead.contactId);
+  return isE164(number) ? { caller, to: number, preview, demo, blocked: null } : { caller, to: null, preview, demo, blocked: WON_TEXT_COPY.notAgreed(lead.name) };
 }
 
 /**
@@ -89,7 +109,7 @@ async function ready(deps: WonTextDeps, engagementId: string, strict: boolean): 
 export async function wonTextStatus(deps: WonTextDeps, input: WonTextBoardInput): Promise<WonTextStatus> {
   const state = await ready(deps, input.engagement_id, false);
   if (!state || state === "not_won") return { show: false };
-  return { show: true, connected: deps.config() !== null && state.to !== null, needsNumber: state.to === null, preview: state.preview };
+  return { show: true, connected: deps.config() !== null && state.to !== null, needsNumber: state.demo && state.to === null, preview: state.preview, ...(state.blocked ? { blocked: state.blocked } : {}) };
 }
 
 /** One press of Send. */
@@ -98,7 +118,7 @@ export async function sendWonText(deps: WonTextDeps, input: WonTextSendInput): P
   if (state === "not_won") return { ok: false, problem: WON_TEXT_COPY.notWon };
   // An archived board, nobody to text, or no sender: one plain line, nothing sent and nothing recorded.
   const config = deps.config();
-  if (state && !state.to) return { ok: false, problem: WON_TEXT_COPY.noNumber };
+  if (state && !state.to) return { ok: false, problem: state.blocked ?? WON_TEXT_COPY.noNumber };
   if (!state || !state.to || !config) return { ok: false, problem: WON_TEXT_COPY.notConnected };
   const to = state.to;
 
@@ -160,6 +180,20 @@ export async function realDeps(context: WonTextContext, profileId: string | null
     async recipient(orgId) {
       const { demoRecipient } = await import("./demo-text-number.server");
       return demoRecipient(admin, orgId);
+    },
+    async lead(orgId, engagementId) {
+      const loose = admin as unknown as SupabaseClient;
+      const { data, error } = await loose.from("proposals").select("lead_contact_id").eq("org_id", orgId).eq("engagement_id", engagementId).maybeSingle();
+      if (error || !data) return null;
+      const contactId = (data as { lead_contact_id: string | null }).lead_contact_id;
+      if (!contactId) return { contactId: null, name: null };
+      const person = await loose.from("roster_contacts").select("full_name").eq("org_id", orgId).eq("id", contactId).maybeSingle();
+      const name = (person.data as { full_name?: unknown } | null)?.full_name;
+      return { contactId, name: typeof name === "string" && name.trim() ? name.trim() : null };
+    },
+    async agreedNumber(orgId, contactId) {
+      const { liveConsentRecords } = await import("./text-consent.server");
+      return (await liveConsentRecords()).numberFor(orgId, contactId);
     },
     config: () => textConfig(),
     recordPress: (who) => record(who, "proposal_text.pressed", { channel: "sms" }),

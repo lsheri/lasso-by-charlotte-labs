@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   CONSENT_COLUMNS,
   listRoster,
+  requestNumberChange,
   saveRosterContact,
   type ConsentMarkRow,
   type RosterDeps,
@@ -13,7 +14,11 @@ import {
 } from "@/lib/roster.server";
 import {
   canManageRoster,
+  changeOpenUntil,
   checkRosterContact,
+  filterRoster,
+  NUMBER_CHANGE_DAYS,
+  rosterChangeInput,
   ROSTER_COPY,
   ROSTER_MAX_CONTACTS,
   rosterLinkPath,
@@ -71,6 +76,14 @@ function world(
         affiliation: fields.affiliation,
         firm_name: fields.firm,
       });
+      return found;
+    },
+    one: async (orgId, id) => rows.find((r) => r.id === id && r.org_id === orgId) ?? "missing",
+    openChange: async (orgId, id, until) => {
+      writes.push("openChange");
+      const found = rows.find((r) => r.id === id && r.org_id === orgId);
+      if (!found) return "missing";
+      found.number_change_until = until;
       return found;
     },
     consents: async (_orgId, ids) =>
@@ -176,31 +189,93 @@ describe("checkRosterContact", () => {
 
 describe("textsStatus", () => {
   const at = "2026-11-19T23:21:48.464097+00:00";
+  const none = { agreedOn: null, stoppedOn: null, confirmed: false };
   it("says agreed with the day for a live agreement, whatever was stopped before", () => {
     expect(
       textsStatus([
         { agreed_at: "2026-10-01T00:00:00Z", revoked_at: "2026-10-02T00:00:00Z" },
         { agreed_at: at, revoked_at: null },
       ]),
-    ).toEqual({ texts: "agreed", agreedOn: "2026-11-19" });
+    ).toEqual({ texts: "agreed", agreedOn: "2026-11-19", stoppedOn: null, confirmed: false });
   });
-  it("says stopped when every agreement was stopped, none when there is nothing, unknown when the read failed", () => {
-    expect(textsStatus([{ agreed_at: at, revoked_at: at }])).toEqual({
-      texts: "stopped",
-      agreedOn: null,
-    });
-    expect(textsStatus([])).toEqual({ texts: "none", agreedOn: null });
-    expect(textsStatus(null)).toEqual({ texts: "unknown", agreedOn: null });
+  it("says stopped with the latest day, none when there is nothing, unknown when the read failed", () => {
+    expect(
+      textsStatus([
+        { agreed_at: "2026-10-01T00:00:00Z", revoked_at: "2026-10-02T00:00:00Z" },
+        { agreed_at: at, revoked_at: "2026-11-20T08:00:00Z" },
+      ]),
+    ).toEqual({ texts: "stopped", agreedOn: null, stoppedOn: "2026-11-20", confirmed: false });
+    expect(textsStatus([])).toEqual({ texts: "none", ...none });
+    expect(textsStatus(null)).toEqual({ texts: "unknown", ...none });
   });
   it("gives no day rather than a wrong one when the date is missing or odd", () => {
     expect(textsStatus([{ agreed_at: null, revoked_at: null }])).toEqual({
       texts: "agreed",
-      agreedOn: null,
+      ...none,
     });
     expect(textsStatus([{ agreed_at: "yesterday", revoked_at: null }])).toEqual({
       texts: "agreed",
-      agreedOn: null,
+      ...none,
     });
+    expect(textsStatus([{ agreed_at: at, revoked_at: "soon" }])).toEqual({
+      texts: "stopped",
+      ...none,
+    });
+  });
+  it("is confirmed only when the live agreement carries a real confirmation date", () => {
+    expect(textsStatus([{ agreed_at: at, revoked_at: null, confirmed_at: at }]).confirmed).toBe(
+      true,
+    );
+    expect(textsStatus([{ agreed_at: at, revoked_at: null, confirmed_at: null }]).confirmed).toBe(
+      false,
+    );
+    expect(textsStatus([{ agreed_at: at, revoked_at: null }]).confirmed).toBe(false);
+    expect(textsStatus([{ agreed_at: at, revoked_at: null, confirmed_at: "true" }]).confirmed).toBe(
+      false,
+    );
+    // A confirmation on an agreement that has since ended says nothing about the live one.
+    expect(
+      textsStatus([
+        { agreed_at: "2026-10-01T00:00:00Z", revoked_at: "2026-10-02T00:00:00Z", confirmed_at: at },
+        { agreed_at: at, revoked_at: null },
+      ]).confirmed,
+    ).toBe(false);
+    expect(textsStatus([{ agreed_at: at, revoked_at: at, confirmed_at: at }]).confirmed).toBe(
+      false,
+    );
+  });
+});
+
+describe("changeOpenUntil and filterRoster", () => {
+  const now = new Date("2026-11-20T12:00:00Z");
+  it("gives the closing day only for a window still open", () => {
+    expect(changeOpenUntil("2026-11-27T12:00:00Z", now)).toBe("2026-11-27");
+    expect(changeOpenUntil("2026-11-20T11:59:59Z", now)).toBeNull();
+    for (const odd of [null, undefined, "", "next week"])
+      expect(changeOpenUntil(odd, now)).toBeNull();
+  });
+
+  const people = [
+    { name: "Tomás Ó Briain-Lee", role: "Health economics", firm: "St. Brigid Partners" },
+    { name: "Dana Whitlock", role: "Pricing", firm: null },
+    { name: "Eli Zhang", role: null, firm: "Brigid & Co" },
+  ];
+  it("matches every word typed against name, role and firm, ignoring case and accents", () => {
+    expect(filterRoster(people, "tomas").map((p) => p.name)).toEqual(["Tomás Ó Briain-Lee"]);
+    expect(filterRoster(people, "BRIGID").map((p) => p.name)).toEqual([
+      "Tomás Ó Briain-Lee",
+      "Eli Zhang",
+    ]);
+    expect(filterRoster(people, "brigid health").map((p) => p.name)).toEqual([
+      "Tomás Ó Briain-Lee",
+    ]);
+    expect(filterRoster(people, "pricing dana")).toHaveLength(1);
+    expect(filterRoster(people, "nobody")).toEqual([]);
+  });
+  it("shows everyone for an empty or blank search, and treats pattern characters as plain text", () => {
+    expect(filterRoster(people, "   ")).toHaveLength(3);
+    expect(filterRoster(people, ".*")).toEqual([]);
+    expect(filterRoster(people, "st.")).toHaveLength(1);
   });
 });
 
@@ -265,6 +340,9 @@ describe("listRoster", () => {
             firm: null,
             texts: "agreed",
             agreedOn: "2026-11-19",
+            stoppedOn: null,
+            confirmed: false,
+            changeUntil: null,
             linkPath: `/texts?w=${ORG}&c=${DANA}`,
           },
         ],
@@ -478,6 +556,107 @@ describe("saveRosterContact", () => {
   });
 });
 
+describe("requestNumberChange", () => {
+  const now = new Date("2026-11-20T12:00:00Z");
+  const agreed: ConsentMarkRow[] = [
+    { roster_contact_id: DANA, agreed_at: "2026-11-19T00:00:00Z", revoked_at: null },
+  ];
+  const ask = { profile_id: null, id: DANA };
+
+  it("opens a seven day window for an admin and a lead, on a person with a live agreement", async () => {
+    for (const role of ["admin", "lead"]) {
+      const { deps, rows, writes } = world({ role, marks: agreed });
+      expect(await requestNumberChange(deps, ask, now)).toMatchObject({
+        ok: true,
+        contact: { id: DANA, texts: "agreed", changeUntil: "2026-11-27" },
+      });
+      expect(rows[0]?.number_change_until).toBe("2026-11-27T12:00:00.000Z");
+      expect(writes).toEqual(["openChange"]);
+      expect(NUMBER_CHANGE_DAYS).toBe(7);
+    }
+  });
+
+  it("refuses every other role with a 403 before any read or write", async () => {
+    for (const role of ["em", "manager", "analyst", "coach", "guest"]) {
+      const { deps, writes } = world({ role, marks: agreed });
+      const one = vi.spyOn(deps, "one");
+      await expect(requestNumberChange(deps, ask, now)).rejects.toMatchObject({ status: 403 });
+      expect(one).not.toHaveBeenCalled();
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("answers 'missing' for no id and for a person in another workspace, and opens nothing there", async () => {
+    const theirs = row({ id: "0000000c-0000-4000-8000-0000000000bb", org_id: OTHER_ORG });
+    const { deps, rows, writes } = world({
+      rows: [row(), theirs],
+      marks: [
+        { roster_contact_id: theirs.id, agreed_at: "2026-11-19T00:00:00Z", revoked_at: null },
+      ],
+    });
+    expect(await requestNumberChange(deps, { profile_id: null, id: theirs.id }, now)).toEqual({
+      ok: false,
+      reason: "missing",
+    });
+    expect(await requestNumberChange(deps, { profile_id: null, id: null }, now)).toEqual({
+      ok: false,
+      reason: "missing",
+    });
+    expect(rows[1]?.number_change_until).toBeUndefined();
+    expect(writes).toEqual([]);
+  });
+
+  it("opens nothing for someone with no live agreement, or one that was stopped", async () => {
+    const stopped: ConsentMarkRow[] = [
+      {
+        roster_contact_id: DANA,
+        agreed_at: "2026-11-01T00:00:00Z",
+        revoked_at: "2026-11-02T00:00:00Z",
+      },
+    ];
+    for (const marks of [[], stopped]) {
+      const { deps, writes } = world({ marks });
+      expect(await requestNumberChange(deps, ask, now)).toEqual({
+        ok: false,
+        reason: "not_agreed",
+      });
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("opens nothing on a guess: a failed read or write says it did not go through", async () => {
+    for (const over of [
+      { consents: async () => null },
+      { one: async () => null },
+      { openChange: async () => null },
+    ] as Partial<RosterDeps>[]) {
+      expect(await requestNumberChange(world({ marks: agreed, ...over }).deps, ask, now)).toEqual({
+        ok: false,
+        reason: "unavailable",
+      });
+    }
+    const thrown = world({
+      marks: agreed,
+      openChange: async () => {
+        throw new Error(SECRET_NUMBER);
+      },
+    });
+    expect(await requestNumberChange(thrown.deps, ask, now)).toEqual({
+      ok: false,
+      reason: "unavailable",
+    });
+  });
+
+  it("shows the window on the list while it is open, and not once it has passed", async () => {
+    const open = world({ rows: [row({ number_change_until: "2099-01-08T00:00:00Z" })] });
+    expect(await listRoster(open.deps)).toMatchObject({
+      contacts: [{ changeUntil: "2099-01-08" }],
+    });
+    const past = world({ rows: [row({ number_change_until: "2020-01-01T00:00:00Z" })] });
+    expect(await listRoster(past.deps)).toMatchObject({ contacts: [{ changeUntil: null }] });
+  });
+});
+
 describe("the floors, read from the source", () => {
   const server = readFileSync("src/lib/roster.server.ts", "utf8");
   const shared = readFileSync("src/lib/roster-shared.ts", "utf8");
@@ -486,10 +665,18 @@ describe("the floors, read from the source", () => {
   const sql = readFileSync("supabase/migrations/20261120000000_roster_contacts.sql", "utf8");
   const code = (source: string) => source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 
-  it("asks message_consents for the person and two dates only, never the number or the name", () => {
-    expect(CONSENT_COLUMNS).toBe("roster_contact_id, agreed_at, revoked_at");
-    const reads = [...server.matchAll(/from\("message_consents"\)\s*\.(\w+)\(([^)]*)\)/g)];
-    expect(reads.map((m) => `${m[1]}(${m[2]})`)).toEqual(["select(CONSENT_COLUMNS)"]);
+  it("asks message_consents for the person and three dates only, never the number or the name", () => {
+    expect(CONSENT_COLUMNS).toBe("roster_contact_id, agreed_at, revoked_at, confirmed_at");
+    expect(server).toContain(
+      'const BASE_CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at";',
+    );
+    // One place touches the table, it only selects, and only with one of those two column lists.
+    const touches = [...server.matchAll(/from\("message_consents"\)\s*\.(\w+)\(([^)]*)\)/g)];
+    expect(touches.map((m) => `${m[1]}(${m[2]})`)).toEqual(["select(columns)"]);
+    expect(server.match(/read\((\w+)\)/g)).toEqual([
+      "read(CONSENT_COLUMNS)",
+      "read(BASE_CONSENT_COLUMNS)",
+    ]);
     expect(code(server) + code(shared) + code(fns) + code(panel)).not.toMatch(
       /phone_|e164|\.phone\b|\bphone\s*[:=]|select\("\*"\)/i,
     );
@@ -501,12 +688,20 @@ describe("the floors, read from the source", () => {
     const logs = [...server.matchAll(/console\.\w+\(([^)]*)\)/g)].map((m) => m[1]);
     expect(logs).toHaveLength(1);
     expect(logs[0]).not.toMatch(/message|details|row|fields|name|data/i);
+    expect(server.match(/logFailure\("[a-z ]+", error\)/g)).toHaveLength(
+      server.match(/logFailure\(/g)!.length - 1,
+    );
     expect(shared + fns + panel).not.toMatch(/console\./);
   });
 
-  it("puts sign-in in front of both functions and takes no workspace from the browser", () => {
-    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(2);
-    expect(fns.match(/createServerFn\(/g)).toHaveLength(2);
+  it("puts sign-in in front of all three functions and takes no workspace or number from the browser", () => {
+    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(3);
+    expect(fns.match(/createServerFn\(/g)).toHaveLength(3);
+    expect(
+      Object.keys(
+        rosterChangeInput({ id: DANA, profile_id: ORG, phone: SECRET_NUMBER, until: "2099-01-01" }),
+      ),
+    ).toEqual(["profile_id", "id"]);
     expect(code(shared)).not.toMatch(/org_id|orgId: text|raw\["org/);
     expect(server).toMatch(/requireFirmMember\(/);
   });
@@ -514,7 +709,7 @@ describe("the floors, read from the source", () => {
   it("scopes every roster write and read to the caller's workspace", () => {
     const real = server.slice(server.indexOf("export async function realDeps"));
     const calls = real.split('.from("roster_contacts")').slice(1);
-    expect(calls).toHaveLength(4);
+    expect(calls).toHaveLength(6);
     for (const call of calls)
       expect(call.slice(0, call.indexOf(";"))).toMatch(/\.eq\("org_id", orgId\)|org_id: orgId/);
     expect(real).not.toMatch(/\.delete\(/);

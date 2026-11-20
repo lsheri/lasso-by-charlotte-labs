@@ -28,6 +28,12 @@ export type RosterContact = {
   texts: RosterTexts;
   /** The day they agreed, YYYY-MM-DD, when texts is "agreed". */
   agreedOn: string | null;
+  /** The day they stopped, when texts is "stopped". */
+  stoppedOn: string | null;
+  /** True once a message has arrived from their number. Agreeing on the page alone never sets it. */
+  confirmed: boolean;
+  /** The day their link stops accepting a new number, when an admin or lead has asked for one. */
+  changeUntil: string | null;
   /** The path of this person's own text agreement link. The page puts its own address in front. */
   linkPath: string;
 };
@@ -57,6 +63,11 @@ export type RosterSaveResult =
   | { ok: true; contact: RosterContact }
   | { ok: false; reason: "invalid"; problems: RosterProblem[] }
   | { ok: false; reason: "missing" | "full" | "unavailable" };
+
+export type RosterChangeInput = { profile_id: string | null; id: string | null };
+export type RosterChangeResult =
+  | { ok: true; contact: RosterContact }
+  | { ok: false; reason: "missing" | "not_agreed" | "unavailable" };
 
 /** Admins and the firm's own leads. The same two roles that manage members. */
 export function canManageRoster(role: string | null | undefined): boolean {
@@ -104,27 +115,73 @@ export function checkRosterContact(
   };
 }
 
-export type ConsentMark = { agreed_at: string | null; revoked_at: string | null };
+export type ConsentMark = {
+  agreed_at: string | null;
+  revoked_at: string | null;
+  /** Set only when a message arrived from the number. Absent before that column exists. */
+  confirmed_at?: string | null;
+};
+
+const day = (value: string | null | undefined): string | null =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null;
+
+export type TextsStatus = Pick<RosterContact, "texts" | "agreedOn" | "stoppedOn" | "confirmed">;
 
 /**
  * One word for a person's agreements. A live one wins, whatever came before. Only stopped ones means stopped.
- * `null` rows means the read failed: say so, never guess "none".
+ * `null` rows means the read failed: say so, never guess "none". `confirmed` is true only when a message has
+ * arrived from the number on the live agreement.
  */
-export function textsStatus(rows: readonly ConsentMark[] | null): {
-  texts: RosterTexts;
-  agreedOn: string | null;
-} {
-  if (rows === null) return { texts: "unknown", agreedOn: null };
+export function textsStatus(rows: readonly ConsentMark[] | null): TextsStatus {
+  const nothing = { agreedOn: null, stoppedOn: null, confirmed: false };
+  if (rows === null) return { texts: "unknown", ...nothing };
   const live = rows.filter((row) => row.revoked_at === null);
   if (live.length > 0) {
-    const first = live.map((row) => row.agreed_at ?? "").sort()[0] ?? "";
+    const first = [...live].sort((a, b) => (a.agreed_at ?? "").localeCompare(b.agreed_at ?? ""))[0];
     return {
       texts: "agreed",
-      agreedOn: /^\d{4}-\d{2}-\d{2}/.test(first) ? first.slice(0, 10) : null,
+      agreedOn: day(first?.agreed_at),
+      stoppedOn: null,
+      confirmed: live.some((row) => day(row.confirmed_at) !== null),
     };
   }
-  return { texts: rows.length > 0 ? "stopped" : "none", agreedOn: null };
+  if (rows.length === 0) return { texts: "none", ...nothing };
+  const last = rows
+    .map((row) => row.revoked_at ?? "")
+    .sort()
+    .at(-1);
+  return { texts: "stopped", agreedOn: null, stoppedOn: day(last), confirmed: false };
 }
+
+/** How long a person has to enter a new number once an admin or lead asks for one. */
+export const NUMBER_CHANGE_DAYS = 7;
+
+/** The day a number-change window closes, or null when none is open at `now`. */
+export function changeOpenUntil(
+  until: string | null | undefined,
+  now: Date = new Date(),
+): string | null {
+  if (typeof until !== "string") return null;
+  const at = Date.parse(until);
+  return Number.isFinite(at) && at > now.getTime() ? day(new Date(at).toISOString()) : null;
+}
+
+/** People whose name, role or firm contains every word typed, in any order, ignoring case and accents. */
+export function filterRoster<T extends Pick<RosterContact, "name" | "role" | "firm">>(
+  contacts: readonly T[],
+  query: string,
+): T[] {
+  const fold = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [...contacts];
+  return contacts.filter((contact) => {
+    const hay = fold([contact.name, contact.role ?? "", contact.firm ?? ""].join(" "));
+    return words.every((word) => hay.includes(word));
+  });
+}
+
+/** The search box appears once the list is longer than a screen reads at a glance. */
+export const ROSTER_SEARCH_FROM = 8;
 
 /** This person's own agreement link. Both ids are checked on the server when the link is used. */
 export function rosterLinkPath(orgId: string, contactId: string): string {
@@ -152,6 +209,11 @@ export function rosterSaveInput(input: unknown): RosterSaveInput {
   };
 }
 
+export function rosterChangeInput(input: unknown): RosterChangeInput {
+  const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  return { profile_id: cleanWorkspace(raw["profile_id"]), id: cleanWorkspace(raw["id"]) };
+}
+
 export const ROSTER_COPY = {
   heading: "People we work with",
   intro:
@@ -169,6 +231,27 @@ export const ROSTER_COPY = {
   copyFailed: "Could not copy. Select the link below and copy it.",
   linkLabel: (name: string) => `Text agreement link for ${name}`,
   independent: "Independent",
+  search: "Search people",
+  searchHint: "Name, role or firm",
+  noMatch: "Nobody matches that. Clear the search to see everyone.",
+  clearSearch: "Clear search",
+  count: (shown: number, total: number, agreed: number) =>
+    `${shown === total ? total : `${shown} of ${total}`} ${total === 1 ? "person" : "people"}, ${agreed} agreed to texts`,
+  stoppedOn: (day: string) => `Stopped ${day}`,
+  confirmed: "Number confirmed by a reply",
+  notConfirmed: "Number not confirmed yet",
+  newNumber: "Ask for a new number",
+  newNumberLabel: (name: string) => `Ask ${name} for a new number`,
+  newNumberDone: (day: string) =>
+    `Link copied. Until ${day} it takes one new number from them and ends the old one. Send it to them yourself; nothing was sent.`,
+  newNumberNoCopy: (day: string) =>
+    `Until ${day} their link takes one new number and ends the old one. Could not copy; select the link below and send it to them.`,
+  changeOpen: (day: string) => `Waiting for a new number until ${day}`,
+  changeFailures: {
+    missing: "That person is no longer on the list. Reload the page.",
+    not_agreed: "They have no live text agreement to change. Send them their link to agree.",
+    unavailable: "That did not go through. Nothing was changed. Try again in a moment.",
+  },
   texts: {
     agreed: "Agreed to texts",
     stopped: "Stopped texts",

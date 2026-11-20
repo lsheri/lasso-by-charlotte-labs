@@ -27,6 +27,9 @@ export type TextConsentInput = {
   /** The roster person a link names (19 Nov). Kept only if that person is in the link's workspace. */
   contact?: string | null;
 };
+export type TextStopInput = { phone: string; workspace?: string | null; contact?: string | null };
+export type TextStopResult =
+  { ok: true } | { ok: false; reason: "invalid" | "busy" | "unavailable" };
 export type TextConsentRecord = {
   name: string;
   phone: string;
@@ -97,6 +100,39 @@ export function checkTextConsent(
     record: { name, phone, workspace, contact: workspace ? cleanWorkspace(input?.contact) : null },
   };
 }
+
+/** The stop form's one rule: a real number. The link's ids are kept only as a pair, as for agreeing. */
+export function checkTextStop(
+  input: Partial<Record<keyof TextStopInput, unknown>> | null | undefined,
+):
+  | { ok: true; record: { phone: string; workspace: string | null; contact: string | null } }
+  | { ok: false } {
+  const phone = normalizePhone(input?.phone);
+  if (!phone) return { ok: false };
+  const workspace = cleanWorkspace(input?.workspace);
+  const contact = workspace ? cleanWorkspace(input?.contact) : null;
+  return { ok: true, record: { phone, workspace: contact ? workspace : null, contact } };
+}
+
+export const TEXT_STOP_COPY = {
+  open: "Stop texts",
+  heading: "Stop texts from this firm",
+  intro:
+    "Enter the mobile number you agreed with and the texts from this firm stop. You can also reply STOP to any text, which stops them all.",
+  phoneLabel: "Mobile number to stop",
+  submit: "Stop texts",
+  sending: "Stopping",
+  cancel: "Keep texts",
+  problem: "Enter the mobile number you agreed with, with its area code.",
+  failures: {
+    invalid: "Enter the mobile number you agreed with, with its area code.",
+    busy: "Too many tries from here. Wait a few minutes, then try again.",
+    unavailable:
+      "That did not go through. Nothing was changed. Try again in a moment, or reply STOP to any text.",
+  } satisfies Record<Exclude<TextStopResult, { ok: true }>["reason"], string>,
+  doneHeading: "Done",
+  done: "If that number was getting texts through this link, they have stopped. You can agree again any time from the same link.",
+} as const;
 
 export const TEXT_CONSENT_COPY = {
   label: "Text messages",

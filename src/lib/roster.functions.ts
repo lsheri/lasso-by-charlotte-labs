@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  rosterChangeInput,
   rosterListInput,
   rosterSaveInput,
+  type RosterChangeResult,
   type RosterList,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
@@ -29,4 +31,15 @@ export const saveRosterContactFn = createServerFn({ method: "POST" })
   .inputValidator(rosterSaveInput)
   .handler(async ({ data, context }): Promise<RosterSaveResult> =>
     (await import("./roster.server")).rosterHandlers.save(context as never, data),
+  );
+
+/**
+ * Asks one roster person for a new number: opens a short window in which their own link accepts one. Admins and
+ * leads only. Takes an id and nothing else; no number is typed, sent or returned.
+ */
+export const askNewNumberFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(rosterChangeInput)
+  .handler(async ({ data, context }): Promise<RosterChangeResult> =>
+    (await import("./roster.server")).rosterHandlers.askNewNumber(context as never, data),
   );

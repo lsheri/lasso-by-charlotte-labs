@@ -27,10 +27,13 @@ type World = {
   countWorks: boolean;
   send: TextSendResult;
   firm: string;
+  /** Real workspaces: the proposal the board came from, and who agreed. */
+  lead: { contactId: string | null; name: string | null } | null;
+  agreed: Record<string, string>;
 };
 
 function world(over: Partial<World> = {}) {
-  const w: World = { role: "admin", orgId: KESTREL_BAY_ORG_ID, board: { archived: false, won: true }, recipient: NUMBER, config: CONFIG, presses: 0, recordWorks: true, countWorks: true, send: { outcome: "accepted" }, firm: "Kestrel Bay", ...over };
+  const w: World = { role: "admin", orgId: KESTREL_BAY_ORG_ID, board: { archived: false, won: true }, recipient: NUMBER, config: CONFIG, presses: 0, recordWorks: true, countWorks: true, send: { outcome: "accepted" }, firm: "Kestrel Bay", lead: null, agreed: {}, ...over };
   const sends: { to: string; text: string; idempotencyKey: string }[] = [];
   const results: string[] = [];
   const caller: WonTextCaller = { profileId: "p1", orgId: w.orgId, role: w.role, userId: "u1" };
@@ -41,6 +44,8 @@ function world(over: Partial<World> = {}) {
     brandName: () => "Lasso",
     demo: async (orgId) => orgId === KESTREL_BAY_ORG_ID,
     recipient: async (orgId) => (orgId === w.orgId ? w.recipient : null),
+    lead: async (orgId) => (orgId === w.orgId ? w.lead : null),
+    agreedNumber: async (orgId, contactId) => w.agreed[`${orgId}/${contactId}`] ?? null,
     config: () => w.config,
     recordPress: async () => {
       if (w.recordWorks) w.presses += 1;
@@ -109,7 +114,7 @@ describe("the words", () => {
   });
 
   it("has no long dash anywhere in its copy", () => {
-    for (const line of [...Object.values(WON_TEXT_COPY), ...Object.values(WON_TEXT_PROBLEMS)]) expect(line).not.toMatch(/[\u2013\u2014]/);
+    for (const line of [...Object.values(WON_TEXT_COPY).map((value) => (typeof value === "function" ? value("x") : value)), ...Object.values(WON_TEXT_PROBLEMS)]) expect(line).not.toMatch(/[\u2013\u2014]/);
   });
 });
 
@@ -174,9 +179,9 @@ describe("who has the button", () => {
     expect(results).toEqual([]);
   });
 
-  it("is for demo workspaces only, decided on the server, with no workspace named in the code", () => {
+  it("a demo workspace is admin only, a real one admin or lead, decided on the server with no workspace named in the code", () => {
     const source = readFileSync("src/lib/won-text.server.ts", "utf8");
-    expect(source).toContain('caller.role === "admin" && (await deps.demo(caller.orgId))');
+    expect(source).toContain('const allowed = demo ? caller.role === "admin" : canManageRoster(caller.role);');
     expect(source).not.toContain("KESTREL_BAY_ORG_ID");
   });
 
@@ -366,5 +371,72 @@ describe("wiring", () => {
     const screen = read("src/components/firm-brain/WonTextButton.tsx");
     expect(screen).not.toMatch(/posthog|featureFlag|useFlag/i);
     expect(screen).not.toMatch(/type="tel"|phone_number|\bto:/);
+  });
+});
+
+describe("a real workspace (20 Nov): the text goes to the picked lead, and only with their own agreement", () => {
+  const REAL = "22222222-2222-4222-8222-222222222222";
+  const LEAD_ID = "33333333-3333-4333-8333-333333333333";
+  const LEAD_NUMBER = "+12065550142";
+  const real = (over: Partial<World> = {}) => world({ orgId: REAL, recipient: null, firm: "Northwind Partners", lead: { contactId: LEAD_ID, name: "Christy Johnson" }, agreed: { [`${REAL}/${LEAD_ID}`]: LEAD_NUMBER }, ...over });
+
+  it.each(["admin", "lead"])("an %s sends to the lead's agreed number, once", async (role) => {
+    const { deps, sends, results } = real({ role });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: true, connected: true, needsNumber: false, preview: wonTextBody({ brandName: "Lasso", firmName: "Northwind Partners" }) });
+    expect(await sendWonText(deps, input)).toEqual({ ok: true });
+    expect(sends.map((sent) => sent.to)).toEqual([LEAD_NUMBER]);
+    expect(results).toEqual(["accepted"]);
+  });
+
+  it.each(["em", "manager", "analyst", "coach", "guest"])("a %s has no button and a direct call sends nothing", async (role) => {
+    const { deps, sends } = real({ role });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: false });
+    expect(await status(sendWonText(deps, input))).toBe(403);
+    expect(sends).toEqual([]);
+  });
+
+  it("no agreement, no send, and the screen says so plainly", async () => {
+    const { deps, sends } = real({ agreed: {} });
+    expect(await wonTextStatus(deps, input)).toMatchObject({ show: true, connected: false, needsNumber: false, blocked: WON_TEXT_COPY.notAgreed("Christy Johnson") });
+    expect(await sendWonText(deps, input)).toEqual({ ok: false, problem: WON_TEXT_COPY.notAgreed("Christy Johnson") });
+    expect(sends).toEqual([]);
+  });
+
+  it("an agreement in another workspace, or a stored value that is not a full number, does not count", async () => {
+    for (const agreed of [{ [`${KESTREL_BAY_ORG_ID}/${LEAD_ID}`]: LEAD_NUMBER }, { [`${REAL}/${LEAD_ID}`]: "2065550142" }]) {
+      const { deps, sends } = real({ agreed });
+      expect((await sendWonText(deps, input)).ok).toBe(false);
+      expect(sends).toEqual([]);
+    }
+  });
+
+  it("no lead picked: says so and sends nothing", async () => {
+    const { deps, sends } = real({ lead: { contactId: null, name: null } });
+    expect(await wonTextStatus(deps, input)).toMatchObject({ show: true, connected: false, blocked: WON_TEXT_COPY.noLead });
+    expect(await sendWonText(deps, input)).toEqual({ ok: false, problem: WON_TEXT_COPY.noLead });
+    expect(sends).toEqual([]);
+  });
+
+  it("a board that did not come from a proposal has no button, and the demo number is never used", async () => {
+    const { deps, sends } = real({ lead: null, recipient: NUMBER });
+    expect(await wonTextStatus(deps, input)).toEqual({ show: false });
+    expect(await status(sendWonText(deps, input))).toBe(403);
+    const withLead = real({ recipient: NUMBER });
+    await sendWonText(withLead.deps, input);
+    expect(withLead.sends.map((sent) => sent.to)).toEqual([LEAD_NUMBER]);
+    expect(sends).toEqual([]);
+  });
+
+  it("a demo workspace still sends to its demo number, never to the lead", async () => {
+    const { deps, sends } = world({ lead: { contactId: LEAD_ID, name: "Christy Johnson" }, agreed: { [`${KESTREL_BAY_ORG_ID}/${LEAD_ID}`]: LEAD_NUMBER } });
+    expect(await sendWonText(deps, input)).toEqual({ ok: true });
+    expect(sends.map((sent) => sent.to)).toEqual([NUMBER]);
+  });
+
+  it("the real wiring reads the lead and the agreement inside the caller's workspace", () => {
+    const source = readFileSync("src/lib/won-text.server.ts", "utf8");
+    expect(source).toMatch(/from\("proposals"\)\.select\("lead_contact_id"\)\.eq\("org_id", orgId\)\.eq\("engagement_id", engagementId\)/);
+    expect(source).toMatch(/from\("roster_contacts"\)\.select\("full_name"\)\.eq\("org_id", orgId\)\.eq\("id", contactId\)/);
+    expect(source).toContain("numberFor(orgId, contactId)");
   });
 });

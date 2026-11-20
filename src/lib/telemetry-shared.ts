@@ -564,6 +564,12 @@ export type TelemetryEvent =
   | "proposal_text.pressed"
   /** 19 Nov, Proposal Desk: what that press came to. Dims: channel (sms), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */
   | "proposal_text.result"
+  /** 20 Nov, Proposal Desk: what a press of "Ask them to lead" came to. Dims: mode (real | demo | practice), outcome (accepted | opted_out | capped | refused | failed). Never a phone number, a name or the words. Portal registration required. */
+  | "lead_ask.result"
+  /** 20 Nov, Proposal Desk: a lead answered an ask. Dims: mode (real | demo | practice), reply (yes | no | stop). Never who, never how long it took. Portal registration required. */
+  | "lead_ask.replied"
+  /** 20 Nov, Proposal Desk: an open proposal was closed as lost, or archived as made by mistake. Dim: change (lost | archived). Never a title, a client or a person. Portal registration required. */
+  | "proposal.closed"
   /** 17 Nov, firm brain: the red pen checked a deliverable. Dims: claims, unsupported, weak (bucketed counts). Portal registration required. */
   | "red_pen.ran"
   /** 17 Nov, firm brain: a red pen claim's source was opened. Dims: grade (sourced | weak | unsupported). Portal registration required. */

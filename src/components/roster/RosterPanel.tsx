@@ -16,14 +16,17 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { tagVariants } from "@/components/ui/tag";
 import {
   checkRosterContact,
+  filterRoster,
   ROSTER_COPY as COPY,
+  ROSTER_SEARCH_FROM,
+  type RosterChangeResult,
   type RosterContact,
   type RosterList,
   type RosterProblem,
   type RosterSaveInput,
   type RosterSaveResult,
 } from "@/lib/roster-shared";
-import { listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
+import { askNewNumberFn, listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
 
 /**
  * 19 Nov 2026, Proposal Desk: the roster, "People we work with". People a firm brings in on proposals who have no
@@ -35,11 +38,13 @@ import { listRosterFn, saveRosterContactFn } from "@/lib/roster.functions";
 export function RosterPanel({ profileId }: { profileId: string | null | undefined }) {
   const load = useServerFn(listRosterFn);
   const save = useServerFn(saveRosterContactFn);
+  const askNewNumber = useServerFn(askNewNumberFn);
   return (
     <RosterView
       profileId={profileId ?? null}
       load={(id) => load({ data: { profile_id: id } })}
       save={(input) => save({ data: input })}
+      askNewNumber={(id, contactId) => askNewNumber({ data: { profile_id: id, id: contactId } })}
       copyText={(text) => navigator.clipboard.writeText(text)}
       origin={typeof window === "undefined" ? "" : window.location.origin}
     />
@@ -50,6 +55,8 @@ export type RosterViewProps = {
   profileId: string | null;
   load: (profileId: string | null) => Promise<RosterList>;
   save: (input: RosterSaveInput) => Promise<RosterSaveResult>;
+  /** Opens the window in which this person's link takes one new number. No number passes through here. */
+  askNewNumber: (profileId: string | null, contactId: string) => Promise<RosterChangeResult>;
   copyText: (text: string) => Promise<void>;
   /** The site's address, put in front of each person's link. */
   origin: string;
@@ -61,21 +68,41 @@ type Loaded =
   | { state: "hidden" }
   | { state: "ready"; contacts: RosterContact[] };
 type Editing = { contact: RosterContact | null } | null;
+/** The line under one row after a press: what happened, in words, and the link when it could not be copied. */
+type Note = { id: string; tone: "status" | "alert"; text: string; showLink: boolean } | null;
 
 const byName = (a: RosterContact, b: RosterContact) => a.name.localeCompare(b.name);
 
 /** Props in, effects out, so the tests can drive it without a server. */
-export function RosterView({ profileId, load, save, copyText, origin }: RosterViewProps) {
+export function RosterView({
+  profileId,
+  load,
+  save,
+  askNewNumber,
+  copyText,
+  origin,
+}: RosterViewProps) {
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
   const [editing, setEditing] = useState<Editing>(null);
-  const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null);
+  const [note, setNote] = useState<Note>(null);
+  const [query, setQuery] = useState("");
+  const [asking, setAsking] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let current = true;
     setLoaded({ state: "loading" });
     setEditing(null);
-    setCopied(null);
+    setNote(null);
+    setQuery("");
+    setAsking(null);
     Promise.resolve()
       .then(() => load(profileId))
       .then((list) => {
@@ -96,7 +123,7 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, attempt]);
 
-  const saved = useCallback((contact: RosterContact) => {
+  const put = useCallback((contact: RosterContact) => {
     setLoaded((now) =>
       now.state === "ready"
         ? {
@@ -105,19 +132,67 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
           }
         : now,
     );
-    setEditing(null);
   }, []);
+  const saved = useCallback(
+    (contact: RosterContact) => {
+      put(contact);
+      setEditing(null);
+    },
+    [put],
+  );
 
   if (loaded.state === "hidden") return null;
 
   async function copy(contact: RosterContact) {
     try {
       await copyText(origin + contact.linkPath);
-      setCopied({ id: contact.id, ok: true });
+      setNote({ id: contact.id, tone: "status", text: COPY.copied, showLink: false });
     } catch {
-      setCopied({ id: contact.id, ok: false });
+      setNote({ id: contact.id, tone: "alert", text: COPY.copyFailed, showLink: true });
     }
   }
+
+  async function askForNewNumber(contact: RosterContact) {
+    if (asking) return;
+    setAsking(contact.id);
+    setNote(null);
+    const startedFor = profileId;
+    let result: RosterChangeResult | "error";
+    try {
+      result = await askNewNumber(profileId, contact.id);
+    } catch {
+      result = "error";
+    }
+    // The person switched workspace or left while this was out: say nothing on the wrong list.
+    if (!live.current || startedFor !== profileId) return;
+    setAsking(null);
+    if (result === "error")
+      return setNote({
+        id: contact.id,
+        tone: "alert",
+        text: COPY.changeFailures.unavailable,
+        showLink: false,
+      });
+    if (!result.ok)
+      return setNote({
+        id: contact.id,
+        tone: "alert",
+        text: COPY.changeFailures[result.reason],
+        showLink: false,
+      });
+    put(result.contact);
+    const until = result.contact.changeUntil ?? "";
+    try {
+      await copyText(origin + result.contact.linkPath);
+      setNote({ id: contact.id, tone: "status", text: COPY.newNumberDone(until), showLink: false });
+    } catch {
+      setNote({ id: contact.id, tone: "alert", text: COPY.newNumberNoCopy(until), showLink: true });
+    }
+  }
+
+  const all = loaded.state === "ready" ? loaded.contacts : [];
+  const shown = filterRoster(all, query);
+  const searchable = all.length >= ROSTER_SEARCH_FROM;
 
   return (
     <section aria-labelledby="roster-heading" className="space-y-4">
@@ -155,13 +230,43 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
         </div>
       ) : null}
 
-      {loaded.state === "ready" && loaded.contacts.length === 0 ? (
+      {loaded.state === "ready" && all.length === 0 ? (
         <p className="text-sm text-muted-foreground">{COPY.empty}</p>
       ) : null}
 
-      {loaded.state === "ready" && loaded.contacts.length > 0 ? (
+      {all.length > 0 ? (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          {searchable ? (
+            <div className="w-full max-w-xs space-y-1">
+              <Label htmlFor="roster-search">{COPY.search}</Label>
+              <Input
+                id="roster-search"
+                type="search"
+                value={query}
+                placeholder={COPY.searchHint}
+                autoComplete="off"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+          ) : null}
+          <p aria-live="polite" className="text-(length:--type-label) text-muted-foreground">
+            {COPY.count(shown.length, all.length, all.filter((c) => c.texts === "agreed").length)}
+          </p>
+        </div>
+      ) : null}
+
+      {all.length > 0 && shown.length === 0 ? (
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span>{COPY.noMatch}</span>
+          <Button type="button" variant="outline" size="sm" onClick={() => setQuery("")}>
+            {COPY.clearSearch}
+          </Button>
+        </div>
+      ) : null}
+
+      {shown.length > 0 ? (
         <ul className="divide-y divide-border rounded-[var(--radius-control)] border border-border">
-          {loaded.contacts.map((contact) => (
+          {shown.map((contact) => (
             <li key={contact.id} className="space-y-2 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -182,11 +287,24 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
                     >
                       {COPY.texts[contact.texts]}
                     </span>
-                    {contact.texts === "agreed" && contact.agreedOn ? (
-                      <span className="text-(length:--type-label) text-muted-foreground">
-                        {COPY.agreedOn(contact.agreedOn)}
-                      </span>
-                    ) : null}
+                    <span className="text-(length:--type-label) text-muted-foreground">
+                      {[
+                        contact.texts === "agreed" && contact.agreedOn
+                          ? COPY.agreedOn(contact.agreedOn)
+                          : null,
+                        contact.texts === "agreed"
+                          ? contact.confirmed
+                            ? COPY.confirmed
+                            : COPY.notConfirmed
+                          : null,
+                        contact.texts === "stopped" && contact.stoppedOn
+                          ? COPY.stoppedOn(contact.stoppedOn)
+                          : null,
+                        contact.changeUntil ? COPY.changeOpen(contact.changeUntil) : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -199,6 +317,18 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
                   >
                     {COPY.copy}
                   </Button>
+                  {contact.texts === "agreed" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={asking !== null}
+                      aria-label={COPY.newNumberLabel(contact.name)}
+                      onClick={() => void askForNewNumber(contact)}
+                    >
+                      {COPY.newNumber}
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     variant="ghost"
@@ -210,22 +340,22 @@ export function RosterView({ profileId, load, save, copyText, origin }: RosterVi
                   </Button>
                 </div>
               </div>
-              {copied?.id === contact.id && copied.ok ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  {COPY.copied}
-                </p>
-              ) : null}
-              {copied?.id === contact.id && !copied.ok ? (
+              {note?.id === contact.id ? (
                 <div className="space-y-1">
-                  <p role="alert" className="text-sm">
-                    {COPY.copyFailed}
+                  <p
+                    role={note.tone}
+                    className={note.tone === "alert" ? "text-sm" : "text-sm text-muted-foreground"}
+                  >
+                    {note.text}
                   </p>
-                  <Input
-                    readOnly
-                    aria-label={COPY.linkLabel(contact.name)}
-                    value={origin + contact.linkPath}
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
+                  {note.showLink ? (
+                    <Input
+                      readOnly
+                      aria-label={COPY.linkLabel(contact.name)}
+                      value={origin + contact.linkPath}
+                      onFocus={(event) => event.currentTarget.select()}
+                    />
+                  ) : null}
                 </div>
               ) : null}
             </li>
