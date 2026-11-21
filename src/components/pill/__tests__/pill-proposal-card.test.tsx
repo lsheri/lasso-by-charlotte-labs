@@ -141,7 +141,7 @@ describe("the proposal card", () => {
     expect(t.land).not.toHaveBeenCalled();
   });
 
-  it("removes documents uploaded for a proposal that was never started", async () => {
+  it("uploads nothing until Start, so a card left behind leaves nothing in the person's work (QA M2 of PR 296)", async () => {
     const t = tools();
     const view = render(<PillProposalCard text={PASTE} tools={t} reduceMotion />);
     await waitFor(() => expect(card().getAttribute("data-proposal-card")).toBe("check"));
@@ -149,8 +149,53 @@ describe("the proposal card", () => {
       dataTransfer: { files: [new File(["x"], "a.pdf")] },
     });
     await waitFor(() => expect(screen.getByText("a.pdf")).toBeTruthy());
+    expect(t.capture).not.toHaveBeenCalled();
     view.unmount();
+    expect(t.capture).not.toHaveBeenCalled();
+    expect(t.discard).not.toHaveBeenCalled();
+  });
+
+  it("a document that fails to upload on Start starts nothing and removes what did upload", async () => {
+    const capture = vi
+      .fn()
+      .mockResolvedValueOnce({ ids: ["44444444-4444-4444-8444-444444444440"], failures: [] })
+      .mockResolvedValueOnce({ ids: [], failures: [{ name: "b.pdf", reason: "too big" }] });
+    const t = tools({ capture });
+    render(<PillProposalCard text={PASTE} tools={t} reduceMotion />);
+    await waitFor(() => expect(card().getAttribute("data-proposal-card")).toBe("check"));
+    fireEvent.drop(card().querySelector(".chat-pill__drop") as HTMLElement, {
+      dataTransfer: { files: [new File(["x"], "a.pdf"), new File(["y"], "b.pdf")] },
+    });
+    fireEvent.click(start());
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toBe(COPY.docsFailed("b.pdf")),
+    );
+    expect(t.create).not.toHaveBeenCalled();
     expect(t.discard).toHaveBeenCalledWith(["44444444-4444-4444-8444-444444444440"]);
+    expect(card().getAttribute("data-proposal-card")).toBe("check");
+  });
+
+  it("a refused start removes the documents it uploaded", async () => {
+    const t = tools({ create: vi.fn(async () => ({ ok: false as const, problem: "No." })) });
+    render(<PillProposalCard text={PASTE} tools={t} reduceMotion />);
+    await waitFor(() => expect(card().getAttribute("data-proposal-card")).toBe("check"));
+    fireEvent.drop(card().querySelector(".chat-pill__drop") as HTMLElement, {
+      dataTransfer: { files: [new File(["x"], "a.pdf")] },
+    });
+    fireEvent.click(start());
+    await waitFor(() =>
+      expect(t.discard).toHaveBeenCalledWith(["44444444-4444-4444-8444-444444444440"]),
+    );
+  });
+
+  it("offers to ask the firm instead, before anything is started", async () => {
+    const onAskInstead = vi.fn();
+    render(
+      <PillProposalCard text={PASTE} tools={tools()} reduceMotion onAskInstead={onAskInstead} />,
+    );
+    await waitFor(() => expect(card().getAttribute("data-proposal-card")).toBe("check"));
+    fireEvent.click(screen.getByRole("button", { name: COPY.askInstead }));
+    expect(onAskInstead).toHaveBeenCalledTimes(1);
   });
 
   it("says the daily limit plainly when the brief cannot be read, and reads again on Try again", async () => {
@@ -314,5 +359,40 @@ describe("the pill tells a brief from a question", () => {
     expect(p.box.placeholder).toBe(PILL_COPY.placeholder);
     p.send(PASTE);
     await waitFor(() => expect(p.onAsk).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe("asking the firm instead (QA M1 of PR 296)", () => {
+  it("takes the card away and asks the same words of the firm", async () => {
+    const onAsk = vi.fn(() => new Promise<never>(() => {}));
+    render(
+      <ChatPill
+        brandName="Lasso"
+        askLabel="Ask Lasso"
+        firstName="Maren"
+        place="home"
+        canAsk
+        questionMax={500}
+        starters={[]}
+        onAsk={onAsk}
+        onOpenOnCanvas={vi.fn()}
+        onOpenSource={vi.fn()}
+        reduceMotion
+        initialMode="open"
+        brief={{
+          render: (_text, context) => (
+            <button type="button" onClick={context.askInstead}>
+              instead
+            </button>
+          ),
+        }}
+      />,
+    );
+    const box = screen.getByLabelText(PILL_COPY.label) as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: PASTE } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "instead" }));
+    await waitFor(() => expect(onAsk).toHaveBeenCalledWith(PASTE, null));
+    expect(screen.queryByRole("button", { name: "instead" })).toBeNull();
   });
 });

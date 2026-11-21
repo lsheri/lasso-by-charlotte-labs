@@ -50,7 +50,7 @@ export type ChatPillMessage =
   | { id: number; kind: "brief"; text: string };
 
 /** What the pill hands a brief card: a way to tuck the chat away once the card has flown out of it. */
-export type BriefContext = { tuck: () => void };
+export type BriefContext = { tuck: () => void; askInstead: () => void };
 
 /**
  * 20 Nov 2026, chat pill PR 1a (Liam, D-97). The one place to ask, on every signed-in page: a pill that says where
@@ -401,9 +401,9 @@ export function ChatPill({
     }
   }
 
-  async function ask(text: string, starter: FirmAskStarter | null = null) {
+  async function ask(text: string, starter: FirmAskStarter | null = null, asQuestion = false) {
     if (busy) return;
-    if (brief && !starter && isBriefPaste(text)) {
+    if (brief && !starter && !asQuestion && isBriefPaste(text)) {
       const pasted = briefText(text);
       setQuestion("");
       setMessages((list) => [
@@ -444,7 +444,15 @@ export function ChatPill({
     await read(answer);
   }
 
-  const briefContext: BriefContext = { tuck: () => window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250) };
+  const tuck = () => window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250);
+  /** The brief card and the person's paste above it go, and the same words are asked of the firm as a question. */
+  const briefContext = (id: number, text: string): BriefContext => ({
+    tuck,
+    askInstead: () => {
+      setMessages((list) => list.filter((message) => message.id !== id && message.id !== id - 1));
+      void ask(text, null, true);
+    },
+  });
 
   async function retry(answer: CanvasAnswer) {
     if (busy) return;
@@ -615,7 +623,7 @@ export function ChatPill({
               </div>
             ) : message.kind === "brief" && brief ? (
               <div key={message.id} className="chat-pill__msg" data-pill-brief>
-                {brief.render(message.text, briefContext)}
+                {brief.render(message.text, briefContext(message.id, message.text))}
               </div>
             ) : message.kind === "person" ? (
               <div key={message.id} className="chat-pill__msg chat-pill__msg--person">

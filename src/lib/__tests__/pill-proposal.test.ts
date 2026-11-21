@@ -1,6 +1,7 @@
 // 20 Nov 2026, chat pill PR 3b (D-111): a pasted brief starts a proposal in the chat. Briefs are told from questions,
 // only admins and leads start one, the card's draft becomes New proposal's own input, and a Member's paste reaches the
 // admins' notifications and nothing else.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { passBrief, briefAdmins, type BriefPassDeps, type Notice } from "@/lib/brief-pass.server";
@@ -248,5 +249,37 @@ describe("a Member passes a brief to the admins", () => {
     expect(
       notificationSentence({ kind: "brief_passed", payload: { by: "Elif Yilmaz", client: "" } }),
     ).toBe("Elif Yilmaz has a brief for a new proposal.");
+  });
+});
+
+// QA M1 of PR 296: the probes that misfired, both ways.
+describe("QA of PR 296: brief or question", () => {
+  it.each([
+    "Find past work like the Marrowfield proposal",
+    "Tell me what Larkspur needs from us",
+    "Summarise what went wrong on the St. Brigid proposal",
+    "List engagements where the client wants a staffing model",
+    "Past fees for work that was due in under a week",
+  ])("%s is a question", (text) => {
+    expect(isBriefPaste(text)).toBe(false);
+  });
+
+  it.each([
+    "Can you put together a proposal for Harbor Health by Friday?",
+    "Hi Maren,\nHarbor Health is reviewing their nurse staffing across 4 sites.\nCould we send something over by the 3rd?\nThanks, Dana",
+  ])("%s is a brief", (text) => {
+    expect(isBriefPaste(text)).toBe(true);
+  });
+
+  it("the notice uses a subject type the live table allows, and the kind has its migration and undo", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20261121010000_notifications_brief_passed.sql",
+      "utf8",
+    );
+    expect(migration).toContain("'brief_passed'");
+    expect(migration).toContain("'firm_share_changed'");
+    expect(
+      readFileSync("supabase/undo/20261121010000_notifications_brief_passed_undo.sql", "utf8"),
+    ).toContain("delete from public.notifications where kind = 'brief_passed'");
   });
 });

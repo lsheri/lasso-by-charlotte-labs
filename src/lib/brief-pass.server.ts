@@ -26,8 +26,9 @@ export type Notice = {
   org_id: string;
   kind: "brief_passed";
   section: "needs_you";
-  subject_type: "brief";
-  subject_id: null;
+  /** The live table allows a fixed list of subject types; the workspace is the subject (QA H1 of PR 296). */
+  subject_type: "org";
+  subject_id: string;
   group_key: string;
   payload: { by: string; client: string; excerpt: string };
 };
@@ -75,8 +76,8 @@ export async function passBrief(deps: BriefPassDeps, text: string): Promise<Brie
     org_id: caller.orgId,
     kind: "brief_passed",
     section: "needs_you",
-    subject_type: "brief",
-    subject_id: null,
+    subject_type: "org",
+    subject_id: caller.orgId,
     group_key: `brief_passed:${caller.profileId}:${now.getTime()}`,
     payload,
   }));

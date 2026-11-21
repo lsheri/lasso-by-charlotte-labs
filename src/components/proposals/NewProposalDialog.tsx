@@ -260,8 +260,19 @@ export function NewProposalDialog({
             <Label htmlFor={`${ids}-due`} className="micro-label">
               {copy.dueLabel}
             </Label>
-            <Input id={`${ids}-due`} type="date" value={dueOn} disabled={busy} onChange={(event) => setDueOn(event.target.value)} className="w-auto" />
-            <p className="text-sm text-muted-foreground">{copy.dueHint}</p>
+            <Input
+              id={`${ids}-due`}
+              type="date"
+              value={dueOn}
+              min={new Date().toISOString().slice(0, 10)}
+              aria-describedby={`${ids}-due-hint`}
+              disabled={busy}
+              onChange={(event) => setDueOn(event.target.value)}
+              className="w-auto"
+            />
+            <p id={`${ids}-due-hint`} className="text-sm text-muted-foreground">
+              {copy.dueHint}
+            </p>
           </div>
 
           <div className="space-y-1.5">

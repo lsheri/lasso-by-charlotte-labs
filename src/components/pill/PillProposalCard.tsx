@@ -39,6 +39,11 @@ export type PassTools = {
   pass: (text: string) => Promise<BriefPassResult>;
 };
 
+/** Today as a date input's value, so a due date in the past cannot be picked (QA L of PR 296). */
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 type Stage = "reading" | "check" | "starting" | "lead" | "landed" | "readFailed";
 
 /**
@@ -52,10 +57,13 @@ export function PillProposalCard({
   text,
   tools,
   reduceMotion,
+  onAskInstead,
 }: {
   text: string;
   tools: ProposalCardTools;
   reduceMotion: boolean;
+  /** QA M1 of PR 296: a paste read as a brief that was really a question is asked of the firm instead. */
+  onAskInstead?: (() => void) | undefined;
 }) {
   const [stage, setStage] = useState<Stage>("reading");
   const [step, setStep] = useState(0);
@@ -66,7 +74,9 @@ export function PillProposalCard({
     dueOn: "",
     workItemIds: [],
   });
-  const [docs, setDocs] = useState<{ id: string; name: string }[]>([]);
+  // QA M2 of PR 296: documents stay in the browser until Start, so a card left behind (a reload, a closed tab) leaves
+  // nothing in the person's work. They upload on Start, and are removed again if the start fails.
+  const [docs, setDocs] = useState<{ id: string; name: string; file: File }[]>([]);
   const [clients, setClients] = useState<DeskClient[]>([]);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [over, setOver] = useState(false);
@@ -107,19 +117,6 @@ export function PillProposalCard({
     }
   }
 
-  // Documents uploaded for a proposal that was never started are removed again when the card goes away.
-  const leftover = useRef<{ ids: string[]; made: boolean }>({ ids: [], made: false });
-  leftover.current = { ids: docs.map((doc) => doc.id), made: proposalId !== null };
-  useEffect(
-    () => () => {
-      if (!leftover.current.made && leftover.current.ids.length)
-        void tools.discard(leftover.current.ids).catch(() => undefined);
-    },
-    // Once, on unmount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -128,50 +125,70 @@ export function PillProposalCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function add(files: File[]) {
-    if (!files.length || uploading || stage !== "check") return;
+  const nextDoc = useRef(1);
+  function add(files: File[]) {
+    if (!files.length || stage !== "check") return;
     setProblem(null);
+    setDocs((list) =>
+      [
+        ...list,
+        ...files.map((file) => ({ id: `doc-${nextDoc.current++}`, name: file.name, file })),
+      ].slice(0, 12),
+    );
+  }
+
+  function removeDoc(id: string) {
+    setDocs((list) => list.filter((doc) => doc.id !== id));
+  }
+
+  /** Uploads the documents for Start. All or nothing: any failure removes what did upload and says which one. */
+  async function upload(): Promise<string[] | null> {
+    const ids: string[] = [];
     const failed: string[] = [];
-    for (let i = 0; i < files.length; i += 1) {
-      setUploading({ done: i, total: files.length });
+    for (let i = 0; i < docs.length; i += 1) {
+      setUploading({ done: i, total: docs.length });
       try {
-        const result = await tools.capture([files[i]!]);
-        const id = result.ids[0];
-        if (id) setDocs((list) => [...list, { id, name: files[i]!.name }]);
-        else failed.push(files[i]!.name);
+        const id = (await tools.capture([docs[i]!.file])).ids[0];
+        if (id) ids.push(id);
+        else failed.push(docs[i]!.name);
       } catch {
-        failed.push(files[i]!.name);
+        failed.push(docs[i]!.name);
       }
     }
     setUploading(null);
-    if (failed.length)
-      setProblem(`${failed.join(", ")} could not be added. Try again, or start without it.`);
-  }
-
-  async function removeDoc(id: string) {
-    setDocs((list) => list.filter((doc) => doc.id !== id));
-    await tools.discard([id]).catch(() => undefined);
+    if (!failed.length) return ids;
+    if (ids.length) await tools.discard(ids).catch(() => undefined);
+    setProblem(COPY.docsFailed(failed.join(", ")));
+    return null;
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setOver(false);
-    void add([...(event.dataTransfer?.files ?? [])].slice(0, 6));
+    add([...(event.dataTransfer?.files ?? [])].slice(0, 6));
   }
 
   async function start() {
     if (stage !== "check" || !reading || !draftReady(draft) || uploading) return;
     setStage("starting");
     setProblem(null);
+    let ids: string[] = [];
     try {
+      const uploaded = await upload();
+      if (!uploaded) {
+        setStage("check");
+        return;
+      }
+      ids = uploaded;
       const input = proposalInput(
-        { ...draft, workItemIds: docs.map((doc) => doc.id) },
+        { ...draft, workItemIds: ids },
         reading.notes,
         clients,
         tools.profileId,
       );
       const result = await tools.create(input);
       if (!result.ok) {
+        if (ids.length) await tools.discard(ids).catch(() => undefined);
         setProblem(result.problem);
         setStage("check");
         return;
@@ -180,6 +197,7 @@ export function PillProposalCard({
       if (tools.leadStep) setStage("lead");
       else await landNow(result.id);
     } catch {
+      if (ids.length) await tools.discard(ids).catch(() => undefined);
       setProblem(COPY.failed);
       setStage("check");
     }
@@ -296,6 +314,7 @@ export function PillProposalCard({
                   <Input
                     id={`${ids}-due`}
                     type="date"
+                    min={todayIso()}
                     value={draft.dueOn}
                     disabled={stage !== "check"}
                     onChange={(event) => setDraft((d) => ({ ...d, dueOn: event.target.value }))}
@@ -346,7 +365,7 @@ export function PillProposalCard({
                 multiple
                 hidden
                 onChange={(event) => {
-                  void add([...(event.target.files ?? [])].slice(0, 6));
+                  add([...(event.target.files ?? [])].slice(0, 6));
                   event.target.value = "";
                 }}
               />
@@ -360,7 +379,7 @@ export function PillProposalCard({
                       type="button"
                       aria-label={COPY.remove(doc.name)}
                       disabled={stage !== "check"}
-                      onClick={() => void removeDoc(doc.id)}
+                      onClick={() => removeDoc(doc.id)}
                     >
                       ×
                     </button>
@@ -382,6 +401,11 @@ export function PillProposalCard({
               >
                 {stage === "starting" ? COPY.starting : COPY.start}
               </Button>
+              {onAskInstead && stage === "check" ? (
+                <Button type="button" variant="ghost" onClick={onAskInstead}>
+                  {COPY.askInstead}
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -402,7 +426,15 @@ export function PillProposalCard({
 }
 
 /** A Member's paste: offered to the admins, sent only on the press. */
-export function PillBriefPass({ text, tools }: { text: string; tools: PassTools }) {
+export function PillBriefPass({
+  text,
+  tools,
+  onAskInstead,
+}: {
+  text: string;
+  tools: PassTools;
+  onAskInstead?: (() => void) | undefined;
+}) {
   const [admins, setAdmins] = useState<BriefAdmins | null>(null);
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [problem, setProblem] = useState<string | null>(null);
@@ -450,6 +482,11 @@ export function PillBriefPass({ text, tools }: { text: string; tools: PassTools 
           >
             {state === "sending" ? BRIEF_PASS_COPY.telling : BRIEF_PASS_COPY.tell(name)}
           </Button>
+          {onAskInstead && state === "idle" ? (
+            <Button size="sm" variant="ghost" onClick={onAskInstead}>
+              {COPY.askInstead}
+            </Button>
+          ) : null}
         </div>
       )}
       {admins && admins.count === 0 && state === "idle" ? (

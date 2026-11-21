@@ -31,19 +31,30 @@ export function isBriefPaste(text: string): boolean {
   const clean = text.trim();
   if (clean.length < BRIEF_READ_MIN || clean.length > BRIEF_READ_MAX) return false;
   if (STARTER.test(clean)) return true;
-  const question =
-    /\?\s*$/.test(clean) ||
-    /^(how|what|where|when|who|why|which|did|do|does|is|are|can|could|should|has|have)\b/i.test(
+  const lines = clean.split(/\n+/).filter((line) => line.trim()).length;
+  const cue =
+    /\b(wants?|needs?|would like|asked us|is looking for|rfp|request for proposal|brief|proposal|scope|due|by the \d)\b/i.test(
       clean,
     );
-  if (question) return false;
+  // QA M1 of PR 296: a pasted email of several lines is a brief even with a question in it ("Could we send something
+  // over by the 3rd?"), and so is asking us to put a proposal together.
+  if (lines >= 3 && clean.length >= 120 && (cue || /^(hi|hello|dear|hey)\b/i.test(clean)))
+    return true;
   if (
-    /\b(wants?|needs?|asked us|is looking for|rfp|request for proposal|brief|proposal|due)\b/i.test(
+    /^(can|could|would|will)\s+(you|we|someone)\b[^?]*\b(put together|draft|write|start|prepare|send|do)\b[^?]*\b(proposal|rfp|bid|quote)\b/i.test(
       clean,
     )
   )
     return true;
-  return clean.split(/\n+/).filter((line) => line.trim()).length >= 4 && clean.length >= 200;
+  // A question, or an instruction to look something up, is asked of the firm.
+  const question =
+    /\?\s*$/.test(clean) ||
+    /^(how|what|where|when|who|why|which|did|do|does|is|are|can|could|should|has|have|find|show|tell me|give me|summari[sz]e|list|explain|compare|past|any|look up|search)\b/i.test(
+      clean,
+    );
+  if (question) return false;
+  if (cue) return true;
+  return lines >= 4 && clean.length >= 200;
 }
 
 /** The paste without a "Start a proposal:" in front. */
@@ -51,7 +62,10 @@ export function briefText(text: string): string {
   return text.trim().replace(STARTER, "").trim();
 }
 
-/** Who may start a proposal in the chat: the same people as on Proposals' New proposal. */
+/**
+ * Who may start a proposal in the chat: admins and leads, as the plan says. (Proposals' own New proposal button is open
+ * to every company member today; only the chat sends a Member's paste to an admin instead.)
+ */
 export function mayStartInChat(role: string | null | undefined): boolean {
   return role === "admin" || role === "lead";
 }
@@ -147,6 +161,9 @@ export const PROPOSAL_CARD_COPY = {
     `${client} is on Proposals. We tucked the chat away so you can see it.`,
   openProposals: "Open Proposals",
   failed: "The proposal could not be started. Nothing was saved. Try again in a moment.",
+  askInstead: "Ask the firm instead",
+  docsFailed: (names: string) =>
+    `${names} could not be added, so nothing was started. Take it off or try again.`,
   readFailed: "The brief could not be read just now. Nothing was saved.",
   tryAgain: "Try again",
 } as const;

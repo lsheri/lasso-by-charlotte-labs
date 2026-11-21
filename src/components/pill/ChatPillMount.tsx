@@ -134,9 +134,9 @@ export function ChatPillMount() {
             ? {
                 render: (text, context) =>
                   starts ? (
-                    <PillProposalCard text={text} tools={cardTools(context.tuck)} reduceMotion={reduceMotion} />
+                    <PillProposalCard text={text} tools={cardTools(context.tuck)} reduceMotion={reduceMotion} onAskInstead={context.askInstead} />
                   ) : (
-                    <PillBriefPass text={text} tools={passTools} />
+                    <PillBriefPass text={text} tools={passTools} onAskInstead={context.askInstead} />
                   ),
               }
             : null
