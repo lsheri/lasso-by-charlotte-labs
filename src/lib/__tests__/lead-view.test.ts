@@ -1,0 +1,263 @@
+// 21 Nov 2026, chat pill PR 4b (D-97): what a proposal's Lead sees. Only the linked teammate; documents only after the
+// owner sends them to that same lead; past work only from boards shared with the firm; amounts withheld for Members.
+import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
+
+import { docsSentToLead, LEAD_VIEW_COPY, leadDocInput, ledInput, SEND_DOCS_COPY, sendDocsInput, upNextOrder, type LedProposal } from "@/lib/lead-view-shared";
+import { listLed, readLeadDocument, sendLeadDocuments, type LeadProposalRow, type LeadStore } from "@/lib/lead-view.server";
+
+const ORG = "00000000-0000-4000-8000-0000000000a1";
+const OTHER = "00000000-0000-4000-8000-0000000000a2";
+const CHRISTY = "00000000-0000-4000-8000-0000000000c1";
+const MAREN = "00000000-0000-4000-8000-0000000000c2";
+const ROW_CHRISTY = "00000000-0000-4000-8000-0000000000d1";
+const ROW_BEN = "00000000-0000-4000-8000-0000000000d2";
+const P1 = "00000000-0000-4000-8000-0000000000e1";
+const P2 = "00000000-0000-4000-8000-0000000000e2";
+const DOC = "00000000-0000-4000-8000-0000000000f1";
+const PRIVATE = "00000000-0000-4000-8000-0000000000f2";
+const NOW = new Date("2026-11-21T12:00:00Z");
+
+const proposal = (over: Partial<LeadProposalRow> = {}): LeadProposalRow => ({
+  id: P1,
+  org_id: ORG,
+  client_id: "c-larkspur",
+  title: "Care model review",
+  owner_id: MAREN,
+  received_at: "2026-11-20T12:00:00Z",
+  sent_at: null,
+  status: "open",
+  archived_at: null,
+  lead_contact_id: ROW_CHRISTY,
+  client_due_on: "2026-11-28",
+  notes: "Larkspur wants a care model review. Fixed fee of $45,000 plus expenses.",
+  lead_docs_to: null,
+  ...over,
+});
+
+function world(over: Partial<LeadStore> & { role?: string; me?: string; rows?: LeadProposalRow[]; links?: Record<string, string | null>; items?: { id: string; owner: string; title: string; org?: string }[]; ctx?: { proposal_id: string; work_item_id: string }[] } = {}) {
+  const rows = over.rows ?? [proposal()];
+  const links = over.links ?? { [ROW_CHRISTY]: CHRISTY, [ROW_BEN]: null };
+  const items = over.items ?? [
+    { id: DOC, owner: MAREN, title: "Larkspur RFP" },
+    { id: PRIVATE, owner: MAREN, title: "Maren's private notes" },
+  ];
+  const context = over.ctx ?? [{ proposal_id: P1, work_item_id: DOC }];
+  const writes: unknown[] = [];
+  const events: unknown[] = [];
+  const me = over.me ?? CHRISTY;
+  const store: LeadStore = {
+    caller: async () => ({ profileId: me, orgId: ORG, role: over.role ?? "em", userId: "u" }),
+    myContacts: async (orgId, profileId) => Object.entries(links).filter(([, p]) => p === profileId && orgId === ORG).map(([id]) => id),
+    ledProposals: async (orgId, ids) => rows.filter((r) => r.org_id === orgId && r.status === "open" && !r.archived_at && ids.includes(r.lead_contact_id ?? "")),
+    proposal: async (id) => rows.find((r) => r.id === id) ?? null,
+    contacts: async (_orgId, ids) => ids.map((id) => ({ id, profile_id: links[id] ?? null })),
+    clientNames: async () => new Map([["c-larkspur", "Larkspur Senior Living"]]),
+    personNames: async () => new Map([[MAREN, "Maren Hollis"]]),
+    context: async (ids) => context.filter((c) => ids.includes(c.proposal_id)),
+    ownedItems: async (orgId, owner, ids) => items.filter((i) => (i.org ?? ORG) === orgId && i.owner === owner && ids.includes(i.id)).map((i) => ({ id: i.id, title: i.title })),
+    settings: async () => ({ proposal_goal_hours: 72 }),
+    sharedBoards: async () => [
+      { id: "b1", title: "Larkspur 2024 staffing", client: "Larkspur Senior Living", created_at: "2024-01-01" },
+      { id: "b2", title: "Larkspur 2025 review", client: "Larkspur Senior Living", created_at: "2025-01-01" },
+      { id: "b3", title: "Pellham pricing", client: "Pellham", created_at: "2025-02-01" },
+    ],
+    itemText: async (_orgId, id) => (id === DOC ? "Scope and Fees.\nThe fee is $120k per month." : "secret"),
+    setDocs: async (id, _orgId, to, at) => {
+      writes.push({ id, to, at });
+      const row = rows.find((r) => r.id === id);
+      if (row) row.lead_docs_to = to;
+      return true;
+    },
+    record: async (_c, type, dims) => void events.push({ type, dims }),
+    now: () => NOW,
+    ...over,
+  };
+  return { store, rows, writes, events };
+}
+
+describe("the pure rules", () => {
+  it("documents count as sent only to the People row that is the lead now", () => {
+    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY, lead_docs_to: ROW_CHRISTY })).toBe(true);
+    expect(docsSentToLead({ lead_contact_id: ROW_BEN, lead_docs_to: ROW_CHRISTY })).toBe(false);
+    expect(docsSentToLead({ lead_contact_id: null, lead_docs_to: null })).toBe(false);
+    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY })).toBe(false);
+  });
+
+  it("Up next is the one over or closest to its goal; sent ones go last", () => {
+    const base = { title: "", clientName: "", ownerName: "", dueOn: null, brief: null, documents: null, documentCount: 0, pastWork: [] };
+    const rows: LedProposal[] = [
+      { ...base, id: "fresh", receivedAt: "2026-11-21T10:00:00Z", sentAt: null },
+      { ...base, id: "sent", receivedAt: "2026-11-15T10:00:00Z", sentAt: "2026-11-16T10:00:00Z" },
+      { ...base, id: "over", receivedAt: "2026-11-17T10:00:00Z", sentAt: null },
+      { ...base, id: "close", receivedAt: "2026-11-19T00:00:00Z", sentAt: null },
+    ];
+    expect(upNextOrder(rows, 72, NOW).map((r) => r.id)).toEqual(["over", "close", "fresh", "sent"]);
+  });
+
+  it("inputs keep ids only and refuse a document without one", () => {
+    expect(ledInput({ profile_id: "x" })).toEqual({ profile_id: null });
+    expect(() => leadDocInput({ proposal_id: P1, work_item_id: "nope" })).toThrow(LEAD_VIEW_COPY.docGone);
+    expect(sendDocsInput({ proposal_id: P1 })).toEqual({ profile_id: null, proposal_id: P1, send: true });
+    expect(sendDocsInput({ proposal_id: P1, send: false }).send).toBe(false);
+  });
+});
+
+describe("listLed", () => {
+  it("gives the linked lead their open proposal: brief, clock data, due date, a count of documents not yet sent, past work for the client", async () => {
+    const { store } = world();
+    const list = await listLed(store);
+    expect(list.goalHours).toBe(72);
+    expect(list.proposals).toHaveLength(1);
+    const [row] = list.proposals;
+    expect(row).toMatchObject({ id: P1, clientName: "Larkspur Senior Living", ownerName: "Maren Hollis", dueOn: "2026-11-28", documents: null, documentCount: 1 });
+    expect(row!.pastWork.map((w) => w.title)).toEqual(["Larkspur 2025 review", "Larkspur 2024 staffing"]);
+    // Titles of documents not sent never travel.
+    expect(JSON.stringify(list)).not.toContain("Larkspur RFP");
+  });
+
+  it("a Member who leads never sees money in the brief; a Lead-role teammate does", async () => {
+    const member = (await listLed(world({ role: "em" }).store)).proposals[0]!.brief!;
+    expect(member).not.toMatch(/45,000|\$/);
+    expect(member).toContain("[fee]");
+    const lead = (await listLed(world({ role: "lead" }).store)).proposals[0]!.brief!;
+    expect(lead).toContain("$45,000");
+  });
+
+  it("after the owner sends them, the documents are listed by title, in order, and only the owner's own work", async () => {
+    const { store } = world({
+      rows: [proposal({ lead_docs_to: ROW_CHRISTY })],
+      ctx: [
+        { proposal_id: P1, work_item_id: DOC },
+        { proposal_id: P1, work_item_id: "not-mine" },
+      ],
+    });
+    const [row] = (await listLed(store)).proposals;
+    expect(row!.documents).toEqual([{ id: DOC, title: "Larkspur RFP" }]);
+    expect(row!.documentCount).toBe(1);
+  });
+
+  it("documents sent to a previous lead stay closed for the new one", async () => {
+    const { store } = world({ links: { [ROW_BEN]: CHRISTY }, rows: [proposal({ lead_contact_id: ROW_BEN, lead_docs_to: ROW_CHRISTY })] });
+    expect((await listLed(store)).proposals[0]!.documents).toBeNull();
+  });
+
+  it("someone else, an unlinked lead, a closed, archived or another workspace's proposal: nothing", async () => {
+    expect((await listLed(world({ me: MAREN }).store)).proposals).toEqual([]);
+    expect((await listLed(world({ links: { [ROW_CHRISTY]: null } }).store)).proposals).toEqual([]);
+    for (const over of [{ status: "won" }, { status: "lost" }, { archived_at: "2026-11-21" }, { org_id: OTHER }])
+      expect((await listLed(world({ rows: [proposal(over)] }).store)).proposals).toEqual([]);
+  });
+
+  it("a read that hands back too much is filtered again", async () => {
+    const { store } = world({ ledProposals: async () => [proposal(), proposal({ id: P2, lead_contact_id: ROW_BEN }), proposal({ id: "x", org_id: OTHER })] });
+    expect((await listLed(store)).proposals.map((p) => p.id)).toEqual([P1]);
+  });
+
+  it("before the 4a SQL, nobody leads anything; a failed read says so instead of showing nothing", async () => {
+    expect((await listLed(world({ myContacts: async () => "absent" }).store)).proposals).toEqual([]);
+    await expect(listLed(world({ myContacts: async () => null }).store)).rejects.toThrow();
+    await expect(listLed(world({ ledProposals: async () => null }).store)).rejects.toThrow();
+  });
+
+  it("past work never comes from an unshared board: the store is asked only for shared ones", () => {
+    const source = readFileSync("src/lib/lead-view.server.ts", "utf8");
+    const read = source.slice(source.indexOf("async sharedBoards"), source.indexOf("async itemText"));
+    expect(read).toContain('.eq("shared_with_firm", true)');
+    expect(read).toContain('.is("archived_at", null)');
+    expect(read).toContain('.eq("org_id", orgId)');
+  });
+});
+
+describe("readLeadDocument", () => {
+  const sent = () => world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+
+  it("opens a sent document for the lead, amounts withheld for a Member, and records only that", async () => {
+    const { store, events } = sent();
+    const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
+    expect(result).toMatchObject({ ok: true, title: "Larkspur RFP", withheld: true });
+    expect(result.ok && result.text).not.toContain("$120k");
+    expect(events).toEqual([{ type: "lead_view.document_opened", dims: { withheld: "yes" } }]);
+  });
+
+  it("a Lead-role teammate reads the figures", async () => {
+    const { store } = world({ role: "lead", rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+    const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
+    expect(result.ok && result.text).toContain("$120k");
+  });
+
+  it("every way it is not theirs reads the same: not sent, sent to someone else, not on the proposal, someone else's work, not the lead, closed", async () => {
+    const gone = { ok: false, problem: LEAD_VIEW_COPY.docGone };
+    const cases: [ReturnType<typeof world>, string][] = [
+      [world(), DOC],
+      [world({ rows: [proposal({ lead_docs_to: ROW_BEN })] }), DOC],
+      [sent(), PRIVATE],
+      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })], items: [{ id: DOC, owner: CHRISTY, title: "x" }] }), DOC],
+      [world({ me: MAREN, rows: [proposal({ lead_docs_to: ROW_CHRISTY })] }), DOC],
+      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY, status: "won" })] }), DOC],
+      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY, org_id: OTHER })] }), DOC],
+    ];
+    for (const [w, item] of cases) {
+      const text = vi.fn(w.store.itemText);
+      w.store.itemText = text;
+      expect(await readLeadDocument(w.store, { profile_id: null, proposal_id: P1, work_item_id: item })).toEqual(gone);
+      expect(text).not.toHaveBeenCalled();
+    }
+  });
+
+  it("a giant document opens at its start, saying so", async () => {
+    const { store } = world({ role: "lead", rows: [proposal({ lead_docs_to: ROW_CHRISTY })], itemText: async () => "x".repeat(200_000) });
+    const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
+    expect(result.ok && result.text.length).toBeLessThan(50_200);
+    expect(result.ok && result.text.endsWith(LEAD_VIEW_COPY.clipped)).toBe(true);
+  });
+
+  it("a document with no readable words says it could not be opened", async () => {
+    const { store } = world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })], itemText: async () => null });
+    expect(await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC })).toEqual({ ok: false, problem: LEAD_VIEW_COPY.docFailed });
+  });
+});
+
+describe("sendLeadDocuments", () => {
+  it("the owner sends them to a teammate lead: one write, one event with a count band", async () => {
+    const { store, writes, events } = world({ me: MAREN, role: "admin" });
+    expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
+    expect(writes).toEqual([{ id: P1, to: ROW_CHRISTY, at: NOW.toISOString() }]);
+    expect(events).toEqual([{ type: "proposal.docs_to_lead", dims: { documents: "1" } }]);
+  });
+
+  it("a second press writes nothing; Stop sharing clears it", async () => {
+    const { store, writes } = world({ me: MAREN, rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+    expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
+    expect(writes).toEqual([]);
+    expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: false })).toEqual({ ok: true });
+    expect(writes).toEqual([{ id: P1, to: null, at: null }]);
+  });
+
+  it("only the owner: an admin, a lead or the lead themselves is refused, and nothing is written", async () => {
+    for (const [me, role] of [[CHRISTY, "lead"], ["someone", "admin"]] as const) {
+      const { store, writes } = world({ me, role });
+      expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: false, problem: SEND_DOCS_COPY.ownerOnly });
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("refuses plainly: no lead, a lead with no login, no documents, a closed proposal, before the SQL", async () => {
+    const send = (w: ReturnType<typeof world>) => sendLeadDocuments(w.store, { profile_id: null, proposal_id: P1, send: true });
+    expect(await send(world({ me: MAREN, rows: [proposal({ lead_contact_id: null })] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.noLead });
+    expect(await send(world({ me: MAREN, rows: [proposal({ lead_contact_id: ROW_BEN })] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.noLogin("") });
+    expect(await send(world({ me: MAREN, ctx: [] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.noDocs });
+    expect(await send(world({ me: MAREN, rows: [proposal({ status: "won" })] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.closed });
+    expect(await send(world({ me: MAREN, setDocs: async () => "absent" }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.notReady });
+    expect(await send(world({ me: MAREN, setDocs: async () => false }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.failed });
+  });
+
+  it("the SQL adds two nullable columns and nothing else; the undo drops them", () => {
+    const sql = readFileSync("supabase/migrations/20261121030000_proposals_lead_docs.sql", "utf8");
+    expect(sql).toMatch(/add column if not exists lead_docs_to uuid references public\.roster_contacts\(id\) on delete set null/);
+    expect(sql).toMatch(/add column if not exists lead_docs_at timestamptz/);
+    expect(sql).not.toMatch(/\bgrant\b|\bpolicy\b|drop /i);
+    const undo = readFileSync("supabase/undo/20261121030000_proposals_lead_docs_undo.sql", "utf8");
+    expect(undo).toContain("drop column if exists lead_docs_to");
+  });
+});

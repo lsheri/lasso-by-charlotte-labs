@@ -74,6 +74,8 @@ export type ProposalRow = {
   archived_at?: string | null;
   /** 20 Nov 2026, PR 3a: arrives with the client_due_on migration. */
   client_due_on?: string | null;
+  /** 21 Nov 2026, PR 4b: the People row the documents were sent to. */
+  lead_docs_to?: string | null;
 };
 
 /** The latest ask on a proposal, as stored. */
@@ -125,6 +127,8 @@ export type DeskStore = {
   record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won" | "proposal.lead_set" | "proposal.closed", dims: Record<string, string>) => Promise<void>;
   /** Names of these roster people, only those on this workspace's list. */
   leadNames: (orgId: string, contactIds: string[]) => Promise<Map<string, string>>;
+  /** 21 Nov 2026, PR 4b: of these roster people, the ones linked to a teammate's login. Left out, none are. */
+  leadLinks?: (orgId: string, contactIds: string[]) => Promise<Set<string>>;
   /** The asks sent about these proposals in this workspace, newest first. Empty when there are none or they cannot be read. */
   asks: (orgId: string, proposalIds: string[]) => Promise<DeskAsk[]>;
   /** Where this workspace's texts go, and whether texting is switched on. */
@@ -216,6 +220,9 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   const askByProposal = askViews(asks, leadNames, store.now(), caller.role === "admin", recorders);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
+  // PR 4b: whether each of the caller's own proposals has a lead with a login to send the documents to.
+  const ownLeads = [...new Set(mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id).map((row) => row.lead_contact_id as string))];
+  const linked = ownLeads.length && store.leadLinks ? await store.leadLinks(caller.orgId, ownLeads).catch(() => new Set<string>()) : new Set<string>();
   const proposals: DeskProposal[] = mine.map((row) => {
     const items = context.filter((c) => c.proposal_id === row.id);
     const own = row.owner_id === caller.profileId;
@@ -238,6 +245,9 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(pickers ? { leadContactId: row.lead_contact_id ?? null } : {}),
       ...(pickers || own ? { leadName: (row.lead_contact_id ? leadNames.get(row.lead_contact_id) : null) ?? null, ask: askByProposal.get(row.id) ?? null } : {}),
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
+      ...(own && row.status === "open" && row.lead_contact_id
+        ? { leadDocs: row.lead_docs_to === row.lead_contact_id ? ("sent" as const) : linked.has(row.lead_contact_id) ? ("unsent" as const) : ("no_login" as const) }
+        : {}),
     };
   });
   return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, canAddClient, clientsOff: caller.role === "admin" && !clientsOn, texts, proposals };
@@ -500,6 +510,8 @@ const BASE_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_
 const PROPOSAL_COLUMNS = `${BASE_COLUMNS}, archived_at`;
 /** `client_due_on` arrives with PR 3a's migration. Until it is applied, reads fall back to the columns before it. */
 const DUE_COLUMNS = `${PROPOSAL_COLUMNS}, client_due_on`;
+/** `lead_docs_to` arrives with PR 4b's migration. Until it is applied, reads fall back to the columns before it. */
+const DOCS_COLUMNS = `${DUE_COLUMNS}, lead_docs_to`;
 
 export async function realStore(context: DeskContext, profileId: string | null): Promise<DeskStore> {
   const { requireFirmMember } = await import("./firm-corpus.server");
@@ -521,7 +533,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async proposals(orgId) {
       const read = (columns: string) => ownLoose.from("proposals").select(columns).eq("org_id", orgId).order("received_at", { ascending: false }).limit(500);
-      let { data, error } = await read(DUE_COLUMNS);
+      let { data, error } = await read(DOCS_COLUMNS);
+      if (error) ({ data, error } = await read(DUE_COLUMNS));
       if (error) ({ data, error } = await read(PROPOSAL_COLUMNS));
       if (error) ({ data, error } = await read(BASE_COLUMNS));
       return error ? null : ((data ?? []) as unknown as ProposalRow[]);
@@ -634,6 +647,12 @@ export async function realStore(context: DeskContext, profileId: string | null):
       if (contactIds.length === 0) return new Map();
       const { data } = await adminLoose.from("roster_contacts").select("id, full_name").eq("org_id", orgId).in("id", contactIds);
       return new Map(((data ?? []) as { id: string; full_name: string }[]).map((person) => [person.id, person.full_name]));
+    },
+    async leadLinks(orgId, contactIds) {
+      if (contactIds.length === 0) return new Set();
+      const { data, error } = await adminLoose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).in("id", contactIds);
+      if (error) return new Set();
+      return new Set(((data ?? []) as { id: string; profile_id: string | null }[]).filter((row) => row.profile_id).map((row) => row.id));
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];

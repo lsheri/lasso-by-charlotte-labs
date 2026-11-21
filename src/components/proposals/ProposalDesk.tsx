@@ -35,6 +35,7 @@ import {
 } from "@/lib/proposal-desk-shared";
 import { HOME_PROPOSALS_COPY } from "@/lib/role-screens-shared";
 import type { RosterContact, RosterTeammate, TeammateLinkResult } from "@/lib/roster-shared";
+import type { SendDocsResult } from "@/lib/lead-view-shared";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,6 +54,7 @@ export function ProposalDesk({
   roster,
   teammates,
   linkTeammate,
+  onSendDocs,
   leadWords,
   onLead,
   ask,
@@ -78,6 +80,8 @@ export function ProposalDesk({
   /** 21 Nov 2026, PR 4a: teammates with a login not on People yet, and the press that links one. */
   teammates?: readonly RosterTeammate[] | undefined;
   linkTeammate?: ((profileId: string) => Promise<TeammateLinkResult>) | undefined;
+  /** 21 Nov 2026, PR 4b: the person who started a proposal sends its documents to the lead. */
+  onSendDocs?: ((proposalId: string, send: boolean) => Promise<SendDocsResult>) | undefined;
   /** The won text as it is sent, shown when picking a lead. */
   leadWords?: string | undefined;
   onLead?: ((proposalId: string, contactId: string | null) => Promise<LeadResult>) | undefined;
@@ -158,6 +162,7 @@ export function ProposalDesk({
                   : undefined
               }
               onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
+              onSendDocs={onSendDocs ? (send) => onSendDocs(proposal.id, send) : undefined}
             />
           ))}
         </ul>

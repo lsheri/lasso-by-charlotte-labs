@@ -569,6 +569,10 @@ export type TelemetryEvent =
   | "proposal.won"
   /** 20 Nov: an admin or lead picked or cleared a proposal's lead from the roster. Dim: change (set | cleared). Never who. Portal registration required. */
   | "proposal.lead_set"
+  /** 21 Nov, chat pill PR 4b: the person who started a proposal sent its documents to its lead. Dim: documents (band). Never a title, a client or a person. Portal registration required. */
+  | "proposal.docs_to_lead"
+  /** 21 Nov, chat pill PR 4b: a proposal's lead opened one of its documents. Dim: withheld (yes | no: amounts withheld for a Member). Never a title or words. Portal registration required. */
+  | "lead_view.document_opened"
   /** 20 Nov, D-50: an admin of a demo workspace set or cleared the one number its won-proposal text goes to. Dim: change (set | cleared). Never the number or any part of it. Portal registration required. */
   | "demo_text_number.changed"
   /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */

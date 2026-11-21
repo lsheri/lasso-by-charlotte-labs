@@ -79,6 +79,7 @@ export function ChatPill({
   reduceMotion = false,
   initialMode = "shut",
   brief = null,
+  upNext = null,
 }: {
   brandName: string;
   /** The brand's Ask label ("Ask Lasso"), from the brand module. */
@@ -109,6 +110,8 @@ export function ChatPill({
    * (the proposal card, or a Member's pass to an admin) instead of being asked of the firm.
    */
   brief?: { render: (text: string, context: BriefContext) => ReactNode } | null | undefined;
+  /** 21 Nov 2026, PR 4b: the Lead's Up next, drawn under the welcome. The container decides who gets one. */
+  upNext?: ReactNode;
 }) {
   const [mode, setModeState] = useState<PillMode>(initialMode);
   const [messages, setMessages] = useState<ChatPillMessage[]>([]);
@@ -591,6 +594,7 @@ export function ChatPill({
               {canAsk ? PILL_COPY.welcomeFirm : PILL_COPY.welcomeNone}
             </p>
           </div>
+          {upNext}
           {messages.map((message) =>
             message.kind === "answer" ? (
               <div key={message.id} className="chat-pill__msg" data-pill-answer={message.answer.id}>
