@@ -36,6 +36,7 @@ import {
 import { HOME_PROPOSALS_COPY } from "@/lib/role-screens-shared";
 import type { RosterContact, RosterTeammate, TeammateLinkResult } from "@/lib/roster-shared";
 import type { SendDocsResult } from "@/lib/lead-view-shared";
+import type { ApprovalResult } from "@/lib/proposal-approval-shared";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,6 +56,7 @@ export function ProposalDesk({
   teammates,
   linkTeammate,
   onSendDocs,
+  review,
   leadWords,
   onLead,
   ask,
@@ -82,6 +84,13 @@ export function ProposalDesk({
   linkTeammate?: ((profileId: string, contactId?: string) => Promise<TeammateLinkResult>) | undefined;
   /** 21 Nov 2026, PR 4b: the person who started a proposal sends its documents to the lead. */
   onSendDocs?: ((proposalId: string, send: boolean) => Promise<SendDocsResult>) | undefined;
+  /** Phase 5: an admin decides a Lead's request. Given only to admins. */
+  review?:
+    | {
+        decide: (proposalId: string, approvalId: string, decision: "approved" | "changes_asked", note: string | null) => Promise<ApprovalResult>;
+        readFinal: (proposalId: string) => Promise<{ ok: true; title: string; text: string } | { ok: false; problem: string }>;
+      }
+    | undefined;
   /** The won text as it is sent, shown when picking a lead. */
   leadWords?: string | undefined;
   onLead?: ((proposalId: string, contactId: string | null) => Promise<LeadResult>) | undefined;
@@ -163,6 +172,7 @@ export function ProposalDesk({
               }
               onClose={onClose ? (change) => setClosing({ proposal, change }) : undefined}
               onSendDocs={onSendDocs ? (send) => onSendDocs(proposal.id, send) : undefined}
+              review={review ? { decide: (approvalId, decision, note) => review.decide(proposal.id, approvalId, decision, note), readFinal: () => review.readFinal(proposal.id) } : undefined}
             />
           ))}
         </ul>

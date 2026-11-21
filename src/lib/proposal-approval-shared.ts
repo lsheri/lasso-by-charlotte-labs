@@ -100,6 +100,7 @@ export const APPROVAL_COPY = {
   approved: (by: string) => `Approved by ${by || "an admin"}. Waiting on the client.`,
   /** Until the carrier approves texts, nothing is texted (Liam, Phase 6). */
   textLater: (lead: string) => `${lead || "The lead"} will get a text once texts are approved. For now they see it in the app.`,
+  finalGone: "The chosen final was deleted. The lead chooses it again and sends it for approval.",
   stale: (lead: string) => `${lead || "The lead"} has chosen a newer final since sending this. Ask them to send it again.`,
   ownRequest: "You lead this proposal, so a second admin approves it.",
   onlyAdmin: "You lead this proposal and are the only admin, so nobody can approve it here yet. Add a second admin, or pick another lead.",
@@ -140,7 +141,7 @@ export type ApprovalRow = {
  */
 export function approvalViews(
   rows: readonly ApprovalRow[],
-  finals: ReadonlyMap<string, readonly { id: string; work_item_id: string }[]>,
+  finals: ReadonlyMap<string, readonly { id: string; work_item_id: string | null }[]>,
   titles: ReadonlyMap<string, string>,
   names: ReadonlyMap<string, string>,
 ): Map<string, ApprovalView> {
@@ -161,7 +162,7 @@ export function approvalViews(
       decidedAt: row.decided_at,
       note: row.note,
       finalItemId: version?.work_item_id ?? "",
-      finalTitle: version ? (titles.get(version.work_item_id) ?? "") : "",
+      finalTitle: version?.work_item_id ? (titles.get(version.work_item_id) ?? "") : "",
       stale: versions.length > 0 && versions[0]!.id !== row.final_version_id,
     });
   }

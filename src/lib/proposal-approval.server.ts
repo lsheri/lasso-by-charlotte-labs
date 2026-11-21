@@ -27,7 +27,7 @@ import {
 
 export type ApprovalStore = FinalStore & {
   /** This proposal's final versions, newest first. "absent" before 4c's table exists. */
-  finalVersions: (orgId: string, proposalId: string) => Promise<{ id: string; work_item_id: string }[] | "absent">;
+  finalVersions: (orgId: string, proposalId: string) => Promise<{ id: string; work_item_id: string | null }[] | "absent">;
   /** Approval rows for these proposals in this workspace. "absent" before Phase 5's table exists. */
   approvalRows: (orgId: string, proposalIds: string[]) => Promise<ApprovalRow[] | "absent">;
   /** Adds an open request. "taken" when one is already open (the unique index). */
@@ -66,7 +66,8 @@ export async function askApproval(store: ApprovalStore, input: ApprovalAskInput)
   const finals = await store.finalVersions(caller.orgId, row.id);
   if (finals === "absent") return { ok: false, problem: APPROVAL_COPY.notReady };
   const latest = finals[0];
-  if (!latest) return { ok: false, problem: APPROVAL_COPY.needsFinal };
+  // No final, or the chosen one was deleted (QA L2 of PR 300): choose it again first.
+  if (!latest?.work_item_id) return { ok: false, problem: APPROVAL_COPY.needsFinal };
   const made = await store.insertApproval({ org_id: caller.orgId, proposal_id: row.id, final_version_id: latest.id, requested_by: caller.profileId, requested_at: now });
   if (made === "absent") return { ok: false, problem: APPROVAL_COPY.notReady };
   if (made === "taken") return { ok: false, problem: APPROVAL_COPY.already };
@@ -94,6 +95,7 @@ export async function decideApproval(store: ApprovalStore, input: ApprovalDecide
   if (input.decision === "approved") {
     const finals = await store.finalVersions(caller.orgId, row.id);
     if (finals === "absent") return { ok: false, problem: APPROVAL_COPY.notReady };
+    if (finals[0] && !finals[0].work_item_id) return { ok: false, problem: APPROVAL_COPY.finalGone };
     if (finals[0]?.id !== open.final_version_id) {
       const names = await store.personNames(open.requested_by ? [open.requested_by] : []);
       return { ok: false, problem: APPROVAL_COPY.stale(names.get(open.requested_by ?? "") ?? "") };
@@ -126,7 +128,7 @@ export async function readFinalForApproval(store: ApprovalStore, input: Approval
   if (!open || open === "absent") return { ok: false, problem: APPROVAL_COPY.gone };
   const finals = await store.finalVersions(caller.orgId, row.id);
   const version = finals === "absent" ? undefined : finals.find((entry) => entry.id === open.final_version_id);
-  if (!version) return { ok: false, problem: APPROVAL_COPY.gone };
+  if (!version?.work_item_id) return { ok: false, problem: APPROVAL_COPY.finalGone };
   const item = await store.item(caller.orgId, version.work_item_id);
   if (!item) return { ok: false, problem: APPROVAL_COPY.gone };
   const text = await store.itemText(caller.orgId, item.id).catch(() => null);
@@ -147,11 +149,11 @@ export async function readApprovalViews(admin: Loose, orgId: string, proposalIds
   const { data: rows, error } = await admin.from("proposal_approvals").select("id, proposal_id, final_version_id, requested_by, requested_at, decision, decided_by, decided_at, note").eq("org_id", orgId).in("proposal_id", proposalIds).order("requested_at", { ascending: false }).limit(1000);
   if (error || !rows?.length) return new Map();
   const { data: versions } = await admin.from("proposal_final_versions").select("id, proposal_id, work_item_id, chosen_at").eq("org_id", orgId).in("proposal_id", proposalIds).order("chosen_at", { ascending: false }).limit(1000);
-  const finals = new Map<string, { id: string; work_item_id: string }[]>();
-  for (const version of (versions ?? []) as { id: string; proposal_id: string; work_item_id: string }[]) {
+  const finals = new Map<string, { id: string; work_item_id: string | null }[]>();
+  for (const version of (versions ?? []) as { id: string; proposal_id: string; work_item_id: string | null }[]) {
     finals.set(version.proposal_id, [...(finals.get(version.proposal_id) ?? []), { id: version.id, work_item_id: version.work_item_id }]);
   }
-  const itemIds = [...new Set([...finals.values()].flat().map((entry) => entry.work_item_id))];
+  const itemIds = [...new Set([...finals.values()].flat().map((entry) => entry.work_item_id).filter((id): id is string => Boolean(id)))];
   const { data: items } = itemIds.length ? await admin.from("work_items").select("id, title, display_title").eq("org_id", orgId).in("id", itemIds) : { data: [] };
   const people = [...new Set((rows as ApprovalRow[]).flatMap((row) => [row.requested_by, row.decided_by]).filter((value): value is string => Boolean(value)))];
   const { data: names } = people.length ? await admin.from("profiles").select("id, display_name").eq("org_id", orgId).in("id", people) : { data: [] };
@@ -172,7 +174,7 @@ export async function realApprovalStore(context: LeadContext, profileId: string 
     async finalVersions(orgId, proposalId) {
       const { data, error } = await admin.from("proposal_final_versions").select("id, work_item_id, chosen_at").eq("org_id", orgId).eq("proposal_id", proposalId).order("chosen_at", { ascending: false }).limit(50);
       if (error) return ABSENT.has(error.code ?? "") ? "absent" : [];
-      return ((data ?? []) as { id: string; work_item_id: string }[]).map((row) => ({ id: row.id, work_item_id: row.work_item_id }));
+      return ((data ?? []) as { id: string; work_item_id: string | null }[]).map((row) => ({ id: row.id, work_item_id: row.work_item_id }));
     },
     async approvalRows(orgId, proposalIds) {
       const { data, error } = await admin.from("proposal_approvals").select("id, proposal_id, final_version_id, requested_by, requested_at, decision, decided_by, decided_at, note").eq("org_id", orgId).in("proposal_id", proposalIds).order("requested_at", { ascending: false }).limit(200);

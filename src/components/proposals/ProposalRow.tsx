@@ -7,6 +7,8 @@ import { LeadChip } from "@/components/proposals/LeadChip";
 import { isAtGoal, ProposalClock } from "@/components/proposals/ProposalClock";
 import { ProposalMore, type MoreAction } from "@/components/proposals/ProposalMore";
 import { SendDocsLine } from "@/components/proposals/SendDocsLine";
+import { ApprovalReview } from "@/components/proposals/ApprovalReview";
+import { APPROVAL_COPY, type ApprovalResult } from "@/lib/proposal-approval-shared";
 import { Button } from "@/components/ui/button";
 import { tagVariants } from "@/components/ui/tag";
 import type { PracticeReplyResult, Reply } from "@/lib/lead-ask-shared";
@@ -46,6 +48,7 @@ export function ProposalRow({
   onClose,
   featured = false,
   onSendDocs,
+  review,
 }: {
   proposal: DeskProposal;
   goalHours: number;
@@ -66,6 +69,13 @@ export function ProposalRow({
   featured?: boolean | undefined;
   /** 21 Nov 2026, PR 4b: the person who started it sends the documents to the lead, or stops sharing them. */
   onSendDocs?: ((send: boolean) => Promise<SendDocsResult>) | undefined;
+  /** Phase 5: an admin decides the Lead's request. Left out, a waiting request is only named. */
+  review?:
+    | {
+        decide: (approvalId: string, decision: "approved" | "changes_asked", note: string | null) => Promise<ApprovalResult>;
+        readFinal: () => Promise<{ ok: true; title: string; text: string } | { ok: false; problem: string }>;
+      }
+    | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -212,6 +222,19 @@ export function ProposalRow({
           <div key={proposal.ask ? `${proposal.ask.status}-${proposal.ask.reply ?? ""}` : "none"} className="animate-in fade-in-0 duration-500 motion-reduce:animate-none">
             <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} onRecordAnswer={ask?.onRecordAnswer} />
           </div>
+          {proposal.approval?.state === "waiting" && review ? (
+            <ApprovalReview
+              approval={proposal.approval}
+              leadName={leadName ?? ""}
+              proposalId={proposal.id}
+              decide={(decision, note) => review.decide(proposal.approval!.id, decision, note)}
+              readFinal={review.readFinal}
+            />
+          ) : proposal.approval?.state === "waiting" ? (
+            <p data-approval-waiting className="text-(length:--type-small) text-muted-foreground">{APPROVAL_COPY.stage.awaiting_approval}</p>
+          ) : proposal.approval?.state === "approved" && proposal.sentAt ? (
+            <p data-approval-client className="text-(length:--type-small) text-foreground">{APPROVAL_COPY.stage.client_review}</p>
+          ) : null}
           {proposal.mine && proposal.leadDocs && onSendDocs ? (
             <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} onSend={onSendDocs} />
           ) : null}
