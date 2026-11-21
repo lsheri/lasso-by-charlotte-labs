@@ -138,6 +138,8 @@ export type RosterDeps = {
   linkProfile: (orgId: string, id: string, profileId: string) => Promise<RosterRow | "missing" | "taken" | "absent" | null>;
   /** Adds a person who is this teammate, with no contact details. "taken" when the teammate is linked already. */
   addLinked: (orgId: string, name: string, profileId: string) => Promise<RosterRow | "taken" | "absent" | null>;
+  /** Whether the database has the link column yet (PR 4a's SQL). Before it, no teammate is offered. */
+  linkReady: (orgId: string) => Promise<boolean>;
 };
 
 const BASE_COLUMNS = "id, org_id, full_name, role_title, affiliation, firm_name";
@@ -187,6 +189,7 @@ function toContact(
 
 /** Members who may lead and are not on People yet, by name. */
 function freeTeammates(members: readonly TeammateRow[] | null, rows: readonly RosterRow[], orgId: string): RosterTeammate[] {
+  // Anyone linked is on People already, whether or not they may still lead.
   const linked = new Set(rows.map((row) => row.profile_id).filter((id): id is string => Boolean(id)));
   return (members ?? [])
     .filter((member) => member.org_id === orgId && canLeadAsTeammate(member) && !linked.has(member.id))
@@ -378,12 +381,18 @@ export async function listRoster(deps: RosterDeps): Promise<RosterList> {
         ])
       : [[], [], []];
   const known = details !== null && details !== "absent" ? details : null;
-  // A failed read of the members offers no teammates; the people on the list are still shown.
-  const members = await deps.teammates(caller.orgId).catch(() => null);
+  // A failed read of the members offers no teammates; the people on the list are still shown. Before the link column
+  // exists (published before the SQL), no teammate is offered at all, rather than offered and unusable (QA L4).
+  const ready = await deps.linkReady(caller.orgId).catch(() => false);
+  const members = ready ? await deps.teammates(caller.orgId).catch(() => null) : null;
+  // A linked teammate counts as one only while they may still lead: active, not a guest or a coach (QA L5). Anyone
+  // else reads as an ordinary person on People.
+  const active = new Set((members ?? []).filter((member) => member.org_id === caller.orgId && canLeadAsTeammate(member)).map((member) => member.id));
+  const shown = mine.map((row) => (row.profile_id && !active.has(row.profile_id) ? { ...row, profile_id: null } : row));
   return {
     allowed: true,
     teammates: freeTeammates(members, mine, caller.orgId),
-    contacts: mine.map((row) =>
+    contacts: shown.map((row) =>
       toContact(
         row,
         marks === null ? null : marks.filter((mark) => mark.roster_contact_id === row.id),
@@ -489,6 +498,17 @@ export async function linkTeammate(deps: RosterDeps, input: TeammateLinkInput, n
     if (already) return finish(already);
     // Before the column exists no row carries the key at all; nothing can be linked yet.
     if (mine.length > 0 && mine.every((row) => !("profile_id" in row))) return { ok: false, reason: "not_ready" };
+    // QA M1: the admin answered "Christy Johnson is already on People: link them?" with yes. Only that row, only while
+    // it is in this workspace and linked to nobody.
+    if (input.contact_id) {
+      const chosen = mine.find((row) => row.id === input.contact_id && !row.profile_id);
+      if (!chosen) return { ok: false, reason: "missing" };
+      const linked = await deps.linkProfile(caller.orgId, chosen.id, member.id);
+      if (linked === "absent") return { ok: false, reason: "not_ready" };
+      if (linked === null) return { ok: false, reason: "unavailable" };
+      if (linked === "missing" || linked === "taken") return { ok: false, reason: "missing" };
+      return finish(linked);
+    }
 
     const email = member.user_id ? await deps.emailOf(member.user_id).catch(() => null) : null;
     const free = mine.filter((row) => !row.profile_id);
@@ -752,6 +772,10 @@ export async function realDeps(
         return null;
       }
       return data ? (data as unknown as RosterRow) : null;
+    },
+    async linkReady(orgId) {
+      const { error } = await admin.from("roster_contacts").select("profile_id").eq("org_id", orgId).limit(1);
+      return !error;
     },
     async consents(orgId, contactIds) {
       const marks: ConsentMarkRow[] = [];

@@ -52,7 +52,7 @@ const proposal: DeskProposal = {
 };
 const ADAEZE: RosterTeammate = { profileId: "p-adaeze", name: "Adaeze Nwosu", role: "lead" };
 
-function open(over: { roster?: RosterContact[]; teammates?: RosterTeammate[]; link?: (id: string) => Promise<TeammateLinkResult>; noLink?: boolean } = {}) {
+function open(over: { roster?: RosterContact[]; teammates?: RosterTeammate[]; link?: (id: string, contactId?: string) => Promise<TeammateLinkResult>; noLink?: boolean } = {}) {
   const roster = over.roster ?? [person("c1", "Dana Whitlock"), person("c2", "Christy Johnson", { teammate: true, texts: "agreed" })];
   const preview = vi.fn(async (_id: string, contactId: string): Promise<AskPreview> => ({ ok: true, words: `Hi ${contactId}`, name: contactId, mode: "practice", warning: null }));
   const onSave = vi.fn(async () => ({ ok: true as const }));
@@ -92,25 +92,74 @@ describe("teammates on the lead sheet", () => {
     expect(screen.queryByText(LEAD_COPY.outside)).toBeNull();
   });
 
-  it("picking a teammate not on People links them, then picks the People row; nothing is saved or sent", async () => {
+  it("picking a teammate writes nothing: no link, no save, no send, no preview; it says when they join People (QA M2)", () => {
     const { link, onSave, send, preview } = open();
     fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
-    expect(link).toHaveBeenCalledWith("p-adaeze");
-    await waitFor(() => expect(screen.getByRole("radio", { name: /Adaeze Nwosu/ }).getAttribute("aria-checked")).toBe("true"));
-    expect(preview).toHaveBeenCalledWith("a", "c9");
+    expect(screen.getByRole("radio", { name: /Adaeze Nwosu/ }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText(LEAD_COPY.addOnSave("Adaeze Nwosu"))).toBeTruthy();
+    expect(link).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
-    // Linked once: the teammate row is gone and the People row stands in its place.
-    expect(screen.getAllByRole("radio", { name: /Adaeze Nwosu/ })).toHaveLength(1);
+    expect(preview).not.toHaveBeenCalled();
+    // Closing or picking someone else now leaves nothing behind.
+    fireEvent.click(screen.getByRole("radio", { name: /Dana Whitlock/ }));
+    expect(screen.queryByText(LEAD_COPY.addOnSave("Adaeze Nwosu"))).toBeNull();
+    expect(link).not.toHaveBeenCalled();
   });
 
-  it("each refusal is said plainly and nothing is picked", async () => {
+  it("Save lead links the teammate, then saves the People row it got back as the lead", async () => {
+    const { link, onSave, send } = open();
+    fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith("a", "c9"));
+    expect(link).toHaveBeenCalledWith("p-adaeze", undefined);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("Ask links the teammate, then shows their text on the confirm; nothing is sent before Send", async () => {
+    const { link, preview, send } = open();
+    fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ask Adaeze" }));
+    await waitFor(() => expect(link).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(preview).toHaveBeenCalledWith("a", "c9"));
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("a People row with the same name is asked about, never linked silently; Link them links that row on save (QA M1)", async () => {
+    const roster = [person("c1", "Dana Whitlock"), person("c7", "Adaeze  NWOSU", { texts: "agreed" })];
+    const { link, onSave, preview } = open({ roster });
+    fireEvent.click(screen.getByRole("radio", { name: /^Adaeze Nwosu/ }));
+    expect(screen.getByText(LEAD_COPY.sameName("Adaeze Nwosu"))).toBeTruthy();
+    // Nothing can be saved or asked until the question is answered.
+    expect((screen.getByRole("button", { name: LEAD_COPY.save }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.linkThem }));
+    expect(screen.getByText(LEAD_COPY.linkOnSave("Adaeze Nwosu"))).toBeTruthy();
+    // The existing row's text and agreement are what the preview shows.
+    await waitFor(() => expect(preview).toHaveBeenCalledWith("a", "c7"));
+    expect(link).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
+    await waitFor(() => expect(link).toHaveBeenCalledWith("p-adaeze", "c7"));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+
+  it("No, add them separately makes a new row on save", async () => {
+    const roster = [person("c7", "Adaeze Nwosu")];
+    const { link } = open({ roster });
+    fireEvent.click(screen.getAllByRole("radio", { name: /Adaeze Nwosu/ }).find((el) => el.hasAttribute("data-lead-teammate"))!);
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.keepApart }));
+    expect(screen.getByText(LEAD_COPY.addOnSave("Adaeze Nwosu"))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
+    await waitFor(() => expect(link).toHaveBeenCalledWith("p-adaeze", undefined));
+  });
+
+  it("each refusal on save is said plainly, nothing is saved, and the teammate stays picked", async () => {
     for (const reason of ["missing", "full", "not_ready", "unavailable"] as const) {
-      const { link } = open({ link: async () => ({ ok: false, reason }) });
+      const { link, onSave } = open({ link: async () => ({ ok: false, reason }) });
       fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
+      fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
       expect(await screen.findByText(LEAD_COPY.linkProblems[reason])).toBeTruthy();
       expect(link).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("radio", { name: /Adaeze Nwosu/ }).getAttribute("aria-checked")).toBe("false");
+      expect(onSave).not.toHaveBeenCalled();
       cleanup();
     }
   });
@@ -118,15 +167,17 @@ describe("teammates on the lead sheet", () => {
   it("a thrown link reads as unavailable", async () => {
     open({ link: async () => Promise.reject(new Error("network")) });
     fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
+    fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
     expect(await screen.findByText(LEAD_COPY.linkProblems.unavailable)).toBeTruthy();
   });
 
-  it("a double click links once", async () => {
+  it("a double click on Save lead links once", async () => {
     let finish: (value: TeammateLinkResult) => void = () => undefined;
     const { link } = open({ link: () => new Promise((resolve) => (finish = resolve)) });
-    const row = screen.getByRole("radio", { name: /Adaeze Nwosu/ });
-    fireEvent.click(row);
-    fireEvent.click(row);
+    fireEvent.click(screen.getByRole("radio", { name: /Adaeze Nwosu/ }));
+    const save = screen.getByRole("button", { name: LEAD_COPY.save });
+    fireEvent.click(save);
+    fireEvent.click(save);
     expect(link).toHaveBeenCalledTimes(1);
     expect(screen.getByText(LEAD_COPY.linking("Adaeze Nwosu"))).toBeTruthy();
     finish({ ok: true, contact: person("c9", "Adaeze Nwosu", { teammate: true }) });

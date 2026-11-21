@@ -17,7 +17,7 @@ import { PersonFace } from "@/components/ui/person-face";
 import { tagVariants } from "@/components/ui/tag";
 import { ASK_COPY, SHEET_COPY, type AskPreview, type AskResult } from "@/lib/lead-ask-shared";
 import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
-import { ROSTER_COPY, type RosterContact, type RosterTeammate, type TeammateLinkResult } from "@/lib/roster-shared";
+import { ROSTER_COPY, samePersonName, type RosterContact, type RosterTeammate, type TeammateLinkResult } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
 /** One piece of past work a person led: who it was for and what it was. Never a fee, a value or a score. */
@@ -104,7 +104,7 @@ export function LeadSheet({
    * (their People row, found by their login email, or a new one) and then they are picked like anyone on People.
    */
   teammates?: readonly RosterTeammate[] | undefined;
-  linkTeammate?: ((profileId: string) => Promise<TeammateLinkResult>) | undefined;
+  linkTeammate?: ((profileId: string, contactId?: string) => Promise<TeammateLinkResult>) | undefined;
 }) {
   const proposal = target?.proposal ?? null;
   const fresh = Boolean(target?.fresh);
@@ -132,9 +132,15 @@ export function LeadSheet({
   // People linked on this sheet, shown at once while the list refreshes behind it.
   const [linked, setLinked] = useState<{ profileId: string; contact: RosterContact }[]>([]);
   const [linking, setLinking] = useState<string | null>(null);
+  /**
+   * QA M2 of PR 298: a teammate picked but not on People yet. Nothing is written until Save lead or Ask. `match` is a
+   * People row with the same name (QA M1): the sheet asks whether it is them; `linkTo` is that row once they say yes.
+   */
+  const [pending, setPending] = useState<{ mate: RosterTeammate; match: RosterContact | null; answered: boolean; linkTo: string | null } | null>(null);
 
   useEffect(() => {
     setChoice(current);
+    setPending(null);
     setStep(target?.start === "confirm" && current ? "confirm" : "pick");
     setProblem(null);
     setShown(null);
@@ -182,7 +188,11 @@ export function LeadSheet({
   // The person picked is no longer on the list (they left it, or the saved lead was removed). Nobody can be asked
   // until someone on the list is picked, so the sheet stays on the list and says so.
   const gone = roster !== undefined && choice !== "" && !chosen;
-  const name = gone ? "" : (chosen?.name ?? ready?.name ?? proposal?.leadName ?? "");
+  const name = gone ? "" : (pending?.mate.name ?? chosen?.name ?? ready?.name ?? proposal?.leadName ?? "");
+  /** Someone is picked: a person on People, or a teammate who joins People on Save lead or Ask. */
+  const picked = Boolean(choice) || pending !== null;
+  /** A same-name question waits for its answer before anything can be saved or asked. */
+  const asking = Boolean(pending?.match && !pending.answered);
   const first = name.trim().split(/\s+/)[0] ?? "";
   const confirm = step === "confirm" && !gone;
   const blocked = !ready || Boolean(ready.warning) || gone;
@@ -202,22 +212,60 @@ export function LeadSheet({
     }
   }
 
-  /** A teammate not on People yet: link them (or add them), then they are picked like anyone on the list. */
-  async function pickTeammate(mate: RosterTeammate) {
-    if (!linkTeammate || working || linking) return;
-    setLinking(mate.profileId);
+  /** A teammate not on People yet is picked locally; nothing is written until Save lead or Ask (QA M2 of PR 298). */
+  function pickTeammate(mate: RosterTeammate) {
+    if (working || linking) return;
+    const same = outsiders.filter((person) => samePersonName(person.name, mate.name));
+    setPending({ mate, match: same.length === 1 ? same[0]! : null, answered: false, linkTo: null });
+    setChoice("");
     setProblem(null);
+  }
+
+  /** The admin's answer to "already on People: link them?". Still nothing is written. */
+  function answer(link: boolean) {
+    if (!pending?.match) return;
+    setPending({ ...pending, answered: true, linkTo: link ? pending.match.id : null });
+    setChoice(link ? pending.match.id : "");
+  }
+
+  /**
+   * On Save lead or Ask: the picked teammate's People row is linked (the one they said yes to, else found by login
+   * email, else made), and its id comes back. With no teammate pending, the person already picked.
+   */
+  async function settle(): Promise<string | null> {
+    if (!pending) return choice || null;
+    if (!linkTeammate) return null;
+    setLinking(pending.mate.profileId);
     try {
-      const result = await linkTeammate(mate.profileId);
-      if (result.ok) {
-        setLinked((before) => [...before.filter((entry) => entry.profileId !== mate.profileId), { profileId: mate.profileId, contact: result.contact }]);
-        setChoice(result.contact.id);
-      } else setProblem(LEAD_COPY.linkProblems[result.reason]);
+      const result = await linkTeammate(pending.mate.profileId, pending.linkTo ?? undefined);
+      if (!result.ok) {
+        setProblem(LEAD_COPY.linkProblems[result.reason]);
+        return null;
+      }
+      setLinked((before) => [...before.filter((entry) => entry.profileId !== pending.mate.profileId), { profileId: pending.mate.profileId, contact: result.contact }]);
+      setPending(null);
+      setChoice(result.contact.id);
+      return result.contact.id;
     } catch {
       setProblem(LEAD_COPY.linkProblems.unavailable);
+      return null;
     } finally {
       setLinking(null);
     }
+  }
+
+  async function saveLead() {
+    if (!proposal || working || asking) return;
+    setProblem(null);
+    const id = await settle();
+    if (id) await save(id);
+  }
+
+  async function toAsk() {
+    if (working || asking) return;
+    setProblem(null);
+    if (pending && !(await settle())) return;
+    setStep("confirm");
   }
 
   /** The confirm: saves the pick if it changed, then sends. The only press that does either on the way to an ask. */
@@ -268,6 +316,7 @@ export function LeadSheet({
           on ? "border-[var(--action-edge)] bg-[var(--action-wash)]" : "border-transparent hover:bg-muted",
         )}
         onClick={() => {
+          setPending(null);
           setChoice(person.id);
           setProblem(null);
         }}
@@ -351,12 +400,15 @@ export function LeadSheet({
                         key={mate.profileId}
                         type="button"
                         role="radio"
-                        aria-checked={false}
+                        aria-checked={pending?.mate.profileId === mate.profileId}
                         aria-busy={linking === mate.profileId}
                         data-lead-teammate={mate.profileId}
                         disabled={working || linking !== null}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border border-transparent px-3 py-2 text-left hover:bg-muted disabled:opacity-50"
-                        onClick={() => void pickTeammate(mate)}
+                        className={cn(
+                          "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
+                          pending?.mate.profileId === mate.profileId ? "border-[var(--action-edge)] bg-[var(--action-wash)]" : "border-transparent hover:bg-muted",
+                        )}
+                        onClick={() => pickTeammate(mate)}
                       >
                         <PersonFace name={mate.name} />
                         <span className="min-w-[6.5rem] flex-1">
@@ -395,6 +447,25 @@ export function LeadSheet({
                 </p>
               </div>
             </div>
+            {pending && !confirm ? (
+              asking && pending.match ? (
+                <div data-lead-same-name role="group" aria-label={LEAD_COPY.sameName(pending.mate.name)} className="mt-3 flex flex-col gap-2 text-sm text-foreground">
+                  <p>{LEAD_COPY.sameName(pending.mate.name)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => answer(true)}>
+                      {LEAD_COPY.linkThem}
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => answer(false)}>
+                      {LEAD_COPY.keepApart}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p data-lead-on-save className="mt-3 text-sm text-muted-foreground">
+                  {pending.linkTo ? LEAD_COPY.linkOnSave(pending.mate.name) : LEAD_COPY.addOnSave(pending.mate.name)}
+                </p>
+              )
+            ) : null}
             {chosen && !confirm && !ready?.warning ? (
               <p data-lead-texts={chosen.texts} className="mt-3 text-sm text-foreground">
                 {chosen.texts === "agreed"
@@ -498,8 +569,8 @@ export function LeadSheet({
               <Button
                 type="button"
                 variant="outline"
-                disabled={working || !choice || choice === current || gone}
-                onClick={() => void save(choice)}
+                disabled={working || linking !== null || asking || !picked || (!pending && choice === current) || gone}
+                onClick={() => void saveLead()}
               >
                 {working ? LEAD_COPY.saving : LEAD_COPY.save}
               </Button>
@@ -507,11 +578,8 @@ export function LeadSheet({
                 type="button"
                 data-lead-ask
                 className="h-auto min-h-9 max-w-full whitespace-normal text-left [overflow-wrap:anywhere]"
-                disabled={working || !choice || gone}
-                onClick={() => {
-                  setStep("confirm");
-                  setProblem(null);
-                }}
+                disabled={working || linking !== null || asking || !picked || gone}
+                onClick={() => void toAsk()}
               >
                 {SHEET_COPY.ask(first)}
               </Button>

@@ -89,8 +89,8 @@ export function PillLeadStep({
       }}
       pastWork={pastWorkByLead(desk.data.proposals)}
       teammates={roster.data.allowed ? roster.data.teammates : undefined}
-      linkTeammate={async (teammateId) => {
-        const result = await linkTeammateFn({ data: { profile_id: profileId, teammate_id: teammateId } });
+      linkTeammate={async (teammateId, contactId) => {
+        const result = await linkTeammateFn({ data: { profile_id: profileId, teammate_id: teammateId, contact_id: contactId ?? null } });
         if (result.ok) void roster.refetch();
         return result;
       }}

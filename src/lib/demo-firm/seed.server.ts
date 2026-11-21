@@ -125,14 +125,19 @@ export async function seedDemoLeadLogins(admin: Db, orgId: string, password: str
       ).id;
       await admin.from("user_active_profile").upsert({ user_id: uid, profile_id: profileId });
     }
-    // The demo's own People row of that name, only while it is linked to nobody.
-    const link = await loose
-      .from("roster_contacts")
-      .update({ profile_id: profileId })
-      .eq("org_id", orgId)
-      .eq("full_name", contact.name)
-      .is("profile_id", null)
-      .select("id");
+    // The demo's own People row of that name, only while it is linked to nobody, and only when exactly one row has it
+    // (QA L3 of PR 298: a second "Christy Johnson" added in a rehearsal must not make every later run fail).
+    const named = await loose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).eq("full_name", contact.name);
+    if (named.error) {
+      if (named.error.code === "42703" || named.error.code === "PGRST204") {
+        result.linkWaits = true;
+        continue;
+      }
+      throw new Error(`reading ${contact.name}: ${named.error.message}`);
+    }
+    const rows = (named.data ?? []) as { id: string; profile_id?: string | null }[];
+    if (rows.some((row) => row.profile_id === profileId) || rows.length !== 1 || rows[0]!.profile_id) continue;
+    const link = await loose.from("roster_contacts").update({ profile_id: profileId }).eq("org_id", orgId).eq("id", rows[0]!.id).is("profile_id", null).select("id");
     if (link.error) {
       if (link.error.code === "42703" || link.error.code === "PGRST204") result.linkWaits = true;
       else throw new Error(`linking ${contact.name}: ${link.error.message}`);

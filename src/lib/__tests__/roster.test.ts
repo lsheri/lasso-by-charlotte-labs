@@ -38,6 +38,7 @@ import {
   rosterListInput,
   rosterSaveInput,
   sameEmail,
+  samePersonName,
   teammateLinkInput,
   textsStatus,
   type RosterSaveInput,
@@ -198,6 +199,7 @@ function world(
       rows.push(made);
       return made;
     },
+    linkReady: async () => true,
     ...over,
   };
   return { deps, rows, writes, stored, sent };
@@ -1380,8 +1382,8 @@ describe("the floors, read from the source", () => {
   it("scopes every roster write and read to the caller's workspace", () => {
     const real = server.slice(server.indexOf("export async function realDeps"));
     const calls = real.split('.from("roster_contacts")').slice(1);
-    // Seven since 21 Nov (PR 4a): the teammate link's update, its check and its add join the four.
-    expect(calls).toHaveLength(7);
+    // Eight since 21 Nov (PR 4a): the teammate link's update, its check, its add and the column check join the four.
+    expect(calls).toHaveLength(8);
     for (const call of calls)
       expect(call.slice(0, call.indexOf(";"))).toMatch(/\.eq\("org_id", orgId\)|org_id: orgId/);
     const details = real.split('.from("roster_contact_details")').slice(1);
@@ -1588,6 +1590,7 @@ describe("a teammate with a login as a lead", () => {
     expect(teammateLinkInput({ teammate_id: ` ${CHRISTY.toUpperCase()} `, extra: "x" })).toEqual({ profile_id: null, teammate_id: CHRISTY });
     expect(teammateLinkInput({ teammate_id: "Robert'); drop table" })).toEqual({ profile_id: null, teammate_id: null });
     expect(teammateLinkInput(null)).toEqual({ profile_id: null, teammate_id: null });
+    expect(teammateLinkInput({ teammate_id: CHRISTY, contact_id: ROW_CHRISTY })).toEqual({ profile_id: null, teammate_id: CHRISTY, contact_id: ROW_CHRISTY });
   });
 
   it("the list offers active teammates not on People yet, by name, never coaches, guests, the deactivated or another workspace", async () => {
@@ -1604,6 +1607,53 @@ describe("a teammate with a login as a lead", () => {
     expect(list.allowed && list.contacts.map((c) => [c.name, c.teammate])).toEqual([["Christy Johnson", true]]);
     // The profile id itself never travels with the contact.
     expect(JSON.stringify(list)).not.toContain(CHRISTY);
+  });
+
+  it("published before the SQL, no teammate is offered at all and members are not even read (QA L4)", async () => {
+    const teammates = vi.fn(async () => members);
+    const { deps } = world({ members, rows: [row()], linkReady: async () => false, teammates });
+    const list = await listRoster(deps);
+    expect(list.allowed && list.teammates).toEqual([]);
+    expect(teammates).not.toHaveBeenCalled();
+  });
+
+  it("a linked teammate who is deactivated, made a coach or a guest is shown as an ordinary person, never as a teammate (QA L5)", async () => {
+    for (const over of [{ deactivated_at: "2026-11-21T00:00:00Z" }, { role: "coach" }, { is_guest: true }]) {
+      const { deps } = world({ members: [member(over)], rows: [row({ id: ROW_CHRISTY, full_name: "Christy Johnson", profile_id: CHRISTY })] });
+      const list = await listRoster(deps);
+      expect(list.allowed && list.contacts[0]!.teammate).toBe(false);
+      expect(list.allowed && list.teammates).toEqual([]);
+    }
+  });
+
+  it("on the admin's yes to 'already on People: link them?', links exactly that row (QA M1)", async () => {
+    const { deps, rows, writes } = world({
+      members,
+      rows: [row({ id: ROW_CHRISTY, full_name: "Christy Johnson", profile_id: null }), row({ profile_id: null })],
+    });
+    const result = await linkTeammate(deps, { ...ask(CHRISTY), contact_id: ROW_CHRISTY });
+    expect(result.ok && result.contact).toMatchObject({ id: ROW_CHRISTY, teammate: true });
+    expect(writes).toEqual(["linkProfile"]);
+    expect(rows.find((r) => r.id === DANA)!.profile_id).toBeNull();
+  });
+
+  it("the chosen row must be this workspace's and linked to nobody; otherwise nothing is written", async () => {
+    const LINKED = "0000000c-0000-4000-8000-0000000000c8";
+    for (const contact_id of [LINKED, "0000000c-0000-4000-8000-0000000000ff"]) {
+      const { deps, writes } = world({
+        members,
+        rows: [row({ id: LINKED, profile_id: "0000000d-0000-4000-8000-0000000000cc" }), row({ id: "0000000c-0000-4000-8000-0000000000fe", org_id: OTHER_ORG, profile_id: null })],
+      });
+      expect(await linkTeammate(deps, { ...ask(CHRISTY), contact_id })).toEqual({ ok: false, reason: "missing" });
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("names match for the question only: accents, case and spaces, never a different name", () => {
+    expect(samePersonName(" christy  JOHNSON", "Christy Johnson")).toBe(true);
+    expect(samePersonName("Adaeze Nwosú", "Adaeze Nwosu")).toBe(true);
+    expect(samePersonName("Christy Johnston", "Christy Johnson")).toBe(false);
+    expect(samePersonName("", "")).toBe(false);
   });
 
   it("a failed read of members still shows People, with no teammates offered", async () => {

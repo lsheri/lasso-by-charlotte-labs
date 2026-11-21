@@ -92,6 +92,13 @@ export const LEAD_COPY = {
   outside: "People we work with",
   teammateTag: "Teammate",
   linking: (name: string) => `Adding ${name} to People`,
+  /** QA M1 of PR 298: asked, never assumed. */
+  sameName: (name: string) => `${name} is already on People: link them?`,
+  linkThem: "Link them",
+  keepApart: "No, add them separately",
+  /** QA M2 of PR 298: said while nothing is written yet. */
+  addOnSave: (name: string) => `${name} is added to People when you save or ask.`,
+  linkOnSave: (name: string) => `${name} on People is linked to their login when you save or ask.`,
   linkProblems: {
     missing: "That teammate can no longer lead here. Pick someone else.",
     full: "People is full at 500, so this teammate could not be added. Remove someone under the People tab first.",
