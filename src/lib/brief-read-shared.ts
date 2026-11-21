@@ -271,8 +271,8 @@ export function checkReading(
       ? clients.find((c) => normalise(c.name) === normalise(proposedClient))
       : undefined;
   // Live check of 20 Nov: the model may shorten an existing client's name ("QA redteam client" for "QA redteam client
-  // (safe to ignore)"). An existing client the paste names that contains the model's words is that client, never a new
-  // one. The longest named client is used only when the model gives no name the paste says.
+  // (safe to ignore)"). An existing client the paste names that contains the model's words, as whole words, is that
+  // client, never a new one. The longest named client is used only when the model gives no name the paste says.
   const modelSaid =
     proposedClient && appearsIn(notes, proposedClient) ? normalise(proposedClient) : null;
   const named = clients
@@ -281,9 +281,10 @@ export function checkReading(
   const known =
     modelKnown ??
     (modelSaid
-      ? named.find(
-          (c) => normalise(c.name).includes(modelSaid) || modelSaid.includes(normalise(c.name)),
-        )
+      ? // Only one way round, and as whole words (QA of PR 297): an existing name that contains the model's words is
+        // that client ("QA redteam client" in "QA redteam client (safe to ignore)"); a longer name from the model is
+        // not merged into a shorter existing one ("Mercy Health System" is not "Mercy"), and "team" is not in "redteam".
+        named.find((c) => appearsIn(c.name, proposedClient!))
       : named[0]);
   let client: BriefReading["client"] = known ? { name: known.name, id: known.id } : null;
   if (!client && proposedClient && appearsIn(notes, proposedClient)) {

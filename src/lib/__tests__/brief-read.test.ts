@@ -374,3 +374,14 @@ describe("a shortened client name", () => {
     expect(reading.client).toEqual({ name: "Harbor Health", id: null });
   });
 });
+
+describe("QA of PR 297: containment one way, whole words", () => {
+  it("never merges a longer name from the model into a shorter existing client", () => {
+    const clients = [{ id: "m", name: "Mercy" }];
+    expect(checkReading({ client: "Mercy Health System" }, "Mercy Health System wants a review; Mercy was our client.", clients, NOW).client).toEqual({ name: "Mercy Health System", id: null });
+  });
+  it("needs whole words: team is not in redteam", () => {
+    const clients = [{ id: "qa", name: "QA redteam client (safe to ignore)" }];
+    expect(checkReading({ client: "team" }, "Hi team, QA redteam client (safe to ignore) wants a review.", clients, NOW).client).toEqual({ name: "team", id: null });
+  });
+});
