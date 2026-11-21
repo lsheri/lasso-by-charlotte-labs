@@ -368,3 +368,27 @@ describe("QA H1b of PR 299", () => {
     expect(LEAD_VIEW_COPY.withheld).toBe("Numbers are withheld for you.");
   });
 });
+
+// Live check of PR 299: titles and file names are not money for a Member; only an amount with a currency or money
+// word goes.
+describe("titles and file names for a Member", () => {
+  it("keep their numbers: 'QA 299 lead view check' and 'QA-299-RFP.txt'", async () => {
+    const rows = [proposal({ title: "QA 299 lead view check", sent: ROW_CHRISTY })];
+    const items = [{ id: DOC, owner: MAREN, title: "QA-299-RFP.txt" }];
+    const [row] = (await listLed(world({ rows, items }).store)).proposals;
+    expect(row!.title).toBe("QA 299 lead view check");
+    expect(row!.documents).toEqual([{ id: DOC, title: "QA-299-RFP.txt" }]);
+  });
+  it("lose an amount with a currency sign or money word, and a title that is only an amount reads Untitled", async () => {
+    const rows = [proposal({ title: "$45,000", sent: ROW_CHRISTY })];
+    const items = [{ id: DOC, owner: MAREN, title: "Fee schedule $45,000" }];
+    const [row] = (await listLed(world({ rows, items }).store)).proposals;
+    expect(row!.title).toBe("Untitled");
+    expect(row!.documents).toEqual([{ id: DOC, title: "Fee schedule" }]);
+  });
+  it("a final whose document was deleted shows as gone, never an earlier one (QA L2 of PR 300)", async () => {
+    const { store } = world({ finals: async () => [{ proposal_id: P1, work_item_id: null, chosen_at: "2026-11-21T10:00:00Z" }, { proposal_id: P1, work_item_id: DOC, chosen_at: "2026-11-20T10:00:00Z" }], itemTitles: async () => new Map([[DOC, "Older final"]]) });
+    const [row] = (await listLed(store)).proposals;
+    expect(row!.final).toEqual({ itemId: "", title: "", chosenAt: "2026-11-21T10:00:00Z", gone: true });
+  });
+});

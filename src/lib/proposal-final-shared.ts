@@ -12,7 +12,13 @@
 export type FinalSource = "upload" | "draft" | "document";
 
 /** The latest final, as the Lead sees it. Where it came from is only counted in the event, never stored. */
-export type FinalView = { itemId: string; title: string; chosenAt: string };
+export type FinalView = {
+  itemId: string;
+  title: string;
+  chosenAt: string;
+  /** QA L2 of PR 300: the chosen document was deleted since. The final is gone until one is chosen again. */
+  gone?: true;
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const id = (value: unknown): string | null => (typeof value === "string" && UUID.test(value.trim()) ? value.trim().toLowerCase() : null);
@@ -47,6 +53,7 @@ export const FINAL_COPY = {
   heading: "Final proposal",
   none: "No final proposal chosen yet. Upload it, draft it from the brief, or use one of the documents.",
   chosen: (title: string, day: string) => `${title}, chosen ${day}`,
+  gone: (day: string) => `The final chosen ${day} was deleted. Choose the final again.`,
   upload: "Upload the final",
   uploading: "Uploading",
   draft: "Draft it from the brief",

@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import type { LeadProposalRow } from "@/lib/lead-view.server";
-import { chooseFinal, draftFinal, type FinalStore } from "@/lib/proposal-final.server";
+import { NUMBER_WITHHELD } from "@/lib/money-mask-shared";
+import { chooseFinal, draftFinal, scrubDraftForMember, type FinalStore } from "@/lib/proposal-final.server";
 import { chooseFinalInput, draftTitle, FINAL_COPY } from "@/lib/proposal-final-shared";
 
 const ORG = "00000000-0000-4000-8000-0000000000a1";
@@ -132,7 +133,7 @@ describe("drafting from the brief", () => {
     const { store, drafts, inserted, events } = world();
     const result = await draftFinal(store, { profile_id: null, proposal_id: P1 });
     expect(result).toEqual({ ok: true, itemId: "draft-1", title: draftTitle("Care model review"), gaps: 2, questions: 4 });
-    expect(drafts).toEqual([{ title: "Proposal draft: Care model review", intake: "Larkspur wants a care model review.", documents: [{ id: SENT, title: "Larkspur RFP", text: "RFP words" }] }]);
+    expect(drafts).toEqual([{ title: "Proposal draft: Care model review", intake: "Larkspur wants a care model review.", documents: [{ id: SENT, title: "Larkspur RFP", text: "RFP words" }], member: true }]);
     expect(JSON.stringify(drafts)).not.toContain("secret");
     expect(inserted).toEqual([]);
     expect(events).toEqual([{ type: "proposal.final_drafted", dims: { gaps: "2-5", questions: "2-5" } }]);
@@ -184,5 +185,52 @@ describe("drafting from the brief", () => {
     expect(sql).toMatch(/revoke all on table public\.proposal_final_versions from public, anon, authenticated/);
     expect(sql).not.toMatch(/create policy|grant [^;]* to (anon|authenticated)/i);
     expect(readFileSync("supabase/undo/20261121040000_proposal_final_versions_undo.sql", "utf8")).toContain("drop table if exists public.proposal_final_versions");
+  });
+});
+
+// QA of PR 300: a Member lead's draft carries no figures, wherever the model got them from.
+describe("QA H1 of PR 300", () => {
+  const section = (body: string, quote = "Day rate: 950") => ({ key: "approach" as const, heading: "Approach", body, status: "draft" as const, sources: [{ kind: "fact" as const, itemId: "i1", itemTitle: "RFP", quote }], flags: [] });
+  const draft = (bodies: string[]) => ({
+    sections: bodies.map((body) => section(body)),
+    questions: [{ text: "Is 2000 per workshop right?", fallback: "Expenses 5,000 at cost" }],
+    checks: { names: "passed" as const, blocked: 0, figuresRemoved: 0, newFacts: 0 },
+    precedentIds: [],
+    createdAt: "2026-11-21T00:00:00Z",
+  });
+
+  it("scrubs the model's reply: QA's sentences, quotes and questions lose every figure", () => {
+    const out = scrubDraftForMember(draft(["Our day rate is 950 and each workshop is 2000.", "Expenses 5,000 are billed at cost.", "Total investment 48,500 ex VAT."]));
+    const text = JSON.stringify(out);
+    expect(text).not.toMatch(/950|2000|5,000|48,500/);
+    expect(out.sections[0]!.body).toContain(NUMBER_WITHHELD);
+  });
+
+  it("keeps what is not money: dates, weeks, small counts", () => {
+    const out = scrubDraftForMember(draft(["Kick-off in Week 3, with 3 workshops, by Q4 2026."]));
+    expect(out.sections[0]!.body).toBe("Kick-off in Week 3, with 3 workshops, by Q4 2026.");
+  });
+
+  it("the draft is made with member true for a Member and false for a Lead-role teammate", async () => {
+    const member = world();
+    await draftFinal(member.store, { profile_id: null, proposal_id: P1 });
+    expect((member.drafts[0] as { member: boolean }).member).toBe(true);
+    const lead = world({ role: "lead" });
+    await draftFinal(lead.store, { profile_id: null, proposal_id: P1 });
+    expect((lead.drafts[0] as { member: boolean }).member).toBe(false);
+  });
+
+  it("the source: for a Member, what the draft engine reads (the exemplar too) and what is saved go through the blunt mask", () => {
+    const source = readFileSync("src/lib/proposal-final.server.ts", "utf8");
+    expect(source).toMatch(/input\.member \? numbersWithheld\(text\) : text/);
+    expect(source).toMatch(/const draft = input\.member \? scrubDraftForMember\(written\) : written;/);
+    const engine = readFileSync("src/lib/proposal-draft.server.ts", "utf8");
+    expect(engine.slice(engine.indexOf("export async function buildExemplar"), engine.indexOf("const DRAFT_SYSTEM"))).toContain("await read(pick.id)");
+  });
+
+  it("the SQL is append only for the server, and a deleted document leaves its choice with no item (QA L1, L2)", () => {
+    const sql = readFileSync("supabase/migrations/20261121040000_proposal_final_versions.sql", "utf8");
+    expect(sql).toMatch(/revoke update, delete, truncate on table public\.proposal_final_versions from service_role/);
+    expect(sql).toMatch(/work_item_id uuid references public\.work_items\(id\) on delete set null/);
   });
 });

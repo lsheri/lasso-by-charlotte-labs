@@ -15,7 +15,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { docsSentToLead } from "./lead-view-shared";
 import { leads, realLeadStore, type LeadCaller, type LeadContext, type LeadProposalRow, type LeadStore } from "./lead-view.server";
-import { numbersWithheld, seesMoney } from "./money-mask-shared";
+import { numbersWithheld, numbersWithheldInline, seesMoney } from "./money-mask-shared";
+import type { ProposalDraft } from "./proposal-draft-shared";
 import { countBand } from "./proposal-desk-shared";
 import {
   draftTitle,
@@ -37,7 +38,8 @@ export type FinalStore = LeadStore & {
   latestVersion: (itemId: string) => Promise<string | null>;
   insertFinal: (row: { org_id: string; proposal_id: string; work_item_id: string; document_version_id: string | null; chosen_by: string; chosen_at: string }) => Promise<boolean | "absent">;
   /** Runs the draft engine on these notes and documents and saves the draft as the caller's own unplaced work. */
-  makeDraft: (caller: LeadCaller, input: { title: string; intake: string; documents: { id: string; title: string; text: string }[] }) => Promise<MadeDraft | null>;
+  /** `member`: the caller may not see money, so everything the model reads and everything saved has numbers withheld. */
+  makeDraft: (caller: LeadCaller, input: { title: string; intake: string; documents: { id: string; title: string; text: string }[]; member: boolean }) => Promise<MadeDraft | null>;
   recordDraft: (caller: LeadCaller, dims: Record<string, string>) => Promise<void>;
 };
 
@@ -112,7 +114,7 @@ export async function draftFinal(store: FinalStore, input: DraftFinalInput): Pro
   if (!notes && documents.length === 0) return { ok: false, problem: FINAL_COPY.noBrief };
   let made: MadeDraft | null;
   try {
-    made = await store.makeDraft(caller, { title: draftTitle(row.title), intake: notes, documents });
+    made = await store.makeDraft(caller, { title: draftTitle(row.title), intake: notes, documents, member: !seesMoney(caller.role) });
   } catch (failure) {
     // The daily spend limit says so in its own words.
     if (failure instanceof Response && failure.status === 429) return { ok: false, problem: await failure.text().catch(() => FINAL_COPY.draftFailed) };
@@ -125,6 +127,24 @@ export async function draftFinal(store: FinalStore, input: DraftFinalInput): Pro
     /* saved; a recording fault changes nothing */
   }
   return { ok: true, ...made };
+}
+
+/**
+ * QA H1 of PR 300 (Liam: Members never see money): a Member's draft is scrubbed before it is saved or shown. Every
+ * section heading and body, every question and every quoted source line goes through the blunt numbers mask, so a
+ * figure the model copied from a past proposal, or made up, never reaches the Member's own work.
+ */
+export function scrubDraftForMember(draft: ProposalDraft): ProposalDraft {
+  return {
+    ...draft,
+    sections: draft.sections.map((section) => ({
+      ...section,
+      heading: numbersWithheldInline(section.heading),
+      body: numbersWithheld(section.body),
+      sources: section.sources.map((source) => (source.kind === "fact" ? { ...source, quote: numbersWithheld(source.quote) } : source)),
+    })),
+    questions: draft.questions.map((question) => ({ text: numbersWithheld(question.text), fallback: numbersWithheld(question.fallback) })),
+  };
 }
 
 /* ---------------------------------------------------------------------------
@@ -166,15 +186,19 @@ export async function realFinalStore(context: LeadContext, profileId: string | n
       const meta = await resolveAiMeta(own as never, { surface: "proposal_draft", orgId: caller.orgId, profileId: caller.profileId, userId: caller.userId });
       const { runProposalDraft } = await import("./proposal-draft.server");
       const intake = [input.intake, ...input.documents.map((doc) => `${doc.title}\n${doc.text}`)].filter(Boolean).join("\n\n");
-      const { draft } = await runProposalDraft(chatComplete, {
+      // A Member's draft: the exemplar and anything else read from the firm also has numbers withheld on the way in.
+      const read = (itemId: string) =>
+        readFirmItemText(supabaseAdmin as never, corpus, itemId).then((text) => (text !== null && input.member ? numbersWithheld(text) : text));
+      const { draft: written } = await runProposalDraft(chatComplete, {
         corpus,
         precedentIds: [],
         intake,
         brief: cleanBrief({}),
         ownItems: new Map(input.documents.map((doc) => [doc.id, { title: doc.title, text: doc.text }])),
-        read: (itemId) => readFirmItemText(supabaseAdmin as never, corpus, itemId),
+        read,
         meta,
       });
+      const draft = input.member ? scrubDraftForMember(written) : written;
       const { renderProposalMarkdown, isEmptyDraft } = await import("./proposal-draft-shared");
       if (isEmptyDraft(draft)) return null;
       const body = renderProposalMarkdown(input.title, draft);
