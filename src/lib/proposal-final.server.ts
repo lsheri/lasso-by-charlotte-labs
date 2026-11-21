@@ -15,6 +15,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { docsSentToLead } from "./lead-view-shared";
 import { leads, realLeadStore, type LeadCaller, type LeadContext, type LeadProposalRow, type LeadStore } from "./lead-view.server";
+import { numbersWithheld, seesMoney } from "./money-mask-shared";
 import { countBand } from "./proposal-desk-shared";
 import {
   draftTitle,
@@ -101,9 +102,12 @@ export async function draftFinal(store: FinalStore, input: DraftFinalInput): Pro
   const documents: { id: string; title: string; text: string }[] = [];
   for (const doc of docs) {
     const text = await store.itemText(caller.orgId, doc.id).catch(() => null);
-    if (text?.trim()) documents.push({ id: doc.id, title: doc.title, text });
+    // A Member's draft is built only from what a Member may read: numbers withheld before the model sees them, so
+    // none can come back in their draft (Liam: Members never see money).
+    if (text?.trim()) documents.push({ id: doc.id, title: doc.title, text: seesMoney(caller.role) ? text : numbersWithheld(text) });
   }
-  const notes = row.notes?.trim() ?? "";
+  const rawNotes = row.notes?.trim() ?? "";
+  const notes = rawNotes && !seesMoney(caller.role) ? numbersWithheld(rawNotes) : rawNotes;
   // Nothing to draft from: refused before any model call.
   if (!notes && documents.length === 0) return { ok: false, problem: FINAL_COPY.noBrief };
   let made: MadeDraft | null;

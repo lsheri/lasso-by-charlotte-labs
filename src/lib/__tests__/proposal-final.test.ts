@@ -138,6 +138,16 @@ describe("drafting from the brief", () => {
     expect(events).toEqual([{ type: "proposal.final_drafted", dims: { gaps: "2-5", questions: "2-5" } }]);
   });
 
+  it("a Member lead's draft reads the brief and documents with numbers withheld; a Lead-role teammate's reads them as written", async () => {
+    const notes = "Budget 50-60k. Day rate: 950.";
+    const member = world({ rows: [proposal({ notes })], itemText: async () => "Discovery: 18,000" });
+    await draftFinal(member.store, { profile_id: null, proposal_id: P1 });
+    expect(JSON.stringify(member.drafts)).not.toMatch(/50-60k|950|18,000/);
+    const lead = world({ role: "lead", rows: [proposal({ notes })], itemText: async () => "Discovery: 18,000" });
+    await draftFinal(lead.store, { profile_id: null, proposal_id: P1 });
+    expect(JSON.stringify(lead.drafts)).toMatch(/950/);
+  });
+
   it("with no brief and nothing sent, it refuses before any model call", async () => {
     const makeDraft = vi.fn();
     const { store } = world({ rows: [proposal({ notes: null })], sent: null, makeDraft });
