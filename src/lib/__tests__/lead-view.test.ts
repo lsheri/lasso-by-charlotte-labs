@@ -261,3 +261,21 @@ describe("sendLeadDocuments", () => {
     expect(undo).toContain("drop column if exists lead_docs_to");
   });
 });
+
+describe("the floors, read from the source", () => {
+  it("every read starts with requireFirmMember, which refuses a deactivated person, a guest and a coach (QA of PR 298, L5)", () => {
+    const server = readFileSync("src/lib/lead-view.server.ts", "utf8");
+    expect(server).toMatch(/const \{ profile, supabaseAdmin \} = await requireFirmMember\(context\.supabase, context\.userId, profileId\);/);
+    const gate = readFileSync("src/lib/firm-corpus.server.ts", "utf8");
+    expect(gate).toMatch(/profile\.role === "coach"/);
+    expect(gate).toMatch(/me\.is_guest \|\| me\.deactivated_at/);
+    const fns = readFileSync("src/lib/lead-view.functions.ts", "utf8");
+    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(3);
+  });
+
+  it("the lead is found by the caller's own link, read fresh on every call, and never from the browser", () => {
+    const server = readFileSync("src/lib/lead-view.server.ts", "utf8");
+    expect(server).toContain('.eq("profile_id", me)');
+    expect(readFileSync("src/lib/lead-view-shared.ts", "utf8")).not.toMatch(/contact_id"?\]|lead_contact_id"\]/);
+  });
+});
