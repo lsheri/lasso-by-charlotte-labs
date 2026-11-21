@@ -24,7 +24,7 @@ const proposal = (over: Partial<LeadProposalRow> = {}): LeadProposalRow => ({
 });
 const open = (over: Partial<ApprovalRow> = {}): ApprovalRow => ({ id: A1, proposal_id: P1, final_version_id: V1, requested_by: CHRISTY, requested_at: "2026-11-21T10:00:00Z", decision: null, decided_by: null, decided_at: null, note: null, ...over });
 
-function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?: LeadProposalRow; approvals?: ApprovalRow[]; finals?: { id: string; work_item_id: string | null }[]; others?: number } = {}) {
+function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?: LeadProposalRow; approvals?: ApprovalRow[]; versions?: { id: string; work_item_id: string | null }[]; others?: number } = {}) {
   const approvals = over.approvals ?? [];
   const writes: unknown[] = [];
   const events: unknown[] = [];
@@ -38,7 +38,7 @@ function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?
     now: () => NOW,
     item: async (_o: string, id: string) => ({ id, owner_id: CHRISTY, title: "Final v3" }),
     itemText: async () => "The final words. Fee 45,000.",
-    finalVersions: async () => over.finals ?? [{ id: V1, work_item_id: "item-1" }],
+    finalVersions: async () => over.versions ?? [{ id: V1, work_item_id: "item-1" }],
     approvalRows: async () => approvals,
     insertApproval: async (row: unknown) => {
       writes.push({ insert: row });
@@ -92,8 +92,8 @@ describe("sending for approval", () => {
   });
   it("one open request per proposal; no final, or a deleted one, cannot be sent", async () => {
     expect(await askApproval(world({ approvals: [open()] }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.already });
-    expect(await askApproval(world({ finals: [] }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.needsFinal });
-    expect(await askApproval(world({ finals: [{ id: V1, work_item_id: null }] }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.needsFinal });
+    expect(await askApproval(world({ versions: [] }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.needsFinal });
+    expect(await askApproval(world({ versions: [{ id: V1, work_item_id: null }] }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.needsFinal });
     expect(await askApproval(world({ insertApproval: async () => "taken" }).store, { profile_id: null, proposal_id: P1, withdraw: false })).toEqual({ ok: false, problem: APPROVAL_COPY.already });
   });
   it("someone who neither leads nor started it, or a closed proposal, is refused", async () => {
@@ -149,8 +149,8 @@ describe("deciding", () => {
   });
   it("a replaced version, a deleted final, a request no longer open, a lost or won proposal are all refused", async () => {
     const admin = { me: MAREN, role: "admin" };
-    expect(await decideApproval(world({ ...admin, approvals: [open()], finals: [{ id: V2, work_item_id: "i2" }, { id: V1, work_item_id: "i1" }] }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.stale("Christy Johnson") });
-    expect(await decideApproval(world({ ...admin, approvals: [open()], finals: [{ id: V1, work_item_id: null }] }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.finalGone });
+    expect(await decideApproval(world({ ...admin, approvals: [open()], versions: [{ id: V2, work_item_id: "i2" }, { id: V1, work_item_id: "i1" }] }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.stale("Christy Johnson") });
+    expect(await decideApproval(world({ ...admin, approvals: [open()], versions: [{ id: V1, work_item_id: null }] }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.finalGone });
     expect(await decideApproval(world({ ...admin, approvals: [] }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.gone });
     expect(await decideApproval(world({ ...admin, approvals: [open()], decide: async () => false }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.gone });
     for (const status of ["lost", "won"]) expect(await decideApproval(world({ ...admin, approvals: [open()], row: proposal({ status }) }).store, decide())).toEqual({ ok: false, problem: APPROVAL_COPY.closed });
