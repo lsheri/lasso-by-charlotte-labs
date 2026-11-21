@@ -3,7 +3,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
-import { docsSentToLead, LEAD_VIEW_COPY, leadDocInput, ledInput, SEND_DOCS_COPY, sendDocsInput, upNextOrder, type LedProposal } from "@/lib/lead-view-shared";
+import { docsSentToLead, sendState, LEAD_VIEW_COPY, leadDocInput, ledInput, SEND_DOCS_COPY, sendDocsInput, upNextOrder, type LedProposal } from "@/lib/lead-view-shared";
+import { MONEY_SECTION_WITHHELD, MONEY_WITHHELD } from "@/lib/money-mask-shared";
 import { listLed, readLeadDocument, sendLeadDocuments, type LeadProposalRow, type LeadStore } from "@/lib/lead-view.server";
 
 const ORG = "00000000-0000-4000-8000-0000000000a1";
@@ -18,7 +19,9 @@ const DOC = "00000000-0000-4000-8000-0000000000f1";
 const PRIVATE = "00000000-0000-4000-8000-0000000000f2";
 const NOW = new Date("2026-11-21T12:00:00Z");
 
-const proposal = (over: Partial<LeadProposalRow> = {}): LeadProposalRow => ({
+/** A proposal as stored, with what was sent to its lead beside it (the proposal_lead_docs row, for the fake store). */
+type Row = LeadProposalRow & { sent?: string | null; sentItems?: string[] };
+const proposal = (over: Partial<Row> = {}): Row => ({
   id: P1,
   org_id: ORG,
   client_id: "c-larkspur",
@@ -31,11 +34,11 @@ const proposal = (over: Partial<LeadProposalRow> = {}): LeadProposalRow => ({
   lead_contact_id: ROW_CHRISTY,
   client_due_on: "2026-11-28",
   notes: "Larkspur wants a care model review. Fixed fee of $45,000 plus expenses.",
-  lead_docs_to: null,
+  sent: null,
   ...over,
 });
 
-function world(over: Partial<LeadStore> & { role?: string; me?: string; rows?: LeadProposalRow[]; links?: Record<string, string | null>; items?: { id: string; owner: string; title: string; org?: string }[]; ctx?: { proposal_id: string; work_item_id: string }[] } = {}) {
+function world(over: Partial<LeadStore> & { role?: string; me?: string; rows?: Row[]; links?: Record<string, string | null>; items?: { id: string; owner: string; title: string; org?: string }[]; ctx?: { proposal_id: string; work_item_id: string }[] } = {}) {
   const rows = over.rows ?? [proposal()];
   const links = over.links ?? { [ROW_CHRISTY]: CHRISTY, [ROW_BEN]: null };
   const items = over.items ?? [
@@ -63,10 +66,15 @@ function world(over: Partial<LeadStore> & { role?: string; me?: string; rows?: L
       { id: "b3", title: "Pellham pricing", client: "Pellham", created_at: "2025-02-01" },
     ],
     itemText: async (_orgId, id) => (id === DOC ? "Scope and Fees.\nThe fee is $120k per month." : "secret"),
-    setDocs: async (id, _orgId, to, at) => {
-      writes.push({ id, to, at });
+    sentDocs: async (orgId, ids) =>
+      new Map(rows.filter((r) => r.org_id === orgId && ids.includes(r.id) && r.sent).map((r) => [r.id, { contact_id: r.sent as string, item_ids: r.sentItems ?? [DOC] }])),
+    saveSent: async (id, _orgId, sent) => {
+      writes.push(sent ? { id, to: sent.contact_id, items: sent.item_ids, at: sent.sent_at } : { id, to: null });
       const row = rows.find((r) => r.id === id);
-      if (row) row.lead_docs_to = to;
+      if (row) {
+        row.sent = sent?.contact_id ?? null;
+        row.sentItems = sent?.item_ids ?? [];
+      }
       return true;
     },
     record: async (_c, type, dims) => void events.push({ type, dims }),
@@ -78,10 +86,16 @@ function world(over: Partial<LeadStore> & { role?: string; me?: string; rows?: L
 
 describe("the pure rules", () => {
   it("documents count as sent only to the People row that is the lead now", () => {
-    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY, lead_docs_to: ROW_CHRISTY })).toBe(true);
-    expect(docsSentToLead({ lead_contact_id: ROW_BEN, lead_docs_to: ROW_CHRISTY })).toBe(false);
-    expect(docsSentToLead({ lead_contact_id: null, lead_docs_to: null })).toBe(false);
-    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY })).toBe(false);
+    const sent = { contact_id: ROW_CHRISTY, item_ids: [DOC] };
+    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY }, sent)).toBe(true);
+    expect(docsSentToLead({ lead_contact_id: ROW_BEN }, sent)).toBe(false);
+    expect(docsSentToLead({ lead_contact_id: null }, null)).toBe(false);
+    expect(docsSentToLead({ lead_contact_id: ROW_CHRISTY }, undefined)).toBe(false);
+    // The owner's row: everything sent, something added since, not yet, no login.
+    expect(sendState({ lead_contact_id: ROW_CHRISTY }, sent, [DOC], true)).toBe("sent");
+    expect(sendState({ lead_contact_id: ROW_CHRISTY }, sent, [DOC, PRIVATE], true)).toBe("more");
+    expect(sendState({ lead_contact_id: ROW_CHRISTY }, null, [DOC], true)).toBe("unsent");
+    expect(sendState({ lead_contact_id: ROW_BEN }, null, [DOC], false)).toBe("no_login");
   });
 
   it("Up next is the one over or closest to its goal; sent ones go last", () => {
@@ -119,14 +133,14 @@ describe("listLed", () => {
   it("a Member who leads never sees money in the brief; a Lead-role teammate does", async () => {
     const member = (await listLed(world({ role: "em" }).store)).proposals[0]!.brief!;
     expect(member).not.toMatch(/45,000|\$/);
-    expect(member).toContain("[fee]");
+    expect(member).toContain(MONEY_WITHHELD);
     const lead = (await listLed(world({ role: "lead" }).store)).proposals[0]!.brief!;
     expect(lead).toContain("$45,000");
   });
 
   it("after the owner sends them, the documents are listed by title, in order, and only the owner's own work", async () => {
     const { store } = world({
-      rows: [proposal({ lead_docs_to: ROW_CHRISTY })],
+      rows: [proposal({ sent: ROW_CHRISTY })],
       ctx: [
         { proposal_id: P1, work_item_id: DOC },
         { proposal_id: P1, work_item_id: "not-mine" },
@@ -138,7 +152,7 @@ describe("listLed", () => {
   });
 
   it("documents sent to a previous lead stay closed for the new one", async () => {
-    const { store } = world({ links: { [ROW_BEN]: CHRISTY }, rows: [proposal({ lead_contact_id: ROW_BEN, lead_docs_to: ROW_CHRISTY })] });
+    const { store } = world({ links: { [ROW_BEN]: CHRISTY }, rows: [proposal({ lead_contact_id: ROW_BEN, sent: ROW_CHRISTY })] });
     expect((await listLed(store)).proposals[0]!.documents).toBeNull();
   });
 
@@ -170,7 +184,7 @@ describe("listLed", () => {
 });
 
 describe("readLeadDocument", () => {
-  const sent = () => world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+  const sent = () => world({ rows: [proposal({ sent: ROW_CHRISTY })] });
 
   it("opens a sent document for the lead, amounts withheld for a Member, and records only that", async () => {
     const { store, events } = sent();
@@ -181,7 +195,7 @@ describe("readLeadDocument", () => {
   });
 
   it("a Lead-role teammate reads the figures", async () => {
-    const { store } = world({ role: "lead", rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+    const { store } = world({ role: "lead", rows: [proposal({ sent: ROW_CHRISTY })] });
     const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
     expect(result.ok && result.text).toContain("$120k");
   });
@@ -190,12 +204,12 @@ describe("readLeadDocument", () => {
     const gone = { ok: false, problem: LEAD_VIEW_COPY.docGone };
     const cases: [ReturnType<typeof world>, string][] = [
       [world(), DOC],
-      [world({ rows: [proposal({ lead_docs_to: ROW_BEN })] }), DOC],
+      [world({ rows: [proposal({ sent: ROW_BEN })] }), DOC],
       [sent(), PRIVATE],
-      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })], items: [{ id: DOC, owner: CHRISTY, title: "x" }] }), DOC],
-      [world({ me: MAREN, rows: [proposal({ lead_docs_to: ROW_CHRISTY })] }), DOC],
-      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY, status: "won" })] }), DOC],
-      [world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY, org_id: OTHER })] }), DOC],
+      [world({ rows: [proposal({ sent: ROW_CHRISTY })], items: [{ id: DOC, owner: CHRISTY, title: "x" }] }), DOC],
+      [world({ me: MAREN, rows: [proposal({ sent: ROW_CHRISTY })] }), DOC],
+      [world({ rows: [proposal({ sent: ROW_CHRISTY, status: "won" })] }), DOC],
+      [world({ rows: [proposal({ sent: ROW_CHRISTY, org_id: OTHER })] }), DOC],
     ];
     for (const [w, item] of cases) {
       const text = vi.fn(w.store.itemText);
@@ -206,14 +220,14 @@ describe("readLeadDocument", () => {
   });
 
   it("a giant document opens at its start, saying so", async () => {
-    const { store } = world({ role: "lead", rows: [proposal({ lead_docs_to: ROW_CHRISTY })], itemText: async () => "x".repeat(200_000) });
+    const { store } = world({ role: "lead", rows: [proposal({ sent: ROW_CHRISTY })], itemText: async () => "x".repeat(200_000) });
     const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
     expect(result.ok && result.text.length).toBeLessThan(50_200);
     expect(result.ok && result.text.endsWith(LEAD_VIEW_COPY.clipped)).toBe(true);
   });
 
   it("a document with no readable words says it could not be opened", async () => {
-    const { store } = world({ rows: [proposal({ lead_docs_to: ROW_CHRISTY })], itemText: async () => null });
+    const { store } = world({ rows: [proposal({ sent: ROW_CHRISTY })], itemText: async () => null });
     expect(await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC })).toEqual({ ok: false, problem: LEAD_VIEW_COPY.docFailed });
   });
 });
@@ -222,16 +236,16 @@ describe("sendLeadDocuments", () => {
   it("the owner sends them to a teammate lead: one write, one event with a count band", async () => {
     const { store, writes, events } = world({ me: MAREN, role: "admin" });
     expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
-    expect(writes).toEqual([{ id: P1, to: ROW_CHRISTY, at: NOW.toISOString() }]);
+    expect(writes).toEqual([{ id: P1, to: ROW_CHRISTY, items: [DOC], at: NOW.toISOString() }]);
     expect(events).toEqual([{ type: "proposal.docs_to_lead", dims: { documents: "1" } }]);
   });
 
   it("a second press writes nothing; Stop sharing clears it", async () => {
-    const { store, writes } = world({ me: MAREN, rows: [proposal({ lead_docs_to: ROW_CHRISTY })] });
+    const { store, writes } = world({ me: MAREN, rows: [proposal({ sent: ROW_CHRISTY })] });
     expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
     expect(writes).toEqual([]);
     expect(await sendLeadDocuments(store, { profile_id: null, proposal_id: P1, send: false })).toEqual({ ok: true });
-    expect(writes).toEqual([{ id: P1, to: null, at: null }]);
+    expect(writes).toEqual([{ id: P1, to: null }]);
   });
 
   it("only the owner: an admin, a lead or the lead themselves is refused, and nothing is written", async () => {
@@ -248,17 +262,19 @@ describe("sendLeadDocuments", () => {
     expect(await send(world({ me: MAREN, rows: [proposal({ lead_contact_id: ROW_BEN })] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.noLogin("") });
     expect(await send(world({ me: MAREN, ctx: [] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.noDocs });
     expect(await send(world({ me: MAREN, rows: [proposal({ status: "won" })] }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.closed });
-    expect(await send(world({ me: MAREN, setDocs: async () => "absent" }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.notReady });
-    expect(await send(world({ me: MAREN, setDocs: async () => false }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.failed });
+    expect(await send(world({ me: MAREN, saveSent: async () => "absent" }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.notReady });
+    expect(await send(world({ me: MAREN, saveSent: async () => false }))).toEqual({ ok: false, problem: SEND_DOCS_COPY.failed });
   });
 
-  it("the SQL adds two nullable columns and nothing else; the undo drops them", () => {
-    const sql = readFileSync("supabase/migrations/20261121030000_proposals_lead_docs.sql", "utf8");
-    expect(sql).toMatch(/add column if not exists lead_docs_to uuid references public\.roster_contacts\(id\) on delete set null/);
-    expect(sql).toMatch(/add column if not exists lead_docs_at timestamptz/);
-    expect(sql).not.toMatch(/\bgrant\b|\bpolicy\b|drop /i);
-    const undo = readFileSync("supabase/undo/20261121030000_proposals_lead_docs_undo.sql", "utf8");
-    expect(undo).toContain("drop column if exists lead_docs_to");
+  it("the SQL is one server-only table, never readable from a browser (QA L3 of PR 299); the undo drops it", () => {
+    const sql = readFileSync("supabase/migrations/20261121030000_proposal_lead_docs.sql", "utf8");
+    expect(sql).toMatch(/create table if not exists public\.proposal_lead_docs/);
+    expect(sql).toMatch(/item_ids uuid\[\] not null/);
+    expect(sql).toMatch(/enable row level security/);
+    expect(sql).toMatch(/revoke all on table public\.proposal_lead_docs from public, anon, authenticated/);
+    expect(sql).not.toMatch(/create policy|grant [^;]* to (anon|authenticated)|alter table public\.proposals/i);
+    const undo = readFileSync("supabase/undo/20261121030000_proposal_lead_docs_undo.sql", "utf8");
+    expect(undo).toContain("drop table if exists public.proposal_lead_docs");
   });
 });
 
@@ -277,5 +293,56 @@ describe("the floors, read from the source", () => {
     const server = readFileSync("src/lib/lead-view.server.ts", "utf8");
     expect(server).toContain('.eq("profile_id", me)');
     expect(readFileSync("src/lib/lead-view-shared.ts", "utf8")).not.toMatch(/contact_id"?\]|lead_contact_id"\]/);
+  });
+});
+
+// QA of PR 299: H1 (a Member lead saw ranges, number words, bare price tables and day rates), L1 (titles), M1 (a
+// document added after the send opened without a new send).
+describe("QA of PR 299", () => {
+  const BRIEF = ["Budget 50-60k", "They pay 45 thousand a month", "Rate 1,250/day", "Price: forty thousand dollars", "Fees", "Phase 1: 20,000", "Phase 2: 30,000"].join("\n");
+  const RFP = ["Scope", "Review the care model.", "", "Pricing and payment", "Discovery: 18,000", "Delivery: 42,000", "Total not to exceed 60k", "Investment: one hundred thousand dollars"].join("\n");
+  const FIGURES = /50-60k|45 thousand|1,250|forty thousand|20,000|30,000|18,000|42,000|60k|one hundred thousand/;
+
+  it("H1: the brief reaches a Member with every one of those figures withheld; a Lead-role teammate reads them", async () => {
+    const member = (await listLed(world({ role: "em", rows: [proposal({ notes: BRIEF })] }).store)).proposals[0]!.brief!;
+    expect(member).not.toMatch(FIGURES);
+    const lead = (await listLed(world({ role: "lead", rows: [proposal({ notes: BRIEF })] }).store)).proposals[0]!.brief!;
+    expect(lead).toBe(BRIEF);
+  });
+
+  it("H1: an RFP with a bare price table opens for a Member with the pricing withheld and says so", async () => {
+    const { store } = world({ rows: [proposal({ sent: ROW_CHRISTY })], itemText: async () => RFP });
+    const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
+    expect(result.ok && result.withheld).toBe(true);
+    expect(result.ok && result.text).not.toMatch(FIGURES);
+    expect(result.ok && result.text).toContain(MONEY_SECTION_WITHHELD);
+    expect(result.ok && result.text).toContain("Review the care model.");
+  });
+
+  it("L1: titles lose their figures for a Member, and keep them for a Lead-role teammate", async () => {
+    const rows = [proposal({ title: "Care model review, $80k cap", sent: ROW_CHRISTY })];
+    const items = [{ id: DOC, owner: MAREN, title: "Fee schedule $45,000" }];
+    const member = (await listLed(world({ rows, items }).store)).proposals[0]!;
+    expect(member.title).toBe("Care model review, cap");
+    expect(member.documents).toEqual([{ id: DOC, title: "Fee schedule" }]);
+    const lead = (await listLed(world({ role: "lead", rows: [proposal({ title: "Care model review, $80k cap", sent: ROW_CHRISTY })], items }).store)).proposals[0]!;
+    expect(lead.title).toContain("$80k");
+  });
+
+  it("M1: a document added after the send is not listed and does not open until the owner sends again", async () => {
+    const ctx = [
+      { proposal_id: P1, work_item_id: DOC },
+      { proposal_id: P1, work_item_id: PRIVATE },
+    ];
+    const w = world({ rows: [proposal({ sent: ROW_CHRISTY, sentItems: [DOC] })], ctx });
+    const [row] = (await listLed(w.store)).proposals;
+    expect(row!.documents!.map((d) => d.id)).toEqual([DOC]);
+    expect(row!.documentCount).toBe(2);
+    expect(await readLeadDocument(w.store, { profile_id: null, proposal_id: P1, work_item_id: PRIVATE })).toEqual({ ok: false, problem: LEAD_VIEW_COPY.docGone });
+    // The owner sends again: now both.
+    const owner = world({ me: MAREN, rows: w.rows, ctx });
+    expect(await sendLeadDocuments(owner.store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
+    expect(owner.writes).toEqual([{ id: P1, to: ROW_CHRISTY, items: [DOC, PRIVATE], at: NOW.toISOString() }]);
+    expect((await readLeadDocument(w.store, { profile_id: null, proposal_id: P1, work_item_id: PRIVATE })).ok).toBe(true);
   });
 });

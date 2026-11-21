@@ -52,6 +52,7 @@ import {
   type LeadResult,
 } from "./proposal-desk-shared";
 import { canManageRoster } from "./roster-shared";
+import { sendState, type SentDocs } from "./lead-view-shared";
 
 type Db = SupabaseClient<Database>;
 /** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
@@ -74,8 +75,6 @@ export type ProposalRow = {
   archived_at?: string | null;
   /** 20 Nov 2026, PR 3a: arrives with the client_due_on migration. */
   client_due_on?: string | null;
-  /** 21 Nov 2026, PR 4b: the People row the documents were sent to. */
-  lead_docs_to?: string | null;
 };
 
 /** The latest ask on a proposal, as stored. */
@@ -129,6 +128,8 @@ export type DeskStore = {
   leadNames: (orgId: string, contactIds: string[]) => Promise<Map<string, string>>;
   /** 21 Nov 2026, PR 4b: of these roster people, the ones linked to a teammate's login. Left out, none are. */
   leadLinks?: (orgId: string, contactIds: string[]) => Promise<Set<string>>;
+  /** 21 Nov 2026, PR 4b: what each of these proposals' owners sent to the lead. Left out, nothing was sent. */
+  leadDocsSent?: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs>>;
   /** The asks sent about these proposals in this workspace, newest first. Empty when there are none or they cannot be read. */
   asks: (orgId: string, proposalIds: string[]) => Promise<DeskAsk[]>;
   /** Where this workspace's texts go, and whether texting is switched on. */
@@ -223,6 +224,8 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   // PR 4b: whether each of the caller's own proposals has a lead with a login to send the documents to.
   const ownLeads = [...new Set(mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id).map((row) => row.lead_contact_id as string))];
   const linked = ownLeads.length && store.leadLinks ? await store.leadLinks(caller.orgId, ownLeads).catch(() => new Set<string>()) : new Set<string>();
+  const ownLed = mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id && row.status === "open").map((row) => row.id);
+  const sentDocs = ownLed.length && store.leadDocsSent ? await store.leadDocsSent(caller.orgId, ownLed).catch(() => new Map<string, SentDocs>()) : new Map<string, SentDocs>();
   const proposals: DeskProposal[] = mine.map((row) => {
     const items = context.filter((c) => c.proposal_id === row.id);
     const own = row.owner_id === caller.profileId;
@@ -246,7 +249,12 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(pickers || own ? { leadName: (row.lead_contact_id ? leadNames.get(row.lead_contact_id) : null) ?? null, ask: askByProposal.get(row.id) ?? null } : {}),
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
       ...(own && row.status === "open" && row.lead_contact_id
-        ? { leadDocs: row.lead_docs_to === row.lead_contact_id ? ("sent" as const) : linked.has(row.lead_contact_id) ? ("unsent" as const) : ("no_login" as const) }
+        ? (() => {
+            const ids = items.map((c) => c.work_item_id);
+            const state = sendState(row, sentDocs.get(row.id), ids, linked.has(row.lead_contact_id));
+            const sentIds = sentDocs.get(row.id)?.item_ids ?? [];
+            return { leadDocs: state, ...(state === "more" ? { leadDocsAdded: ids.filter((id) => !sentIds.includes(id)).length } : {}) };
+          })()
         : {}),
     };
   });
@@ -510,8 +518,6 @@ const BASE_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_
 const PROPOSAL_COLUMNS = `${BASE_COLUMNS}, archived_at`;
 /** `client_due_on` arrives with PR 3a's migration. Until it is applied, reads fall back to the columns before it. */
 const DUE_COLUMNS = `${PROPOSAL_COLUMNS}, client_due_on`;
-/** `lead_docs_to` arrives with PR 4b's migration. Until it is applied, reads fall back to the columns before it. */
-const DOCS_COLUMNS = `${DUE_COLUMNS}, lead_docs_to`;
 
 export async function realStore(context: DeskContext, profileId: string | null): Promise<DeskStore> {
   const { requireFirmMember } = await import("./firm-corpus.server");
@@ -533,8 +539,7 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async proposals(orgId) {
       const read = (columns: string) => ownLoose.from("proposals").select(columns).eq("org_id", orgId).order("received_at", { ascending: false }).limit(500);
-      let { data, error } = await read(DOCS_COLUMNS);
-      if (error) ({ data, error } = await read(DUE_COLUMNS));
+      let { data, error } = await read(DUE_COLUMNS);
       if (error) ({ data, error } = await read(PROPOSAL_COLUMNS));
       if (error) ({ data, error } = await read(BASE_COLUMNS));
       return error ? null : ((data ?? []) as unknown as ProposalRow[]);
@@ -653,6 +658,12 @@ export async function realStore(context: DeskContext, profileId: string | null):
       const { data, error } = await adminLoose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).in("id", contactIds);
       if (error) return new Set();
       return new Set(((data ?? []) as { id: string; profile_id: string | null }[]).filter((row) => row.profile_id).map((row) => row.id));
+    },
+    async leadDocsSent(orgId, proposalIds) {
+      if (proposalIds.length === 0) return new Map();
+      const { data, error } = await adminLoose.from("proposal_lead_docs").select("proposal_id, contact_id, item_ids").eq("org_id", orgId).in("proposal_id", proposalIds);
+      if (error) return new Map();
+      return new Map(((data ?? []) as { proposal_id: string; contact_id: string; item_ids: string[] }[]).map((row) => [row.proposal_id, { contact_id: row.contact_id, item_ids: row.item_ids ?? [] }]));
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];

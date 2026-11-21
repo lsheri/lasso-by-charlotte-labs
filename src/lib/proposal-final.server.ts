@@ -48,8 +48,18 @@ async function mayDecide(store: FinalStore, caller: LeadCaller, row: LeadProposa
 
 /** The proposal's own documents this caller may open: the owner always, the lead once they were sent. */
 async function openableDocuments(store: FinalStore, caller: LeadCaller, row: LeadProposalRow): Promise<{ id: string; title: string }[]> {
-  if (row.owner_id !== caller.profileId && !docsSentToLead(row)) return [];
-  const listed = (await store.context([row.id])).filter((entry) => entry.proposal_id === row.id).map((entry) => entry.work_item_id);
+  const owner = row.owner_id === caller.profileId;
+  let sentIds: string[] | null = null;
+  if (!owner) {
+    const read = await store.sentDocs(caller.orgId, [row.id]).catch(() => "absent" as const);
+    const record = read === "absent" ? undefined : read.get(row.id);
+    if (!docsSentToLead(row, record)) return [];
+    sentIds = record!.item_ids;
+  }
+  // The lead opens only what was sent (QA M1 of PR 299); the owner, all of their own.
+  const listed = (await store.context([row.id]))
+    .filter((entry) => entry.proposal_id === row.id && (sentIds === null || sentIds.includes(entry.work_item_id)))
+    .map((entry) => entry.work_item_id);
   if (!listed.length) return [];
   const owned = await store.ownedItems(caller.orgId, row.owner_id, listed);
   return listed.map((itemId) => owned.find((item) => item.id === itemId)).filter((item): item is { id: string; title: string } => Boolean(item));
