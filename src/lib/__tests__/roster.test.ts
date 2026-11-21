@@ -1649,6 +1649,19 @@ describe("a teammate with a login as a lead", () => {
     }
   });
 
+  it("a hand-made call cannot link a stranger's row by choice: the name or the login email must match (QA N2)", async () => {
+    const { deps, writes } = world({ members, rows: [row({ profile_id: null })] });
+    expect(await linkTeammate(deps, { ...ask(CHRISTY), contact_id: DANA })).toEqual({ ok: false, reason: "missing" });
+    expect(writes).toEqual([]);
+    const byEmail = world({
+      members,
+      emails: { [CHRISTY_USER]: "christy@kestrelbay.test" },
+      rows: [row({ profile_id: null })],
+      stored: [detail({ email: "Christy@kestrelbay.test" })],
+    });
+    expect((await linkTeammate(byEmail.deps, { ...ask(CHRISTY), contact_id: DANA })).ok).toBe(true);
+  });
+
   it("names match for the question only: accents, case and spaces, never a different name", () => {
     expect(samePersonName(" christy  JOHNSON", "Christy Johnson")).toBe(true);
     expect(samePersonName("Adaeze Nwosú", "Adaeze Nwosu")).toBe(true);
