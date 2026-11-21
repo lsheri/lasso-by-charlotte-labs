@@ -18,6 +18,9 @@ import type { BriefReading } from "@/lib/brief-read-shared";
 import { leadAskBody, type AskPreview } from "@/lib/lead-ask-shared";
 import type { DeskList, DeskProposal } from "@/lib/proposal-desk-shared";
 
+import { useBrand } from "@/components/skin/use-skin";
+import { brandFor } from "@/design/brand/brand";
+
 import { AsShipped } from "./as-shipped";
 import { desk, FIRM, NOW, PEOPLE, WON_WORDS } from "./kestrel-bay";
 
@@ -58,6 +61,8 @@ const NEW: DeskProposal = {
   dueOn: "2026-11-27",
 } as DeskProposal;
 
+/** The name the shipped look wears (AsShipped: the Charlotte skin in its Slate / Spool variant), for copy passed as a prop. */
+const brand = brandFor("charlotte", "slate-spool");
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const preview = async (_id: string, contactId: string): Promise<AskPreview> => {
   const person = PEOPLE.find((p) => p.id === contactId) ?? PEOPLE[0]!;
@@ -87,13 +92,13 @@ function InRouter({ children }: { children: ReactNode }) {
 }
 
 /** A plain app frame: the menu stays sharp, the page (data-pill-behind) goes soft behind a card. */
-function Shell({ page, children, title }: { page: ReactNode; children: ReactNode; title: string }) {
+function Shell({ page, children, title }: { page: ReactNode; children?: ReactNode; title: string }) {
   return (
     <AsShipped>
       <InRouter>
         <div className="flex min-h-screen bg-background text-foreground">
           <nav className="hidden w-[236px] shrink-0 flex-col gap-1 border-r border-border bg-secondary p-4 md:flex" aria-label="Menu">
-            <b className="mb-4 tracking-[0.2em]">CHARLOTTE</b>
+            <Wordmark />
             {["Home", "Proposals", "Firm brain", "Boards"].map((item) => (
               <span key={item} className="rounded-[var(--radius-control)] px-3 py-2 text-(length:--type-small)" data-on={item === title || undefined}>
                 {item}
@@ -110,10 +115,16 @@ function Shell({ page, children, title }: { page: ReactNode; children: ReactNode
   );
 }
 
-function ProposalsPageBehind() {
+/** The shipped look's name (the skin wearing its variant), as the app's menu shows it. */
+function Wordmark() {
+  return <b className="mb-4 uppercase tracking-[0.2em]">{useBrand().name}</b>;
+}
+
+function ProposalsPageBehind({ children }: { children?: ReactNode }) {
   return (
     <>
       <h1 className="mb-6 text-(length:--type-display) font-semibold">Proposals</h1>
+      {children}
       <ProposalDesk data={desk("admin")} now={NOW} roster={PEOPLE} />
     </>
   );
@@ -130,10 +141,16 @@ function AdminNewProposal({ role = "admin" }: { role?: "admin" | "lead" }) {
   });
   return (
     <QueryClientProvider client={client}>
-      <Shell title="Proposals" page={<ProposalsPageBehind />}>
-        <div className="fixed right-4 top-4">
-          <Button onClick={() => setOpen(true)}>New proposal ({role})</Button>
-        </div>
+      <Shell
+        title="Proposals"
+        page={
+          <ProposalsPageBehind>
+            <Button variant="outline" className="mb-4" onClick={() => setOpen(true)}>
+              New proposal ({role})
+            </Button>
+          </ProposalsPageBehind>
+        }
+      >
         <ProposalFlow
           open={open}
           onOpenChange={setOpen}
@@ -155,7 +172,7 @@ function AdminNewProposal({ role = "admin" }: { role?: "admin" | "lead" }) {
           }}
           passTools={{ admins: async () => ({ name: "Maren", count: 1 }), pass: async () => ({ ok: true, admins: 1 }) }}
           firmName={FIRM}
-          brandName="Charlotte"
+          brandName={brand.name}
           sendDocs={async () => ({ ok: true })}
           reduceMotion={false}
           leadStep={(_id, done, onState) => (
@@ -209,7 +226,7 @@ function MemberPassBrief() {
             },
           }}
           firmName={FIRM}
-          brandName="Charlotte"
+          brandName={brand.name}
           sendDocs={async () => ({ ok: true })}
           reduceMotion={false}
         />
@@ -218,10 +235,11 @@ function MemberPassBrief() {
   );
 }
 
-function HomeBehind({ name }: { name: string }) {
+function HomeBehind({ name, children }: { name: string; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-center text-(length:--type-display) font-semibold">Good afternoon, {name}</h1>
+      {children}
       <p className="text-center text-muted-foreground">Up next, what changed, and your boards.</p>
       {Array.from({ length: 5 }, (_, i) => (
         <div key={i} className="h-16 rounded-[var(--corner-panel)] border border-border bg-card" />
@@ -273,8 +291,8 @@ function AdminLeadSheet({ start }: { start: "pick" | "confirm" }) {
 /* ----- A Lead on Home: decide the final, read what was sent ----- */
 function LeadFinal() {
   return (
-    <Shell title="Home" page={<HomeBehind name="Corin" />}>
-      <div className="fixed left-1/2 top-24 w-[min(560px,90vw)] -translate-x-1/2 rounded-[var(--corner-panel)] border border-border bg-card p-4">
+    <Shell title="Home" page={<HomeBehind name="Corin">
+<div className="mx-auto w-full max-w-[560px] rounded-[var(--corner-panel)] border border-border bg-card p-4">
         <LeadFinalCard
           proposalId="p-new"
           client="Harbor Health"
@@ -292,7 +310,8 @@ function LeadFinal() {
             upload: async () => ({ ids: [], failures: [] }),
           }}
         />
-      </div>
+</div>
+</HomeBehind>}>
     </Shell>
   );
 }
@@ -334,8 +353,8 @@ function LeadDocument({ member = false }: { member?: boolean }) {
 /* ----- Phase 5 (PR 303): the Lead sends the final for approval; an admin reviews it ----- */
 function LeadSendForApproval() {
   return (
-    <Shell title="Home" page={<HomeBehind name="Corin" />}>
-      <div className="fixed left-1/2 top-24 w-[min(560px,90vw)] -translate-x-1/2 rounded-[var(--corner-panel)] border border-border bg-card p-4">
+    <Shell title="Home" page={<HomeBehind name="Corin">
+<div className="mx-auto w-full max-w-[560px] rounded-[var(--corner-panel)] border border-border bg-card p-4">
         <LeadFinalCard
           proposalId="p-new"
           client="Harbor Health"
@@ -351,15 +370,16 @@ function LeadSendForApproval() {
             },
           }}
         />
-      </div>
+</div>
+</HomeBehind>}>
     </Shell>
   );
 }
 
 function AdminApproval() {
   return (
-    <Shell title="Proposals" page={<ProposalsPageBehind />}>
-      <div className="fixed left-1/2 top-24 w-[min(560px,90vw)] -translate-x-1/2 rounded-[var(--corner-panel)] border border-border bg-card p-4">
+    <Shell title="Proposals" page={<ProposalsPageBehind>
+<div className="mx-auto w-full max-w-[560px] rounded-[var(--corner-panel)] border border-border bg-card p-4">
         <ApprovalReview
           approval={{ id: "a1", state: "waiting", requestedBy: "Corin Ashby", requestedAt: "2026-11-21T10:00:00Z", decidedBy: null, decidedAt: null, note: null, finalItemId: "d9", finalTitle: "Harbor Health proposal, final", stale: false }}
           leadName="Corin Ashby"
@@ -370,7 +390,8 @@ function AdminApproval() {
           }}
           readFinal={async () => ({ ok: true, title: "Harbor Health proposal, final", text: DOC })}
         />
-      </div>
+</div>
+</ProposalsPageBehind>}>
     </Shell>
   );
 }

@@ -47,6 +47,7 @@ export function SendDocsCard({
   titles,
   count,
   onSend,
+  cardKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +56,8 @@ export function SendDocsCard({
   titles: readonly string[];
   count: number;
   onSend: (send: boolean) => Promise<SendDocsResult>;
+  /** Names the card for the chat's way back, e.g. "send-docs:<proposal id>". */
+  cardKey?: string | undefined;
 }) {
   const first = firstWord(leadName);
   const [working, setWorking] = useState(false);
@@ -82,6 +85,7 @@ export function SendDocsCard({
       intro={SEND_DOCS_COPY.what(first)}
       busy={working}
       onReopen={() => onOpenChange(true)}
+      cardKey={cardKey}
       testId="send-docs-card"
       footer={
         <>

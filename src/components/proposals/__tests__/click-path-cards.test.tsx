@@ -447,7 +447,11 @@ describe("the Lead decides the final on a card", () => {
     const card = await screen.findByTestId("lead-final-card");
     expect(card.querySelector(".step-card__pane:not([data-leaving]) [data-step-marker]")?.textContent).toBe(STEP_CARD_COPY.stepOf(2, 2));
     expect(within(card).getByText("Harbor final v2")).toBeTruthy();
-    fireEvent.click(within(card).getByRole("button", { name: APPROVAL_COPY.send }));
+    // The action itself is the footer primary; the line on the step shows where it stands with no second button.
+    const sends = within(card).getAllByRole("button", { name: APPROVAL_COPY.send });
+    expect(sends).toHaveLength(1);
+    expect(sends[0]!.closest("[data-step-foot]")).not.toBeNull();
+    fireEvent.click(sends[0]!);
     await waitFor(() => expect(ask).toHaveBeenCalledWith(false));
   });
 

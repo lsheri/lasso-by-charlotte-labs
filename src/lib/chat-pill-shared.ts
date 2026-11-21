@@ -27,7 +27,15 @@ export const PILL_OPEN_EVENT = "lasso:chat-pill-open";
  * Where a step card sent the person from: the step's name, as the card shows it, and the way back to that step. Only
  * the step's own title travels; nothing typed on the card goes into the chat.
  */
-export type PillCardContext = { label: string; reopen: () => void };
+export type PillCardContext = {
+  label: string;
+  /** The card's key in step-card-return.ts, when it has one: the chat reopens it there, even after a change of page. */
+  key?: string | null | undefined;
+  /** The page the card was on (path and query), to go back to it. */
+  href?: string | undefined;
+  /** Reopens the card where it is, while it is still mounted. */
+  reopen: () => void;
+};
 
 /**
  * Opens the chat pill, as if it were pressed. From a step card it carries the step it came from, so the chat can
@@ -41,6 +49,8 @@ export function openChatPill(context?: PillCardContext): void {
 export const PILL_CARD_COPY = {
   from: (label: string) => `You came from ${label}. What you typed there is kept.`,
   back: "Back to the card",
+  /** Said when the chat went back to the card's page and the card was not there (the proposal is gone or decided). */
+  gone: "That card is not here any more. The proposal may have moved on.",
 } as const;
 
 /** One morph, open or shut, in ms. */

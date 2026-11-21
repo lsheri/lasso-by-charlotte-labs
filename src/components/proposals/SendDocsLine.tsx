@@ -16,6 +16,7 @@ export function SendDocsLine({
   added = 1,
   titles = [],
   onSend,
+  cardKey,
 }: {
   state: "sent" | "more" | "unsent" | "no_login";
   leadName: string;
@@ -25,6 +26,8 @@ export function SendDocsLine({
   added?: number | undefined;
   /** The documents on the proposal, by title, for the send card's picture (unsent only). */
   titles?: readonly string[] | undefined;
+  /** Names the send card for the chat's way back. */
+  cardKey?: string | undefined;
   onSend: (send: boolean) => Promise<SendDocsResult>;
 }) {
   const C = SEND_DOCS_COPY;
@@ -95,6 +98,7 @@ export function SendDocsLine({
         titles={state === "more" ? [] : titles}
         count={state === "more" ? added : titles.length}
         onSend={onSend}
+        cardKey={cardKey}
       />
     </div>
   );

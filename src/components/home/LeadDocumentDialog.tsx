@@ -45,6 +45,7 @@ export function LeadDocumentDialog({
       title={result?.ok ? result.title : (shown?.title ?? "")}
       intro={doc.isLoading ? LEAD_VIEW_COPY.docLoading : result?.ok && result.withheld ? LEAD_VIEW_COPY.withheld : null}
       onReopen={onReopen}
+      cardKey={shown ? `lead-doc:${shown.proposalId}:${shown.itemId}` : undefined}
       testId="lead-document"
       footer={
         <Button type="button" onClick={onClose}>

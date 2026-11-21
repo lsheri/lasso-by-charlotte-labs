@@ -60,6 +60,9 @@ export function ApprovalReview({
     };
   }, [open, doc, K.finalFailed]);
 
+  // The request this card last showed. A different one (sent again after changes) starts at its final.
+  const seenRequest = useRef<string | null>(null);
+
   const order: ReviewStep[] = ["final", "approve", "changes"];
   function go(next: ReviewStep) {
     setDirection(stepDirection(order.indexOf(step), order.indexOf(next)));
@@ -110,7 +113,12 @@ export function ApprovalReview({
         size="sm"
         className="self-start"
         onClick={() => {
-          setStep("final");
+          // Back where the admin left it (the note is kept too), unless this is a new request: then the final first.
+          if (seenRequest.current !== approval.id) {
+            seenRequest.current = approval.id;
+            setStep("final");
+            setDoc(null);
+          }
           setDirection("forward");
           setOpen(true);
         }}
@@ -129,6 +137,7 @@ export function ApprovalReview({
         onBack={step === "final" || working ? null : () => go("final")}
         busy={working}
         onReopen={() => setOpen(true)}
+        cardKey={`approval:${proposalId}`}
         testId="approval-card"
         footer={
           step === "final" ? (

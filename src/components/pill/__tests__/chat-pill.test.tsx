@@ -464,4 +464,14 @@ describe("from a step card", () => {
     await waitFor(() => expect(p.el.getAttribute("data-mode")).toBe("open"));
     expect(screen.queryByRole("button", { name: PILL_CARD_COPY.back })).toBeNull();
   });
+  it("with a way back given, shows the line only while there is a card to go back to, and goes through it", async () => {
+    const go = vi.fn();
+    const p = pill({ cardReturn: { can: (context) => context.key === "approval:p1", go } });
+    act(() => openChatPill({ label: "Approve and tell Corin", key: "approval:gone", reopen: vi.fn() }));
+    await waitFor(() => expect(p.el.getAttribute("data-mode")).toBe("open"));
+    expect(screen.queryByRole("button", { name: PILL_CARD_COPY.back })).toBeNull();
+    act(() => openChatPill({ label: "Approve and tell Corin", key: "approval:p1", href: "/proposals", reopen: vi.fn() }));
+    fireEvent.click(await screen.findByRole("button", { name: PILL_CARD_COPY.back }));
+    expect(go).toHaveBeenCalledWith(expect.objectContaining({ key: "approval:p1", href: "/proposals" }));
+  });
 });

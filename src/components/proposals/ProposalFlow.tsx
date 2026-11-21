@@ -202,6 +202,7 @@ function ProposalFlowRound({
     // "Ask Lasso about this" closes the card (this round keeps what was typed and the step) and the chat's way back
     // opens it again here.
     onReopen: () => onOpenChange(true),
+    cardKey: "proposal-flow",
     testId: "proposal-flow",
   };
 

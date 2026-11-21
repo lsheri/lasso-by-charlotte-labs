@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { LeadApprovalLine } from "@/components/home/LeadApprovalLine";
+import { LeadApprovalLine, useApprovalPress } from "@/components/home/LeadApprovalLine";
 import { Button } from "@/components/ui/button";
 import { StepCard } from "@/components/ui/step-card";
 import { FileText } from "@/design/brand/icons";
-import { type ApprovalResult, type ApprovalView, type ProposalStage } from "@/lib/proposal-approval-shared";
+import { APPROVAL_COPY, type ApprovalResult, type ApprovalView, type ProposalStage } from "@/lib/proposal-approval-shared";
 import { deskDate } from "@/lib/proposal-desk-shared";
 import { FINAL_COPY, FINAL_CARD_COPY, type FinalView } from "@/lib/proposal-final-shared";
 import { STEP_CARD_COPY, stepDirection } from "@/lib/step-card-shared";
@@ -43,7 +43,12 @@ export function LeadFinalCard({
   now?: Date | undefined;
 }) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<LeadCardStep>("final");
+  // A card mounted again (the chat's way back after a change of page) opens where the work is: sending, once a final
+  // is chosen.
+  const [step, setStep] = useState<LeadCardStep>(() =>
+    approval && (approval.stage === "ready_to_send" || approval.stage === "changes_asked") ? "approval" : "final",
+  );
+  const sending = useApprovalPress(approval?.ask ?? (async () => ({ ok: false, problem: "" })));
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const C = FINAL_COPY;
   const A = FINAL_CARD_COPY;
@@ -90,15 +95,21 @@ export function LeadFinalCard({
         intro={step === "final" ? (client ? A.intro(client) : null) : A.approvalIntro}
         onBack={step === "approval" ? () => go("final") : null}
         onReopen={() => setOpen(true)}
+        cardKey={`lead-final:${proposalId}`}
         testId="lead-final-card"
+        busy={sending.working}
         footer={
           step === "final" && approval ? (
             <Button type="button" disabled={!chosen} onClick={() => go("approval")} data-flow-primary="">
               {A.next}
             </Button>
+          ) : step === "approval" && sendNext && approval ? (
+            // The action itself is the primary: PR 303's own send, shared with the line through useApprovalPress.
+            <Button type="button" disabled={sending.working} onClick={() => void sending.press(false)} data-flow-primary="">
+              {sending.working ? APPROVAL_COPY.sending : APPROVAL_COPY.send}
+            </Button>
           ) : (
-            // While the final still waits to be sent, PR 303's own Send for approval on the step is the one filled button.
-            <Button type="button" variant={step === "final" || sendNext ? "ghost" : "default"} onClick={() => setOpen(false)}>
+            <Button type="button" variant={step === "final" ? "ghost" : "default"} onClick={() => setOpen(false)}>
               {A.close}
             </Button>
           )
@@ -114,7 +125,7 @@ export function LeadFinalCard({
                 <span>{final.title || "Untitled"}</span>
               </div>
             ) : null}
-            <LeadApprovalLine stage={approval.stage} approval={approval.view} onAsk={approval.ask} />
+            <LeadApprovalLine stage={approval.stage} approval={approval.view} onAsk={approval.ask} hideSend pressing={sending} />
           </div>
         ) : null}
       </StepCard>

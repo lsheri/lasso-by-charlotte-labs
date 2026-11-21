@@ -12,7 +12,8 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
-import { pillAccess, pillPlace, pillStarters } from "@/lib/chat-pill-shared";
+import { PILL_CARD_COPY, pillAccess, pillPlace, pillStarters, type PillCardContext } from "@/lib/chat-pill-shared";
+import { awaitCard, CARD_RETURN_WAIT_MS, cardIsHere, cardNeverCame, pageOf, reopenCard } from "@/lib/step-card-return";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { FIRM_ASK_QUESTION_MAX } from "@/lib/firm-ask-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
@@ -46,6 +47,26 @@ export function ChatPillMount() {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const path = useRouterState({ select: (state) => state.location.pathname });
+  // 21 Nov 2026, click path cards: the way back to a step card that opened the chat (step-card-return.ts). A card
+  // still mounted reopens; one on another page is gone back to and reopened as it mounts there; if none comes, the
+  // chat says so. With no key and on another page, there is nothing to go back to, so the line is not shown.
+  const cardReturn = useMemo(
+    () => ({
+      can: (context: PillCardContext) =>
+        context.key ? cardIsHere(context.key) || (Boolean(context.href) && pageOf(context.href!) !== pageOf(path)) : pageOf(context.href ?? path) === pageOf(path),
+      go: (context: PillCardContext) => {
+        if (!context.key) return context.reopen();
+        if (reopenCard(context.key)) return;
+        const key = context.key;
+        awaitCard(key);
+        void navigate({ href: context.href ?? "/" });
+        window.setTimeout(() => {
+          if (cardNeverCame(key)) toast(PILL_CARD_COPY.gone);
+        }, CARD_RETURN_WAIT_MS);
+      },
+    }),
+    [path, navigate],
+  );
   const boardHandler = useAskLassoHandler();
   const ask = useServerFn(askTheFirm);
   const [openItem, setOpenItem] = useState<string | null>(null);
@@ -141,6 +162,7 @@ export function ChatPillMount() {
         profileId={profileId}
         onAsk={(question, starter) => ask({ data: { question, starter, profile_id: profileId } })}
         onOpenSource={setOpenItem}
+        cardReturn={cardReturn}
         brief={
           canAsk
             ? {

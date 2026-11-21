@@ -95,6 +95,22 @@ describe("the admin's review", () => {
     fireEvent.click(card().getByRole("button", { name: APPROVAL_COPY.approve }));
     expect(await card().findByText(APPROVAL_COPY.ownRequest)).toBeTruthy();
   });
+  it("Review it comes back to the step the admin left, with the note kept; a new request starts at its final", async () => {
+    const t = tools();
+    const view = render(<ApprovalReview approval={approval()} leadName="Christy Johnson" proposalId="p1" decide={t.decide} readFinal={t.readFinal} />);
+    await openCard();
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_CARD_COPY.askChanges("Christy") }));
+    fireEvent.change(card().getByLabelText(APPROVAL_COPY.note), { target: { value: "Tighten the scope" } });
+    fireEvent.keyDown(screen.getByTestId("approval-card"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("approval-card")).toBeNull());
+    await openCard();
+    expect((card().getByLabelText(APPROVAL_COPY.note) as HTMLTextAreaElement).value).toBe("Tighten the scope");
+    fireEvent.keyDown(screen.getByTestId("approval-card"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("approval-card")).toBeNull());
+    view.rerender(<ApprovalReview approval={approval({ id: "a2" })} leadName="Christy Johnson" proposalId="p1" decide={t.decide} readFinal={t.readFinal} />);
+    await openCard();
+    expect(card().getByRole("button", { name: APPROVAL_CARD_COPY.next })).toBeTruthy();
+  });
   it("a final that cannot be read says so on the card", async () => {
     render(<ApprovalReview approval={approval()} leadName="Christy" proposalId="p1" decide={vi.fn()} readFinal={async () => ({ ok: false, problem: "Gone." })} />);
     await openCard();

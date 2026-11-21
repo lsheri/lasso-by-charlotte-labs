@@ -14,6 +14,7 @@ import { ArrowLeft, X } from "@/design/brand/icons";
 import { useBrand } from "@/components/skin/use-skin";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { openChatPill } from "@/lib/chat-pill-shared";
+import { registerCardReturn } from "@/lib/step-card-return";
 import { FOCUS_BLUR, focusBlurAt } from "@/lib/focus-blur-shared";
 import { cn } from "@/lib/utils";
 import { sheetFollow, sheetSettle, STEP_CARD_COPY, STEP_CARD_MORPH_MS, STEP_CARD_PHONE_MAX, washAt } from "@/lib/step-card-shared";
@@ -99,6 +100,7 @@ export function StepCard({
   busy = false,
   aside,
   onReopen,
+  cardKey,
   askLabel,
   footer,
   children,
@@ -129,6 +131,11 @@ export function StepCard({
    * owner keeps what was typed), then opens the chat with the step's name and a way back here.
    */
   onReopen?: (() => void) | null | undefined;
+  /**
+   * Names this card for the chat's way back (step-card-return.ts), e.g. "approval:<proposal id>". With it, "Back to
+   * the card" works after a change of page: the chat goes back and reopens it, or says it is gone.
+   */
+  cardKey?: string | undefined;
   /** The step's name as the chat says it. Defaults to the title when that is plain text. */
   askLabel?: string | undefined;
   /** The step's buttons, secondary first, primary last (it sits on the right; full width on a phone). */
@@ -264,6 +271,15 @@ export function StepCard({
     else softenBehind(1, false);
   }
 
+  // While mounted, a keyed card is somewhere the chat can come back to.
+  const reopenRef = useRef(onReopen);
+  reopenRef.current = onReopen;
+  const canReturn = Boolean(onReopen);
+  useEffect(() => {
+    if (!cardKey || !canReturn) return;
+    return registerCardReturn(cardKey, () => reopenRef.current?.());
+  }, [cardKey, canReturn]);
+
   const label = askLabel ?? (typeof title === "string" ? title : "");
   const askLink =
     aside === undefined && onReopen ? (
@@ -274,7 +290,8 @@ export function StepCard({
         onClick={() => {
           // The card closes first, so the chat is free to use and the page's blur hands over cleanly.
           onOpenChange(false);
-          openChatPill({ label, reopen: onReopen });
+          const here = globalThis.location;
+          openChatPill({ label, key: cardKey ?? null, href: here ? `${here.pathname}${here.search}` : undefined, reopen: onReopen });
         }}
       >
         {STEP_CARD_COPY.askAbout(brand.name)}

@@ -83,6 +83,7 @@ export function ChatPill({
   reduceMotion = false,
   initialMode = "shut",
   brief = null,
+  cardReturn = null,
   upNext = null,
 }: {
   brandName: string;
@@ -114,6 +115,12 @@ export function ChatPill({
    * (the proposal card, or a Member's pass to an admin) instead of being asked of the firm.
    */
   brief?: { render: (text: string, context: BriefContext) => ReactNode } | null | undefined;
+  /**
+   * 21 Nov 2026, click path cards: the way back to a step card that opened the chat. `can` says whether there is
+   * still a card to go back to (here, or on the page it was on); `go` reopens it, going back to its page first when
+   * needed. Left out, the line calls the card's own reopen.
+   */
+  cardReturn?: { can: (context: PillCardContext) => boolean; go: (context: PillCardContext) => void } | null | undefined;
   /** 21 Nov 2026, PR 4b: the Lead's Up next, drawn under the welcome. The container decides who gets one. */
   upNext?: ReactNode;
 }) {
@@ -613,7 +620,7 @@ export function ChatPill({
               {canAsk ? PILL_COPY.welcomeFirm : PILL_COPY.welcomeNone}
             </p>
           </div>
-          {fromCard ? (
+          {fromCard && (cardReturn ? cardReturn.can(fromCard) : true) ? (
             <div className="chat-pill__msg chat-pill__from-card" data-pill-from-card="">
               <p>{PILL_CARD_COPY.from(fromCard.label)}</p>
               <Button
@@ -624,7 +631,8 @@ export function ChatPill({
                   const back = fromCard;
                   setFromCard(null);
                   setMode("shut");
-                  back.reopen();
+                  if (cardReturn) cardReturn.go(back);
+                  else back.reopen();
                 }}
               >
                 {PILL_CARD_COPY.back}
