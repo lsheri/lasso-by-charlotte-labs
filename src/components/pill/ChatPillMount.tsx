@@ -269,6 +269,7 @@ export function ChatPillMount() {
       />
       {landing ? (
         <PillLanding
+          brandName={brand.name}
           firstName={firstNameOf(profile.display_name)}
           welcome={PILL_COPY.welcomeFirm}
           hint={PILL_HINTS.home}

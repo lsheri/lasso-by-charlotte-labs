@@ -12,7 +12,7 @@ afterEach(cleanup);
 describe("the landing chat", () => {
   it("greets, hints and asks; a short question does not go", () => {
     const onAsk = vi.fn();
-    render(<PillLanding firstName="Maren" welcome="Welcome words" hint="Paste a brief" onAsk={onAsk} onHandleDown={() => undefined} onHandleClick={() => undefined} />);
+    render(<PillLanding firstName="Maren" brandName="Charlotte" welcome="Welcome words" hint="Paste a brief" onAsk={onAsk} onHandleDown={() => undefined} onHandleClick={() => undefined} />);
     expect(screen.getByText(PILL_COPY.hello("Maren"))).toBeTruthy();
     const box = screen.getByLabelText(PILL_COPY.label) as HTMLTextAreaElement;
     expect(box.placeholder).toBe("Paste a brief");
@@ -26,7 +26,7 @@ describe("the landing chat", () => {
   });
   it("has the six-dot handle with its words", () => {
     const onHandleDown = vi.fn();
-    render(<PillLanding firstName="Maren" welcome="" hint="" onAsk={() => undefined} onHandleDown={onHandleDown} onHandleClick={() => undefined} />);
+    render(<PillLanding firstName="Maren" brandName="Charlotte" welcome="" hint="" onAsk={() => undefined} onHandleDown={onHandleDown} onHandleClick={() => undefined} />);
     fireEvent.pointerDown(screen.getByRole("button", { name: PILL_DOCK_COPY.handle }));
     expect(onHandleDown).toHaveBeenCalled();
   });

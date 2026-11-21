@@ -12,6 +12,7 @@ import { PILL_COPY, PILL_DOCK_COPY } from "@/lib/chat-pill-shared";
  */
 export function PillLanding({
   firstName,
+  brandName,
   welcome,
   hint,
   onAsk,
@@ -19,6 +20,8 @@ export function PillLanding({
   onHandleClick,
 }: {
   firstName: string;
+  /** The product name the shell shows (Charlotte or Lasso). */
+  brandName: string;
   welcome: string;
   hint: string;
   onAsk: (text: string) => void;
@@ -43,7 +46,7 @@ export function PillLanding({
     }
   };
   return (
-    <section className="pill-landing" data-pill-landing-chat="" aria-label={PILL_COPY.panel("Lasso")}>
+    <section className="pill-landing" data-pill-landing-chat="" aria-label={PILL_COPY.panel(brandName)}>
       <button
         type="button"
         className="pill-landing__handle"
