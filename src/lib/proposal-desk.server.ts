@@ -95,7 +95,7 @@ export type DeskStore = {
   removeClient: (id: string) => Promise<void>;
   /** Of these work items, the ones in this workspace that belong to this person. */
   ownedItems: (orgId: string, profileId: string, ids: string[]) => Promise<string[]>;
-  insertProposal: (row: { id: string; org_id: string; client_id: string; title: string; notes: string | null; owner_id: string }) => Promise<boolean>;
+  insertProposal: (row: { id: string; org_id: string; client_id: string; title: string; notes: string | null; owner_id: string; client_due_on?: string }) => Promise<boolean>;
   insertContext: (rows: { proposal_id: string; work_item_id: string; position: number }[]) => Promise<boolean>;
   removeProposal: (id: string) => Promise<void>;
   /** One proposal, read by the server. Null when it does not exist. */
@@ -282,7 +282,7 @@ export async function createProposal(store: DeskStore, input: NewProposalInput):
     await store.removeProposal(id);
     if (madeClient && clientId) await store.removeClient(clientId);
   };
-  const written = await store.insertProposal({ id, org_id: caller.orgId, client_id: clientId, title: input.title, notes: input.notes, owner_id: caller.profileId });
+  const written = await store.insertProposal({ id, org_id: caller.orgId, client_id: clientId, title: input.title, notes: input.notes, owner_id: caller.profileId, ...(input.client_due_on ? { client_due_on: input.client_due_on } : {}) });
   if (!written) {
     if (madeClient) await store.removeClient(clientId);
     return { ok: false, problem: problems.failed };
@@ -559,6 +559,12 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async insertProposal(row) {
       const { error } = await adminLoose.from("proposals").insert(row);
+      // Before the due date's column is added (Liam pastes the SQL), the proposal is still made, without the date.
+      if (error && row.client_due_on && (error as { code?: string }).code === "42703") {
+        const { client_due_on: _dropped, ...rest } = row;
+        const retry = await adminLoose.from("proposals").insert(rest);
+        return !retry.error;
+      }
       return !error;
     },
     async insertContext(rows) {

@@ -7,6 +7,7 @@
  * a row says about anyone.
  */
 
+import { dueOnOrNull } from "./brief-read-shared";
 import type { AskView, TextsState } from "./lead-ask-shared";
 
 /** The turnaround goal a workspace starts with, in hours, until an admin picks its own. */
@@ -452,6 +453,8 @@ export type NewProposalInput = DeskProfileInput & {
   new_client_name: string | null;
   notes: string | null;
   work_item_ids: string[];
+  /** 20 Nov 2026, chat pill PR 3a: the client's due date, YYYY-MM-DD, when the brief says one. */
+  client_due_on?: string | null | undefined;
 };
 
 export type NewProposalRaw = {
@@ -461,6 +464,7 @@ export type NewProposalRaw = {
   new_client_name?: string | null | undefined;
   notes?: string | null | undefined;
   work_item_ids?: string[] | undefined;
+  client_due_on?: string | null | undefined;
 };
 
 /** What the form and the server both check, so the two can never disagree. */
@@ -484,7 +488,16 @@ export function checkNewProposal(raw: NewProposalRaw): { ok: true; input: NewPro
   if (ids.length > MAX_CONTEXT_ITEMS) return { ok: false, problem: "tooMany" };
   return {
     ok: true,
-    input: { profile_id: uuidOrNull(loose?.["profile_id"]), title, client_id: clientId, new_client_name: clientId ? null : newName, notes: rawNotes || null, work_item_ids: ids },
+    input: {
+      profile_id: uuidOrNull(loose?.["profile_id"]),
+      title,
+      client_id: clientId,
+      new_client_name: clientId ? null : newName,
+      notes: rawNotes || null,
+      work_item_ids: ids,
+      // Anything that is not a real date is no date: a due date is never invented or guessed.
+      ...(dueOnOrNull(loose?.["client_due_on"]) ? { client_due_on: dueOnOrNull(loose?.["client_due_on"]) } : {}),
+    },
   };
 }
 
