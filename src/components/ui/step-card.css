@@ -1,0 +1,311 @@
+/* 21 Nov 2026, click path cards (plans/click-path-cards.html). The step card (step-card.tsx): a white card centred
+   over the page, a bottom sheet on a phone. The page behind takes the shared focus blur from code
+   (focus-blur-shared.ts), so this file draws only the card and a clear click catcher. One easing, the fluid flow's.
+   Skin tokens only. Layer: with every other dialog, above the chat pill and the tab bar. */
+
+.step-card-scrim,
+.step-card {
+  --step-card-ease: cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+/* Clear: the page itself goes soft. It only catches a tap on the page behind, which closes the card. */
+.step-card-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-backdrop);
+  background: transparent;
+}
+/* Off the app shell there is no page element to soften, so the scrim carries the same blur and wash itself. */
+.step-card-scrim[data-own-blur] {
+  background: color-mix(in oklab, var(--background) 58%, transparent);
+  backdrop-filter: blur(26px) saturate(0.75);
+  -webkit-backdrop-filter: blur(26px) saturate(0.75);
+  animation: step-card-fade-in 600ms var(--step-card-ease) both;
+}
+.step-card-scrim[data-own-blur][data-state="closed"] {
+  animation: step-card-fade-out 450ms var(--step-card-ease) both;
+}
+
+.step-card {
+  position: fixed;
+  z-index: var(--layer-backdrop);
+  left: var(--step-card-x, 50%);
+  top: 50%;
+  width: min(640px, calc(100vw - 32px));
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: var(--corner-sheet);
+  box-shadow: var(--shadow-sheet);
+  font-family: var(--font-sans);
+  transform: translate(-50%, -50%);
+  animation: step-card-in 600ms var(--step-card-ease) both;
+  outline: none;
+}
+.step-card[data-state="closed"] {
+  animation: step-card-out 450ms var(--step-card-ease) both;
+}
+
+/* A phone: the bottom sheet, edge to edge, with a grabber, pulled down by a finger. */
+.step-card[data-phone] {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: 0;
+  width: 100%;
+  max-height: 90dvh;
+  border-radius: var(--corner-sheet) var(--corner-sheet) 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  transform: translateY(var(--step-card-pull, 0px));
+  transition: transform 420ms var(--step-card-ease);
+  animation-name: step-card-sheet-in;
+}
+.step-card[data-phone][data-state="closed"] {
+  animation-name: step-card-sheet-out;
+}
+.step-card[data-phone][data-pulling] {
+  transition: none;
+}
+
+/* The corners: back on the left from step 2 on, close on the right. On a phone, the grabber above. */
+/* Drawn after the steps (so above them), over the card's top. On a phone the whole band is the handle a finger pulls. */
+.step-card__top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 64px;
+  pointer-events: none;
+}
+.step-card__top > * {
+  pointer-events: auto;
+}
+.step-card[data-phone] .step-card__top {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+}
+.step-card__grabber {
+  display: block;
+  width: 36px;
+  height: 5px;
+  margin: 8px auto 0;
+  pointer-events: none;
+  border-radius: var(--corner-pill);
+  background: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+.step-card__icon {
+  position: absolute;
+  top: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--corner-pill);
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background-color 200ms var(--step-card-ease), color 200ms var(--step-card-ease);
+}
+.step-card__icon--back {
+  left: 18px;
+}
+.step-card__icon--close {
+  right: 18px;
+}
+.step-card[data-phone] .step-card__icon {
+  top: 16px;
+}
+.step-card__icon:hover {
+  background: color-mix(in oklab, var(--secondary) 70%, var(--border));
+  color: var(--foreground);
+}
+.step-card__icon:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.step-card__icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The steps. The viewport's height follows the step it shows; the step that left fades out on top of it. */
+.step-card__viewport {
+  position: relative;
+  flex: 0 1 auto;
+  margin-top: 20px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.step-card__viewport[data-measured] {
+  height: var(--step-card-h);
+  transition: height 550ms var(--step-card-ease);
+}
+.step-card__ghosts {
+  position: absolute;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+}
+.step-card__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 24px 24px;
+}
+.step-card__pane[data-entering] {
+  animation: step-card-step-in 550ms var(--step-card-ease) both;
+}
+.step-card__pane[data-entering="back"] {
+  animation-name: step-card-step-back-in;
+}
+.step-card__pane[data-leaving] {
+  position: absolute;
+  inset: 0 0 auto 0;
+  animation: step-card-step-out 450ms var(--step-card-ease) both;
+}
+.step-card__pane[data-leaving="back"] {
+  animation-name: step-card-step-back-out;
+}
+.step-card[data-phone] .step-card__viewport {
+  margin-top: 24px;
+}
+.step-card[data-phone] .step-card__pane {
+  padding: 0 20px 20px;
+}
+
+/* The marker above the centred title, and one plain line under it. Room on both sides for the corner buttons. */
+.step-card__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 44px;
+  text-align: center;
+}
+.step-card__marker {
+  font-size: var(--type-label);
+  color: var(--muted-foreground);
+}
+.step-card__marker--alone {
+  align-self: center;
+  margin-top: 6px;
+}
+.step-card__title {
+  margin: 0;
+  font-size: var(--type-title);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.step-card__intro {
+  margin: 2px 0 0;
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+  text-wrap: pretty;
+}
+
+/* The footer: the small link on the left, then at most one secondary and the primary on the right. */
+.step-card__foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.step-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.step-card__aside {
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+}
+.step-card__aside button,
+.step-card__aside a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.step-card__aside button:hover,
+.step-card__aside a:hover {
+  color: var(--foreground);
+}
+/* On a phone: the primary full width, the secondary above it, the link under it. */
+.step-card[data-phone] .step-card__foot {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  padding: 12px 20px 16px;
+}
+.step-card[data-phone] .step-card__actions {
+  flex-direction: column;
+}
+.step-card[data-phone] .step-card__actions > * {
+  width: 100%;
+}
+.step-card[data-phone] .step-card__aside {
+  text-align: center;
+}
+.step-card__aside:empty {
+  display: none;
+}
+
+@keyframes step-card-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes step-card-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes step-card-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes step-card-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+@keyframes step-card-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes step-card-sheet-out {
+  from { transform: translateY(var(--step-card-pull, 0px)); }
+  to { transform: translateY(100%); }
+}
+@keyframes step-card-step-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes step-card-step-back-in {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes step-card-step-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(-24px); }
+}
+@keyframes step-card-step-back-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+/* Less movement asked for: no slides or scale, the content swaps in place and the blur is set at once. */
+@media (prefers-reduced-motion: reduce) {
+  .step-card-scrim,
+  .step-card,
+  .step-card__pane,
+  .step-card__viewport[data-measured] {
+    animation-duration: 1ms;
+    transition-duration: 1ms;
+  }
+}

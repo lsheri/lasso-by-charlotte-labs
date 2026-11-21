@@ -49,6 +49,16 @@ export function draftTitle(proposalTitle: string): string {
   return `Proposal draft: ${proposalTitle.replace(/\s+/g, " ").trim()}`.slice(0, 200);
 }
 
+/** 21 Nov 2026, click path cards: the Lead's way into the final, on a step card. */
+export const FINAL_CARD_COPY = {
+  title: "Decide the final proposal",
+  intro: (client: string) => `For ${client}. Upload the final, draft it from the brief, or use a document you were sent.`,
+  notYet: "Not chosen yet.",
+  decide: "Decide the final",
+  change: "Change the final",
+  close: "Done",
+} as const;
+
 export const FINAL_COPY = {
   heading: "Final proposal",
   none: "No final proposal chosen yet. Upload it, draft it from the brief, or use one of the documents.",

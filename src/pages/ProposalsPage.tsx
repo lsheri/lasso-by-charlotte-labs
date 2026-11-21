@@ -4,24 +4,21 @@ import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DemoTextNumberCard } from "@/components/proposals/DemoTextNumberCard";
-import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
+import { ProposalFlowMount } from "@/components/proposals/ProposalFlowMount";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { useProposalDesk } from "@/components/proposals/use-proposal-desk";
 import { RosterPanel } from "@/components/roster/RosterPanel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { SkeletonFrame } from "@/components/ui/skeleton-frame";
 import { useProfile } from "@/hooks/use-profile";
 import { useBrandCopy } from "@/components/skin/use-skin";
-import { afterCreate, DESK_COPY, deskLinkFromSearch, deskViewFromSearch, seesAllProposals, type DeskClient, type DeskList } from "@/lib/proposal-desk-shared";
-import { deleteWorkItem } from "@/lib/work-remove.functions";
+import { DESK_COPY, deskLinkFromSearch, deskViewFromSearch, seesAllProposals } from "@/lib/proposal-desk-shared";
 import { askLeadFn, askPreviewFn, practiceReplyFn, recordAnswerFn } from "@/lib/lead-ask.functions";
-import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
+import { closeProposalFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { linkTeammateFn, listRosterFn } from "@/lib/roster.functions";
 import { sendLeadDocsFn } from "@/lib/lead-view.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
-import { morph } from "@/lib/view-morph";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
 /**
@@ -30,6 +27,15 @@ import { profileHasFirmView } from "@/lib/workspace-capabilities";
  * and the intake dialog. The People tab is the roster panel (its own files and server functions); it is for admins
  * and leads, so nobody else is shown the tab, and the roster's server functions refuse them in any case.
  */
+/** Brings a proposal's row into view and marks it for a moment. */
+function markRow(id: string) {
+  const row = document.querySelector<HTMLElement>(`[data-proposal-row="${id}"]`);
+  if (!row) return;
+  row.setAttribute("data-linked", "true");
+  row.scrollIntoView?.({ block: "center", behavior: "smooth" });
+  window.setTimeout(() => row.removeAttribute("data-linked"), 2400);
+}
+
 /** Brings the proposal a link named into view once the list is there, and marks it for a moment. */
 function useLinkedRow(id: string | undefined, ready: boolean) {
   const done = useRef(false);
@@ -49,7 +55,6 @@ export function ProposalsPage() {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { captureWithResult } = useCaptureFiles();
   const [open, setOpen] = useState(false);
   // "See all" on Home carries the view chosen there. Read once from the address, so the chips stay in charge after.
   const [initialView] = useState(() => deskViewFromSearch(new URLSearchParams(globalThis.location?.search ?? "").get("view")) ?? undefined);
@@ -60,13 +65,6 @@ export function ProposalsPage() {
   const showPeople = allowed && seesAllProposals(profile?.role);
 
   const desk = useProposalDesk(profileId);
-  const clients = useQuery({
-    queryKey: ["proposal-desk-clients", profileId],
-    enabled: Boolean(profileId) && open,
-    staleTime: 30_000,
-    retry: false,
-    queryFn: (): Promise<DeskClient[]> => listProposalClientsFn({ data: { profile_id: profileId as string } }),
-  });
 
   // The roster names the lead on each row and fills the pick list. Its server function refuses anyone but an admin or a lead.
   const roster = useQuery({
@@ -82,10 +80,9 @@ export function ProposalsPage() {
   const [leadFromLink, setLeadFromLink] = useState(Boolean(link.lead));
   // A proposal that saved but is not in the list yet (QA M1). Cleared by itself once a read shows it.
   const [notShown, setNotShown] = useState<{ id: string; title: string } | null>(null);
-  const lastTitle = useRef("");
+  // The proposal the step card just started, brought into view when the card closes.
+  const started = useRef<string | null>(null);
   const missing = notShown !== null && !desk.data?.proposals.some((proposal) => proposal.id === notShown.id) ? notShown : null;
-  // Who may pick a lead: the server says so for the desk, and the people list was readable.
-  const mayPickLead = Boolean(desk.data?.canPickLead && roster.data?.allowed);
   useLinkedRow(link.proposal, Boolean(desk.data));
 
   if (profile && !allowed) {
@@ -209,38 +206,31 @@ export function ProposalsPage() {
         ) : null}
       </Tabs>
 
-      <NewProposalDialog
-        open={open}
-        onOpenChange={setOpen}
-        clients={clients.data}
-        clientsLoading={clients.isLoading}
-        canAddClient={desk.data?.canAddClient ?? false}
-        clientsOff={desk.data?.clientsOff ?? false}
-        profileId={profileId}
-        capture={(files) => captureWithResult(files, { channel: "upload" })}
-        discard={async (ids) => {
-          await Promise.all(ids.map((id) => deleteWorkItem({ data: { work_item_id: id, profile_id: profileId ?? null } })));
-        }}
-        create={async (input) => {
-          const result = await createProposalFn({ data: input });
-          if (result.ok) lastTitle.current = input.title;
-          return result;
-        }}
-        recent={missing ? missing.title : undefined}
-        onCreated={async (id) => {
-          void queryClient.invalidateQueries({ queryKey: ["proposal-desk-clients"] });
-          void queryClient.invalidateQueries({ queryKey: ["clients"] });
-          // 21 Nov 2026 (Liam): making a proposal begins lead picking. The desk is read again first, so the new
-          // row is there for the sheet; then the form morphs into the sheet. Only for people who may pick a lead.
-          await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
-          const next = afterCreate(queryClient.getQueryData<DeskList>(["proposal-desk", profileId]), id, mayPickLead);
-          // QA M1: if the new row is not in the list, say it was started, and open nothing by itself later.
-          setStartLead(null);
-          setLeadFromLink(false);
-          if (next === "notRefreshed") setNotShown({ id, title: lastTitle.current });
-          else if (next === "sheet") await morph(() => { setOpen(false); setStartLead(id); });
-        }}
-      />
+      {/* 21 Nov 2026, click path cards: New proposal opens the proposal step card (paste the brief, check it, pick the
+          lead, send the documents), the same code the chat runs. Closing it brings the new row into view. */}
+      {profileId ? (
+        <ProposalFlowMount
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next && started.current) {
+              const id = started.current;
+              started.current = null;
+              window.setTimeout(() => markRow(id), 120);
+            }
+          }}
+          profileId={profileId}
+          mayStart
+          firmName={profile?.org_name ?? ""}
+          onProposals
+          onStarted={(id) => {
+            started.current = id;
+            // QA M1: until a read of the list shows it, the page says it was started, so nobody starts it twice.
+            setNotShown({ id, title: "" });
+            void queryClient.invalidateQueries({ queryKey: ["proposal-desk-clients"] });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

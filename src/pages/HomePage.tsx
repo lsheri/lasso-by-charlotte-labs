@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminHome } from "@/components/home/AdminHome";
 import { HomeAsk } from "@/components/home/HomeAsk";
 import { HomeBoard } from "@/components/home/HomeBoard";
+import { HomeStartProposal } from "@/components/home/HomeStartProposal";
 import { LeadUpNext } from "@/components/home/LeadUpNext";
 import { UsesHomeCard } from "@/components/person/UsesHomeCard";
 import { useProfile } from "@/hooks/use-profile";
@@ -20,6 +21,8 @@ export function HomePage() {
       <UsesHomeCard orgId={profile?.org_id} />
       {/* 21 Nov 2026, PR 4b: the proposals this person leads, first. Renders nothing for someone who leads none. */}
       {pillAccess(profile) === "firm" ? <LeadUpNext profileId={profile?.id} /> : null}
+      {/* 21 Nov 2026, click path cards: start a proposal (or pass a brief) on a step card, never through the chat. */}
+      {pillAccess(profile) === "firm" && profile ? <HomeStartProposal profile={profile} /> : null}
       {asks ? (
         // 21 Nov, D-85 PR B: everyone in the firm who is not an admin gets a mini firm brain at the top of Home, with
         // their boards as cards below. Prepare me and How we do this live on Firm brain now.

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// 21 Nov 2026: the real ProposalsPage hand-over from New proposal to the lead sheet, with stubbed server calls.
+// 21 Nov 2026: the real ProposalsPage hand-over from New proposal to the lead sheet, with stubbed server calls. Since
+// the click path cards (21 Nov), both live in one step card.
 // Started as QA's scratch case for #275 (M1: a failed re-read after Start proposal).
 import { within, act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,7 +8,10 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SHEET_COPY } from "@/lib/lead-ask-shared";
-import { afterCreate, DESK_COPY, INTAKE_COPY, LEAD_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { PROPOSAL_CARD_COPY } from "@/lib/pill-proposal-shared";
+import { afterCreate, DESK_COPY, LEAD_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
+import { FLOW_COPY } from "@/lib/proposal-flow-shared";
+import { STEP_CARD_COPY } from "@/lib/step-card-shared";
 
 const h = vi.hoisted(() => ({
   role: "admin" as string,
@@ -19,6 +23,7 @@ const h = vi.hoisted(() => ({
   askLead: vi.fn(),
   rosterAllowed: true,
   createDelay: 0,
+  refuse: "" as string,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -33,6 +38,8 @@ vi.mock("@/components/work/use-capture-files", () => ({ useCaptureFiles: () => (
 vi.mock("@/components/skin/use-skin", async (orig) => ({ ...(await orig<object>()), useBrandCopy: () => (t: string) => t }));
 vi.mock("@/components/roster/RosterPanel", () => ({ RosterPanel: () => null }));
 vi.mock("@/components/proposals/DemoTextNumberCard", () => ({ DemoTextNumberCard: () => null }));
+vi.mock("@/lib/brief-read.functions", () => ({ readBriefFn: vi.fn(), briefAdminsFn: vi.fn(async () => ({ name: null, count: 1 })), passBriefFn: vi.fn() }));
+vi.mock("@/lib/lead-view.functions", () => ({ sendLeadDocsFn: vi.fn(async () => ({ ok: true })) }));
 vi.mock("@/lib/work-remove.functions", () => ({ deleteWorkItem: vi.fn(async () => undefined) }));
 vi.mock("@/lib/lead-ask.functions", () => ({
   askLeadFn: (...a: unknown[]) => h.askLead(...a),
@@ -54,6 +61,7 @@ vi.mock("@/lib/proposal-desk.functions", () => ({
     return { goalHours: 72, canSetGoal: h.role === "admin", canPickLead: pickers, canAddClient: true, texts: { demo: true, connected: false }, proposals: h.rows as DeskProposal[] };
   }),
   createProposalFn: vi.fn(async ({ data }: { data: { title: string } }) => {
+    if (h.refuse) return { ok: false, problem: h.refuse };
     h.createCalls += 1;
     if (h.createDelay) await new Promise((r) => setTimeout(r, h.createDelay));
     const id = `p${h.createCalls}`;
@@ -70,7 +78,7 @@ vi.mock("@/lib/proposal-desk.functions", () => ({
 import { ProposalsPage } from "@/pages/ProposalsPage";
 
 beforeEach(() => {
-  Object.assign(h, { role: "admin", rows: [], listFails: false, listCalls: 0, createCalls: 0, rosterAllowed: true, createDelay: 0 });
+  Object.assign(h, { role: "admin", rows: [], listFails: false, listCalls: 0, createCalls: 0, rosterAllowed: true, createDelay: 0, refuse: "" });
   h.setLead.mockReset().mockResolvedValue({ ok: true });
   h.askLead.mockReset();
 });
@@ -83,66 +91,92 @@ async function page() {
   await screen.findByTestId("proposals-page");
   return client;
 }
-async function start() {
+async function start(title = "QA network redesign") {
   fireEvent.click(screen.getByRole("button", { name: /new proposal/i }));
-  const pick = await screen.findByLabelText(INTAKE_COPY.pickClient);
-  await waitFor(() => expect((pick as HTMLSelectElement).options.length).toBeGreaterThan(1));
-  fireEvent.change(pick, { target: { value: "44444444-4444-4444-8444-444444444444" } });
-  fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "QA network redesign" } });
+  const card = await screen.findByTestId("proposal-flow");
+  const client = within(card).getByLabelText(PROPOSAL_CARD_COPY.client) as HTMLInputElement;
+  // Lock until loaded: the fields open once the card has read the clients.
+  await waitFor(() => expect(client.disabled).toBe(false));
+  fireEvent.change(client, { target: { value: "Marrowfield" } });
+  fireEvent.change(within(card).getByLabelText(FLOW_COPY.start.askLabel), { target: { value: title } });
+  return card;
 }
+// The step showing now, not the one sliding out.
+const marker = () => screen.getByTestId("proposal-flow").querySelector(".step-card__pane:not([data-leaving]) [data-step-marker]");
+const primary = (name: string | RegExp) => within(screen.getByTestId("proposal-flow")).getByRole("button", { name });
 
-describe("the Proposals page: from New proposal to picking the lead", () => {
-  it("admin: form becomes the fresh sheet; Pick later leaves no lead, sends nothing", async () => {
+// 21 Nov 2026, click path cards: New proposal opens the proposal step card. Start, then the lead sheet inside the same
+// card, then the last word; nothing opens the chat.
+describe("the Proposals page: New proposal on the step card", () => {
+  it("admin: Start becomes Pick the lead in the same card; Pick later leaves no lead, sends nothing", async () => {
     await page();
     await start();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
+    expect(marker()?.textContent).toBe(STEP_CARD_COPY.stepOf(1, 3));
+    fireEvent.click(primary(FLOW_COPY.start.next));
     const sheet = await screen.findByTestId("pick-lead");
-    expect(sheet.hasAttribute("data-lead-fresh")).toBe(true);
-    expect(screen.queryByTestId("new-proposal")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: SHEET_COPY.pickLater }));
-    await waitFor(() => expect(screen.queryByTestId("pick-lead")).toBeNull());
+    expect(screen.getByTestId("proposal-flow").contains(sheet)).toBe(true);
+    expect(marker()?.textContent).toBe(STEP_CARD_COPY.stepOf(2, 3));
+    fireEvent.click(within(sheet).getByRole("button", { name: SHEET_COPY.pickLater }));
+    expect(await screen.findByText(FLOW_COPY.done.title("Marrowfield"))).toBeTruthy();
     expect(h.setLead).not.toHaveBeenCalled();
     expect(h.askLead).not.toHaveBeenCalled();
     expect(h.createCalls).toBe(1);
+    fireEvent.click(primary(FLOW_COPY.done.close));
+    await waitFor(() => expect(screen.queryByTestId("proposal-flow")).toBeNull());
+    expect(screen.getByText("QA network redesign")).toBeTruthy();
   });
 
   it("lead role behaves as admin", async () => {
     h.role = "lead";
     await page();
     await start();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    expect((await screen.findByTestId("pick-lead")).hasAttribute("data-lead-fresh")).toBe(true);
+    fireEvent.click(primary(FLOW_COPY.start.next));
+    expect(await screen.findByTestId("pick-lead")).toBeTruthy();
   });
 
-  it("manager (em) and analyst land on the rows", async () => {
+  it("manager (em) and analyst start it and land on the last word, with no lead step", async () => {
     for (const role of ["em", "analyst"]) {
       h.role = role; h.rows = []; h.createCalls = 0;
       await page();
       await start();
-      fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-      await waitFor(() => expect(screen.queryByTestId("new-proposal")).toBeNull());
+      expect(marker()).toBeNull();
+      fireEvent.click(primary(FLOW_COPY.start.start));
+      expect(await screen.findByText(FLOW_COPY.done.title("Marrowfield"))).toBeTruthy();
       expect(screen.queryByTestId("pick-lead")).toBeNull();
-      expect(screen.getByText("QA network redesign")).toBeTruthy();
+      expect(h.createCalls).toBe(1);
       cleanup();
     }
   });
 
-  it("double press on Start proposal makes one proposal", async () => {
+  it("closing by mistake keeps what was typed, on the same step", async () => {
+    await page();
+    await start("Kept words");
+    fireEvent.keyDown(screen.getByTestId("proposal-flow"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("proposal-flow")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /new proposal/i }));
+    const card = await screen.findByTestId("proposal-flow");
+    expect((within(card).getByLabelText(FLOW_COPY.start.askLabel) as HTMLInputElement).value).toBe("Kept words");
+    expect((within(card).getByLabelText(PROPOSAL_CARD_COPY.client) as HTMLInputElement).value).toBe("Marrowfield");
+    expect(h.createCalls).toBe(0);
+  });
+
+  it("double press on Next makes one proposal, and the card cannot be closed while it starts", async () => {
     h.createDelay = 200;
     await page();
     await start();
-    const button = screen.getByRole("button", { name: INTAKE_COPY.create });
+    const button = primary(FLOW_COPY.start.next);
     fireEvent.click(button); fireEvent.click(button);
-    fireEvent.submit(button.closest("form") as HTMLFormElement);
+    fireEvent.keyDown(screen.getByTestId("proposal-flow"), { key: "Escape" });
+    expect(screen.getByTestId("proposal-flow")).toBeTruthy();
     await screen.findByTestId("pick-lead");
     expect(h.createCalls).toBe(1);
   });
 
-  it("a failed lead save keeps the sheet open, says so, proposal kept", async () => {
+  it("a failed lead save keeps the sheet open in the card, says so, proposal kept", async () => {
     h.setLead.mockResolvedValue({ ok: false, problem: "That could not be saved. Try again." });
     await page();
     await start();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
+    fireEvent.click(primary(FLOW_COPY.start.next));
     const sheet = await screen.findByTestId("pick-lead");
     fireEvent.click(await within(sheet).findByText("Christy Johnson"));
     fireEvent.click(screen.getByRole("button", { name: LEAD_COPY.save }));
@@ -152,55 +186,47 @@ describe("the Proposals page: from New proposal to picking the lead", () => {
     expect(h.askLead).not.toHaveBeenCalled();
   });
 
-  it("QA M1: a failed re-read says the proposal was started, opens nothing later, and a second press is warned", async () => {
+  it("a refused start keeps the card on Start with the server's plain line, and nothing moves on", async () => {
+    await page();
+    await start();
+    fireEvent.change(within(screen.getByTestId("proposal-flow")).getByLabelText(PROPOSAL_CARD_COPY.client), { target: { value: "A brand new client" } });
+    h.refuse = "An admin adds new clients. Choose an existing client, or ask an admin to add this one first.";
+    fireEvent.click(primary(FLOW_COPY.start.next));
+    expect(await screen.findByText(h.refuse)).toBeTruthy();
+    expect(screen.queryByTestId("pick-lead")).toBeNull();
+    expect(h.createCalls).toBe(0);
+  });
+
+  it("QA M1: a failed re-read says the proposal was started, and the row shows once the list reads again", async () => {
     const client = await page();
     await start();
     h.listFails = true;
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(screen.queryByTestId("new-proposal")).toBeNull(), { timeout: 3000 });
-    // Says plainly that it was started, not that the list failed.
+    fireEvent.click(primary(FLOW_COPY.start.next));
+    // The lead sheet cannot read the list, so the card goes straight to its last word.
+    expect(await screen.findByText(FLOW_COPY.done.title("Marrowfield"), undefined, { timeout: 3000 })).toBeTruthy();
+    fireEvent.click(primary(FLOW_COPY.done.close));
+    await waitFor(() => expect(screen.queryByTestId("proposal-flow")).toBeNull());
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toContain(DESK_COPY.startedNotRefreshed);
     expect(alert.textContent).not.toContain(DESK_COPY.loadFailed);
-    expect(screen.queryByTestId("pick-lead")).toBeNull();
     expect(h.createCalls).toBe(1);
-    // A second press on New proposal says the first one is saved, so a duplicate is never silent.
-    fireEvent.click(screen.getByRole("button", { name: /new proposal/i }));
-    const form = await screen.findByTestId("new-proposal");
-    expect(within(form).getByRole("status").textContent).toBe(INTAKE_COPY.justStarted("QA network redesign"));
-    fireEvent.keyDown(form, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByTestId("new-proposal")).toBeNull());
-    // The list recovers later (Try again, or coming back to the tab): the row shows, the line goes, no sheet pops up.
     h.listFails = false;
     await act(async () => { await client.invalidateQueries({ queryKey: ["proposal-desk"] }); });
     await screen.findByText("QA network redesign");
-    expect(screen.queryByTestId("pick-lead")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
-    // And the form no longer warns.
+    // The next New proposal starts fresh, once the finished card has played its way out.
+    await act(async () => { await new Promise((r) => setTimeout(r, 600)); });
     fireEvent.click(screen.getByRole("button", { name: /new proposal/i }));
-    const again = await screen.findByTestId("new-proposal");
-    expect(again.querySelector("[data-new-proposal-recent]")).toBeNull();
+    const again = await screen.findByTestId("proposal-flow");
+    expect((within(again).getByLabelText(FLOW_COPY.start.askLabel) as HTMLInputElement).value).toBe("");
   });
 
-  it("QA M1: Try again on the started line reads the list again and shows the row, with no sheet", async () => {
-    await page();
-    await start();
-    h.listFails = true;
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    const alert = await screen.findByRole("alert");
-    h.listFails = false;
-    fireEvent.click(within(alert).getByRole("button", { name: DESK_COPY.retry }));
-    await screen.findByText("QA network redesign");
-    expect(screen.queryByTestId("pick-lead")).toBeNull();
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
-
-  it("people list refused (roster allowed false): admin lands on rows", async () => {
+  it("people list refused (roster allowed false): the card goes on to its last word with no sheet", async () => {
     h.rosterAllowed = false;
     await page();
     await start();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(screen.queryByTestId("new-proposal")).toBeNull());
+    fireEvent.click(primary(FLOW_COPY.start.next));
+    expect(await screen.findByText(FLOW_COPY.done.title("Marrowfield"))).toBeTruthy();
     expect(screen.queryByTestId("pick-lead")).toBeNull();
   });
 });

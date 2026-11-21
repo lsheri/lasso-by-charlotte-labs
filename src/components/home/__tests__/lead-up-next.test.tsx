@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 // 21 Nov 2026, chat pill PR 4b (D-97): Up next for a proposal's Lead on Home and in the chat pill, and the owner's
 // "Send Christy the documents" on their row.
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LeadUpNextList } from "@/components/home/LeadUpNext";
 import { PillUpNext } from "@/components/pill/PillUpNext";
 import { SendDocsLine } from "@/components/proposals/SendDocsLine";
 import { LEAD_VIEW_COPY, SEND_DOCS_COPY, type LedList, type LedProposal } from "@/lib/lead-view-shared";
+import { FLOW_COPY } from "@/lib/proposal-flow-shared";
 
 afterEach(cleanup);
 
@@ -79,12 +80,29 @@ describe("Up next in the chat pill", () => {
 });
 
 describe("Send the lead the documents", () => {
-  it("unsent: one press, saying first what it does", async () => {
+  // 21 Nov 2026, click path cards: the press opens a card showing who and what first; Send there sends.
+  const sendInCard = () => fireEvent.click(within(screen.getByTestId("send-docs-card")).getByRole("button", { name: FLOW_COPY.send.send }));
+
+  it("unsent: says first what it does, opens the card with who and what, and Send there sends", async () => {
     const onSend = vi.fn(async () => ({ ok: true as const }));
-    render(<SendDocsLine state="unsent" leadName="Christy Johnson" hasDocs onSend={onSend} />);
+    render(<SendDocsLine state="unsent" leadName="Christy Johnson" hasDocs titles={["Harbor Health RFP.pdf"]} onSend={onSend} />);
     expect(screen.getByText(SEND_DOCS_COPY.what("Christy"))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.send("Christy") }));
+    expect(onSend).not.toHaveBeenCalled();
+    const card = screen.getByTestId("send-docs-card");
+    expect(within(card).getByText("Christy Johnson")).toBeTruthy();
+    expect(within(card).getByText("Harbor Health RFP.pdf")).toBeTruthy();
+    sendInCard();
     await waitFor(() => expect(onSend).toHaveBeenCalledWith(true));
+    await waitFor(() => expect(screen.queryByTestId("send-docs-card")).toBeNull());
+  });
+
+  it("Not now closes the card and sends nothing", () => {
+    const onSend = vi.fn(async () => ({ ok: true as const }));
+    render(<SendDocsLine state="unsent" leadName="Christy" hasDocs titles={["a.pdf"]} onSend={onSend} />);
+    fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.send("Christy") }));
+    fireEvent.click(within(screen.getByTestId("send-docs-card")).getByRole("button", { name: FLOW_COPY.send.later }));
+    expect(onSend).not.toHaveBeenCalled();
   });
 
   it("sent: says so, with Stop sharing", async () => {
@@ -95,32 +113,41 @@ describe("Send the lead the documents", () => {
     await waitFor(() => expect(onSend).toHaveBeenCalledWith(false));
   });
 
-  it("a refusal and a thrown call each leave a plain line", async () => {
+  it("a refusal and a thrown call each keep the card open with a plain line", async () => {
     render(<SendDocsLine state="unsent" leadName="Christy" hasDocs onSend={async () => ({ ok: false, problem: SEND_DOCS_COPY.notReady })} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.send("Christy") }));
+    sendInCard();
     expect(await screen.findByText(SEND_DOCS_COPY.notReady)).toBeTruthy();
+    expect(screen.getByTestId("send-docs-card")).toBeTruthy();
     cleanup();
     render(<SendDocsLine state="unsent" leadName="Christy" hasDocs onSend={() => Promise.reject(new Error("x"))} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.send("Christy") }));
+    sendInCard();
     expect(await screen.findByText(SEND_DOCS_COPY.failed)).toBeTruthy();
   });
 
-  it("a double click sends once", async () => {
+  it("a double click on Send sends once, and the card holds still while it saves", async () => {
     let finish: () => void = () => undefined;
     const onSend = vi.fn(() => new Promise<{ ok: true }>((resolve) => (finish = () => resolve({ ok: true }))));
     render(<SendDocsLine state="unsent" leadName="Christy" hasDocs onSend={onSend} />);
-    const button = screen.getByRole("button");
-    fireEvent.click(button);
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.send("Christy") }));
+    const send = within(screen.getByTestId("send-docs-card")).getByRole("button", { name: FLOW_COPY.send.send });
+    fireEvent.click(send);
+    fireEvent.click(send);
     expect(onSend).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(screen.getByTestId("send-docs-card")).toBeTruthy();
     finish();
+    await waitFor(() => expect(screen.queryByTestId("send-docs-card")).toBeNull());
   });
 
-  it("more: says how many were added since, and Send the new documents sends again", async () => {
+  it("more: says how many were added since, and the card sends again", async () => {
     const onSend = vi.fn(async () => ({ ok: true as const }));
     render(<SendDocsLine state="more" leadName="Christy Johnson" hasDocs added={2} onSend={onSend} />);
     expect(screen.getByText(SEND_DOCS_COPY.more("Christy", 2))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.sendNew("Christy") }));
+    expect(within(screen.getByTestId("send-docs-card")).getByText(FLOW_COPY.send.countOnly(2))).toBeTruthy();
+    sendInCard();
     await waitFor(() => expect(onSend).toHaveBeenCalledWith(true));
   });
 

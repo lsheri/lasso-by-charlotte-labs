@@ -21,11 +21,14 @@ export function PillLeadStep({
   profileId,
   firmName,
   onDone,
+  onState,
 }: {
   proposalId: string;
   profileId: string;
   firmName: string;
   onDone: () => void;
+  /** 21 Nov 2026, click path cards: the sheet's step and saving, for a step card around it. */
+  onState?: ((state: { confirm: boolean; working: boolean }) => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const brand = useBrandCopy();
@@ -95,6 +98,7 @@ export function PillLeadStep({
         return result;
       }}
       onClose={onDone}
+      onState={onState}
     />
   );
 }

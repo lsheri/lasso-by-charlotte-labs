@@ -113,6 +113,9 @@ export function sendDocsInput(raw: unknown): SendDocsInput {
 }
 export type SendDocsResult = { ok: true } | { ok: false; problem: string };
 
+/** 21 Nov 2026, click path cards: a sent document, read on a step card. */
+export const LEAD_DOC_CARD_COPY = { done: "Done" } as const;
+
 export const LEAD_VIEW_COPY = {
   title: "Up next",
   intro: (count: number) => (count === 1 ? "The proposal you lead." : `The ${count} proposals you lead, closest to the goal first.`),

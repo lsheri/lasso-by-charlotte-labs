@@ -23,6 +23,7 @@ import { briefText, isBriefPaste } from "@/lib/pill-proposal-shared";
 import { landCard, liftCard } from "./fly-card";
 import {
   behindAt,
+  PILL_OPEN_EVENT,
   dragPull,
   geometryAt,
   PILL_COPY,
@@ -368,6 +369,17 @@ export function ChatPill({
     const velocity = (last[1] - first[1]) / Math.max(16, last[0] - first[0]);
     setMode(settleMode(d.progress, velocity));
   }
+
+  // 21 Nov 2026, click path cards: a step card's "Ask Lasso about this" opens the pill, and nothing more. The card has
+  // closed first; the pill opens where it is, as if pressed.
+  useEffect(() => {
+    const onOpen = () => {
+      if (boardChat) boardChat();
+      else setMode("open");
+    };
+    window.addEventListener(PILL_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(PILL_OPEN_EVENT, onOpen);
+  }, [boardChat, setMode]);
 
   function openFromShut() {
     if (justDragged.current) {

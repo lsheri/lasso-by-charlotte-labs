@@ -1,7 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { LeadFinalBlock, type FinalTools } from "@/components/home/LeadFinalBlock";
+import { type FinalTools } from "@/components/home/LeadFinalBlock";
+import { LeadFinalCard } from "@/components/home/LeadFinalCard";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { chooseFinalFn, draftFinalFn } from "@/lib/proposal-final.functions";
 
@@ -149,7 +150,7 @@ function LedRow({
           </ul>
         )}
       </div>
-      {finalTools ? <LeadFinalBlock proposalId={row.id} final={row.final} documents={row.documents ?? []} tools={finalTools} now={now} /> : null}
+      {finalTools ? <LeadFinalCard proposalId={row.id} client={row.clientName ?? ""} final={row.final} documents={row.documents ?? []} tools={finalTools} now={now} /> : null}
       <div className="flex flex-col gap-1 text-(length:--type-small)">
         <p className="font-medium text-foreground">{C.pastWork}</p>
         <p data-led-past className="break-words text-muted-foreground [overflow-wrap:anywhere]">

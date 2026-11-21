@@ -70,6 +70,9 @@
   --shadow-flat:none;
   --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 15%,transparent);
   --shadow-float:0 12px 32px color-mix(in oklab,var(--neutral-95) 10%,transparent);
+  /* Click path cards (21 Nov): the deep, soft shadow under a step card, and its corner. */
+  --shadow-sheet:0 2px 6px color-mix(in oklab,var(--neutral-95) 8%,transparent), 0 30px 80px color-mix(in oklab,var(--neutral-95) 22%,transparent);
+  --corner-sheet:22px;
 
   --dur-instant:80ms; --dur-quick:160ms; --dur-move:200ms; --dur-base:300ms;
   --dur-enter:400ms; --dur-settle:550ms; --dur-draw:800ms; --dur-catch:900ms;

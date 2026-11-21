@@ -19,6 +19,14 @@ import {
 export const PILL_MODES = ["shut", "open", "full"] as const;
 export type PillMode = (typeof PILL_MODES)[number];
 
+/** 21 Nov 2026, click path cards: the one way into the chat from a step card ("Ask Lasso about this"). */
+export const PILL_OPEN_EVENT = "lasso:chat-pill-open";
+
+/** Opens the chat pill, as if it were pressed. Carries nothing: the chat is there if the person wants it. */
+export function openChatPill(): void {
+  globalThis.window?.dispatchEvent(new Event(PILL_OPEN_EVENT));
+}
+
 /** One morph, open or shut, in ms. */
 export const PILL_MORPH_MS = 600;
 /** The panel's own fade follows the morph by this much, so the shape leads and the words follow. */

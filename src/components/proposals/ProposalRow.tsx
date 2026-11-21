@@ -213,7 +213,7 @@ export function ProposalRow({
             <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} onRecordAnswer={ask?.onRecordAnswer} />
           </div>
           {proposal.mine && proposal.leadDocs && onSendDocs ? (
-            <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} onSend={onSendDocs} />
+            <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} titles={proposal.contextTitles} onSend={onSendDocs} />
           ) : null}
         </div>
         <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />

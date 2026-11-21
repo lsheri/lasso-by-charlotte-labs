@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SendDocsCard } from "@/components/proposals/SendDocsCard";
 import { SEND_DOCS_COPY, type SendDocsResult } from "@/lib/lead-view-shared";
 
 /**
@@ -13,6 +14,7 @@ export function SendDocsLine({
   leadName,
   hasDocs,
   added = 1,
+  titles = [],
   onSend,
 }: {
   state: "sent" | "more" | "unsent" | "no_login";
@@ -21,12 +23,16 @@ export function SendDocsLine({
   hasDocs: boolean;
   /** How many documents were added since the send ("more" only). */
   added?: number | undefined;
+  /** The documents on the proposal, by title, for the send card's picture (unsent only). */
+  titles?: readonly string[] | undefined;
   onSend: (send: boolean) => Promise<SendDocsResult>;
 }) {
   const C = SEND_DOCS_COPY;
   const first = leadName.trim().split(/\s+/)[0] ?? "";
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // 21 Nov 2026, click path cards: sending opens a card that shows who and what first; stopping stays one press.
+  const [card, setCard] = useState(false);
   async function press(send: boolean) {
     if (working) return;
     setWorking(true);
@@ -54,7 +60,7 @@ export function SendDocsLine({
         <>
           <p className="text-foreground">{C.more(first, added)}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Button type="button" size="sm" variant="outline" className="h-auto min-h-8 whitespace-normal text-left" disabled={working} onClick={() => void press(true)}>
+            <Button type="button" size="sm" variant="outline" className="h-auto min-h-8 whitespace-normal text-left" disabled={working} onClick={() => setCard(true)}>
               {working ? C.working : C.sendNew(first)}
             </Button>
             <button type="button" className="text-muted-foreground underline hover:text-foreground disabled:opacity-50" disabled={working} onClick={() => void press(false)}>
@@ -71,7 +77,7 @@ export function SendDocsLine({
         </p>
       ) : (
         <>
-          <Button type="button" size="sm" variant="outline" className="h-auto min-h-8 self-start whitespace-normal text-left" disabled={working} onClick={() => void press(true)} title={C.what(first)}>
+          <Button type="button" size="sm" variant="outline" className="h-auto min-h-8 self-start whitespace-normal text-left" disabled={working} onClick={() => setCard(true)} title={C.what(first)}>
             {working ? C.working : C.send(first)}
           </Button>
           <p className="text-muted-foreground">{C.what(first)}</p>
@@ -82,6 +88,14 @@ export function SendDocsLine({
           {problem}
         </p>
       ) : null}
+      <SendDocsCard
+        open={card}
+        onOpenChange={setCard}
+        leadName={leadName}
+        titles={state === "more" ? [] : titles}
+        count={state === "more" ? added : titles.length}
+        onSend={onSend}
+      />
     </div>
   );
 }

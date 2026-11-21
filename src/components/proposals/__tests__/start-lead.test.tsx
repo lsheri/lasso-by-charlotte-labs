@@ -49,8 +49,9 @@ describe("a new proposal opens the lead sheet at once", () => {
     desk();
     const open = sheet() as HTMLElement;
     expect(open).not.toBeNull();
-    expect(open.hasAttribute("data-lead-fresh")).toBe(true);
-    expect(within(open).getByRole("heading").textContent).toBe(SHEET_COPY.title("Marrowfield"));
+    // 21 Nov 2026, click path cards: the sheet sits on a step card, not a dialog of its own.
+    expect(open.closest("[data-step-card]")).not.toBeNull();
+    expect(within(open).getByRole("heading", { level: 3 }).textContent).toBe(SHEET_COPY.title("Marrowfield"));
     expect(within(open).getByText(`${SHEET_COPY.started} ${LEAD_COPY.intro}`)).toBeTruthy();
     expect(within(open).getByRole("button", { name: SHEET_COPY.pickLater })).toBeTruthy();
     expect(within(open).queryByRole("button", { name: LEAD_COPY.cancel })).toBeNull();
@@ -113,23 +114,13 @@ describe("a new proposal opens the lead sheet at once", () => {
     expect(open.textContent).not.toContain(SHEET_COPY.started);
   });
 
-  it("the fresh sheet carries the morph name while it arrives, and never zooms in by itself", async () => {
-    vi.useFakeTimers();
-    try {
-      desk();
-      const box = sheet() as HTMLElement;
-      expect(box.style.animation).toBe("none");
-      expect((box.style as unknown as Record<string, string>)["viewTransitionName"]).toBe(PROPOSAL_MORPH);
-      expect(box.hasAttribute("data-lead-arriving")).toBe(true);
-      await act(async () => { vi.advanceTimersByTime(800); });
-      // The name goes; the entrance stays off, so the zoom is never replayed while it is open.
-      expect((box.style as unknown as Record<string, string>)["viewTransitionName"] ?? "").toBe("");
-      expect(box.style.animation).toBe("none");
-      expect(box.hasAttribute("data-lead-arriving")).toBe(false);
-      expect(box.hasAttribute("data-lead-fresh")).toBe(true);
-    } finally {
-      vi.useRealTimers();
-    }
+  it("21 Nov 2026, click path cards: the sheet arrives on a step card that says where you are, with no dialog morph", () => {
+    desk();
+    const box = sheet() as HTMLElement;
+    const card = box.closest("[data-step-card]") as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.querySelector("[data-step-marker]")?.textContent).toBe("Step 1 of 2");
+    expect((box.style as unknown as Record<string, string>)["viewTransitionName"] ?? "").toBe("");
   });
 
   it("the backdrop stays steady during the hand-over and the page behind does not cross-fade", () => {
