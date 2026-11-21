@@ -52,6 +52,7 @@ import {
   type LeadResult,
 } from "./proposal-desk-shared";
 import { canManageRoster } from "./roster-shared";
+import { sendState, type SentDocs } from "./lead-view-shared";
 
 type Db = SupabaseClient<Database>;
 /** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
@@ -125,6 +126,10 @@ export type DeskStore = {
   record: (caller: DeskCaller, eventType: "proposal.created" | "proposal.sent" | "proposal.won" | "proposal.lead_set" | "proposal.closed", dims: Record<string, string>) => Promise<void>;
   /** Names of these roster people, only those on this workspace's list. */
   leadNames: (orgId: string, contactIds: string[]) => Promise<Map<string, string>>;
+  /** 21 Nov 2026, PR 4b: of these roster people, the ones linked to a teammate's login. Left out, none are. */
+  leadLinks?: (orgId: string, contactIds: string[]) => Promise<Set<string>>;
+  /** 21 Nov 2026, PR 4b: what each of these proposals' owners sent to the lead. Left out, nothing was sent. */
+  leadDocsSent?: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs>>;
   /** The asks sent about these proposals in this workspace, newest first. Empty when there are none or they cannot be read. */
   asks: (orgId: string, proposalIds: string[]) => Promise<DeskAsk[]>;
   /** Where this workspace's texts go, and whether texting is switched on. */
@@ -216,6 +221,11 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   const askByProposal = askViews(asks, leadNames, store.now(), caller.role === "admin", recorders);
   const ownIds = new Set(mine.filter((row) => row.owner_id === caller.profileId).map((row) => row.id));
   const titles = await store.itemTitles([...new Set(context.filter((c) => ownIds.has(c.proposal_id)).map((c) => c.work_item_id))]);
+  // PR 4b: whether each of the caller's own proposals has a lead with a login to send the documents to.
+  const ownLeads = [...new Set(mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id).map((row) => row.lead_contact_id as string))];
+  const linked = ownLeads.length && store.leadLinks ? await store.leadLinks(caller.orgId, ownLeads).catch(() => new Set<string>()) : new Set<string>();
+  const ownLed = mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id && row.status === "open").map((row) => row.id);
+  const sentDocs = ownLed.length && store.leadDocsSent ? await store.leadDocsSent(caller.orgId, ownLed).catch(() => new Map<string, SentDocs>()) : new Map<string, SentDocs>();
   const proposals: DeskProposal[] = mine.map((row) => {
     const items = context.filter((c) => c.proposal_id === row.id);
     const own = row.owner_id === caller.profileId;
@@ -238,6 +248,14 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(pickers ? { leadContactId: row.lead_contact_id ?? null } : {}),
       ...(pickers || own ? { leadName: (row.lead_contact_id ? leadNames.get(row.lead_contact_id) : null) ?? null, ask: askByProposal.get(row.id) ?? null } : {}),
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
+      ...(own && row.status === "open" && row.lead_contact_id
+        ? (() => {
+            const ids = items.map((c) => c.work_item_id);
+            const state = sendState(row, sentDocs.get(row.id), ids, linked.has(row.lead_contact_id));
+            const sentIds = sentDocs.get(row.id)?.item_ids ?? [];
+            return { leadDocs: state, ...(state === "more" ? { leadDocsAdded: ids.filter((id) => !sentIds.includes(id)).length } : {}) };
+          })()
+        : {}),
     };
   });
   return { goalHours: goalHours(settings), canSetGoal: caller.role === "admin", canPickLead: pickers, canAddClient, clientsOff: caller.role === "admin" && !clientsOn, texts, proposals };
@@ -634,6 +652,18 @@ export async function realStore(context: DeskContext, profileId: string | null):
       if (contactIds.length === 0) return new Map();
       const { data } = await adminLoose.from("roster_contacts").select("id, full_name").eq("org_id", orgId).in("id", contactIds);
       return new Map(((data ?? []) as { id: string; full_name: string }[]).map((person) => [person.id, person.full_name]));
+    },
+    async leadLinks(orgId, contactIds) {
+      if (contactIds.length === 0) return new Set();
+      const { data, error } = await adminLoose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).in("id", contactIds);
+      if (error) return new Set();
+      return new Set(((data ?? []) as { id: string; profile_id: string | null }[]).filter((row) => row.profile_id).map((row) => row.id));
+    },
+    async leadDocsSent(orgId, proposalIds) {
+      if (proposalIds.length === 0) return new Map();
+      const { data, error } = await adminLoose.from("proposal_lead_docs").select("proposal_id, contact_id, item_ids").eq("org_id", orgId).in("proposal_id", proposalIds);
+      if (error) return new Map();
+      return new Map(((data ?? []) as { proposal_id: string; contact_id: string; item_ids: string[] }[]).map((row) => [row.proposal_id, { contact_id: row.contact_id, item_ids: row.item_ids ?? [] }]));
     },
     async asks(orgId, proposalIds) {
       if (proposalIds.length === 0) return [];

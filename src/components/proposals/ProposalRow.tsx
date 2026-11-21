@@ -6,9 +6,11 @@ import { AskLine } from "@/components/proposals/AskLead";
 import { LeadChip } from "@/components/proposals/LeadChip";
 import { isAtGoal, ProposalClock } from "@/components/proposals/ProposalClock";
 import { ProposalMore, type MoreAction } from "@/components/proposals/ProposalMore";
+import { SendDocsLine } from "@/components/proposals/SendDocsLine";
 import { Button } from "@/components/ui/button";
 import { tagVariants } from "@/components/ui/tag";
 import type { PracticeReplyResult, Reply } from "@/lib/lead-ask-shared";
+import type { SendDocsResult } from "@/lib/lead-view-shared";
 import {
   askWord,
   CLOSE_COPY,
@@ -43,6 +45,7 @@ export function ProposalRow({
   ask,
   onClose,
   featured = false,
+  onSendDocs,
 }: {
   proposal: DeskProposal;
   goalHours: number;
@@ -61,6 +64,8 @@ export function ProposalRow({
   onClose?: ((change: "lost" | "archived") => void) | undefined;
   /** Up next: the one proposal on the page whose next step is the filled button. */
   featured?: boolean | undefined;
+  /** 21 Nov 2026, PR 4b: the person who started it sends the documents to the lead, or stops sharing them. */
+  onSendDocs?: ((send: boolean) => Promise<SendDocsResult>) | undefined;
 }) {
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -207,6 +212,9 @@ export function ProposalRow({
           <div key={proposal.ask ? `${proposal.ask.status}-${proposal.ask.reply ?? ""}` : "none"} className="animate-in fade-in-0 duration-500 motion-reduce:animate-none">
             <AskLine proposal={proposal} canAsk={Boolean(ask && proposal.leadContactId)} onAsk={() => ask?.onAsk()} onPracticeReply={ask?.onPracticeReply} onRecordAnswer={ask?.onRecordAnswer} />
           </div>
+          {proposal.mine && proposal.leadDocs && onSendDocs ? (
+            <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} onSend={onSendDocs} />
+          ) : null}
         </div>
         <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />
         <div className="flex flex-wrap items-center gap-2 md:justify-end">

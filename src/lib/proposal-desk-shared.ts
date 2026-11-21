@@ -268,6 +268,14 @@ export type DeskProposal = {
   contextTitles?: string[];
   /** May mark it sent: the person who started it, an admin or a lead. Recording the win is for `mine` only. */
   canAct: boolean;
+  /**
+   * 21 Nov 2026, PR 4b: for the person who started it only, once a lead is picked: whether the lead can open the
+   * documents ("sent"), can open those sent but some were added since ("more"), not yet ("unsent"), or has no login
+   * to send them to ("no_login").
+   */
+  leadDocs?: "sent" | "more" | "unsent" | "no_login";
+  /** With "more": how many documents were added since the send. */
+  leadDocsAdded?: number;
   /** The picked lead's roster id. Sent only to admins and leads, who are the only people who see the roster. */
   leadContactId?: string | null;
   /** The picked lead's name. Sent to admins, leads and the person who started the proposal. */

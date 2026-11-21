@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminHome } from "@/components/home/AdminHome";
 import { HomeAsk } from "@/components/home/HomeAsk";
 import { HomeBoard } from "@/components/home/HomeBoard";
+import { LeadUpNext } from "@/components/home/LeadUpNext";
 import { UsesHomeCard } from "@/components/person/UsesHomeCard";
 import { useProfile } from "@/hooks/use-profile";
 import { FIRM_MAP_HOME_CACHE, type FirmCanvasData } from "@/lib/firm-canvas-shared";
 import { getFirmMap } from "@/lib/firm-map.functions";
+import { pillAccess } from "@/lib/chat-pill-shared";
 import { homeAsksTheFirm } from "@/lib/home-ask-shared";
 import { homeShowsProposals } from "@/lib/role-screens-shared";
 
@@ -16,6 +18,8 @@ export function HomePage() {
   return (
     <>
       <UsesHomeCard orgId={profile?.org_id} />
+      {/* 21 Nov 2026, PR 4b: the proposals this person leads, first. Renders nothing for someone who leads none. */}
+      {pillAccess(profile) === "firm" ? <LeadUpNext profileId={profile?.id} /> : null}
       {asks ? (
         // 21 Nov, D-85 PR B: everyone in the firm who is not an admin gets a mini firm brain at the top of Home, with
         // their boards as cards below. Prepare me and How we do this live on Firm brain now.

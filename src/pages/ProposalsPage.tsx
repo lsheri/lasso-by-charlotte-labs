@@ -19,6 +19,7 @@ import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn, recordAnswerFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { linkTeammateFn, listRosterFn } from "@/lib/roster.functions";
+import { sendLeadDocsFn } from "@/lib/lead-view.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 import { morph } from "@/lib/view-morph";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -141,6 +142,11 @@ export function ProposalsPage() {
               }}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
               teammates={roster.data?.allowed ? roster.data.teammates : undefined}
+              onSendDocs={async (proposalId, send) => {
+                const result = await sendLeadDocsFn({ data: { profile_id: profileId as string, proposal_id: proposalId, send } });
+                if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                return result;
+              }}
               linkTeammate={async (teammateId, contactId) => {
                 const result = await linkTeammateFn({ data: { profile_id: profileId as string, teammate_id: teammateId, contact_id: contactId ?? null } });
                 if (result.ok) void roster.refetch();

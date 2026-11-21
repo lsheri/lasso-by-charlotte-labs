@@ -71,6 +71,10 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "proposal.sent": ["change", "within_goal"],
   "proposal.won": ["documents", "notes", "sent_first"],
   "proposal.lead_set": ["change"],
+  // 21 Nov 2026, chat pill PR 4b: the owner sent a proposal's documents to its lead (a count band), and a lead opened
+  // one (whether amounts were withheld). Never a title, a client, a name or words.
+  "proposal.docs_to_lead": ["documents"],
+  "lead_view.document_opened": ["withheld"],
   "demo_text_number.changed": ["change"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],

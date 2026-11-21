@@ -29,6 +29,8 @@ import { ChatPill } from "./ChatPill";
 import { landCard, liftCard } from "./fly-card";
 import { PillBriefPass, PillProposalCard, type PassTools, type ProposalCardTools } from "./PillProposalCard";
 import { PillLeadStep } from "./PillLeadStep";
+import { PillUpNext } from "./PillUpNext";
+import { useLed } from "@/components/home/use-led";
 
 /**
  * 20 Nov 2026, chat pill: the pill as the app mounts it, once, in the app shell. It reads where the person is and who
@@ -56,6 +58,8 @@ export function ChatPillMount() {
   // Only for people who may start a proposal: the goal hours the card's clock line says.
   const desk = useProposalDesk(starts ? (profile?.id ?? undefined) : undefined);
   const goalHours = desk.data?.goalHours ?? 72;
+  // PR 4b: the proposals this person leads, from the same cache entry as Home's Up next.
+  const led = useLed(canAsk ? (profile?.id ?? undefined) : undefined);
   const pid = profile?.id ?? "";
   const firmName = profile?.org_name ?? "";
   const passTools = useMemo<PassTools>(
@@ -124,6 +128,7 @@ export function ChatPillMount() {
         starters={canAsk ? pillStarters(profile.role, recent?.title) : []}
         boardChat={place === "board" ? boardHandler : null}
         reduceMotion={reduceMotion}
+        upNext={<PillUpNext data={led.data} onOpen={() => void navigate({ to: "/" })} />}
         onOpened={(where) => emitClientEvent("pill.opened", { page: where })}
         onExpanded={(where) => emitClientEvent("pill.expanded", { page: where })}
         profileId={profileId}

@@ -885,3 +885,43 @@ describe("21 Nov (D-82): links from an admin's Home into Proposals", () => {
     for (const junk of [{ proposal: "1; drop" }, { lead: "<script>" }, { tab: "settings" }, { proposal: 5 }, {}]) expect(deskLinkFromSearch(junk)).toEqual({});
   });
 });
+
+// 21 Nov 2026, chat pill PR 4b: the person who started a proposal is told whether its lead can open the documents.
+describe("the documents and the lead, on the owner's row", () => {
+  const STAN = "77777777-7777-4777-8777-77777777aaaa";
+  it("sent, more, unsent or no login, for the owner only and only on open proposals with a lead", async () => {
+    const rows = [
+      row({ lead_contact_id: LEAD }),
+      row({ id: "p2", owner_id: OTHER, lead_contact_id: LEAD }),
+      row({ id: "p5", lead_contact_id: LEAD }),
+      row({ id: "p6", lead_contact_id: STAN }),
+      row({ id: "p7", lead_contact_id: LEAD }),
+      row({ id: "p8" }),
+      row({ id: "p9", lead_contact_id: LEAD, status: "won", decided_at: hoursAgo(1) }),
+    ];
+    const links = vi.fn(async (_org: string, ids: string[]) => new Set(ids.filter((id) => id === LEAD)));
+    // p1 sent its one document (ITEM_A); p7 was sent to STAN before LEAD became the lead.
+    const sent = vi.fn(async () => new Map([["p1", { contact_id: LEAD, item_ids: [ITEM_A] }], ["p7", { contact_id: STAN, item_ids: [ITEM_A] }]]));
+    const list = await listDesk(fakeStore({ rows, role: "admin", leadLinks: links, leadDocsSent: sent }));
+    const docs = Object.fromEntries(list.proposals.map((p) => [p.id, p.leadDocs]));
+    expect(docs).toEqual({ p1: "sent", p2: undefined, p5: "unsent", p6: "no_login", p7: "unsent", p8: undefined, p9: undefined });
+    expect(links.mock.calls[0]![1].sort()).toEqual([LEAD, STAN].sort());
+  });
+
+  it("a document added after the send makes it 'more', with how many", async () => {
+    const rows = [row({ lead_contact_id: LEAD })];
+    const list = await listDesk(fakeStore({
+      rows,
+      context: async () => [{ proposal_id: "p1", work_item_id: ITEM_A }, { proposal_id: "p1", work_item_id: ITEM_B }],
+      leadLinks: async () => new Set([LEAD]),
+      leadDocsSent: async () => new Map([["p1", { contact_id: LEAD, item_ids: [ITEM_A] }]]),
+    }));
+    expect(list.proposals[0]).toMatchObject({ leadDocs: "more", leadDocsAdded: 1 });
+  });
+
+  it("a store without the link read says no login rather than guessing; a failed read too", async () => {
+    const rows = [row({ lead_contact_id: LEAD })];
+    expect((await listDesk(fakeStore({ rows }))).proposals[0]!.leadDocs).toBe("no_login");
+    expect((await listDesk(fakeStore({ rows, leadLinks: async () => { throw new Error("x"); } }))).proposals[0]!.leadDocs).toBe("no_login");
+  });
+});

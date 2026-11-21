@@ -37,14 +37,34 @@ const PER = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)?
 // QA M1 (PR 281): a scale word or a bare "k" with no currency is a count ("2 million users", "10k employees", "4k video"),
 // never money, unless a fee word sits right before or after it ("a fee of 1.2 million", "120k retainer"). The same
 // fee words make a bare grouped figure money ("Fees: 290,000", "day rate 1,200").
-const FEE_WORD = "(?:fees?|retainer|budget|price[ds]?|pricing|costs?|rate|charged?|honorar(?:ium)?|paid|payment)";
+// 21 Nov 2026 (QA H1 of PR 299): "pay", "exceed", "cap", "total" and "investment" join, so "They pay 45 thousand",
+// "not to exceed 60k" and "Investment: 120k" read as money.
+const FEE_WORD = "(?:fees?|retainer|budgets?|price[ds]?|pricing|costs?|rate|charged?|honorar(?:ium)?|paid|pay|payment|exceed|cap|total|investment)";
 const AFTER_FEE_WORD = `(?<=\\b${FEE_WORD}\\b[^.\\n\\d]{0,15})`;
 const BEFORE_FEE_WORD = `(?=\\s?${FEE_WORD}\\b)`;
 const STRICT_FEE_WORD = "(?:fees?|retainer|price[ds]?|day rate|honorar(?:ium)?)";
 const AFTER_STRICT_FEE_WORD = `(?<=\\b${STRICT_FEE_WORD}\\b[^.\\n\\d]{0,15})`;
 const GROUPED = "(?:(?<![\\d.,'’])\\d{1,2}(?:,\\d{2})+,\\d{3}(?![\\d])" + `|(?<![\\d.,'’])\\d{1,3}(?:${SEP}\\d{3})+(?:[.,]\\d+)?(?![\\d]))`;
 
+// QA H1 of PR 299: the formats a Member lead still saw in a brief or an RFP.
+// A range: "$50-60k", "50 to 60k" after a fee word, "45-50 thousand dollars".
+const RANGE = `${NUMBER}\\s?(?:[-\u2013\u2014]|to)\\s?${NUMBER}`;
+// Spelled numbers before a scale: "forty thousand", "one hundred and twenty thousand".
+const NUM_WORD =
+  "(?:a|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|and)";
+const SPELLED = `\\b${NUM_WORD}(?:[\\s-]+${NUM_WORD})*\\s+(?:thousand|million|billion)\\b`;
+const PER_REQUIRED = "(?:\\s?(?:/|per|a)\\s?(?:month|mo|week|wk|year|yr|day|hour|hr)\\b)";
+
 const MONEY_PARTS = [
+  `${SYMBOL}\\s?${RANGE}${SCALE}?${PER}`,
+  `${AFTER_FEE_WORD}${RANGE}${SCALE}?${PER}`,
+  `${RANGE}${SCALE}?\\s?\\(?(?:${SYMBOL_AFTER}|\\b(?:${CODES}|${WORDS})\\b)\\)?${PER}`,
+  `${SPELLED}\\s?(?:${SYMBOL_AFTER}|\\b(?:${CODES}|${WORDS})\\b)${PER}`,
+  `${AFTER_FEE_WORD}${SPELLED}${PER}`,
+  // A scale with a period is a price ("45 thousand a month", "10k per month"); a figure with a slash rate is one too.
+  `${NUMBER}\\s?(?:${SCALE_WORD}|k\\b)${PER_REQUIRED}`,
+  `${AFTER_FEE_WORD}${NUMBER}${PER_REQUIRED}`,
+  `${GROUPED}\\s?/\\s?(?:day|hour|hr)\\b`,
   `${SYMBOL}\\s?${NUMBER}${SCALE}?${PER}`,
   `\\b(?:${CODES})\\s?${NUMBER}${SCALE}?${PER}`,
   `${NUMBER}${SCALE}?\\s?\\(?(?:${SYMBOL_AFTER}|\\b(?:${CODES}|${WORDS})\\b)\\)?${PER}`,
@@ -79,6 +99,113 @@ export function withoutMoney(text: string): string {
     .replace(/\s{2,}/g, " ")
     .replace(/^[\s,;:·-]+|[\s,;:·-]+$/g, "")
     .trim();
+}
+
+/** The line put where a money section was, in a document a Member reads. */
+export const MONEY_SECTION_WITHHELD = "[pricing withheld]";
+
+// A line that opens a money section, in any heading style: "## Fees", "FEES", "Pricing and payment", "Budget:",
+// "4. Commercials". Short (up to 8 words), and the money word is its first word after any numbering.
+const MONEY_HEADING = /^\s*(?:#{1,6}\s*)?(?:[\d.)\s]+)?(?:fees?|pricing|prices?|investment|commercials?|budgets?|payments?|costs?|rates?|compensation|financials?)\b[^\n.!?]{0,60}:?\s*$/i;
+const ANY_HEADING = /^\s*(?:#{1,6}\s+\S|[A-Z][A-Za-z0-9&/ ,'-]{1,60}:?\s*$)/;
+
+/**
+ * 21 Nov 2026 (QA H1 of PR 299): a whole document as a Member may read it. Every money-headed section is withheld,
+ * from its heading to the next blank line followed by another heading (or the next markdown heading), so a bare price
+ * table ("Discovery: 18,000") goes with it; then every figure left is masked. For whole documents and briefs, where a
+ * price table can sit with no currency on any line.
+ */
+export function moneyFreeDocument(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  let hiding = false;
+  let blank = false;
+  for (const line of lines) {
+    if (MONEY_HEADING.test(line) && line.trim().split(/\s+/).length <= 8) {
+      if (!hiding) out.push(line.trim().replace(/:$/, ""), MONEY_SECTION_WITHHELD);
+      hiding = true;
+      blank = false;
+      continue;
+    }
+    if (hiding) {
+      const isHeading = /^\s*#{1,6}\s+\S/.test(line) || (blank && ANY_HEADING.test(line) && line.trim().split(/\s+/).length <= 8);
+      if (!isHeading) {
+        blank = line.trim() === "";
+        continue;
+      }
+      hiding = false;
+      out.push("");
+    }
+    out.push(line);
+  }
+  return maskMoney(withoutFees(out.join("\n")));
+}
+
+/** The mark left where a number was, in a brief or document a Member lead reads. */
+export const NUMBER_WITHHELD = "[number withheld]";
+
+// A heading over money, in any style: "## Fees", "Section 5. Fees", "4) Costs and expenses", "Day rates:", "BUDGET".
+const NUMBERS_HEADING =
+  /^\s*(?:#{1,6}\s*)?(?:(?:section|part|schedule|appendix)\s+[\w.]+[.:)]?\s*)?(?:[\d.)\s]+)?(?:fees?|costs?|cost\s+table|prices?|pricing|budgets?|rates?|day\s+rates?|expenses?|commercials?|investment|payments?|compensation|financials?)\b[^\n.!?]{0,60}:?\s*$/i;
+const NUMBERS_ANY_HEADING = (line: string) =>
+  /^\s*#{1,6}\s+\S/.test(line) || /^\s*(?:section|part|schedule|appendix)\s+[\w.]+[.:)]?\s+\S/i.test(line) || /^\s*[A-Z][A-Za-z0-9&/ ,'-]{1,60}:?\s*$/.test(line);
+// Spelled amounts: "one hundred and twenty thousand", "fifteen hundred", "a million".
+const SPELLED_AMOUNT = new RegExp(`\\b${NUM_WORD}(?:[\\s-]+${NUM_WORD})*\\s+(?:hundred|thousand|million|billion)\\b(?:[\\s-]+(?:and\\s+)?${NUM_WORD}(?:[\\s-]+${NUM_WORD})*)?`, "gi");
+// Dates and times stay: 2026-11-21, 21/11/2026, 21.11.26, 10:30, Q4 2026, FY26.
+const DATE_LIKE = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b|\b\d{1,2}:\d{2}\b/g;
+// Any number with three or more digits (separators allowed), with an optional decimal and scale; or a short number
+// with a scale ("120 to 150 thousand", "2.5m").
+const BIG_NUMBER = new RegExp(
+  `(?<![\\w.,'’])(?:\\d{1,3}(?:${SEP}\\d{3})+|\\d{3,})(?:[.,]\\d+)?(?:\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}]))?(?![\\d])` +
+    `|(?<![\\w.,'’])\\d{1,2}(?:[.,]\\d+)?\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}])`,
+  "giu",
+);
+/** A plain year stays a year: 1900 to 2099, standing alone or after Q1-Q4, FY or a month. */
+const isYear = (value: string) => /^(?:19|20)\d{2}$/.test(value);
+
+/**
+ * 21 Nov 2026 (QA H1b of PR 299, Liam's rule "Members never see money"): the blunt form for a whole brief or document a
+ * Member lead reads. Every money-headed section goes whole; then every number of three or more digits, every number
+ * with a scale and every spelled-out amount is withheld, whatever the currency or none. Years, dates, times and short
+ * counts ("3 workshops", "Week 3") stay. Admins and Leads never get this text.
+ */
+export function numbersWithheld(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  let hiding = false;
+  let blank = false;
+  for (const line of lines) {
+    // A heading carries no figure of its own ("Day rate: 950" is a line to mask, not a section to hide).
+    const plain = line.replace(/(?:section|part|schedule|appendix)\s+[\w.]+/i, "");
+    if (NUMBERS_HEADING.test(line) && !/\d/.test(plain) && line.trim().split(/\s+/).length <= 9) {
+      if (!hiding) out.push(line.trim().replace(/:$/, ""), MONEY_SECTION_WITHHELD);
+      hiding = true;
+      blank = false;
+      continue;
+    }
+    if (hiding) {
+      const isHeading = /^\s*#{1,6}\s+\S/.test(line) || (blank && NUMBERS_ANY_HEADING(line) && line.trim().split(/\s+/).length <= 9);
+      if (!isHeading) {
+        blank = line.trim() === "";
+        continue;
+      }
+      hiding = false;
+      out.push("");
+    }
+    out.push(line);
+  }
+  return numbersWithheldInline(out.join("\n"));
+}
+
+/** The number part of numbersWithheld alone, for a title or a single line: no section is hidden. */
+export function numbersWithheldInline(text: string): string {
+  let body = maskMoney(text, NUMBER_WITHHELD);
+  // Dates and times are set aside so their digits are never read as amounts.
+  const kept: string[] = [];
+  body = body.replace(DATE_LIKE, (match) => `\u0000${kept.push(match) - 1}\u0000`);
+  body = body.replace(SPELLED_AMOUNT, NUMBER_WITHHELD);
+  body = body.replace(BIG_NUMBER, (match) => (isYear(match) ? match : NUMBER_WITHHELD));
+  return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
 }
 
 /** A document or summary as a Member may read it: a proposal's Fees section withheld, and every figure masked. */
