@@ -8,7 +8,7 @@ import { askLeadFn, askPreviewFn } from "@/lib/lead-ask.functions";
 import { PROPOSAL_CARD_COPY } from "@/lib/pill-proposal-shared";
 import { pastWorkByLead } from "@/lib/proposal-desk-shared";
 import { setProposalLeadFn } from "@/lib/proposal-desk.functions";
-import { listRosterFn } from "@/lib/roster.functions";
+import { linkTeammateFn, listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 
 /**
@@ -88,6 +88,12 @@ export function PillLeadStep({
         return result;
       }}
       pastWork={pastWorkByLead(desk.data.proposals)}
+      teammates={roster.data.allowed ? roster.data.teammates : undefined}
+      linkTeammate={async (teammateId) => {
+        const result = await linkTeammateFn({ data: { profile_id: profileId, teammate_id: teammateId } });
+        if (result.ok) void roster.refetch();
+        return result;
+      }}
       onClose={onDone}
     />
   );

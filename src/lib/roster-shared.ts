@@ -50,9 +50,44 @@ export type RosterContact = {
   numberDiffers: boolean;
   /** The day Lasso last emailed them their link, when it has. */
   invitedOn: string | null;
+  /**
+   * 21 Nov 2026, chat pill PR 4a (D-97): true when this person is a teammate with a login in this workspace. Set by
+   * the server from roster_contacts.profile_id; the profile id itself never reaches the browser from the roster.
+   */
+  teammate?: boolean;
 };
 
-export type RosterList = { allowed: false } | { allowed: true; contacts: RosterContact[] };
+/**
+ * 21 Nov 2026, chat pill PR 4a (D-97): a teammate with a login who is not on People yet, offered as a lead. Name and
+ * role only. Picking one links their People row (the one whose email is their login's) or makes one.
+ */
+export type RosterTeammate = { profileId: string; name: string; role: "admin" | "lead" | "em" };
+
+export type RosterList =
+  | { allowed: false }
+  | {
+      allowed: true;
+      contacts: RosterContact[];
+      /** Teammates not yet on People. Absent from an older server. */
+      teammates?: RosterTeammate[];
+    };
+
+export type TeammateLinkInput = { profile_id: string | null; teammate_id: string | null };
+export type TeammateLinkResult =
+  | { ok: true; contact: RosterContact }
+  | { ok: false; reason: "missing" | "full" | "not_ready" | "unavailable" };
+
+/** The roles a lead may have: Admin, Lead or Member. Never a Coach or a guest. */
+export function canLeadAsTeammate(row: { role: string | null | undefined; is_guest?: boolean | null; deactivated_at?: string | null }): boolean {
+  return (row.role === "admin" || row.role === "lead" || row.role === "em") && !row.is_guest && !row.deactivated_at;
+}
+
+/** Two email addresses are the same mailbox: compared trimmed and without case. */
+export function sameEmail(a: string | null | undefined, b: string | null | undefined): boolean {
+  const left = typeof a === "string" ? a.trim().toLowerCase() : "";
+  const right = typeof b === "string" ? b.trim().toLowerCase() : "";
+  return left !== "" && left === right;
+}
 
 export type RosterProblem =
   | "name"
@@ -322,6 +357,11 @@ export function rosterSaveInput(input: unknown): RosterSaveInput {
   };
 }
 
+export function teammateLinkInput(input: unknown): TeammateLinkInput {
+  const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  return { profile_id: cleanWorkspace(raw["profile_id"]), teammate_id: cleanWorkspace(raw["teammate_id"]) };
+}
+
 export function rosterChangeInput(input: unknown): RosterChangeInput {
   const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   return { profile_id: cleanWorkspace(raw["profile_id"]), id: cleanWorkspace(raw["id"]) };
@@ -330,7 +370,7 @@ export function rosterChangeInput(input: unknown): RosterChangeInput {
 export const ROSTER_COPY = {
   heading: "People we work with",
   intro:
-    "Independent consultants and people at other firms who help with proposals and projects. They have no login. Only admins and leads see this list and the contact details on it.",
+    "Independent consultants and people at other firms who help with proposals and projects, and teammates picked to lead one. Only admins and leads see this list and the contact details on it.",
   add: "Add a person",
   empty: "Nobody yet. Add the people you bring in on proposals.",
   loading: "Loading the list",
@@ -377,6 +417,8 @@ export const ROSTER_COPY = {
     not_agreed: "They have no live text agreement to change. Send them their link to agree.",
     unavailable: "That did not go through. Nothing was changed. Try again in a moment.",
   },
+  teammate: "Teammate",
+  teammateTitle: "Has a login in this workspace",
   needsDetails: "Needs a number and email",
   needsDetailsCount: (count: number) =>
     `${count} ${count === 1 ? "person needs" : "people need"} a mobile number and email. Open Edit to add them.`,

@@ -8,6 +8,7 @@ import {
   CONSENT_COLUMNS,
   DETAIL_COLUMNS,
   INVITE_GAP_MS,
+  linkTeammate,
   listRoster,
   requestNumberChange,
   rosterInviteEmail,
@@ -17,8 +18,10 @@ import {
   type DetailRow,
   type RosterDeps,
   type RosterRow,
+  type TeammateRow,
 } from "@/lib/roster.server";
 import {
+  canLeadAsTeammate,
   canManageRoster,
   changeOpenUntil,
   checkRosterContact,
@@ -34,6 +37,8 @@ import {
   rosterLinkPath,
   rosterListInput,
   rosterSaveInput,
+  sameEmail,
+  teammateLinkInput,
   textsStatus,
   type RosterSaveInput,
 } from "@/lib/roster-shared";
@@ -71,6 +76,8 @@ function world(
     marks?: ConsentMarkRow[];
     stored?: DetailRow[];
     differing?: string[];
+    members?: TeammateRow[];
+    emails?: Record<string, string>;
   } = {},
 ) {
   const rows = over.rows ?? [row()];
@@ -174,6 +181,23 @@ function world(
     },
     consents: async (_orgId, ids) =>
       (over.marks ?? []).filter((m) => ids.includes(m.roster_contact_id)),
+    teammates: async (orgId) => (over.members ?? []).filter((m) => m.org_id === orgId),
+    emailOf: async (userId) => over.emails?.[userId] ?? null,
+    linkProfile: async (orgId, id, profileId) => {
+      const found = rows.find((r) => r.id === id && r.org_id === orgId);
+      if (!found) return "missing";
+      if (found.profile_id || rows.some((r) => r.org_id === orgId && r.profile_id === profileId)) return "taken";
+      writes.push("linkProfile");
+      found.profile_id = profileId;
+      return found;
+    },
+    addLinked: async (orgId, name, profileId) => {
+      if (rows.some((r) => r.org_id === orgId && r.profile_id === profileId)) return "taken";
+      writes.push("addLinked");
+      const made = row({ id: NEW_ID, org_id: orgId, full_name: name, role_title: null, profile_id: profileId });
+      rows.push(made);
+      return made;
+    },
     ...over,
   };
   return { deps, rows, writes, stored, sent };
@@ -444,8 +468,10 @@ describe("listRoster", () => {
             needsDetails: true,
             numberDiffers: false,
             invitedOn: null,
+            teammate: false,
           },
         ],
+        teammates: [],
       });
     }
   });
@@ -508,6 +534,7 @@ describe("listRoster", () => {
     expect(await listRoster(world({ rows: [], consents }).deps)).toEqual({
       allowed: true,
       contacts: [],
+      teammates: [],
     });
     expect(consents).not.toHaveBeenCalled();
   });
@@ -1337,9 +1364,10 @@ describe("the floors, read from the source", () => {
     expect(shared + fns + panel).not.toMatch(/console\./);
   });
 
-  it("puts sign-in in front of all four functions and takes no workspace from the browser", () => {
-    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(4);
-    expect(fns.match(/createServerFn\(/g)).toHaveLength(4);
+  it("puts sign-in in front of all five functions and takes no workspace from the browser", () => {
+    // Five since 21 Nov (PR 4a): the teammate link joins the four.
+    expect(fns.match(/\.middleware\(\[requireSupabaseAuth\]\)/g)).toHaveLength(5);
+    expect(fns.match(/createServerFn\(/g)).toHaveLength(5);
     expect(
       Object.keys(
         rosterChangeInput({ id: DANA, profile_id: ORG, phone: SECRET_NUMBER, until: "2099-01-01" }),
@@ -1352,7 +1380,8 @@ describe("the floors, read from the source", () => {
   it("scopes every roster write and read to the caller's workspace", () => {
     const real = server.slice(server.indexOf("export async function realDeps"));
     const calls = real.split('.from("roster_contacts")').slice(1);
-    expect(calls).toHaveLength(4);
+    // Seven since 21 Nov (PR 4a): the teammate link's update, its check and its add join the four.
+    expect(calls).toHaveLength(7);
     for (const call of calls)
       expect(call.slice(0, call.indexOf(";"))).toMatch(/\.eq\("org_id", orgId\)|org_id: orgId/);
     const details = real.split('.from("roster_contact_details")').slice(1);
@@ -1506,5 +1535,195 @@ describe("the contact details migration", () => {
         /^drop (function|table) if exists public\.(roster_number_differs|save_roster_contact|roster_contact_details|roster_contact_details_guard)\b/,
       );
     expect(undo).toMatch(/THIS DELETES DATA/);
+  });
+});
+
+// 21 Nov 2026, chat pill PR 4a (D-97): a proposal's Lead can be a teammate with a login. Picking one links their
+// People row, found only by their own login email, or makes one. Never by name.
+describe("a teammate with a login as a lead", () => {
+  const CHRISTY = "0000000d-0000-4000-8000-0000000000c1";
+  const CHRISTY_USER = "0000000e-0000-4000-8000-0000000000c1";
+  const COACH = "0000000d-0000-4000-8000-0000000000c2";
+  const GUEST = "0000000d-0000-4000-8000-0000000000c3";
+  const GONE = "0000000d-0000-4000-8000-0000000000c4";
+  const ELSEWHERE = "0000000d-0000-4000-8000-0000000000c5";
+  const ROW_CHRISTY = "0000000c-0000-4000-8000-0000000000c1";
+  const member = (over: Partial<TeammateRow> = {}): TeammateRow => ({
+    id: CHRISTY,
+    org_id: ORG,
+    display_name: "Christy Johnson",
+    role: "lead",
+    is_guest: false,
+    deactivated_at: null,
+    user_id: CHRISTY_USER,
+    ...over,
+  });
+  const members = [
+    member(),
+    member({ id: COACH, display_name: "Cora Coach", role: "coach" }),
+    member({ id: GUEST, display_name: "Gus Guest", role: "em", is_guest: true }),
+    member({ id: GONE, display_name: "Gwen Gone", role: "em", deactivated_at: "2026-11-01T00:00:00Z" }),
+    member({ id: ELSEWHERE, org_id: OTHER_ORG, display_name: "Otto Other", role: "admin" }),
+  ];
+  const ask = (teammate_id: string | null) => ({ profile_id: null, teammate_id });
+
+  it("who may lead: Admin, Lead or Member, active and not a guest", () => {
+    expect(canLeadAsTeammate({ role: "admin" })).toBe(true);
+    expect(canLeadAsTeammate({ role: "lead" })).toBe(true);
+    expect(canLeadAsTeammate({ role: "em" })).toBe(true);
+    expect(canLeadAsTeammate({ role: "coach" })).toBe(false);
+    expect(canLeadAsTeammate({ role: "em", is_guest: true })).toBe(false);
+    expect(canLeadAsTeammate({ role: "em", deactivated_at: "2026-01-01" })).toBe(false);
+    expect(canLeadAsTeammate({ role: null })).toBe(false);
+  });
+
+  it("emails match trimmed and without case, and empty never matches", () => {
+    expect(sameEmail(" Christy@KestrelBay.test ", "christy@kestrelbay.test")).toBe(true);
+    expect(sameEmail("", "")).toBe(false);
+    expect(sameEmail(null, null)).toBe(false);
+    expect(sameEmail("a@x.test", "b@x.test")).toBe(false);
+  });
+
+  it("the input keeps only ids", () => {
+    expect(teammateLinkInput({ teammate_id: ` ${CHRISTY.toUpperCase()} `, extra: "x" })).toEqual({ profile_id: null, teammate_id: CHRISTY });
+    expect(teammateLinkInput({ teammate_id: "Robert'); drop table" })).toEqual({ profile_id: null, teammate_id: null });
+    expect(teammateLinkInput(null)).toEqual({ profile_id: null, teammate_id: null });
+  });
+
+  it("the list offers active teammates not on People yet, by name, never coaches, guests, the deactivated or another workspace", async () => {
+    const { deps } = world({ members, rows: [row({ profile_id: null })] });
+    const list = await listRoster(deps);
+    expect(list.allowed && list.teammates).toEqual([{ profileId: CHRISTY, name: "Christy Johnson", role: "lead" }]);
+    expect(list.allowed && list.contacts[0]!.teammate).toBe(false);
+  });
+
+  it("a linked teammate shows once, as their People row marked Teammate", async () => {
+    const { deps } = world({ members, rows: [row({ id: ROW_CHRISTY, full_name: "Christy Johnson", profile_id: CHRISTY })] });
+    const list = await listRoster(deps);
+    expect(list.allowed && list.teammates).toEqual([]);
+    expect(list.allowed && list.contacts.map((c) => [c.name, c.teammate])).toEqual([["Christy Johnson", true]]);
+    // The profile id itself never travels with the contact.
+    expect(JSON.stringify(list)).not.toContain(CHRISTY);
+  });
+
+  it("a failed read of members still shows People, with no teammates offered", async () => {
+    const { deps } = world({ members, rows: [row({ profile_id: null })], teammates: async () => null });
+    const list = await listRoster(deps);
+    expect(list.allowed && list.contacts).toHaveLength(1);
+    expect(list.allowed && list.teammates).toEqual([]);
+  });
+
+  it("links the one People row whose email is the teammate's login email", async () => {
+    const { deps, rows, writes } = world({
+      members,
+      emails: { [CHRISTY_USER]: "Christy@kestrelbay.test" },
+      rows: [row({ id: ROW_CHRISTY, full_name: "C. Johnson", profile_id: null }), row({ profile_id: null })],
+      stored: [detail({ roster_contact_id: ROW_CHRISTY, email: "christy@KESTRELBAY.test" }), detail()],
+    });
+    const result = await linkTeammate(deps, ask(CHRISTY));
+    expect(result.ok && result.contact).toMatchObject({ id: ROW_CHRISTY, teammate: true, name: "C. Johnson" });
+    expect(writes).toEqual(["linkProfile"]);
+    expect(rows.find((r) => r.id === ROW_CHRISTY)!.profile_id).toBe(CHRISTY);
+    // The number still leaves masked only.
+    expect(JSON.stringify(result)).not.toContain(SECRET_NUMBER);
+  });
+
+  it("never links by name alone: a People row with the same name and no matching email gets a new row beside it", async () => {
+    const { deps, rows, writes } = world({
+      members,
+      emails: { [CHRISTY_USER]: "christy@kestrelbay.test" },
+      rows: [row({ id: ROW_CHRISTY, full_name: "Christy Johnson", profile_id: null })],
+      stored: [detail({ roster_contact_id: ROW_CHRISTY, email: "christy.johnson@elsewhere.test" })],
+    });
+    const result = await linkTeammate(deps, ask(CHRISTY));
+    expect(result.ok && result.contact).toMatchObject({ id: NEW_ID, teammate: true, name: "Christy Johnson", needsDetails: true });
+    expect(writes).toEqual(["addLinked"]);
+    expect(rows.find((r) => r.id === ROW_CHRISTY)!.profile_id).toBeNull();
+  });
+
+  it("two People rows with the teammate's email is a guess: neither is linked, a new row is made", async () => {
+    const OTHER_ROW = "0000000c-0000-4000-8000-0000000000c9";
+    const { deps, writes } = world({
+      members,
+      emails: { [CHRISTY_USER]: "christy@kestrelbay.test" },
+      rows: [row({ id: ROW_CHRISTY, profile_id: null }), row({ id: OTHER_ROW, profile_id: null })],
+      stored: [detail({ roster_contact_id: ROW_CHRISTY, email: "christy@kestrelbay.test" }), detail({ roster_contact_id: OTHER_ROW, email: "christy@kestrelbay.test" })],
+    });
+    expect((await linkTeammate(deps, ask(CHRISTY))).ok).toBe(true);
+    expect(writes).toEqual(["addLinked"]);
+  });
+
+  it("a second press hands back the same row and writes nothing", async () => {
+    const { deps, writes } = world({ members, rows: [row({ id: ROW_CHRISTY, profile_id: CHRISTY })] });
+    const result = await linkTeammate(deps, ask(CHRISTY));
+    expect(result.ok && result.contact.id).toBe(ROW_CHRISTY);
+    expect(writes).toEqual([]);
+  });
+
+  it("a row someone else linked a moment ago is read again, never linked twice", async () => {
+    const { deps, rows, writes } = world({
+      members,
+      emails: { [CHRISTY_USER]: "christy@kestrelbay.test" },
+      rows: [row({ id: ROW_CHRISTY, profile_id: null })],
+      stored: [detail({ roster_contact_id: ROW_CHRISTY, email: "christy@kestrelbay.test" })],
+      linkProfile: async () => {
+        rows[0]!.profile_id = CHRISTY;
+        return "taken";
+      },
+    });
+    const result = await linkTeammate(deps, ask(CHRISTY));
+    expect(result.ok && result.contact.id).toBe(ROW_CHRISTY);
+    expect(writes).toEqual([]);
+  });
+
+  it("a coach, a guest, a deactivated person, someone in another workspace and an unknown id are all missing", async () => {
+    for (const id of [COACH, GUEST, GONE, ELSEWHERE, "0000000d-0000-4000-8000-0000000000ff", null]) {
+      const { deps, writes } = world({ members, rows: [row({ profile_id: null })] });
+      expect(await linkTeammate(deps, ask(id))).toEqual({ ok: false, reason: "missing" });
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("only admins and leads may link; a Member's direct call is refused before any read", async () => {
+    for (const role of ["em", "coach", "guest", ""]) {
+      const teammates = vi.fn(async () => members);
+      const { deps } = world({ role, members, teammates });
+      await expect(linkTeammate(deps, ask(CHRISTY))).rejects.toMatchObject({ status: 403 });
+      expect(teammates).not.toHaveBeenCalled();
+    }
+  });
+
+  it("before the SQL is pasted, it says not ready and writes nothing", async () => {
+    const { deps, writes } = world({ members, rows: [row()] });
+    expect(await linkTeammate(deps, ask(CHRISTY))).toEqual({ ok: false, reason: "not_ready" });
+    expect(writes).toEqual([]);
+    const empty = world({ members, rows: [], addLinked: async () => "absent" });
+    expect(await linkTeammate(empty.deps, ask(CHRISTY))).toEqual({ ok: false, reason: "not_ready" });
+  });
+
+  it("a full list is refused plainly", async () => {
+    const many = Array.from({ length: ROSTER_MAX_CONTACTS }, (_, at) => row({ id: `0000000c-0000-4000-8000-${String(at).padStart(12, "0")}`, profile_id: null }));
+    const { deps, writes } = world({ members, rows: many });
+    expect(await linkTeammate(deps, ask(CHRISTY))).toEqual({ ok: false, reason: "full" });
+    expect(writes).toEqual([]);
+  });
+
+  it("a failed read or write says unavailable, never a half answer", async () => {
+    expect(await linkTeammate(world({ members, teammates: async () => null }).deps, ask(CHRISTY))).toEqual({ ok: false, reason: "unavailable" });
+    expect(await linkTeammate(world({ members, list: async () => null }).deps, ask(CHRISTY))).toEqual({ ok: false, reason: "unavailable" });
+    expect(await linkTeammate(world({ members, rows: [], addLinked: async () => null }).deps, ask(CHRISTY))).toEqual({ ok: false, reason: "unavailable" });
+    expect(await linkTeammate(world({ members, rows: [], addLinked: async () => { throw new Error("boom"); } }).deps, ask(CHRISTY))).toEqual({ ok: false, reason: "unavailable" });
+  });
+
+  it("the source: only roster.server.ts reads the details, and the link is never made from a name", () => {
+    const source = readFileSync("src/lib/roster.server.ts", "utf8");
+    const body = source.slice(source.indexOf("export async function linkTeammate"), source.indexOf("/* ----", source.indexOf("export async function linkTeammate")));
+    expect(body).toContain("sameEmail(");
+    expect(body).not.toMatch(/full_name\s*===|sameClientName|\.name\s*===/);
+    const sql = readFileSync("supabase/migrations/20261121020000_roster_contacts_profile.sql", "utf8");
+    expect(sql).toMatch(/add column if not exists profile_id uuid references public\.profiles\(id\) on delete set null/);
+    expect(sql).toMatch(/create unique index if not exists roster_contacts_profile_key/);
+    expect(sql).not.toMatch(/grant [^;]* to (anon|authenticated)/i);
+    expect(readFileSync("supabase/undo/20261121020000_roster_contacts_profile_undo.sql", "utf8")).toContain("drop column if exists profile_id");
   });
 });

@@ -5,7 +5,9 @@ import {
   rosterChangeInput,
   rosterListInput,
   rosterSaveInput,
+  teammateLinkInput,
   type RosterChangeResult,
+  type TeammateLinkResult,
   type RosterInviteResult,
   type RosterList,
   type RosterSaveResult,
@@ -55,4 +57,15 @@ export const sendRosterInviteFn = createServerFn({ method: "POST" })
   .inputValidator(rosterChangeInput)
   .handler(async ({ data, context }): Promise<RosterInviteResult> =>
     (await import("./roster.server")).rosterHandlers.invite(context as never, data),
+  );
+
+/**
+ * 21 Nov 2026, chat pill PR 4a (D-97): links a teammate with a login to their People row, or makes one, so they can
+ * lead a proposal. Admins and leads only. Takes a teammate's id and nothing else; sends nothing and agrees to nothing.
+ */
+export const linkTeammateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(teammateLinkInput)
+  .handler(async ({ data, context }): Promise<TeammateLinkResult> =>
+    (await import("./roster.server")).rosterHandlers.linkTeammate(context as never, data),
   );

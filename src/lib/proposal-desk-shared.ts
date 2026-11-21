@@ -87,6 +87,17 @@ export const LEAD_COPY = {
   closed: "This proposal is already decided.",
   missing: "That person is not on this workspace's list.",
   failed: "That could not be saved. Nothing changed. Try again in a moment.",
+  /** 21 Nov 2026, PR 4a (D-97): teammates with a login can lead. The list says who is who. */
+  teammates: "Teammates",
+  outside: "People we work with",
+  teammateTag: "Teammate",
+  linking: (name: string) => `Adding ${name} to People`,
+  linkProblems: {
+    missing: "That teammate can no longer lead here. Pick someone else.",
+    full: "People is full at 500, so this teammate could not be added. Remove someone under the People tab first.",
+    not_ready: "Teammates can lead once the latest database update is in. Pick from People we work with for now.",
+    unavailable: "That teammate could not be added to People. Nothing changed. Try again in a moment.",
+  },
 } as const;
 
 export const WIN_COPY = {

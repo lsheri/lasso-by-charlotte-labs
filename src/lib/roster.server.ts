@@ -20,6 +20,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EMAIL_PALETTE } from "@/design/email-palette";
 
 import {
+  canLeadAsTeammate,
   canManageRoster,
   changeOpenUntil,
   checkRosterContact,
@@ -28,6 +29,7 @@ import {
   NUMBER_CHANGE_DAYS,
   ROSTER_MAX_CONTACTS,
   rosterLinkPath,
+  sameEmail,
   textsStatus,
   type ConsentMark,
   type RosterAffiliation,
@@ -40,6 +42,9 @@ import {
   type RosterList,
   type RosterSaveInput,
   type RosterSaveResult,
+  type RosterTeammate,
+  type TeammateLinkInput,
+  type TeammateLinkResult,
 } from "@/lib/roster-shared";
 
 export type RosterCaller = { profileId: string; orgId: string; role: string };
@@ -53,6 +58,19 @@ export type RosterRow = {
   firm_name: string | null;
   /** When this person's link stops accepting a new number. Absent before that column exists. */
   number_change_until?: string | null;
+  /** 21 Nov 2026, PR 4a: the teammate this person is. Absent before that column exists. */
+  profile_id?: string | null;
+};
+
+/** A member of the workspace, as the lead picker needs them. Never an email or a phone number. */
+export type TeammateRow = {
+  id: string;
+  org_id: string;
+  display_name: string;
+  role: string;
+  is_guest: boolean | null;
+  deactivated_at: string | null;
+  user_id: string | null;
 };
 
 export type ConsentMarkRow = ConsentMark & { roster_contact_id: string };
@@ -109,10 +127,23 @@ export type RosterDeps = {
   one: (orgId: string, id: string) => Promise<RosterRow | "missing" | null>;
   /** Agreement dates for these people in this workspace. Null when the read failed. Never a number. */
   consents: (orgId: string, contactIds: readonly string[]) => Promise<ConsentMarkRow[] | null>;
+  /** 21 Nov 2026, PR 4a: the workspace's members. Null when the read failed. */
+  teammates: (orgId: string) => Promise<TeammateRow[] | null>;
+  /** The email a login signs in with. Null when there is none or it could not be read. Never logged. */
+  emailOf: (userId: string) => Promise<string | null>;
+  /**
+   * Links one person to one teammate, only on a row in this workspace that is not linked yet. "taken" when the row,
+   * or the teammate, is linked already; "absent" before the column exists.
+   */
+  linkProfile: (orgId: string, id: string, profileId: string) => Promise<RosterRow | "missing" | "taken" | "absent" | null>;
+  /** Adds a person who is this teammate, with no contact details. "taken" when the teammate is linked already. */
+  addLinked: (orgId: string, name: string, profileId: string) => Promise<RosterRow | "taken" | "absent" | null>;
 };
 
 const BASE_COLUMNS = "id, org_id, full_name, role_title, affiliation, firm_name";
 const COLUMNS = `${BASE_COLUMNS}, number_change_until`;
+/** 21 Nov 2026, PR 4a: with the teammate link. Reads fall back to COLUMNS before the column exists. */
+const LINK_COLUMNS = `${COLUMNS}, profile_id`;
 /** The only columns the roster ever asks message_consents for: the person and three dates. */
 export const CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at, confirmed_at";
 const BASE_CONSENT_COLUMNS = "roster_contact_id, agreed_at, revoked_at";
@@ -150,7 +181,18 @@ function toContact(
     needsDetails: extra.detail === null,
     numberDiffers: extra.detail ? extra.differs : false,
     invitedOn: dayOf(extra.detail?.invite_sent_at),
+    teammate: Boolean(row.profile_id),
   };
+}
+
+/** Members who may lead and are not on People yet, by name. */
+function freeTeammates(members: readonly TeammateRow[] | null, rows: readonly RosterRow[], orgId: string): RosterTeammate[] {
+  const linked = new Set(rows.map((row) => row.profile_id).filter((id): id is string => Boolean(id)));
+  return (members ?? [])
+    .filter((member) => member.org_id === orgId && canLeadAsTeammate(member) && !linked.has(member.id))
+    .map((member) => ({ profileId: member.id, name: member.display_name.trim().slice(0, 120), role: member.role as RosterTeammate["role"] }))
+    .filter((member) => member.name !== "")
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** One person's details and whether their agreed number differs, read fresh. */
@@ -336,8 +378,11 @@ export async function listRoster(deps: RosterDeps): Promise<RosterList> {
         ])
       : [[], [], []];
   const known = details !== null && details !== "absent" ? details : null;
+  // A failed read of the members offers no teammates; the people on the list are still shown.
+  const members = await deps.teammates(caller.orgId).catch(() => null);
   return {
     allowed: true,
+    teammates: freeTeammates(members, mine, caller.orgId),
     contacts: mine.map((row) =>
       toContact(
         row,
@@ -413,6 +458,69 @@ export async function saveRosterContact(
   }
 }
 
+/**
+ * 21 Nov 2026, chat pill PR 4a (D-97): an admin or lead picks a teammate with a login as a proposal's lead. The
+ * teammate's People row is found or made, and linked to their login:
+ *   1. already linked: that row, unchanged (a second press links nothing new);
+ *   2. otherwise the one unlinked row whose email on file is the teammate's own login email;
+ *   3. otherwise a new row with the teammate's name and no contact details.
+ * Never matched by name alone: two people can share a name, and a wrong link would show one person another's
+ * proposals. Texts still need the person's own agreement on their link; linking agrees to nothing and sends nothing.
+ */
+export async function linkTeammate(deps: RosterDeps, input: TeammateLinkInput, now: Date = new Date()): Promise<TeammateLinkResult> {
+  const caller = await deps.caller();
+  if (!canManageRoster(caller.role)) throw new Response("Forbidden", { status: 403 });
+  if (!input.teammate_id) return { ok: false, reason: "missing" };
+  try {
+    const members = await deps.teammates(caller.orgId);
+    if (members === null) return { ok: false, reason: "unavailable" };
+    // Someone from another workspace, a coach, a guest or a deactivated person reads as missing.
+    const member = members.find((row) => row.id === input.teammate_id && row.org_id === caller.orgId && canLeadAsTeammate(row));
+    if (!member) return { ok: false, reason: "missing" };
+    const finish = async (row: RosterRow): Promise<TeammateLinkResult> => {
+      if (row.org_id !== caller.orgId || row.profile_id !== member.id) return { ok: false, reason: "unavailable" };
+      const marks = await deps.consents(caller.orgId, [row.id]).catch(() => null);
+      return { ok: true, contact: toContact(row, marks, now, await extraFor(deps, caller.orgId, row.id)) };
+    };
+    const rows = await deps.list(caller.orgId);
+    if (rows === null) return { ok: false, reason: "unavailable" };
+    const mine = rows.filter((row) => row.org_id === caller.orgId);
+    const already = mine.find((row) => row.profile_id === member.id);
+    if (already) return finish(already);
+    // Before the column exists no row carries the key at all; nothing can be linked yet.
+    if (mine.length > 0 && mine.every((row) => !("profile_id" in row))) return { ok: false, reason: "not_ready" };
+
+    const email = member.user_id ? await deps.emailOf(member.user_id).catch(() => null) : null;
+    const free = mine.filter((row) => !row.profile_id);
+    if (email && free.length > 0) {
+      const details = await deps.details(caller.orgId, free.map((row) => row.id));
+      if (details === null) return { ok: false, reason: "unavailable" };
+      const matches = details === "absent" ? [] : details.filter((detail) => sameEmail(detail.email, email));
+      // Exactly one row with that email; two would be a guess.
+      if (matches.length === 1) {
+        const linked = await deps.linkProfile(caller.orgId, matches[0]!.roster_contact_id, member.id);
+        if (linked === "absent") return { ok: false, reason: "not_ready" };
+        if (linked && linked !== "missing" && linked !== "taken") return finish(linked);
+        if (linked === null) return { ok: false, reason: "unavailable" };
+        // Someone linked it a moment ago: read again and use whatever row is the teammate's now.
+        const again = (await deps.list(caller.orgId))?.find((row) => row.org_id === caller.orgId && row.profile_id === member.id);
+        if (again) return finish(again);
+      }
+    }
+    if (mine.length >= ROSTER_MAX_CONTACTS) return { ok: false, reason: "full" };
+    const made = await deps.addLinked(caller.orgId, member.display_name.trim().slice(0, 120), member.id);
+    if (made === "absent") return { ok: false, reason: "not_ready" };
+    if (made === "taken") {
+      const again = (await deps.list(caller.orgId))?.find((row) => row.org_id === caller.orgId && row.profile_id === member.id);
+      return again ? finish(again) : { ok: false, reason: "unavailable" };
+    }
+    if (!made) return { ok: false, reason: "unavailable" };
+    return finish(made);
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * The real outside world. Kept thin: every rule is above.
  * ------------------------------------------------------------------------- */
@@ -459,6 +567,8 @@ export async function realDeps(
   const withColumns = async <T extends { error: { code?: string } | null }>(
     run: (columns: string) => PromiseLike<T>,
   ): Promise<T> => {
+    const linked = await run(LINK_COLUMNS);
+    if (linked.error?.code !== "42703") return linked;
     const first = await run(COLUMNS);
     return first.error?.code === "42703" ? run(BASE_COLUMNS) : first;
   };
@@ -576,18 +686,72 @@ export async function realDeps(
       return data ? (data as unknown as RosterRow) : "missing";
     },
     async openChange(orgId, id, until) {
-      const { data, error } = await admin
-        .from("roster_contacts")
-        .update({ number_change_until: until })
-        .eq("org_id", orgId)
-        .eq("id", id)
-        .select(COLUMNS)
-        .maybeSingle();
+      const { data, error } = await withColumns((selected) =>
+        admin
+          .from("roster_contacts")
+          .update({ number_change_until: until })
+          .eq("org_id", orgId)
+          .eq("id", id)
+          .select(selected)
+          .maybeSingle(),
+      );
       if (error) {
         logFailure("number change", error);
         return null;
       }
       return data ? (data as unknown as RosterRow) : "missing";
+    },
+    async teammates(orgId) {
+      const { data, error } = await admin
+        .from("profiles")
+        .select("id, org_id, display_name, role, is_guest, deactivated_at, user_id")
+        .eq("org_id", orgId)
+        .limit(1000);
+      if (error) {
+        logFailure("members read", error);
+        return null;
+      }
+      return (data ?? []) as unknown as TeammateRow[];
+    },
+    async emailOf(userId) {
+      const { data, error } = await admin.auth.admin.getUserById(userId);
+      if (error) return null;
+      const email = data.user?.email;
+      return typeof email === "string" && email.trim() ? email.trim() : null;
+    },
+    async linkProfile(orgId, id, profileId) {
+      const { data, error } = await admin
+        .from("roster_contacts")
+        .update({ profile_id: profileId, updated_at: new Date().toISOString() })
+        .eq("org_id", orgId)
+        .eq("id", id)
+        .is("profile_id", null)
+        .select(LINK_COLUMNS)
+        .maybeSingle();
+      if (error) {
+        if (error.code === "42703" || error.code === "PGRST204") return "absent";
+        if (error.code === "23505") return "taken";
+        logFailure("teammate link", error);
+        return null;
+      }
+      if (data) return data as unknown as RosterRow;
+      // No row back: not in this workspace, or linked already. Which one decides the answer.
+      const { data: there } = await admin.from("roster_contacts").select("id").eq("org_id", orgId).eq("id", id).maybeSingle();
+      return there ? "taken" : "missing";
+    },
+    async addLinked(orgId, name, profileId) {
+      const { data, error } = await admin
+        .from("roster_contacts")
+        .insert({ org_id: orgId, full_name: name, affiliation: "independent", profile_id: profileId })
+        .select(LINK_COLUMNS)
+        .maybeSingle();
+      if (error) {
+        if (error.code === "42703" || error.code === "PGRST204") return "absent";
+        if (error.code === "23505") return "taken";
+        logFailure("teammate add", error);
+        return null;
+      }
+      return data ? (data as unknown as RosterRow) : null;
     },
     async consents(orgId, contactIds) {
       const marks: ConsentMarkRow[] = [];
@@ -623,6 +787,9 @@ export const rosterHandlers = {
   },
   async askNewNumber(context: RosterContext, data: RosterChangeInput): Promise<RosterChangeResult> {
     return requestNumberChange(await realDeps(context, data.profile_id), data);
+  },
+  async linkTeammate(context: RosterContext, data: TeammateLinkInput): Promise<TeammateLinkResult> {
+    return linkTeammate(await realDeps(context, data.profile_id), data);
   },
   async invite(context: RosterContext, data: RosterChangeInput): Promise<RosterInviteResult> {
     const { CANONICAL_ORIGIN } = await import("./app-host");

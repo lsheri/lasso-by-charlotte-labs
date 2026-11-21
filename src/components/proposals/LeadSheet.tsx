@@ -17,7 +17,7 @@ import { PersonFace } from "@/components/ui/person-face";
 import { tagVariants } from "@/components/ui/tag";
 import { ASK_COPY, SHEET_COPY, type AskPreview, type AskResult } from "@/lib/lead-ask-shared";
 import { LEAD_COPY, type DeskProposal, type LeadResult } from "@/lib/proposal-desk-shared";
-import { ROSTER_COPY, type RosterContact } from "@/lib/roster-shared";
+import { ROSTER_COPY, type RosterContact, type RosterTeammate, type TeammateLinkResult } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
 /** One piece of past work a person led: who it was for and what it was. Never a fee, a value or a score. */
@@ -74,6 +74,8 @@ export function LeadSheet({
   onClose,
   pastWork,
   inline = false,
+  teammates,
+  linkTeammate,
 }: {
   /** The proposal, and where the sheet starts: the list, or the confirm when a lead is already saved. */
   target: { proposal: DeskProposal; start: LeadSheetStart; /** Opened straight after New proposal saved it. */ fresh?: boolean } | null;
@@ -97,6 +99,12 @@ export function LeadSheet({
    * step, word and server call is the sheet's own; only the frame differs. The card's own flow carries on when it closes.
    */
   inline?: boolean | undefined;
+  /**
+   * 21 Nov 2026, chat pill PR 4a (D-97): teammates with a login who are not on People yet. Picking one links them
+   * (their People row, found by their login email, or a new one) and then they are picked like anyone on People.
+   */
+  teammates?: readonly RosterTeammate[] | undefined;
+  linkTeammate?: ((profileId: string) => Promise<TeammateLinkResult>) | undefined;
 }) {
   const proposal = target?.proposal ?? null;
   const fresh = Boolean(target?.fresh);
@@ -121,6 +129,9 @@ export function LeadSheet({
   // second person unasked (QA S1) and make "try again" replay the failure instead of trying.
   const pressId = useRef("");
   const box = useRef<HTMLDivElement | null>(null);
+  // People linked on this sheet, shown at once while the list refreshes behind it.
+  const [linked, setLinked] = useState<{ profileId: string; contact: RosterContact }[]>([]);
+  const [linking, setLinking] = useState<string | null>(null);
 
   useEffect(() => {
     setChoice(current);
@@ -159,8 +170,13 @@ export function LeadSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId, choice]);
 
-  const people = roster ?? [];
+  const listed = roster ?? [];
+  const people = [...listed, ...linked.map((entry) => entry.contact).filter((person) => !listed.some((row) => row.id === person.id))];
   const chosen = people.find((person) => person.id === choice);
+  const freeTeammates = linkTeammate ? (teammates ?? []).filter((mate) => !linked.some((entry) => entry.profileId === mate.profileId)) : [];
+  const insiders = people.filter((person) => person.teammate);
+  const outsiders = people.filter((person) => !person.teammate);
+  const grouped = insiders.length > 0 || freeTeammates.length > 0;
   const loaded = shown && shown.contactId === choice ? shown.preview : null;
   const ready = loaded?.ok ? loaded : null;
   // The person picked is no longer on the list (they left it, or the saved lead was removed). Nobody can be asked
@@ -183,6 +199,24 @@ export function LeadSheet({
       setProblem(LEAD_COPY.failed);
     } finally {
       setWorking(false);
+    }
+  }
+
+  /** A teammate not on People yet: link them (or add them), then they are picked like anyone on the list. */
+  async function pickTeammate(mate: RosterTeammate) {
+    if (!linkTeammate || working || linking) return;
+    setLinking(mate.profileId);
+    setProblem(null);
+    try {
+      const result = await linkTeammate(mate.profileId);
+      if (result.ok) {
+        setLinked((before) => [...before.filter((entry) => entry.profileId !== mate.profileId), { profileId: mate.profileId, contact: result.contact }]);
+        setChoice(result.contact.id);
+      } else setProblem(LEAD_COPY.linkProblems[result.reason]);
+    } catch {
+      setProblem(LEAD_COPY.linkProblems.unavailable);
+    } finally {
+      setLinking(null);
     }
   }
 
@@ -217,6 +251,53 @@ export function LeadSheet({
       setWorking(false);
     }
   }
+
+  /** One person on People, as a choice. Teammates carry a tag saying so. */
+  const personRow = (person: RosterContact) => {
+    const on = person.id === choice;
+    return (
+      <button
+        key={person.id}
+        type="button"
+        role="radio"
+        aria-checked={on}
+        data-lead-person={person.id}
+        disabled={working || linking !== null}
+        className={cn(
+          "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
+          on ? "border-[var(--action-edge)] bg-[var(--action-wash)]" : "border-transparent hover:bg-muted",
+        )}
+        onClick={() => {
+          setChoice(person.id);
+          setProblem(null);
+        }}
+      >
+        <PersonFace name={person.name} />
+        <span className="min-w-[6.5rem] flex-1">
+          <span className="block break-words text-(length:--type-control) font-medium text-foreground [overflow-wrap:anywhere]">
+            {person.name}
+          </span>
+          {person.role ? (
+            <span className="block break-words text-(length:--type-small) text-muted-foreground [overflow-wrap:anywhere]">
+              {person.role}
+            </span>
+          ) : null}
+          <LedBefore work={pastWork?.[person.id]} known={pastWork !== undefined} />
+        </span>
+        {person.teammate ? <span className={cn(tagVariants({ tone: "outline" }), "ms-auto shrink-0")}>{LEAD_COPY.teammateTag}</span> : null}
+        <span
+          className={cn(
+            tagVariants({
+              tone: person.texts === "agreed" ? "accent" : "outline",
+            }),
+            person.teammate ? "shrink-0" : "ms-auto shrink-0",
+          )}
+        >
+          {ROSTER_COPY.texts[person.texts]}
+        </span>
+      </button>
+    );
+  };
 
   const title = (
     <>
@@ -254,7 +335,7 @@ export function LeadSheet({
                   <p role="status" data-lead-no-list className="text-sm text-muted-foreground">
                     {LEAD_COPY.noList}
                   </p>
-                ) : people.length === 0 ? (
+                ) : people.length === 0 && freeTeammates.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{LEAD_COPY.noPeople}</p>
                 ) : (
                   <div
@@ -263,52 +344,36 @@ export function LeadSheet({
                     data-lead-people
                     className="-m-1 flex max-h-72 flex-col gap-1 overflow-y-auto p-1"
                   >
-                    {people.map((person) => {
-                      const on = person.id === choice;
-                      return (
-                        <button
-                          key={person.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          data-lead-person={person.id}
-                          disabled={working}
-                          className={cn(
-                            "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border px-3 py-2 text-left disabled:opacity-50",
-                            on
-                              ? "border-[var(--action-edge)] bg-[var(--action-wash)]"
-                              : "border-transparent hover:bg-muted",
-                          )}
-                          onClick={() => {
-                            setChoice(person.id);
-                            setProblem(null);
-                          }}
-                        >
-                          <PersonFace name={person.name} />
-                          <span className="min-w-[6.5rem] flex-1">
-                            <span className="block break-words text-(length:--type-control) font-medium text-foreground [overflow-wrap:anywhere]">
-                              {person.name}
+                    {grouped ? <p aria-hidden data-lead-group="teammates" className="micro-label px-1 pt-1">{LEAD_COPY.teammates}</p> : null}
+                    {insiders.map((person) => personRow(person))}
+                    {freeTeammates.map((mate) => (
+                      <button
+                        key={mate.profileId}
+                        type="button"
+                        role="radio"
+                        aria-checked={false}
+                        aria-busy={linking === mate.profileId}
+                        data-lead-teammate={mate.profileId}
+                        disabled={working || linking !== null}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--corner-panel) border border-transparent px-3 py-2 text-left hover:bg-muted disabled:opacity-50"
+                        onClick={() => void pickTeammate(mate)}
+                      >
+                        <PersonFace name={mate.name} />
+                        <span className="min-w-[6.5rem] flex-1">
+                          <span className="block break-words text-(length:--type-control) font-medium text-foreground [overflow-wrap:anywhere]">
+                            {mate.name}
+                          </span>
+                          {linking === mate.profileId ? (
+                            <span role="status" className="block text-(length:--type-small) text-muted-foreground">
+                              {LEAD_COPY.linking(mate.name)}
                             </span>
-                            {person.role ? (
-                              <span className="block break-words text-(length:--type-small) text-muted-foreground [overflow-wrap:anywhere]">
-                                {person.role}
-                              </span>
-                            ) : null}
-                            <LedBefore work={pastWork?.[person.id]} known={pastWork !== undefined} />
-                          </span>
-                          <span
-                            className={cn(
-                              tagVariants({
-                                tone: person.texts === "agreed" ? "accent" : "outline",
-                              }),
-                              "ms-auto shrink-0",
-                            )}
-                          >
-                            {ROSTER_COPY.texts[person.texts]}
-                          </span>
-                        </button>
-                      );
-                    })}
+                          ) : null}
+                        </span>
+                        <span className={cn(tagVariants({ tone: "outline" }), "ms-auto shrink-0")}>{LEAD_COPY.teammateTag}</span>
+                      </button>
+                    ))}
+                    {grouped && outsiders.length > 0 ? <p aria-hidden data-lead-group="outside" className="micro-label px-1 pt-2">{LEAD_COPY.outside}</p> : null}
+                    {outsiders.map((person) => personRow(person))}
                   </div>
                 )}
               </div>

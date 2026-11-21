@@ -344,6 +344,11 @@ export function RosterView({
                     </p>
                   ) : null}
                   <p className="mt-2 flex flex-wrap items-center gap-2">
+                    {contact.teammate ? (
+                      <span data-roster-teammate className={tagVariants({ tone: "outline" })} title={COPY.teammateTitle}>
+                        {COPY.teammate}
+                      </span>
+                    ) : null}
                     {contact.needsDetails ? (
                       <span className={tagVariants({ tone: "neutral" })}>{COPY.needsDetails}</span>
                     ) : null}
