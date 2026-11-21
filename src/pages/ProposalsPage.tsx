@@ -18,7 +18,7 @@ import { afterCreate, DESK_COPY, deskLinkFromSearch, deskViewFromSearch, seesAll
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 import { askLeadFn, askPreviewFn, practiceReplyFn, recordAnswerFn } from "@/lib/lead-ask.functions";
 import { closeProposalFn, createProposalFn, listProposalClientsFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
-import { listRosterFn } from "@/lib/roster.functions";
+import { linkTeammateFn, listRosterFn } from "@/lib/roster.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 import { morph } from "@/lib/view-morph";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
@@ -140,6 +140,12 @@ export function ProposalsPage() {
                 setLeadFromLink(false);
               }}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
+              teammates={roster.data?.allowed ? roster.data.teammates : undefined}
+              linkTeammate={async (teammateId, contactId) => {
+                const result = await linkTeammateFn({ data: { profile_id: profileId as string, teammate_id: teammateId, contact_id: contactId ?? null } });
+                if (result.ok) void roster.refetch();
+                return result;
+              }}
               leadWords={wonTextBody({ brandName: brand("Lasso"), firmName: profile?.org_name ?? "" })}
               onLead={async (proposalId, contactId) => {
                 const result = await setProposalLeadFn({ data: { profile_id: profileId as string, proposal_id: proposalId, lead_contact_id: contactId } });

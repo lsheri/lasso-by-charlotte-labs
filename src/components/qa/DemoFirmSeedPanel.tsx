@@ -20,7 +20,7 @@ export const DEMO_FIRM_COPY = {
   cancel: "Cancel",
   exists: "The demo firm is seeded.",
   missing: "The demo firm is not seeded.",
-  password: "Demo password, shown once. Save it in Pane under Settings, Secrets.",
+  password: "Demo password, shown once. Save it in Pane under Settings, Secrets. When only the Lead logins were made just now, it is theirs alone.",
 } as const;
 
 /** Founder-only controls for the demo firm, on the QA seed page. Steps run one board at a time so none times out. */
@@ -64,6 +64,12 @@ export function DemoFirmSeedPanel({ profileId }: { profileId: string | undefined
       const done = await finish({ data: { profile_id: profileId } });
       const added = done?.proposals;
       if (added) note(`Proposals: ${added.won} won, ${added.lost} lost, ${added.open} open, ${added.people} people added (anything already there is kept)`);
+      const leads = added?.leadLogins;
+      if (leads) {
+        if (leads.made.length) note(`Lead logins made: ${leads.made.join(", ")}`);
+        if (leads.password) setPassword(leads.password);
+        note(leads.linkWaits ? "Lead logins are linked to People once the 4a SQL is pasted. Run this again after." : `Lead logins linked to People: ${leads.linked} new`);
+      }
       note("Done");
     } catch (error) {
       note(`Stopped: ${error instanceof Error ? error.message : String(error)}. Run it again to continue.`);

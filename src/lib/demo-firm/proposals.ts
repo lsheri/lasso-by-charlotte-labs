@@ -25,6 +25,16 @@ export const DEMO_CONTACTS: readonly DemoContact[] = [
 ];
 
 /**
+ * 21 Nov 2026, chat pill PR 4a (D-97): in the demo only, Christy Johnson and Adaeze Nwosu are also teammates with a
+ * Lead login (johnson@ and nwosu@kestrelbay.test), linked to their People rows, so the buyer script can sign in as
+ * the Lead. Real workspaces get leads with logins only by an admin picking a teammate.
+ */
+export const DEMO_LEAD_LOGINS: readonly { contact: "johnson" | "nwosu"; role: "lead" }[] = [
+  { contact: "johnson", role: "lead" },
+  { contact: "nwosu", role: "lead" },
+];
+
+/**
  * The won proposal each older board came from, as Record the win leaves it: title, client, owner and notes are the
  * board's own; decided the moment before the board was made (board.start at 09:00 UTC). Times are UTC.
  * sentAt null: it was never marked as sent.

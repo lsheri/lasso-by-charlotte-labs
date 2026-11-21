@@ -34,7 +34,7 @@ import {
   type WinResult,
 } from "@/lib/proposal-desk-shared";
 import { HOME_PROPOSALS_COPY } from "@/lib/role-screens-shared";
-import type { RosterContact } from "@/lib/roster-shared";
+import type { RosterContact, RosterTeammate, TeammateLinkResult } from "@/lib/roster-shared";
 import { cn } from "@/lib/utils";
 
 /**
@@ -51,6 +51,8 @@ export function ProposalDesk({
   onSent,
   onWin,
   roster,
+  teammates,
+  linkTeammate,
   leadWords,
   onLead,
   ask,
@@ -73,6 +75,9 @@ export function ProposalDesk({
   onWin?: ((proposalId: string) => Promise<WinResult>) | undefined;
   /** People we work with, for naming and picking a lead. Used only when the server says this person may pick. */
   roster?: RosterContact[] | undefined;
+  /** 21 Nov 2026, PR 4a: teammates with a login not on People yet, and the press that links one. */
+  teammates?: readonly RosterTeammate[] | undefined;
+  linkTeammate?: ((profileId: string, contactId?: string) => Promise<TeammateLinkResult>) | undefined;
   /** The won text as it is sent, shown when picking a lead. */
   leadWords?: string | undefined;
   onLead?: ((proposalId: string, contactId: string | null) => Promise<LeadResult>) | undefined;
@@ -167,7 +172,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
+        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} teammates={teammates} linkTeammate={linkTeammate} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>

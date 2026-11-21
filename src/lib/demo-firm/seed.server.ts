@@ -4,7 +4,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 
 import { DEMO_BOARDS } from "./index";
 import { DEMO_PEOPLE, demoEmail } from "./people";
-import { DEMO_CONTACTS, DEMO_LOST_PROPOSALS, DEMO_OPEN_PROPOSALS, DEMO_WON_PROPOSALS } from "./proposals";
+import { DEMO_CONTACTS, DEMO_LEAD_LOGINS, DEMO_LOST_PROPOSALS, DEMO_OPEN_PROPOSALS, DEMO_WON_PROPOSALS } from "./proposals";
 import { CARD_H, CARD_W, fileNameFor, nextSlot, outcomeLine, planBoard, sectionTop, seedMeta, slideMap, sourceFor } from "./plan";
 import type { DemoBoard, DemoFirm, DemoItem } from "./types";
 
@@ -77,7 +77,73 @@ export async function seedDemoPeople(admin: Db, firm: DemoFirm, password: string
     );
     await admin.from("user_active_profile").upsert({ user_id: uid, profile_id: profile.id });
   }
-  return { orgId: org.id, people: firm.people.length };
+  // The demo's Lead logins share the same password; their People rows are linked at the finish, once they exist.
+  const leads = await seedDemoLeadLogins(admin, org.id, password);
+  return { orgId: org.id, people: firm.people.length + leads.made.length };
+}
+
+/** What the Lead logins step did. `password` is set only when it made a login with a password of its own. */
+export type LeadLoginsResult = { made: string[]; password: string | null; linked: number; linkWaits: boolean };
+
+/**
+ * 21 Nov 2026, chat pill PR 4a (D-97): Christy Johnson and Adaeze Nwosu as Lead logins in the demo only, linked to
+ * their People rows. Safe to run again: an existing login keeps its password, an existing profile is left alone, and
+ * a row already linked is not touched. A login made here on an existing demo gets a new password, returned once.
+ * Before the link column exists (PR 4a's SQL), the logins are made and the link waits: `linkWaits`.
+ */
+export async function seedDemoLeadLogins(admin: Db, orgId: string, password: string | null): Promise<LeadLoginsResult> {
+  const loose = admin as unknown as { from: (table: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const result: LeadLoginsResult = { made: [], password: null, linked: 0, linkWaits: false };
+  for (const lead of DEMO_LEAD_LOGINS) {
+    const contact = DEMO_CONTACTS.find((entry) => entry.key === lead.contact);
+    if (!contact) continue;
+    const email = demoEmail(lead.contact);
+    let uid = await findUserId(admin, email);
+    if (!uid) {
+      const secret = password ?? (result.password ??= (await import("../qa-seed.functions")).newQaPassword());
+      const created = await admin.auth.admin.createUser({ email, password: secret, email_confirm: true });
+      if (!created.data.user) throw new Error(`creating ${email}: ${created.error?.message ?? "unknown error"}`);
+      uid = created.data.user.id;
+      result.made.push(email);
+    }
+    const { data: existing } = await admin.from("profiles").select("id").eq("org_id", orgId).eq("user_id", uid).maybeSingle();
+    let profileId = existing?.id ?? null;
+    if (!profileId) {
+      profileId = must(
+        await admin
+          .from("profiles")
+          .insert({
+            org_id: orgId,
+            user_id: uid,
+            display_name: contact.name,
+            role: lead.role,
+            onboarding: { welcome_seen: true, checklist: "retired", welcome_board_hidden: true },
+          })
+          .select("id")
+          .single(),
+        `profile for ${contact.name}`,
+      ).id;
+      await admin.from("user_active_profile").upsert({ user_id: uid, profile_id: profileId });
+    }
+    // The demo's own People row of that name, only while it is linked to nobody, and only when exactly one row has it
+    // (QA L3 of PR 298: a second "Christy Johnson" added in a rehearsal must not make every later run fail).
+    const named = await loose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).eq("full_name", contact.name);
+    if (named.error) {
+      if (named.error.code === "42703" || named.error.code === "PGRST204") {
+        result.linkWaits = true;
+        continue;
+      }
+      throw new Error(`reading ${contact.name}: ${named.error.message}`);
+    }
+    const rows = (named.data ?? []) as { id: string; profile_id?: string | null }[];
+    if (rows.some((row) => row.profile_id === profileId) || rows.length !== 1 || rows[0]!.profile_id) continue;
+    const link = await loose.from("roster_contacts").update({ profile_id: profileId }).eq("org_id", orgId).eq("id", rows[0]!.id).is("profile_id", null).select("id");
+    if (link.error) {
+      if (link.error.code === "42703" || link.error.code === "PGRST204") result.linkWaits = true;
+      else throw new Error(`linking ${contact.name}: ${link.error.message}`);
+    } else result.linked += (link.data ?? []).length;
+  }
+  return result;
 }
 
 /** The demo org's people, by roster key (from the email). */
@@ -167,6 +233,8 @@ export async function finishDemoSeed(admin: Db, actAs: ActAs = actAsDemoPerson, 
   if (!orgId) return null;
   // The proposals and people the backfill used to paste (20 Nov): written here, so a reseed brings them back.
   const proposals = await seedDemoProposals(admin, actAs, now);
+  // The Lead logins (PR 4a), made here too for a demo seeded before them, and linked to their People rows.
+  const leadLogins = await seedDemoLeadLogins(admin, orgId, null);
   // Each demo person has said they use the app for work, so Home skips the first-use question.
   const { userId } = await demoPeople(admin, orgId);
   const rows = [...userId.values()].map((user_id) => ({ user_id, uses: ["work"], uses_declared_at: new Date().toISOString() }));
@@ -176,7 +244,7 @@ export async function finishDemoSeed(admin: Db, actAs: ActAs = actAsDemoPerson, 
   }
   const { error } = await admin.from("notifications").delete().eq("org_id", orgId);
   if (error) throw new Error(`clearing notifications: ${error.message}`);
-  return proposals;
+  return { ...proposals, leadLogins };
 }
 
 async function seedBoard(
@@ -524,7 +592,7 @@ async function repairBoard(admin: Db, orgId: string, board: DemoBoard, workboard
   await writeSlideMaps(admin, { ...board, items: decks.filter((deck) => itemId.has(deck.key)) }, itemId, itemHash, itemRef);
 }
 
-export type ProposalSeedResult = { people: number; won: number; lost: number; open: number; ledger: number };
+export type ProposalSeedResult = { people: number; won: number; lost: number; open: number; ledger: number; leadLogins?: LeadLoginsResult };
 
 /**
  * The demo firm's proposals and the people it works with (20 Nov 2026, chat pill build Phase 2), from proposals.ts.
