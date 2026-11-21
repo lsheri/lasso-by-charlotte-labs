@@ -12,6 +12,8 @@ export const FIRM_BRAIN_SURFACES: readonly string[] = [
   "firm_ask_answer",
   "firm_walkthrough",
   "proposal_brief",
+  // 20 Nov 2026, chat pill PR 3a: reading a pasted brief.
+  "proposal_brief_read",
   "proposal_precedents",
   "proposal_draft",
   "red_pen",

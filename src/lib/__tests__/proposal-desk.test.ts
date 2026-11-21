@@ -307,6 +307,17 @@ describe("starting a proposal", () => {
   });
 });
 
+// 20 Nov 2026, chat pill PR 3a: the client's due date, read from a pasted brief, goes onto the new proposal's row.
+describe("the client's due date", () => {
+  it("is written on the new row when given, and left off when not", async () => {
+    const store = fakeStore({ role: "admin" });
+    expect(await createProposal(store, newProposalInput({ title: "Staffing model review", client_id: CLIENT, client_due_on: "2026-11-27" }))).toMatchObject({ ok: true });
+    expect(store.state.proposals.at(-1)).toMatchObject({ client_due_on: "2026-11-27" });
+    await createProposal(store, newProposalInput({ title: "Workforce plan", client_id: CLIENT }));
+    expect("client_due_on" in (store.state.proposals.at(-1) as object)).toBe(false);
+  });
+});
+
 describe("marking a proposal as sent", () => {
   const rows = [row({ received_at: hoursAgo(20) }), row({ id: "p2", owner_id: OTHER, received_at: hoursAgo(100) }), row({ id: "p3", org_id: "another-org", owner_id: OTHER }), row({ id: "p5", status: "won", decided_at: hoursAgo(1) }), row({ id: "p6", sent_at: hoursAgo(2) })];
   const P = (id: string, sent: boolean) => sentInput({ profile_id: ME, proposal_id: id, sent });
