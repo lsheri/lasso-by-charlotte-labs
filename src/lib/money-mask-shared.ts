@@ -222,22 +222,57 @@ export function numbersWithheldInline(text: string): string {
   return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
 }
 
-// An amount right after a money word, with no currency sign: "Budget: 45,000", "Fee 2000", "rate 85".
-const AMOUNT_AFTER_MONEY_WORD = new RegExp(`(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d[\\d,.'’ ]*\\d(?:\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}]))?|(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d(?![\\d])`, "giu");
+// The stricter title rule (follow-up to PR 300): no money word list to keep growing. Any amount of a thousand or more
+// written like one (a thousands comma, or a k, m or bn suffix) goes wherever it stands, and any number of four or more
+// digits goes when a money word sits within a few words of it.
+const TITLE_MONEY_WORDS = "(?:quotes?|quoted|investment|invest|value|valued|total|costs?|costing|prices?|priced|pricing|fees?|rates?|budgets?|retainer|pay|paid|payment|expenses?|charge[sd]?|spend|worth|deal|contract value)";
+const TITLE_WRITTEN_AMOUNT = /(?<![\p{L}\d.\-])(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?(?:\s?(?:k|m|mm|bn))?|\d+(?:\.\d+)?\s?(?:k|m|mm|bn))(?![\p{L}\d\-])/giu;
+const TITLE_LONG_NUMBER = /(?<![\p{L}\d.\-])\d{4,}(?![\p{L}\d.\-])/gu;
+const NEAR_MONEY_BEFORE = new RegExp(`\\b${TITLE_MONEY_WORDS}\\b(?:[\\s:,-]+\\S+){0,2}[\\s:,-]*$`, "i");
+const NEAR_MONEY_AFTER = new RegExp(`^(?:[\\s:,-]+\\S+){0,2}?[\\s:,-]+${TITLE_MONEY_WORDS}\\b`, "i");
+// A year in date context stays: "Q4 2026", "FY 2026", "March 2026", "in 2026", "2026-27", "2026 to 2027".
+const DATE_BEFORE = /(?:\bq[1-4]|\bfy|\bh[12]|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*|\bin|\bsince|\bby|\bfrom|\buntil|\bthrough|\bend of|\bsummer|\bwinter|\bspring|\bautumn|\bfall)\s*$/i;
+const DATE_AFTER = /^\s*(?:[-/]\s*\d{2,4}\b|to\s+(?:19|20)\d{2}\b|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b)/i;
+const isYearLike = (value: string) => /^(?:19|20)\d{2}$/.test(value);
+const TITLE_MARK = "\u0001";
 
 /**
- * The one title rule for a Member (QA of PR 299 and PR 300): titles and file names are not money, so their numbers
- * stay ("QA 299 lead view check", "QA-299-RFP.txt", "phase 2"); an amount with a currency sign, or right after a money
- * word, goes ("Fee schedule $45,000", "Budget: 45,000 for phase 2", "Fee 2000 refresh"). A title that was only an
- * amount reads Untitled.
+ * The one title rule for a Member (QA of PR 299 and PR 300, stricter follow-up): titles and file names are not money,
+ * so their numbers stay ("QA 299 lead view check", "QA-299-RFP.txt", "phase 2", "Q4 2026 plan"). What goes: an
+ * amount with a currency sign; any amount of a thousand or more written as one ("120,000", "48.5k", "2m"); and any
+ * number of four or more digits within a few words of a money word ("Quote 48500", "Fee 2000 refresh"), unless it is
+ * a year in date context. Numbers joined to letters or inside a file name stay. A dangling dash or colon is tidied, and
+ * a title that was only an amount reads Untitled.
  */
 export function memberTitle(title: string): string {
-  const cleaned = withoutMoney(title.replace(AMOUNT_AFTER_MONEY_WORD, (_m, a?: string, b?: string) => (a ?? b ?? "").replace(/[:\s-]+$/, " ")))
+  let marked = title.replace(MONEY, TITLE_MARK).replace(TITLE_WRITTEN_AMOUNT, TITLE_MARK);
+  marked = marked.replace(TITLE_LONG_NUMBER, (match: string, offset: number, whole: string) => {
+    const before = whole.slice(Math.max(0, offset - 40), offset);
+    const after = whole.slice(offset + match.length, offset + match.length + 40);
+    if (!NEAR_MONEY_BEFORE.test(before) && !NEAR_MONEY_AFTER.test(after)) return match;
+    // A year right after the money word is an amount ("Fee 2000 refresh"); one in date context stays a year.
+    const right = new RegExp(`\\b${TITLE_MONEY_WORDS}\\b[\\s:]*$`, "i").test(before);
+    if (isYearLike(match) && !right && (DATE_BEFORE.test(before) || DATE_AFTER.test(after))) return match;
+    return TITLE_MARK;
+  });
+  marked = marked.replace(TITLE_MONEY_ONLY_NUMBER, (match: string, offset: number, whole: string) => {
+    const before = whole.slice(Math.max(0, offset - 20), offset);
+    return new RegExp(`\\b${TITLE_MONEY_WORDS}\\b[\\s:]*$`, "i").test(before) ? TITLE_MARK : match;
+  });
+  const cleaned = marked
+    // The words around a figure that went: "Budget: 45,000 - pilot" reads "Budget pilot".
+    .replace(new RegExp(`\\s*[-\u2013\u2014:]?\\s*${TITLE_MARK}(?:\\s*[-\u2013\u2014:](?=\\s))?`, "g"), " ")
+    .replace(/\(\s*\)/g, "")
     .replace(/\s+([,.;:])/g, "$1")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+(?:of|at|for|to|is|from|=)\s*$/i, "")
     .replace(/\s{2,}/g, " ")
+    .replace(/^[\s,;:\-\u2013\u2014]+|[\s,;:\-\u2013\u2014]+$/g, "")
     .trim();
   return cleaned || "Untitled";
 }
+// A short figure (one to three digits) straight after a money word in a title: "Rate 85", "Fee 99".
+const TITLE_MONEY_ONLY_NUMBER = /(?<![\p{L}\d.\-])\d{1,3}(?:\.\d+)?(?![\p{L}\d.\-%])/gu;
 
 /** A document or summary as a Member may read it: a proposal's Fees section withheld, and every figure masked. */
 export function moneyFreeText(text: string): string {
