@@ -214,3 +214,19 @@ describe("numbersWithheld: the blunt Member form (QA H1b of PR 299)", () => {
     expect(numbersWithheldInline("Fee schedule 45,000")).toBe(`Fee schedule ${NUMBER_WITHHELD}`);
   });
 });
+
+describe("numbersWithheld: prices that look like years or are small (QA of PR 300)", () => {
+  it.each([
+    ["fees of 99 each", "99"],
+    ["Rate 85 per hour", "85"],
+    ["costs 1950", "1950"],
+    ["1999 per day", "1999"],
+    ["2000 each", "2000"],
+    ["each workshop is 2000", "2000"],
+  ])("withholds %s", (text, figure) => {
+    expect(numbersWithheld(text)).not.toContain(figure);
+  });
+  it.each(["In 2026 they grew", "Founded 1998", "Q4 2026 delivery", "a 15% discount", "Phase 2 of 3"])("keeps %s", (text) => {
+    expect(numbersWithheld(text)).toBe(text);
+  });
+});

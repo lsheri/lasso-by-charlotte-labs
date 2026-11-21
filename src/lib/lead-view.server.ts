@@ -30,7 +30,7 @@ import {
   type SendDocsResult,
 } from "./lead-view-shared";
 import { countBand, goalHours, sameClientName } from "./proposal-desk-shared";
-import { numbersWithheld, numbersWithheldInline, seesMoney, withoutMoney } from "./money-mask-shared";
+import { numbersWithheld, seesMoney, withoutMoney } from "./money-mask-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -76,7 +76,7 @@ export type LeadStore = {
   saveSent: (proposalId: string, orgId: string, sent: (SentDocs & { sent_by: string; sent_at: string }) | null) => Promise<boolean | "absent">;
   record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen" | "proposal.approval_requested" | "proposal.approval_decided" | "proposal.client_review", dims: Record<string, string>) => Promise<void>;
   /** 21 Nov 2026, PR 4c: the latest final per proposal. "absent" before its table exists. Left out, none. */
-  finals?: (orgId: string, proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string; chosen_at: string }[] | "absent">;
+  finals?: (orgId: string, proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string | null; chosen_at: string }[] | "absent">;
   /** Titles of these work items in this workspace, whoever owns them. */
   itemTitles?: (orgId: string, ids: string[]) => Promise<Map<string, string>>;
   /** Phase 5: the latest approval request per proposal. Left out, none. */
@@ -96,9 +96,10 @@ function forReader(text: string, role: string): { text: string; withheld: boolea
   return { text: masked, withheld: masked !== text };
 }
 function titleFor(title: string, role: string): string {
+  // Titles and file names are not money (live check of PR 299: "QA 299 lead view check", "QA-299-RFP.txt"): only an
+  // amount with a currency sign or a money word goes ("Fee schedule $45,000", "Care model review, $80k cap").
   if (seesMoney(role)) return title;
-  const bare = numbersWithheldInline(withoutMoney(title)).replace(/\s*\[number withheld\]\s*/g, " ").replace(/\s{2,}/g, " ").trim();
-  return bare || "Untitled";
+  return withoutMoney(title) || "Untitled";
 }
 
 /** Whether this caller leads this row now: open, unarchived, in their workspace, and its lead linked to them. */
@@ -132,7 +133,7 @@ export async function listLed(store: LeadStore): Promise<LedList> {
   const sent = sentRead === "absent" ? new Map<string, SentDocs>() : sentRead;
   const approvals = store.approvalViews ? await store.approvalViews(caller.orgId, rows.map((row) => row.id)).catch(() => new Map<string, ApprovalView>()) : new Map<string, ApprovalView>();
   const finals = finalRows === "absent" ? [] : finalRows;
-  const finalTitles = finals.length && store.itemTitles ? await store.itemTitles(caller.orgId, [...new Set(finals.map((row) => row.work_item_id))]) : new Map<string, string>();
+  const finalTitles = finals.length && store.itemTitles ? await store.itemTitles(caller.orgId, [...new Set(finals.map((row) => row.work_item_id).filter((id): id is string => Boolean(id)))]) : new Map<string, string>();
   const proposals: LedProposal[] = [];
   for (const row of rows) {
     const listed = context.filter((entry) => entry.proposal_id === row.id).map((entry) => entry.work_item_id);
@@ -165,7 +166,10 @@ export async function listLed(store: LeadStore): Promise<LedList> {
       approval: approvals.get(row.id) ?? null,
       final: (() => {
         const latest = finals.filter((entry) => entry.proposal_id === row.id).sort((a, b) => b.chosen_at.localeCompare(a.chosen_at))[0];
-        return latest ? { itemId: latest.work_item_id, title: titleFor(finalTitles.get(latest.work_item_id) ?? "", role), chosenAt: latest.chosen_at } : null;
+        if (!latest) return null;
+        // The latest choice counts, even when its document is gone: never a quiet fall back to an earlier one.
+        if (!latest.work_item_id) return { itemId: "", title: "", chosenAt: latest.chosen_at, gone: true as const };
+        return { itemId: latest.work_item_id, title: titleFor(finalTitles.get(latest.work_item_id) ?? "", role), chosenAt: latest.chosen_at };
       })(),
     });
   }
@@ -320,7 +324,7 @@ export async function realLeadStore(context: LeadContext, profileId: string | nu
       if (!proposalIds.length) return [];
       const { data, error } = await admin.from("proposal_final_versions").select("proposal_id, work_item_id, chosen_at").eq("org_id", orgId).in("proposal_id", proposalIds).order("chosen_at", { ascending: false }).limit(500);
       if (error) return "absent";
-      return (data ?? []) as { proposal_id: string; work_item_id: string; chosen_at: string }[];
+      return (data ?? []) as { proposal_id: string; work_item_id: string | null; chosen_at: string }[];
     },
     async approvalViews(orgId, proposalIds) {
       const { readApprovalViews } = await import("./proposal-approval.server");

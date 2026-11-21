@@ -78,6 +78,12 @@ describe("the final proposal on the Lead's row", () => {
     finish();
   });
 
+  it("a final whose document was deleted says so and asks to choose again", () => {
+    open({}, { itemId: "", title: "", chosenAt: "2026-11-21T09:00:00Z", gone: true } as never);
+    expect(document.querySelector("[data-led-final]")!.getAttribute("data-led-final")).toBe("gone");
+    expect(document.querySelector("[data-led-final-line]")!.textContent).toMatch(/was deleted\. Choose the final again\./);
+  });
+
   it("the chosen final shows with its day, and that document cannot be chosen again", () => {
     open({}, { itemId: "d1", title: "Larkspur RFP", chosenAt: "2026-11-21T09:00:00Z" });
     expect(document.querySelector("[data-led-final-line]")!.textContent).toMatch(/Larkspur RFP, chosen/);

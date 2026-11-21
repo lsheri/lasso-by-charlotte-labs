@@ -162,6 +162,12 @@ const BIG_NUMBER = new RegExp(
 );
 /** A plain year stays a year: 1900 to 2099, standing alone or after Q1-Q4, FY or a month. */
 const isYear = (value: string) => /^(?:19|20)\d{2}$/.test(value);
+// QA of PR 300: a "year" with money words around it is a price ("costs 1950", "1999 per day", "2000 each"), and a
+// small figure right after a money word is one too ("fees of 99 each", "rate 85").
+const MONEY_WORDS = "(?:fees?|costs?|cost|price[sd]?|pricing|rates?|budgets?|charged?|charges|pays?|paid|payment|total|expenses?|investment|value|worth|spend|£|\\$|€)";
+const PRICE_BEFORE = new RegExp(`\\b${MONEY_WORDS}\\b[^.\\n\\d]{0,15}$|[£$€]\\s?$|\\b(?:is|are|at)\\s$`, "i");
+const PRICE_AFTER = /^\s?(?:\/|per\b|each\b|a\s+(?:day|month|week|year|hour)\b|ex\b|plus\b|\+\s?VAT|VAT\b|net\b|gross\b|in fees)/i;
+const SMALL_AFTER_MONEY = new RegExp(`(\\b${MONEY_WORDS}\\b[^.\\n\\d]{0,15})(\\d{1,2}(?:[.,]\\d+)?)(?![\\d%])`, "gi");
 
 /**
  * 21 Nov 2026 (QA H1b of PR 299, Liam's rule "Members never see money"): the blunt form for a whole brief or document a
@@ -204,7 +210,13 @@ export function numbersWithheldInline(text: string): string {
   const kept: string[] = [];
   body = body.replace(DATE_LIKE, (match) => `\u0000${kept.push(match) - 1}\u0000`);
   body = body.replace(SPELLED_AMOUNT, NUMBER_WITHHELD);
-  body = body.replace(BIG_NUMBER, (match) => (isYear(match) ? match : NUMBER_WITHHELD));
+  body = body.replace(BIG_NUMBER, (match: string, offset: number, whole: string) => {
+    if (!isYear(match)) return NUMBER_WITHHELD;
+    const before = whole.slice(Math.max(0, offset - 20), offset);
+    const after = whole.slice(offset + match.length, offset + match.length + 12);
+    return PRICE_BEFORE.test(before) || PRICE_AFTER.test(after) ? NUMBER_WITHHELD : match;
+  });
+  body = body.replace(SMALL_AFTER_MONEY, (_m, lead: string) => `${lead}${NUMBER_WITHHELD}`);
   return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
 }
 

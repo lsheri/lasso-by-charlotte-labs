@@ -91,10 +91,10 @@ export function LeadFinalBlock({
   }
 
   return (
-    <div data-led-final={shown ? "chosen" : "none"} className="flex flex-col gap-2 text-(length:--type-small)">
+    <div data-led-final={shown?.gone ? "gone" : shown ? "chosen" : "none"} className="flex flex-col gap-2 text-(length:--type-small)">
       <p className="font-medium text-foreground">{C.heading}</p>
       <p data-led-final-line className="break-words text-muted-foreground [overflow-wrap:anywhere]">
-        {shown ? C.chosen(shown.title || "Untitled", deskDate(shown.chosenAt, now)) : C.none}
+        {shown?.gone ? C.gone(deskDate(shown.chosenAt, now)) : shown ? C.chosen(shown.title || "Untitled", deskDate(shown.chosenAt, now)) : C.none}
       </p>
       <div className="flex flex-wrap gap-2">
         <input
