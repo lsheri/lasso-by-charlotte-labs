@@ -20,6 +20,29 @@ import {
 export const PILL_MODES = ["shut", "open", "full"] as const;
 export type PillMode = (typeof PILL_MODES)[number];
 
+/** 21 Nov 2026, click path cards: the one way into the chat from a step card ("Ask Lasso about this"). */
+export const PILL_OPEN_EVENT = "lasso:chat-pill-open";
+
+/**
+ * Where a step card sent the person from: the step's name, as the card shows it, and the way back to that step. Only
+ * the step's own title travels; nothing typed on the card goes into the chat.
+ */
+export type PillCardContext = { label: string; reopen: () => void };
+
+/**
+ * Opens the chat pill, as if it were pressed. From a step card it carries the step it came from, so the chat can
+ * offer the way back. The card has already closed (keeping what was typed), so the chat is fully usable.
+ */
+export function openChatPill(context?: PillCardContext): void {
+  globalThis.window?.dispatchEvent(new CustomEvent<PillCardContext | null>(PILL_OPEN_EVENT, { detail: context ?? null }));
+}
+
+/** The line a step card leaves in the chat, and its way back. */
+export const PILL_CARD_COPY = {
+  from: (label: string) => `You came from ${label}. What you typed there is kept.`,
+  back: "Back to the card",
+} as const;
+
 /** One morph, open or shut, in ms. */
 export const PILL_MORPH_MS = 600;
 /** The panel's own fade follows the morph by this much, so the shape leads and the words follow. */

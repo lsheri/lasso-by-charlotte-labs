@@ -12,10 +12,13 @@ export function LeadApprovalLine({
   stage,
   approval,
   onAsk,
+  onSend,
 }: {
   stage: ProposalStage;
   approval: ApprovalView | null | undefined;
   onAsk: (withdraw: boolean) => Promise<ApprovalResult>;
+  /** 21 Nov 2026, click path cards: on Home's row, Send for approval opens the Lead's step card on that step instead. */
+  onSend?: (() => void) | undefined;
 }) {
   const C = APPROVAL_COPY;
   const [working, setWorking] = useState(false);
@@ -48,7 +51,7 @@ export function LeadApprovalLine({
       <p className="font-medium text-foreground">{C.stage[stage]}</p>
       {line ? <p className="break-words text-muted-foreground [overflow-wrap:anywhere]">{line}</p> : null}
       {stage === "ready_to_send" || stage === "changes_asked" ? (
-        <Button type="button" size="sm" className="self-start" disabled={working} onClick={() => void press(false)}>
+        <Button type="button" size="sm" className="self-start" disabled={working} onClick={() => (onSend ? onSend() : void press(false))}>
           {working ? C.sending : C.send}
         </Button>
       ) : null}

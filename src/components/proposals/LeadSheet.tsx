@@ -76,6 +76,7 @@ export function LeadSheet({
   inline = false,
   teammates,
   linkTeammate,
+  onState,
 }: {
   /** The proposal, and where the sheet starts: the list, or the confirm when a lead is already saved. */
   target: { proposal: DeskProposal; start: LeadSheetStart; /** Opened straight after New proposal saved it. */ fresh?: boolean } | null;
@@ -105,6 +106,11 @@ export function LeadSheet({
    */
   teammates?: readonly RosterTeammate[] | undefined;
   linkTeammate?: ((profileId: string, contactId?: string) => Promise<TeammateLinkResult>) | undefined;
+  /**
+   * 21 Nov 2026, click path cards: told which step the sheet is on and whether it is saving, so a step card around it
+   * can show its marker and hold still while a write is in flight.
+   */
+  onState?: ((state: { confirm: boolean; working: boolean }) => void) | undefined;
 }) {
   const proposal = target?.proposal ?? null;
   const fresh = Boolean(target?.fresh);
@@ -195,6 +201,9 @@ export function LeadSheet({
   const asking = Boolean(pending?.match && !pending.answered);
   const first = name.trim().split(/\s+/)[0] ?? "";
   const confirm = step === "confirm" && !gone;
+  useEffect(() => {
+    onState?.({ confirm, working });
+  }, [confirm, working, onState]);
   const blocked = !ready || Boolean(ready.warning) || gone;
 
   async function save(contactId: string | null) {

@@ -70,6 +70,8 @@
   --shadow-flat:none;
   --shadow-card-new:1px 2px 3px color-mix(in oklab,var(--neutral-95) 15%,transparent);
   --shadow-float:0 12px 32px color-mix(in oklab,var(--neutral-95) 10%,transparent);
+  /* Click path cards (21 Nov): a step card's corner. Its shadow is tinted by the skin's ink, so it lives on the card. */
+  --corner-sheet:22px;
 
   --dur-instant:80ms; --dur-quick:160ms; --dur-move:200ms; --dur-base:300ms;
   --dur-enter:400ms; --dur-settle:550ms; --dur-draw:800ms; --dur-catch:900ms;

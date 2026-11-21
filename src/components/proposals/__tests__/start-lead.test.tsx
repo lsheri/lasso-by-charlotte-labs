@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { SHEET_COPY } from "@/lib/lead-ask-shared";
 import { INTAKE_COPY, LEAD_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
@@ -49,8 +48,9 @@ describe("a new proposal opens the lead sheet at once", () => {
     desk();
     const open = sheet() as HTMLElement;
     expect(open).not.toBeNull();
-    expect(open.hasAttribute("data-lead-fresh")).toBe(true);
-    expect(within(open).getByRole("heading").textContent).toBe(SHEET_COPY.title("Marrowfield"));
+    // 21 Nov 2026, click path cards: the sheet sits on a step card, not a dialog of its own.
+    expect(open.closest("[data-step-card]")).not.toBeNull();
+    expect(within(open).getByRole("heading", { level: 3 }).textContent).toBe(SHEET_COPY.title("Marrowfield"));
     expect(within(open).getByText(`${SHEET_COPY.started} ${LEAD_COPY.intro}`)).toBeTruthy();
     expect(within(open).getByRole("button", { name: SHEET_COPY.pickLater })).toBeTruthy();
     expect(within(open).queryByRole("button", { name: LEAD_COPY.cancel })).toBeNull();
@@ -113,23 +113,13 @@ describe("a new proposal opens the lead sheet at once", () => {
     expect(open.textContent).not.toContain(SHEET_COPY.started);
   });
 
-  it("the fresh sheet carries the morph name while it arrives, and never zooms in by itself", async () => {
-    vi.useFakeTimers();
-    try {
-      desk();
-      const box = sheet() as HTMLElement;
-      expect(box.style.animation).toBe("none");
-      expect((box.style as unknown as Record<string, string>)["viewTransitionName"]).toBe(PROPOSAL_MORPH);
-      expect(box.hasAttribute("data-lead-arriving")).toBe(true);
-      await act(async () => { vi.advanceTimersByTime(800); });
-      // The name goes; the entrance stays off, so the zoom is never replayed while it is open.
-      expect((box.style as unknown as Record<string, string>)["viewTransitionName"] ?? "").toBe("");
-      expect(box.style.animation).toBe("none");
-      expect(box.hasAttribute("data-lead-arriving")).toBe(false);
-      expect(box.hasAttribute("data-lead-fresh")).toBe(true);
-    } finally {
-      vi.useRealTimers();
-    }
+  it("21 Nov 2026, click path cards: the sheet arrives on a step card that says where you are, with no dialog morph", () => {
+    desk();
+    const box = sheet() as HTMLElement;
+    const card = box.closest("[data-step-card]") as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.querySelector("[data-step-marker]")?.textContent).toBe("Step 1 of 2");
+    expect((box.style as unknown as Record<string, string>)["viewTransitionName"] ?? "").toBe("");
   });
 
   it("the backdrop stays steady during the hand-over and the page behind does not cross-fade", () => {
@@ -143,50 +133,6 @@ describe("a new proposal opens the lead sheet at once", () => {
   });
 });
 
-describe("the form waits for the hand-over, then leaves", () => {
-  const CLIENTS = [{ id: "44444444-4444-4444-8444-444444444444", name: "Marrowfield" }];
-  function form(onCreated: (id: string) => void | Promise<void>) {
-    const props = {
-      open: true, onOpenChange: vi.fn(), clients: CLIENTS, clientsLoading: false, profileId: "22222222-2222-4222-8222-222222222222",
-      capture: vi.fn(async () => ({ ids: ["55555555-5555-4555-8555-555555555555"], failures: [] })),
-      discard: vi.fn(async () => undefined),
-      create: vi.fn(async () => ({ ok: true as const, id: "new" })), onCreated: vi.fn(onCreated),
-    };
-    render(<NewProposalDialog {...props} />);
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
-    return props;
-  }
-
-  it("stays on Starting until the page has handed over, carries the morph name, then closes", async () => {
-    let done: () => void = () => {};
-    const props = form(() => new Promise<void>((resolve) => { done = resolve; }));
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onCreated).toHaveBeenCalledWith("new"));
-    expect(screen.getByRole("button", { name: INTAKE_COPY.creating })).toBeTruthy();
-    const box = screen.getByTestId("new-proposal");
-    expect((box.style as unknown as Record<string, string>)["viewTransitionName"]).toBe(PROPOSAL_MORPH);
-    expect(box.hasAttribute("data-proposal-handing")).toBe(true);
-    expect(props.onOpenChange).not.toHaveBeenCalled();
-    await act(async () => done());
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-    expect(props.discard).not.toHaveBeenCalled();
-  });
-
-  it("a hand-over that fails still closes quietly: the proposal was made, so nothing says it failed", async () => {
-    const props = form(async () => { throw new Error("read failed"); });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(props.create).toHaveBeenCalledTimes(1);
-  });
-
-  it("a page that hands nothing over closes the form as before", async () => {
-    const props = form(() => undefined);
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-  });
-});
 
 describe("the morph", () => {
   it("uses the browser's view transition when there is one, and resolves only once the change is made", async () => {

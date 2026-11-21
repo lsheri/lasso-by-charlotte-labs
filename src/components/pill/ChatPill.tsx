@@ -12,6 +12,7 @@ import {
 
 import { CanvasAnswerCard, type CanvasAnswer } from "@/components/firm-brain/CanvasAnswerCard";
 import { BrandMark } from "@/components/layout/BrandLockup";
+import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowUpRight, ChevronDown, Maximize2, Minimize2 } from "@/design/brand/icons";
 import { isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import type { FirmAskResult, FirmAskStarter } from "@/lib/firm-ask-shared";
@@ -23,6 +24,9 @@ import { briefText, isBriefPaste } from "@/lib/pill-proposal-shared";
 import { landCard, liftCard } from "./fly-card";
 import {
   behindAt,
+  PILL_CARD_COPY,
+  PILL_OPEN_EVENT,
+  type PillCardContext,
   dragPull,
   geometryAt,
   PILL_COPY,
@@ -369,6 +373,21 @@ export function ChatPill({
     setMode(settleMode(d.progress, velocity));
   }
 
+  // 21 Nov 2026, click path cards: a step card's "Ask Lasso about this" opens the pill, and nothing more. The card has
+  // closed first (keeping what was typed); the pill opens where it is, as if pressed, with a line naming the step and
+  // a way back to it.
+  const [fromCard, setFromCard] = useState<PillCardContext | null>(null);
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const context = (event as CustomEvent<PillCardContext | null>).detail ?? null;
+      setFromCard(context);
+      if (boardChat) boardChat();
+      else setMode("open");
+    };
+    window.addEventListener(PILL_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(PILL_OPEN_EVENT, onOpen);
+  }, [boardChat, setMode]);
+
   function openFromShut() {
     if (justDragged.current) {
       justDragged.current = false;
@@ -594,6 +613,24 @@ export function ChatPill({
               {canAsk ? PILL_COPY.welcomeFirm : PILL_COPY.welcomeNone}
             </p>
           </div>
+          {fromCard ? (
+            <div className="chat-pill__msg chat-pill__from-card" data-pill-from-card="">
+              <p>{PILL_CARD_COPY.from(fromCard.label)}</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const back = fromCard;
+                  setFromCard(null);
+                  setMode("shut");
+                  back.reopen();
+                }}
+              >
+                {PILL_CARD_COPY.back}
+              </Button>
+            </div>
+          ) : null}
           {upNext}
           {messages.map((message) =>
             message.kind === "answer" ? (

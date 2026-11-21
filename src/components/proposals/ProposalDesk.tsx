@@ -3,7 +3,8 @@ import { useRef, useState } from "react";
 
 import { BoardBuildReveal } from "@/components/proposals/BoardBuildReveal";
 import { LeadDialog } from "@/components/proposals/LeadPicker";
-import { LeadSheet, type LeadSheetStart } from "@/components/proposals/LeadSheet";
+import type { LeadSheetStart } from "@/components/proposals/LeadSheet";
+import { LeadSheetCard } from "@/components/proposals/LeadSheetCard";
 import { ProposalRow } from "@/components/proposals/ProposalRow";
 import { useRowFlip } from "@/components/proposals/use-row-flip";
 import { Button } from "@/components/ui/button";
@@ -187,7 +188,7 @@ export function ProposalDesk({
       {onWin ? <WinDialog proposal={winning} onClose={() => setWinning(null)} onWin={onWin} /> : null}
       {picks && onLead && !ask ? <LeadDialog proposal={leading} roster={roster} words={leadWords ?? ""} demo={data.texts.demo} onClose={() => setLeading(null)} onSave={onLead} /> : null}
       {picks && ask && onLead ? (
-        <LeadSheet target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} teammates={teammates} linkTeammate={linkTeammate} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
+        <LeadSheetCard target={sheetTarget} roster={roster} wonWords={leadWords ?? ""} demo={data.texts.demo} connected={data.texts.connected} preview={ask.preview} send={ask.send} onSave={onLead} pastWork={pastWorkByLead(data.proposals)} teammates={teammates} linkTeammate={linkTeammate} onClose={() => (sheet ? setSheet(null) : onStartLeadDone?.())} />
       ) : null}
       {onClose ? <CloseDialog target={closing} onDone={() => setClosing(null)} onClose={onClose} /> : null}
     </section>

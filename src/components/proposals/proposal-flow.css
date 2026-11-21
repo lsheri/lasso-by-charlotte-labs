@@ -1,0 +1,317 @@
+/* 21 Nov 2026, click path cards. What sits inside the proposal step card (ProposalFlow.tsx): fields, the reading
+   stages, the documents and the send picture. Skin tokens only. */
+
+.flow-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.flow-label {
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+}
+.flow-note {
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+}
+.flow-problem {
+  font-size: var(--type-small);
+  color: var(--destructive);
+}
+.flow-brief {
+  min-height: 84px;
+  resize: vertical;
+  font-size: var(--type-body);
+}
+.flow-quote {
+  margin: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 14px 16px;
+  border-left: 3px solid var(--border);
+  border-radius: var(--corner-panel);
+  background: var(--secondary);
+  font-size: var(--type-body);
+  color: var(--foreground);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* The details, as one clean summary: the client big, then the ask, then the date and the clock side by side. */
+.flow-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-float);
+  background: color-mix(in oklab, var(--secondary) 45%, var(--card));
+}
+.flow-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.step-card[data-phone] .flow-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.flow-clock {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+}
+.flow-summary[aria-busy] {
+  opacity: 0.55;
+  transition: opacity 500ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.flow-drop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--corner-float);
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+  transition: border-color 300ms cubic-bezier(0.45, 0, 0.2, 1), background-color 300ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+.flow-drop[data-over] {
+  border-color: var(--primary);
+  background: var(--secondary);
+}
+
+/* Reading the brief: the stages, one after another, each readable. */
+.flow-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+.flow-stages li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--type-body);
+  color: var(--muted-foreground);
+  transition: color 500ms cubic-bezier(0.45, 0, 0.2, 1), opacity 500ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+.flow-stages li[data-state="next"] {
+  opacity: 0.45;
+}
+.flow-stages li[data-state="now"] {
+  color: var(--foreground);
+}
+.flow-stages i {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: var(--corner-pill);
+  border: 1.5px solid currentColor;
+}
+.flow-stages li[data-state="now"] i {
+  border-color: var(--good-mark);
+  animation: flow-breathe 1600ms cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+.flow-stages li[data-state="done"] i {
+  background: var(--good-mark);
+  border-color: var(--good-mark);
+}
+@keyframes flow-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--good-mark) 40%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--good-mark) 0%, transparent); }
+}
+
+/* Send: exactly who, and exactly what. */
+.flow-send {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.flow-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--type-body);
+}
+.flow-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.flow-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 96px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-float);
+  background: var(--card);
+  box-shadow: var(--shadow-card-new);
+  font-size: var(--type-small);
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+.flow-tile svg {
+  color: var(--muted-foreground);
+}
+
+.flow-done {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 12px 20px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-float);
+  font-size: var(--type-body);
+}
+.flow-done dt {
+  color: var(--muted-foreground);
+}
+.flow-done dd {
+  margin: 0;
+  color: var(--foreground);
+}
+
+/* The lead sheet, inside a step card, keeps its own heading, centred at the card's size like every step's title. */
+.step-card [data-lead-inline] > div:first-child {
+  align-items: center;
+  padding: 0 44px;
+  text-align: center;
+}
+.step-card [data-lead-inline] > div:first-child h3 {
+  font-size: var(--type-title);
+  font-weight: 700;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.flow-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.flow-link {
+  font-size: var(--type-small);
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.flow-link:hover {
+  color: var(--muted-foreground);
+}
+
+/* Documents dropped on the card, as small pages: a sheet with a few lines and its name under it. */
+.flow-pages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+}
+.flow-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.flow-page__sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  height: 92px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-panel);
+  background: var(--card);
+  box-shadow: var(--shadow-card-new);
+  color: var(--muted-foreground);
+}
+.flow-page__sheet i {
+  display: block;
+  height: 4px;
+  border-radius: var(--corner-pill);
+  background: var(--secondary);
+}
+.flow-page__sheet i:last-child {
+  width: 60%;
+}
+.flow-page__name {
+  font-size: var(--type-label);
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+.flow-page button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--corner-pill);
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.flow-page button:hover {
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-stages li[data-state="now"] i {
+    animation: none;
+  }
+}
+
+/* A sent document read on a step card: a page, not a box of text. */
+.lead-doc-page {
+  max-height: 56dvh;
+  overflow-y: auto;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--corner-panel);
+  background: var(--card);
+  box-shadow: var(--shadow-card-new);
+  font-size: var(--type-body);
+  line-height: 1.6;
+  color: var(--foreground);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.step-card[data-phone] .lead-doc-page {
+  padding: 18px;
+}
+
+/* The lead sheet's own buttons are the card's footer on its step: pinned to the card's foot, with the card's look. */
+.step-card [data-lead-actions] {
+  position: sticky;
+  bottom: -24px;
+  margin: 4px -24px -24px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+.step-card[data-phone] [data-lead-actions] {
+  bottom: -20px;
+  margin: 4px -20px -20px;
+  padding: 12px 20px 16px;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The final block on its card: the card's title already says what it is. */
+.step-card [data-led-final] > p:first-child {
+  display: none;
+}
+.flow-tile--wide {
+  flex-direction: row;
+  align-items: center;
+  min-height: 0;
+}

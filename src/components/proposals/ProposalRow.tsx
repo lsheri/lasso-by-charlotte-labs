@@ -238,7 +238,7 @@ export function ProposalRow({
             <p data-approval-approved className="text-(length:--type-small) text-foreground">{APPROVAL_COPY.stage.approved_not_sent}</p>
           ) : null}
           {proposal.mine && proposal.leadDocs && onSendDocs ? (
-            <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} onSend={onSendDocs} />
+            <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} titles={proposal.contextTitles} onSend={onSendDocs} />
           ) : null}
         </div>
         <ProposalClock left={left} goalHours={goalHours} atGoal={atGoal} large={featured} />

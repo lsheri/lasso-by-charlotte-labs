@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatPill } from "@/components/pill/ChatPill";
-import { PILL_COPY } from "@/lib/chat-pill-shared";
+import { openChatPill, PILL_CARD_COPY, PILL_COPY } from "@/lib/chat-pill-shared";
 import { FIRM_CANVAS_COPY } from "@/lib/firm-canvas-shared";
 import { FIRM_ASK_COPY, type FirmAskResult } from "@/lib/firm-ask-shared";
 import { FIRM_BRAIN_LIMIT_COPY } from "@/lib/firm-brain-limit-shared";
@@ -441,5 +441,27 @@ describe("the pill and the demo story's dialog watch", () => {
     expect(anyDialogOpen()).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: PILL_COPY.close }));
     expect(anyDialogOpen()).toBe(false);
+  });
+});
+
+// 21 Nov 2026, click path cards (QA M1 of PR 304): a step card's "Ask Lasso about this" opens the pill with the step's
+// name and a way back; the way back shuts the pill and reopens the card.
+describe("from a step card", () => {
+  it("opens with the step it came from, and Back to the card reopens it and tucks the chat away", async () => {
+    const p = pill();
+    const reopen = vi.fn();
+    act(() => openChatPill({ label: "Start a proposal", reopen }));
+    await waitFor(() => expect(p.el.getAttribute("data-mode")).toBe("open"));
+    expect(screen.getByText(PILL_CARD_COPY.from("Start a proposal"))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: PILL_CARD_COPY.back }));
+    expect(reopen).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(p.el.getAttribute("data-mode")).toBe("shut"));
+    expect(screen.queryByText(PILL_CARD_COPY.from("Start a proposal"))).toBeNull();
+  });
+  it("opened plainly, it carries no card line", async () => {
+    const p = pill();
+    act(() => openChatPill());
+    await waitFor(() => expect(p.el.getAttribute("data-mode")).toBe("open"));
+    expect(screen.queryByRole("button", { name: PILL_CARD_COPY.back })).toBeNull();
   });
 });
