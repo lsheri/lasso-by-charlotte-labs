@@ -220,6 +220,7 @@
   border-top: 1px solid var(--border);
 }
 .step-card__actions {
+  margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;

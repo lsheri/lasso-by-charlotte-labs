@@ -7,6 +7,8 @@ import { FINAL_COPY, FINAL_CARD_COPY, type FinalView } from "@/lib/proposal-fina
 
 import { LeadFinalBlock, type FinalTools } from "./LeadFinalBlock";
 
+import "@/components/proposals/proposal-flow.css";
+
 /**
  * 21 Nov 2026, click path cards: the Lead's "Decide the final" on Home opens a step card holding the final block
  * (upload it, draft it from the brief, or use a document that was sent), so the choice gets the whole stage. The row

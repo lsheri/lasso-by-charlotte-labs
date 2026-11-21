@@ -288,3 +288,25 @@
 .step-card[data-phone] .lead-doc-page {
   padding: 18px;
 }
+
+/* The lead sheet's own buttons are the card's footer on its step: pinned to the card's foot, with the card's look. */
+.step-card [data-lead-actions] {
+  position: sticky;
+  bottom: -24px;
+  margin: 4px -24px -24px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+.step-card[data-phone] [data-lead-actions] {
+  bottom: -20px;
+  margin: 4px -20px -20px;
+  padding: 12px 20px 16px;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The final block on its card: the card's title already says what it is. */
+.step-card [data-led-final] > p:first-child {
+  display: none;
+}

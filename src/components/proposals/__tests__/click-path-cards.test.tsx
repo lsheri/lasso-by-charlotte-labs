@@ -37,6 +37,15 @@ vi.mock("@/components/pill/PillLeadStep", () => ({
       <button type="button" onClick={onDone}>
         lead done
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          onState?.({ confirm: true, working: true });
+          onDone();
+        }}
+      >
+        sent and closed
+      </button>
     </div>
   ),
 }));
@@ -231,6 +240,18 @@ describe("the proposal step card", () => {
     fireEvent.click(within(card()).getByRole("button", { name: FLOW_COPY.send.send }));
     await waitFor(() => expect(p.sendDocs).toHaveBeenCalledWith("p-new", true));
     expect(await within(card()).findByText(FLOW_COPY.done.sent("Christy"))).toBeTruthy();
+  });
+
+  it("a lead sheet that closes while it said it was saving never leaves the card stuck open", async () => {
+    const p = props();
+    render(<ProposalFlow {...p} />);
+    await ready();
+    fireEvent.change(field(PROPOSAL_CARD_COPY.client), { target: { value: "Marrowfield Health" } });
+    fireEvent.change(field(FLOW_COPY.start.askLabel), { target: { value: "A review" } });
+    fireEvent.click(within(card()).getByRole("button", { name: FLOW_COPY.start.next }));
+    fireEvent.click(await screen.findByRole("button", { name: "sent and closed" }));
+    await within(card()).findByText(FLOW_COPY.send.title("Christy"));
+    expect((within(card()).getByRole("button", { name: STEP_CARD_COPY.close }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("a refused send keeps the documents step with the plain line", async () => {

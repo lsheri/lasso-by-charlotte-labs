@@ -158,6 +158,8 @@ function ProposalFlowRound({
 
   /** The lead sheet closed: on to the documents if there are any to send, else to the last word. */
   async function afterLead() {
+    // The sheet is gone: whatever it last said about saving no longer holds the card.
+    setSheet({ confirm: false, working: false });
     const fresh = await desk.refetch().catch(() => null);
     // A read that fails keeps the list it had, so the card still knows what there is to send.
     const row = (fresh?.data ?? desk.data)?.proposals.find((item) => item.id === flow.proposalId);
@@ -191,7 +193,7 @@ function ProposalFlowRound({
 
   const marker = flowMarker(step, steps, step === "lead" && sheet.confirm);
   const back = flowBack(step, steps, flow.proposalId !== null);
-  const busy = flow.stage === "starting" || sending || pass.state === "sending" || sheet.working;
+  const busy = flow.stage === "starting" || sending || pass.state === "sending" || (step === "lead" && sheet.working);
   const askLink = onAsk ? (
     <button type="button" onClick={onAsk}>
       {STEP_CARD_COPY.askAbout(brandName)}
@@ -471,7 +473,8 @@ function ProposalFlowRound({
   /* ----- Step 2 (and 3 on the ask): the lead sheet, picking and then asking, all its own ----- */
   if (step === "lead" && flow.proposalId) {
     return (
-      <StepCard {...common} title={FLOW_COPY.lead.title} hideTitle>
+      // The lead sheet's own buttons are this step's footer, so the card adds none of its own.
+      <StepCard {...common} aside={null} title={FLOW_COPY.lead.title} hideTitle>
         {leadStep ? (
           leadStep(flow.proposalId, () => void afterLead(), onSheet)
         ) : (
