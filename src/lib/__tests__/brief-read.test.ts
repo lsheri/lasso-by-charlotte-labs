@@ -59,7 +59,7 @@ describe("due dates, worked out in code", () => {
     ["3 December", "2026-12-03"],
     ["3rd of December, 2026", "2026-12-03"],
     ["January 15", "2027-01-15"],
-    ["Nov 2", "2027-11-02"],
+    ["Aug 2", "2027-08-02"],
     ["12/3", "2026-12-03"],
     ["12/3/26", "2026-12-03"],
     ["2026-12-03", "2026-12-03"],
@@ -308,5 +308,55 @@ describe("the due date on a new proposal", () => {
     expect(
       readFileSync("supabase/undo/20261121000000_proposals_client_due_on_undo.sql", "utf8"),
     ).toContain("drop column if exists client_due_on");
+  });
+});
+
+// QA of PR 295 (H1, M1, lows): ordinary words are never due dates, the model's existing client wins, just-passed dates
+// are left for the person, and short names match with or without their full stop.
+describe("QA of PR 295", () => {
+  const thursday = new Date("2026-11-19T12:00:00Z");
+  it.each([
+    "We want to cut readmissions by monitoring patients at home.",
+    "We were referred by friends of the CEO.",
+    "Improve throughput by satisfying the new rules.",
+    "Success is measured by month-end close.",
+    "Reduce costs by 1/3 across the network.",
+    "Launch is planned by June 2027.",
+    "Sunday staffing is thin; saturation by Thursdays.",
+  ])("%s has no due date", (paste) => {
+    expect(findDuePhrase(paste, thursday)).toBeNull();
+  });
+
+  it("still reads real due phrases", () => {
+    expect(findDuePhrase("Proposal due Friday.", thursday)?.date).toBe("2026-11-20");
+    expect(findDuePhrase("Please respond by Mon.", thursday)?.date).toBe("2026-11-23");
+    expect(findDuePhrase("Deadline: 12/3", thursday)?.date).toBe("2026-12-03");
+    expect(findDuePhrase("Submit by December 3", thursday)?.date).toBe("2026-12-03");
+    expect(findDuePhrase("Due June 20, 2027.", thursday)?.date).toBe("2027-06-20");
+  });
+
+  it("leaves a just-passed date or a past year for the person, and reads this Friday on a Friday as today", () => {
+    expect(dueDateFor("Nov 19", new Date("2026-11-20T12:00:00Z"))).toBeNull();
+    expect(dueDateFor("Dec 30", new Date("2026-12-31T12:00:00Z"))).toBeNull();
+    expect(dueDateFor("Dec 30", new Date("2027-01-05T12:00:00Z"))).toBeNull();
+    expect(dueDateFor("Dec 3, 2025", NOW)).toBeNull();
+    expect(dueDateFor("this Friday", NOW)).toBe("2026-11-20");
+    expect(dueDateFor("Friday", NOW)).toBe("2026-11-27");
+  });
+
+  it("keeps the model's existing client when the paste names two", () => {
+    const paste = "St. Brigid Health would like what we did for Larkspur Senior Living, by Dec 3.";
+    expect(checkReading({ client: "St. Brigid Health" }, paste, CLIENTS, NOW).client).toEqual({ name: "St. Brigid Health", id: "c3" });
+    // With no client from the model, the longest named one is used.
+    expect(checkReading({}, paste, CLIENTS, NOW).client?.id).toBe("c1");
+  });
+
+  it("matches a short name with or without its full stop, and at any place it appears", () => {
+    expect(appearsIn("St Brigid Health asked", "St. Brigid Health")).toBe(true);
+    expect(appearsIn("Larkspurs and Larkspur", "Larkspur")).toBe(true);
+  });
+
+  it("the due date fallback accepts the code PostgREST sends for a missing column", () => {
+    expect(readFileSync("src/lib/proposal-desk.server.ts", "utf8")).toContain('["42703", "PGRST204"]');
   });
 });

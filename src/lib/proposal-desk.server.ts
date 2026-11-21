@@ -560,7 +560,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
     async insertProposal(row) {
       const { error } = await adminLoose.from("proposals").insert(row);
       // Before the due date's column is added (Liam pastes the SQL), the proposal is still made, without the date.
-      if (error && row.client_due_on && (error as { code?: string }).code === "42703") {
+      // QA M2 of PR 295: PostgREST answers an unknown column with PGRST204, Postgres with 42703; both mean "not there yet".
+      if (error && row.client_due_on && ["42703", "PGRST204"].includes(String((error as { code?: string }).code))) {
         const { client_due_on: _dropped, ...rest } = row;
         const retry = await adminLoose.from("proposals").insert(rest);
         return !retry.error;
