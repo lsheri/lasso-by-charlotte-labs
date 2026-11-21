@@ -143,6 +143,11 @@ export type DeskStore = {
   closeLost: (id: string, decidedAt: string) => Promise<boolean>;
   /** Archives a proposal that is not won. False when nothing changed. */
   archive: (id: string, at: string) => Promise<boolean>;
+  /**
+   * 21 Nov (after PR 303): closes any approval request still waiting on a proposal that was just archived, lost or won,
+   * as withdrawn by the system (no person named). The request row is decided, never deleted, so the history stays.
+   */
+  closeApprovals?: (id: string, at: string) => Promise<void>;
   /** Saves one workspace setting, touching no other. False when refused. */
   saveSetting: (orgId: string, key: string, value: number) => Promise<boolean>;
   /** The board, only if the signed-in person can open it. */
@@ -381,12 +386,24 @@ export async function closeProposal(store: DeskStore, input: CloseInput): Promis
     if (row.status !== "open") return { ok: false, problem: CLOSE_COPY.decided };
     if (!(await store.closeLost(row.id, now))) return { ok: false, problem: CLOSE_COPY.failed };
   }
+  await closeWaiting(store, row.id, now);
   try {
     await store.record(caller, "proposal.closed", { change: input.change });
   } catch {
     /* the change is saved; a recording fault never undoes it */
   }
   return { ok: true };
+}
+
+/** A request left waiting on a closed proposal is closed too. Best effort: the close is saved either way, and every
+ * reader already leaves archived and decided proposals out. */
+async function closeWaiting(store: DeskStore, proposalId: string, at: string): Promise<void> {
+  try {
+    await store.closeApprovals?.(proposalId, at);
+  } catch (e) {
+    // The proposal change stands. Logged without personal data: the proposal id and the error's kind only.
+    console.error("[proposal-desk] closing a waiting approval threw", { proposal_id: proposalId, error: e instanceof Error ? e.name : "unknown" });
+  }
 }
 
 /** Saves the workspace's turnaround goal: an admin, and only that one setting. */
@@ -504,6 +521,7 @@ export async function winProposal(store: DeskStore, input: WinInput): Promise<Wi
       const after = await store.proposal(row.id);
       return after && after.status === "won" && after.engagement_id ? { ok: true, engagementId: after.engagement_id } : { ok: false, problem: WIN_COPY.failed };
     }
+    await closeWaiting(store, row.id, now.toISOString());
   } catch {
     return await undo();
   }
@@ -706,6 +724,12 @@ export async function realStore(context: DeskContext, profileId: string | null):
     async archive(id, at) {
       const { data, error } = await adminLoose.from("proposals").update({ archived_at: at }).eq("id", id).eq("org_id", caller.orgId).neq("status", "won").is("archived_at", null).select("id");
       return !error && (data ?? []).length === 1;
+    },
+    async closeApprovals(id, at) {
+      // Only an open request changes (decision is null); decided ones are never touched. decided_by stays empty: the system closed it.
+      const { error } = await adminLoose.from("proposal_approvals").update({ decision: "withdrawn", decided_by: null, decided_at: at, note: null }).eq("proposal_id", id).eq("org_id", caller.orgId).is("decision", null);
+      // Logged with the proposal id and the database's code only: no names, notes or other personal data.
+      if (error) console.error("[proposal-desk] closing a waiting approval failed", { proposal_id: id, code: error.code ?? null });
     },
     async saveSetting(orgId, key, value) {
       if (orgId !== caller.orgId) return false;
