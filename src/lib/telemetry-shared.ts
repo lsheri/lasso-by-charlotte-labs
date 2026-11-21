@@ -577,6 +577,12 @@ export type TelemetryEvent =
   | "proposal.final_chosen"
   /** 21 Nov, chat pill PR 4c: a proposal's lead drafted it from the brief and sent documents, with no board. Dims: gaps, questions (bands). Never words. Portal registration required. */
   | "proposal.final_drafted"
+  /** 21 Nov, chat pill Phase 5: a proposal's final version was sent for approval. No dims. Portal registration required. */
+  | "proposal.approval_requested"
+  /** 21 Nov, chat pill Phase 5: an admin approved, asked for changes, or the request was withdrawn. Dim: decision. Never who or the note. Portal registration required. */
+  | "proposal.approval_decided"
+  /** 21 Nov, chat pill Phase 5: approving marked the proposal as gone to the client. Dim: within_goal (yes | no). Portal registration required. */
+  | "proposal.client_review"
   /** 20 Nov, D-50: an admin of a demo workspace set or cleared the one number its won-proposal text goes to. Dim: change (set | cleared). Never the number or any part of it. Portal registration required. */
   | "demo_text_number.changed"
   /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */

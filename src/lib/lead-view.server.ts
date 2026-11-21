@@ -72,7 +72,7 @@ export type LeadStore = {
   sentDocs: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs> | "absent">;
   /** Records what was sent (replacing any earlier send), or deletes the record (Stop sharing). */
   saveSent: (proposalId: string, orgId: string, sent: (SentDocs & { sent_by: string; sent_at: string }) | null) => Promise<boolean | "absent">;
-  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen", dims: Record<string, string>) => Promise<void>;
+  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen" | "proposal.approval_requested" | "proposal.approval_decided" | "proposal.client_review", dims: Record<string, string>) => Promise<void>;
   /** 21 Nov 2026, PR 4c: the latest final per proposal. "absent" before its table exists. Left out, none. */
   finals?: (orgId: string, proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string; chosen_at: string }[] | "absent">;
   /** Titles of these work items in this workspace, whoever owns them. */
