@@ -245,3 +245,13 @@ describe("QA M1 of PR 300: the draft title for a Member", () => {
     expect((lead.drafts[0] as { title: string }).title).toBe("Proposal draft: Care model review, $80k cap, phase 2");
   });
 });
+
+describe("the Member draft title uses the one title rule", () => {
+  it("'Budget: 45,000 for phase 2' and 'Fee 2000 refresh'", async () => {
+    for (const [title, expected] of [["Budget: 45,000 for phase 2", "Proposal draft: Budget for phase 2"], ["Fee 2000 refresh", "Proposal draft: Fee refresh"]] as const) {
+      const w = world({ rows: [proposal({ title })] });
+      await draftFinal(w.store, { profile_id: null, proposal_id: P1 });
+      expect((w.drafts[0] as { title: string }).title).toBe(expected);
+    }
+  });
+});

@@ -222,6 +222,23 @@ export function numbersWithheldInline(text: string): string {
   return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
 }
 
+// An amount right after a money word, with no currency sign: "Budget: 45,000", "Fee 2000", "rate 85".
+const AMOUNT_AFTER_MONEY_WORD = new RegExp(`(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d[\\d,.'’ ]*\\d(?:\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}]))?|(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d(?![\\d])`, "giu");
+
+/**
+ * The one title rule for a Member (QA of PR 299 and PR 300): titles and file names are not money, so their numbers
+ * stay ("QA 299 lead view check", "QA-299-RFP.txt", "phase 2"); an amount with a currency sign, or right after a money
+ * word, goes ("Fee schedule $45,000", "Budget: 45,000 for phase 2", "Fee 2000 refresh"). A title that was only an
+ * amount reads Untitled.
+ */
+export function memberTitle(title: string): string {
+  const cleaned = withoutMoney(title.replace(AMOUNT_AFTER_MONEY_WORD, (_m, a?: string, b?: string) => (a ?? b ?? "").replace(/[:\s-]+$/, " ")))
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned || "Untitled";
+}
+
 /** A document or summary as a Member may read it: a proposal's Fees section withheld, and every figure masked. */
 export function moneyFreeText(text: string): string {
   return maskMoney(withoutFees(text));

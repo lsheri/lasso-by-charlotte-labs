@@ -15,7 +15,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { docsSentToLead } from "./lead-view-shared";
 import { leads, realLeadStore, type LeadCaller, type LeadContext, type LeadProposalRow, type LeadStore } from "./lead-view.server";
-import { numbersWithheld, numbersWithheldInline, seesMoney, withoutMoney } from "./money-mask-shared";
+import { memberTitle, numbersWithheld, numbersWithheldInline, seesMoney } from "./money-mask-shared";
 import type { ProposalDraft } from "./proposal-draft-shared";
 import { countBand } from "./proposal-desk-shared";
 import {
@@ -117,7 +117,7 @@ export async function draftFinal(store: FinalStore, input: DraftFinalInput): Pro
     // QA M1 of PR 300: a Member's draft title follows the Member title rule: currency or money-word amounts go,
     // other numbers stay ("Care model review, $80k cap" becomes "Care model review, cap").
     const member = !seesMoney(caller.role);
-    const title = draftTitle(member ? withoutMoney(row.title) || "Untitled" : row.title);
+    const title = draftTitle(member ? memberTitle(row.title) : row.title);
     made = await store.makeDraft(caller, { title, intake: notes, documents, member });
   } catch (failure) {
     // The daily spend limit says so in its own words.
