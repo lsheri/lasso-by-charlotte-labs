@@ -957,9 +957,15 @@ describe("21 Nov (after PR 303): closing a proposal closes a request still waiti
     await winProposal(racer, winInput({ profile_id: ME, proposal_id: W1 }));
     expect(lostRace).toEqual([]);
   });
-  it("a failure closing the request never undoes the proposal change", async () => {
+  it("a failure closing the request never undoes the proposal change, and is logged with no personal data", async () => {
     const calls: string[] = [];
-    expect(await closeProposal(fakeStore({ role: "admin", rows: [row({ id: ID })], closeApprovals: closer(calls, true) }), closeInput({ proposal_id: ID, change: "archived" }))).toEqual({ ok: true });
-    expect(calls).toHaveLength(1);
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      expect(await closeProposal(fakeStore({ role: "admin", rows: [row({ id: ID })], closeApprovals: closer(calls, true) }), closeInput({ proposal_id: ID, change: "archived" }))).toEqual({ ok: true });
+      expect(calls).toHaveLength(1);
+      expect(logged).toHaveBeenCalledWith("[proposal-desk] closing a waiting approval threw", { proposal_id: ID, error: "Error" });
+    } finally {
+      logged.mockRestore();
+    }
   });
 });

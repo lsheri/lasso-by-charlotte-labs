@@ -400,8 +400,9 @@ export async function closeProposal(store: DeskStore, input: CloseInput): Promis
 async function closeWaiting(store: DeskStore, proposalId: string, at: string): Promise<void> {
   try {
     await store.closeApprovals?.(proposalId, at);
-  } catch {
-    /* the proposal change stands */
+  } catch (e) {
+    // The proposal change stands. Logged without personal data: the proposal id and the error's kind only.
+    console.error("[proposal-desk] closing a waiting approval threw", { proposal_id: proposalId, error: e instanceof Error ? e.name : "unknown" });
   }
 }
 
@@ -726,7 +727,9 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async closeApprovals(id, at) {
       // Only an open request changes (decision is null); decided ones are never touched. decided_by stays empty: the system closed it.
-      await adminLoose.from("proposal_approvals").update({ decision: "withdrawn", decided_by: null, decided_at: at, note: null }).eq("proposal_id", id).eq("org_id", caller.orgId).is("decision", null);
+      const { error } = await adminLoose.from("proposal_approvals").update({ decision: "withdrawn", decided_by: null, decided_at: at, note: null }).eq("proposal_id", id).eq("org_id", caller.orgId).is("decision", null);
+      // Logged with the proposal id and the database's code only: no names, notes or other personal data.
+      if (error) console.error("[proposal-desk] closing a waiting approval failed", { proposal_id: id, code: error.code ?? null });
     },
     async saveSetting(orgId, key, value) {
       if (orgId !== caller.orgId) return false;
