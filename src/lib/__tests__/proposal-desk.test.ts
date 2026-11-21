@@ -925,3 +925,41 @@ describe("the documents and the lead, on the owner's row", () => {
     expect((await listDesk(fakeStore({ rows, leadLinks: async () => { throw new Error("x"); } }))).proposals[0]!.leadDocs).toBe("no_login");
   });
 });
+
+describe("21 Nov (after PR 303): closing a proposal closes a request still waiting on it", () => {
+  const ID = "00000000-0000-4000-8000-0000000000b1";
+  const W1 = "00000000-0000-4000-8000-0000000000b2";
+  const closer = (calls: string[], fail = false) => async (id: string, at: string) => {
+    calls.push(`${id}@${at}`);
+    if (fail) throw new Error("down");
+  };
+  it("archiving and closing as lost close it, after the proposal change and at the same time", async () => {
+    for (const change of ["archived", "lost"] as const) {
+      const calls: string[] = [];
+      const store = fakeStore({ role: "admin", rows: [row({ id: ID })], closeApprovals: closer(calls) });
+      expect(await closeProposal(store, closeInput({ proposal_id: ID, change }))).toEqual({ ok: true });
+      expect(calls).toEqual([`${ID}@${NOW.toISOString()}`]);
+    }
+  });
+  it("a refused close leaves the request alone", async () => {
+    const calls: string[] = [];
+    await closeProposal(fakeStore({ rows: [row({ id: ID })], closeLost: async () => false, closeApprovals: closer(calls) }), closeInput({ proposal_id: ID, change: "lost" }));
+    await closeProposal(fakeStore({ role: "manager", rows: [row({ id: ID })], closeApprovals: closer(calls) }), closeInput({ proposal_id: ID, change: "archived" }));
+    expect(calls).toEqual([]);
+  });
+  it("winning closes it; losing a win race does not", async () => {
+    const calls: string[] = [];
+    const won = fakeStore({ rows: [row({ id: W1 })], closeApprovals: closer(calls) });
+    expect(await winProposal(won, winInput({ profile_id: ME, proposal_id: W1 }))).toMatchObject({ ok: true });
+    expect(calls).toEqual([`${W1}@${NOW.toISOString()}`]);
+    const lostRace: string[] = [];
+    const racer = fakeStore({ rows: [row({ id: W1 })], claimWin: async () => false, closeApprovals: closer(lostRace) });
+    await winProposal(racer, winInput({ profile_id: ME, proposal_id: W1 }));
+    expect(lostRace).toEqual([]);
+  });
+  it("a failure closing the request never undoes the proposal change", async () => {
+    const calls: string[] = [];
+    expect(await closeProposal(fakeStore({ role: "admin", rows: [row({ id: ID })], closeApprovals: closer(calls, true) }), closeInput({ proposal_id: ID, change: "archived" }))).toEqual({ ok: true });
+    expect(calls).toHaveLength(1);
+  });
+});
