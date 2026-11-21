@@ -26,6 +26,7 @@ import {
   dragPull,
   geometryAt,
   PILL_COPY,
+  PILL_DOCK_COPY,
   PILL_DRAG_SLOP,
   PILL_MODES,
   PILL_MORPH_MS,
@@ -36,6 +37,7 @@ import {
   type PillGeometry,
   type PillMode,
   type PillPlace,
+  type PillCorner,
   type PillStarter,
   type Viewport,
 } from "@/lib/chat-pill-shared";
@@ -79,6 +81,11 @@ export function ChatPill({
   reduceMotion = false,
   initialMode = "shut",
   brief = null,
+  corner = "bottom-right",
+  hint,
+  hidden = false,
+  startWith = null,
+  onHandleDown,
   upNext = null,
 }: {
   brandName: string;
@@ -110,6 +117,16 @@ export function ChatPill({
    * (the proposal card, or a Member's pass to an admin) instead of being asked of the firm.
    */
   brief?: { render: (text: string, context: BriefContext) => ReactNode } | null | undefined;
+  /** 21 Nov 2026, Phase 1c: the corner the pill sits in on a laptop. */
+  corner?: PillCorner;
+  /** The question box's hint for this page. */
+  hint?: string | undefined;
+  /** The landing chat on Home stands in for the pill: the shut pill is not drawn. */
+  hidden?: boolean;
+  /** A question from the landing chat: the chat opens full and asks it. A new id asks again. */
+  startWith?: { id: number; text: string } | null;
+  /** The six-dot handle was pressed: the container moves the pill between spots. Left out, no handle. */
+  onHandleDown?: ((event: ReactPointerEvent<HTMLElement>) => void) | undefined;
   /** 21 Nov 2026, PR 4b: the Lead's Up next, drawn under the welcome. The container decides who gets one. */
   upNext?: ReactNode;
 }) {
@@ -138,6 +155,8 @@ export function ChatPill({
   const scrub = useRef({ cur: 0, target: 0, raf: 0 });
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const cornerRef = useRef<PillCorner>(corner);
+  cornerRef.current = corner;
 
   const viewport = useCallback((): Viewport => {
     const width = window.innerWidth;
@@ -152,6 +171,7 @@ export function ChatPill({
       railWidth: phone ? 0 : (rail?.offsetWidth ?? 0),
       shutWidth: (shut.current?.scrollWidth ?? 120) + 2,
       bottomClear: phone ? (tabbar?.offsetHeight ?? 0) : 0,
+      dock: cornerRef.current,
     };
   }, []);
 
@@ -226,6 +246,22 @@ export function ChatPill({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [place, place_, onOpened, onExpanded, reduceMotion],
   );
+
+  // Phase 1c: a new corner moves the pill there with the usual morph.
+  useEffect(() => {
+    place_(modeRef.current, false);
+  }, [corner, place_]);
+
+  // Phase 1c: a question from the landing chat opens the chat full and asks it, once per id.
+  const started = useRef<number | null>(null);
+  useEffect(() => {
+    if (!startWith || started.current === startWith.id) return;
+    started.current = startWith.id;
+    setMode("full");
+    void ask(startWith.text);
+    // `ask` is a fresh function each render; the id decides.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startWith?.id]);
 
   // First paint: placed with no motion. Afterwards, every resize places it again at once.
   useLayoutEffect(() => {
@@ -517,6 +553,8 @@ export function ChatPill({
       data-mode={mode}
       data-testid="ask-the-firm"
       data-chat-pill=""
+      data-corner={corner}
+      data-hidden={hidden && mode === "shut" ? "" : undefined}
       data-ph-no-autocapture=""
     >
       <button
@@ -534,6 +572,23 @@ export function ChatPill({
       >
         <BrandMark px={24} />
         <span>{askLabel}</span>
+        {onHandleDown && !boardChat ? (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label={PILL_DOCK_COPY.handle}
+            title={PILL_DOCK_COPY.handle}
+            className="chat-pill__handle"
+            data-pill-handle=""
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              onHandleDown(event);
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <i aria-hidden />
+          </span>
+        ) : null}
         {boardChat ? <span className="chat-pill__ctx">{PILL_COPY.where("board")}</span> : null}
       </button>
       <div
@@ -668,7 +723,7 @@ export function ChatPill({
                 rows={1}
                 value={question}
                 maxLength={brief ? BRIEF_READ_MAX : questionMax}
-                placeholder={brief ? PILL_COPY.placeholderBrief : PILL_COPY.placeholder}
+                placeholder={hint ?? (brief ? PILL_COPY.placeholderBrief : PILL_COPY.placeholder)}
                 aria-label={PILL_COPY.label}
                 disabled={busy}
                 onChange={(event) => setQuestion(event.target.value)}

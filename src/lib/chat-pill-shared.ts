@@ -42,6 +42,8 @@ export type Viewport = {
   shutWidth: number;
   /** Space kept clear at the bottom of a phone for the tab bar. */
   bottomClear: number;
+  /** 21 Nov 2026, Phase 1c: the corner the pill sits in on a laptop. Bottom right when left out. */
+  dock?: PillCorner;
 };
 
 export type PillGeometry = {
@@ -81,7 +83,8 @@ export function pillGeometry(mode: PillMode, vp: Viewport): PillGeometry {
     }
     const w = Math.min(OPEN_WIDTH, W - EDGE * 2);
     const h = Math.min(OPEN_HEIGHT, H - EDGE * 2);
-    return { left: W - w - EDGE, top: H - h - EDGE, width: w, height: h, radius: "18px" };
+    // Docked top right, the panel opens down from the top; otherwise up from the bottom.
+    return { left: W - w - EDGE, top: vp.dock === "top-right" ? EDGE : H - h - EDGE, width: w, height: h, radius: "18px" };
   }
   const w = Math.max(120, Math.round(vp.shutWidth));
   if (vp.phone)
@@ -94,12 +97,108 @@ export function pillGeometry(mode: PillMode, vp: Viewport): PillGeometry {
     };
   return {
     left: W - w - EDGE,
-    top: H - PILL_HEIGHT - EDGE,
+    top: vp.dock === "top-right" ? EDGE : H - PILL_HEIGHT - EDGE,
     width: w,
     height: PILL_HEIGHT,
     radius: "22px",
   };
 }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * 21 Nov 2026, Phase 1c (Liam's recording, corrected the same day): where the pill sits. On Home the chat lands big in
+ * the centre over the blurred page; off Home it is a compact pill in the top right or bottom right corner. A six-dot
+ * handle moves it: drag and it snaps to the nearest spot, or click and pick one. Boards keep their own chat and are
+ * not changed. Phones keep the bottom sheet: no spots under 640px.
+ * ------------------------------------------------------------------------------------------------------------- */
+
+export type PillCorner = "top-right" | "bottom-right";
+export type PillDock = "center" | PillCorner;
+export const PILL_SPOTS_MIN_WIDTH = 640;
+
+export const PILL_DOCK_COPY = {
+  handle: "Drag to move. Click to pick a spot.",
+  spots: { center: "Home centre", "top-right": "Top right", "bottom-right": "Bottom right" } satisfies Record<PillDock, string>,
+  pick: (spot: string) => `Move the chat to ${spot}`,
+  close: "Keep it where it is",
+} as const;
+
+/** The spots offered on this page, as rects in px. Home centre only on Home. */
+export function dockSpots(vp: Pick<Viewport, "width" | "height" | "railWidth">, onHome: boolean): { dock: PillDock; left: number; top: number; width: number; height: number }[] {
+  const spotW = 260;
+  const spotH = 64;
+  const spots: { dock: PillDock; left: number; top: number; width: number; height: number }[] = [
+    { dock: "top-right", left: vp.width - spotW - EDGE, top: EDGE, width: spotW, height: spotH },
+    { dock: "bottom-right", left: vp.width - spotW - EDGE, top: vp.height - spotH - EDGE, width: spotW, height: spotH },
+  ];
+  if (onHome) {
+    const centreW = Math.min(640, vp.width - vp.railWidth - EDGE * 2);
+    const middle = vp.railWidth + (vp.width - vp.railWidth) / 2;
+    spots.unshift({ dock: "center", left: middle - centreW / 2, top: vp.height / 2 - 90, width: centreW, height: 180 });
+  }
+  return spots;
+}
+
+/** The spot whose middle is nearest this point. */
+export function nearestDock(point: { x: number; y: number }, spots: readonly { dock: PillDock; left: number; top: number; width: number; height: number }[]): PillDock {
+  let best: PillDock = "bottom-right";
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const spot of spots) {
+    const dx = spot.left + spot.width / 2 - point.x;
+    const dy = spot.top + spot.height / 2 - point.y;
+    const distance = dx * dx + dy * dy;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = spot.dock;
+    }
+  }
+  return best;
+}
+
+/**
+ * Where the pill sits now: the person's own choice, read through what this page allows. Home centre only on Home;
+ * elsewhere a saved centre reads as bottom right. A phone or a narrow window has no spots.
+ */
+export function dockFor(saved: PillDock | null | undefined, place: PillPlace, width: number): PillDock {
+  if (width < PILL_SPOTS_MIN_WIDTH) return "bottom-right";
+  const choice = saved ?? (place === "home" ? "center" : "bottom-right");
+  if (choice === "center" && place !== "home") return "bottom-right";
+  return choice;
+}
+
+/** The corner a dock means for the compact pill: centre falls back to bottom right. */
+export function cornerOf(dock: PillDock): PillCorner {
+  return dock === "top-right" ? "top-right" : "bottom-right";
+}
+
+/** The person's choice, kept in this browser only. Reading or writing can fail (private windows); then nothing is kept. */
+export function dockKey(profileId: string): string {
+  return `lasso:pill-dock:${profileId}`;
+}
+export function readDock(storage: Pick<Storage, "getItem"> | null | undefined, profileId: string): PillDock | null {
+  try {
+    const value = storage?.getItem(dockKey(profileId));
+    return value === "center" || value === "top-right" || value === "bottom-right" ? value : null;
+  } catch {
+    return null;
+  }
+}
+export function writeDock(storage: Pick<Storage, "setItem"> | null | undefined, profileId: string, dock: PillDock): void {
+  try {
+    storage?.setItem(dockKey(profileId), dock);
+  } catch {
+    /* nothing kept; the default comes back next time */
+  }
+}
+
+/** The hint in the question box, per page: what the chat does here (Liam, 21 Nov: "the leading text ... hints"). */
+export const PILL_HINTS: Record<PillPlace, string> = {
+  home: "Paste a brief to start a proposal, or ask the firm anything",
+  proposals: "Paste a brief to start a proposal, or ask about your proposals",
+  firm: "Ask the firm about its past work",
+  board: "Ask about this board",
+  work: "Ask the firm, or paste a brief",
+  other: "Ask the firm, or paste a brief",
+};
 
 const clamp = (value: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, value));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
