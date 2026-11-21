@@ -272,3 +272,18 @@ describe("memberTitle, stricter (follow-up to PR 300): no money in a Member's ti
     expect(memberTitle(title)).toBe(title);
   });
 });
+
+describe("memberTitle: the Lows from PR 301", () => {
+  it.each([
+    ["Fee of 99", "Fee"],
+    ["Fee of 99 each (draft)", "Fee each (draft)"],
+    ["Retainer 12500", "Retainer"],
+    ["Proposal 12500 refresh", "Proposal refresh"],
+    ["QA 301 Investment of 120,000 (safe to ignore)", "QA 301 Investment (safe to ignore)"],
+  ])("%s", (title, expected) => {
+    expect(memberTitle(title)).toBe(expected);
+  });
+  it.each(["QA-301-RFP.txt", "Q4 2026 plan", "Top 1000 customers", "Review of 3 workshops"])("keeps %s", (title) => {
+    expect(memberTitle(title)).toBe(title);
+  });
+});
