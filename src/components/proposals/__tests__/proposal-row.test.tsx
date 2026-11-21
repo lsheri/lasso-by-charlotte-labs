@@ -147,3 +147,17 @@ describe("the redrawn proposal row", () => {
     expect(clockShare({ state: "sent", hoursTaken: 1, withinGoal: true, underAnHour: true }, 72)).toBeLessThan(0.01);
   });
 });
+
+// 20 Nov 2026, chat pill PR 3b: the client's due date, from a pasted brief or the New proposal form, on the row.
+describe("the due date on the row", () => {
+  it("says the due day when there is one, and nothing when there is not", () => {
+    row({ dueOn: "2026-11-27" });
+    expect(document.querySelector("[data-proposal-due]")?.textContent).toBe(DESK_COPY.due("Fri 27 Nov"));
+    cleanup();
+    row({ dueOn: null });
+    expect(document.querySelector("[data-proposal-due]")).toBeNull();
+    cleanup();
+    row({ dueOn: "not a date" });
+    expect(document.querySelector("[data-proposal-due]")).toBeNull();
+  });
+});

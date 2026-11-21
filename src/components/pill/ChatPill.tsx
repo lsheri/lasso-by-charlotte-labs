@@ -7,6 +7,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 
 import { CanvasAnswerCard, type CanvasAnswer } from "@/components/firm-brain/CanvasAnswerCard";
@@ -15,6 +16,9 @@ import { ArrowUp, ArrowUpRight, ChevronDown, Maximize2, Minimize2 } from "@/desi
 import { isFirmBrainLimit } from "@/lib/firm-brain-limit-shared";
 import type { FirmAskResult, FirmAskStarter } from "@/lib/firm-ask-shared";
 import { toast } from "sonner";
+
+import { BRIEF_READ_MAX } from "@/lib/brief-read-shared";
+import { briefText, isBriefPaste } from "@/lib/pill-proposal-shared";
 
 import { landCard, liftCard } from "./fly-card";
 import {
@@ -41,7 +45,12 @@ import "./chat-pill.css";
 export type ChatPillMessage =
   | { id: number; kind: "person" | "note" | "alert"; text: string }
   /** An answer from the firm, drawn with the canvas's own card, and the one action it offers once it is in. */
-  | { id: number; kind: "answer"; answer: CanvasAnswer };
+  | { id: number; kind: "answer"; answer: CanvasAnswer }
+  /** 20 Nov 2026, PR 3b: a pasted brief, drawn by the container's proposal card (or, for a Member, the pass to an admin). */
+  | { id: number; kind: "brief"; text: string };
+
+/** What the pill hands a brief card: a way to tuck the chat away once the card has flown out of it. */
+export type BriefContext = { tuck: () => void };
 
 /**
  * 20 Nov 2026, chat pill PR 1a (Liam, D-97). The one place to ask, on every signed-in page: a pill that says where
@@ -69,6 +78,7 @@ export function ChatPill({
   onExpanded,
   reduceMotion = false,
   initialMode = "shut",
+  brief = null,
 }: {
   brandName: string;
   /** The brand's Ask label ("Ask Lasso"), from the brand module. */
@@ -94,6 +104,11 @@ export function ChatPill({
   onExpanded?: ((place: PillPlace) => void) | undefined;
   reduceMotion?: boolean;
   initialMode?: PillMode;
+  /**
+   * 20 Nov 2026, PR 3b: a pasted brief is not a question. Given, a paste that reads as a brief is drawn by `render`
+   * (the proposal card, or a Member's pass to an admin) instead of being asked of the firm.
+   */
+  brief?: { render: (text: string, context: BriefContext) => ReactNode } | null | undefined;
 }) {
   const [mode, setModeState] = useState<PillMode>(initialMode);
   const [messages, setMessages] = useState<ChatPillMessage[]>([]);
@@ -388,6 +403,16 @@ export function ChatPill({
 
   async function ask(text: string, starter: FirmAskStarter | null = null) {
     if (busy) return;
+    if (brief && !starter && isBriefPaste(text)) {
+      const pasted = briefText(text);
+      setQuestion("");
+      setMessages((list) => [
+        ...list,
+        { id: nextId.current++, kind: "person", text: pasted },
+        { id: nextId.current++, kind: "brief", text: pasted },
+      ]);
+      return;
+    }
     const clean = pillQuestion(text, questionMax);
     if (!clean) {
       setMessages((list) => [
@@ -418,6 +443,8 @@ export function ChatPill({
     ]);
     await read(answer);
   }
+
+  const briefContext: BriefContext = { tuck: () => window.setTimeout(() => setMode("shut"), reduceMotion ? 0 : 250) };
 
   async function retry(answer: CanvasAnswer) {
     if (busy) return;
@@ -586,6 +613,10 @@ export function ChatPill({
                   </div>
                 ) : null}
               </div>
+            ) : message.kind === "brief" && brief ? (
+              <div key={message.id} className="chat-pill__msg" data-pill-brief>
+                {brief.render(message.text, briefContext)}
+              </div>
             ) : message.kind === "person" ? (
               <div key={message.id} className="chat-pill__msg chat-pill__msg--person">
                 {message.text}
@@ -624,8 +655,8 @@ export function ChatPill({
                 ref={input}
                 rows={1}
                 value={question}
-                maxLength={questionMax}
-                placeholder={PILL_COPY.placeholder}
+                maxLength={brief ? BRIEF_READ_MAX : questionMax}
+                placeholder={brief ? PILL_COPY.placeholderBrief : PILL_COPY.placeholder}
                 aria-label={PILL_COPY.label}
                 disabled={busy}
                 onChange={(event) => setQuestion(event.target.value)}

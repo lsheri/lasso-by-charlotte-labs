@@ -74,6 +74,8 @@ export function NewProposalDialog({
   const [clientName, setClientName] = useState("");
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  // 20 Nov 2026, PR 3b (the Click path): the client's due date, the same field the chat's card fills from a brief.
+  const [dueOn, setDueOn] = useState("");
   const [added, setAdded] = useState<Added[]>([]);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [pending, setPending] = useState(false);
@@ -93,6 +95,7 @@ export function NewProposalDialog({
     setClientName("");
     setTitle("");
     setNotes("");
+    setDueOn("");
     setAdded([]);
     setUploading(null);
     setPending(false);
@@ -142,6 +145,7 @@ export function NewProposalDialog({
       ...(effectiveMode === "existing" ? { client_id: clientId || null } : { new_client_name: clientName }),
       notes,
       work_item_ids: added.map((item) => item.id),
+      ...(dueOn ? { client_due_on: dueOn } : {}),
     };
     const checked = checkNewProposal(raw);
     if (!checked.ok) {
@@ -250,6 +254,14 @@ export function NewProposalDialog({
               {copy.titleLabel}
             </Label>
             <Input id={`${ids}-title`} value={title} disabled={busy} placeholder={copy.titleHint} onChange={(event) => setTitle(event.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor={`${ids}-due`} className="micro-label">
+              {copy.dueLabel}
+            </Label>
+            <Input id={`${ids}-due`} type="date" value={dueOn} disabled={busy} onChange={(event) => setDueOn(event.target.value)} className="w-auto" />
+            <p className="text-sm text-muted-foreground">{copy.dueHint}</p>
           </div>
 
           <div className="space-y-1.5">

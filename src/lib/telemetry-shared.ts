@@ -68,6 +68,8 @@ export type TelemetryEvent =
   | "pill.opened"
   /** 20 Nov 2026, chat pill PR 3a: a pasted brief was read. Dims: fields (0 to 3 of client, ask, due found), read_by (model | code). Never the words. */
   | "proposal_brief.read"
+  /** 20 Nov 2026, chat pill PR 3b: a Member passed a pasted brief to the admins. Dims: admins (1 | 2-5 | 6+). Never the words. */
+  | "proposal_brief.passed"
   /** 20 Nov 2026, chat pill: the chat was made full screen, by the button or a drag. Dims: page. */
   | "pill.expanded"
   /** P4a: the new-engagement dialog was opened from Home. Content-free. */

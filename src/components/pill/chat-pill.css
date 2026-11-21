@@ -321,11 +321,203 @@
   transition: none;
 }
 
+/* 20 Nov 2026, PR 3b: a pasted brief builds a proposal card in the chat (the prototype's pcard), skin tokens only. */
+.chat-pill__msg--person {
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  max-height: 9.5em;
+  overflow-y: auto;
+}
+.chat-pill__brief {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-pill__pcard {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-float);
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.chat-pill__pcard[data-done] {
+  border-color: color-mix(in srgb, var(--skin-action) 40%, var(--border));
+}
+.chat-pill__pcard[data-building]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40px;
+  top: 30px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--skin-live-wash), transparent);
+  animation: chat-pill-scan 6s linear 0.4s forwards;
+}
+@keyframes chat-pill-scan {
+  to {
+    top: 100%;
+  }
+}
+.chat-pill__cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+  min-height: 18px;
+}
+.chat-pill__cap > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.chat-pill__cap-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--muted-foreground);
+  animation: chat-pill-glow 1.4s var(--chat-pill-ease) infinite;
+}
+.chat-pill__pcard[data-done] .chat-pill__cap-dot {
+  background: var(--skin-action);
+  animation: none;
+  box-shadow: 0 0 0 3px var(--skin-live-wash);
+}
+@keyframes chat-pill-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--skin-live-wash);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+.chat-pill__cap-pct {
+  font-variant-numeric: tabular-nums;
+}
+.chat-pill__pgrid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: start;
+}
+.chat-pill__k {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  padding-top: 8px;
+}
+.chat-pill__v {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding-top: 6px;
+}
+.chat-pill__v small {
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+}
+.chat-pill__big {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.chat-pill__field--big {
+  font-weight: 600;
+}
+.chat-pill__field--date {
+  width: auto;
+}
+.chat-pill__pc {
+  animation: chat-pill-pc 800ms var(--chat-pill-ease) both;
+}
+@keyframes chat-pill-pc {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.chat-pill__docarea,
+.chat-pill__leadstep {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-pill__drop {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--corner-control);
+  padding: 10px 12px;
+  font-size: var(--type-small);
+  color: var(--muted-foreground);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  transition: border-color 400ms var(--chat-pill-ease), background 400ms var(--chat-pill-ease);
+}
+.chat-pill__drop[data-over] {
+  border-color: var(--skin-action);
+  background: var(--skin-live-wash);
+}
+.chat-pill__docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chat-pill__doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  font-size: var(--type-small);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-control);
+  padding: 2px 4px 2px 8px;
+}
+.chat-pill__doc span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-pill__doc button {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--corner-control);
+  color: var(--muted-foreground);
+}
+.chat-pill__acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chat-pill__pcard[data-reduce-motion]::after,
+[data-reduce-motion] .chat-pill__pc {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chat-pill,
   .chat-pill__shut,
   .chat-pill__panel,
   .chat-pill__msg,
+  .chat-pill__pc,
+  .chat-pill__cap-dot,
+  .chat-pill__pcard::after,
   [data-lasso="on"] [data-pill-behind] {
     transition-duration: 1ms;
     transition-delay: 0s;
