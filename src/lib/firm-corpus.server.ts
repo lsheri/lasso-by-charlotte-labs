@@ -185,6 +185,15 @@ async function readExemplarMarks(admin: Db, orgId: string, boardIds: string[], i
   }
 }
 
+/**
+ * Whether this workspace has any open engagement not shared with the firm: a yes or no only, never a count or a name.
+ * A failed read answers yes, so the coverage line never claims everything was shared when that is unknown.
+ */
+export async function hasUnsharedBoards(admin: Db, orgId: string): Promise<boolean> {
+  const { data, error } = await admin.from("engagements").select("id").eq("org_id", orgId).eq("shared_with_firm", false).is("archived_at", null).limit(1);
+  return Boolean(error) || (data ?? []).length > 0;
+}
+
 /** Reads what the firm may read, for one asker. Call only with the admin client from requireFirmMember. */
 export async function readFirmCorpus(admin: Db, asker: ResolvedProfile): Promise<FirmCorpus> {
   const orgId = asker.org_id;

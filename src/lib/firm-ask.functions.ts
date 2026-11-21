@@ -40,7 +40,8 @@ export const askTheFirm = createServerFn({ method: "POST" })
       { chat: chatComplete, loadText: (itemId) => readFirmItemText(supabaseAdmin, corpus, itemId) },
       { corpus, question: data.question, canSeeFees: profile.role === "admin" || profile.role === "lead", meta },
     );
-    const coverage = scopedCoverage(corpus, scope);
+    const { hasUnsharedBoards } = await import("./firm-corpus.server");
+    const coverage = scope === "firm" ? null : scopedCoverage(corpus, scope, await hasUnsharedBoards(supabaseAdmin, profile.org_id));
     const result = coverage ? { ...raw, coverage } : raw;
 
     // Counts only: the question never travels. Its kind is read in code against the fixed situation and method lists

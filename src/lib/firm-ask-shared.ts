@@ -301,18 +301,25 @@ export function isProposalWork(item: Pick<FirmCorpus["items"][number], "kind" | 
 
 /**
  * The corpus a scope reads. "firm" is the corpus as read (already only boards shared with the firm). "proposals" keeps
- * only proposal work, and only the engagements that still hold some, so nothing else can be picked, read or cited.
+ * only proposal work, and only the engagements that still hold some. Those engagements keep their name, client, lead
+ * and start (to say where a proposal sits) but lose their brief and close-out line (QA M1 of PR 307), so the model is
+ * never shown them and a close-out can never be picked, read or cited from Proposals.
  */
 export function scopeCorpus(corpus: FirmCorpus, scope: FirmAskScope): FirmCorpus {
   if (scope === "firm") return corpus;
   const items = corpus.items.filter(isProposalWork);
-  const boards = new Set(items.map((item) => item.boardId));
-  return { ...corpus, items, boards: corpus.boards.filter((board) => boards.has(board.id)) };
+  const holding = new Set(items.map((item) => item.boardId));
+  const boards = corpus.boards.filter((board) => holding.has(board.id)).map((board) => ({ ...board, brief: null, outcome: null }));
+  return { ...corpus, items, boards };
 }
 
-/** The coverage line for a scope: the same floor (no count or names of unshared engagements), said for proposals. */
-export function scopedCoverage(corpus: Pick<FirmCorpus, "boards">, scope: FirmAskScope): string | null {
+/**
+ * The coverage line for a scope: the same floor (never a count or names of unshared engagements), said for proposals.
+ * It says some are not shared only when some are (QA L2 of PR 307); `someUnshared` is a yes or no read by the server.
+ */
+export function scopedCoverage(corpus: Pick<FirmCorpus, "boards">, scope: FirmAskScope, someUnshared: boolean): string | null {
   if (scope === "firm") return null;
   const count = corpus.boards.length;
-  return `Read the proposals in ${count} engagement${count === 1 ? "" : "s"} shared with the firm. Some engagements are not shared.`;
+  const read = `Read the proposals in ${count} engagement${count === 1 ? "" : "s"} shared with the firm.`;
+  return someUnshared ? `${read} Some engagements are not shared.` : read;
 }
