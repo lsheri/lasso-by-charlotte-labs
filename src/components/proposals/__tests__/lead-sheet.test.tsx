@@ -73,6 +73,7 @@ function open(
     pastWork?: Record<string, PastWork[]>;
     noList?: boolean;
     connected?: boolean;
+    inline?: boolean;
   } = {},
 ) {
   const mode = over.mode ?? "real";
@@ -115,6 +116,7 @@ function open(
       onSave={onSave}
       onClose={onClose}
       pastWork={over.pastWork}
+      inline={over.inline}
     />,
   );
   return { preview, onSave, send, onClose, calls };
@@ -609,5 +611,30 @@ describe("past work beside each name (Q-68)", () => {
       );
       expect(sheet().textContent).not.toMatch(/practice|Sent today|texts go to/i);
     });
+  });
+});
+
+// 20 Nov 2026, chat pill PR 3b: the same sheet inside the chat's proposal card, with no dialog around it.
+describe("the sheet inside the chat", () => {
+  it("draws the same steps with no dialog, and a pick then a confirm saves and sends once, then closes", async () => {
+    const h = open({ inline: true });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(sheet().hasAttribute("data-lead-inline")).toBe(true);
+    expect(within(sheet()).getByRole("heading").textContent).toBe(SHEET_COPY.title("Pellham"));
+    pick("c1");
+    await waitFor(() => expect(h.preview).toHaveBeenCalledTimes(1));
+    expect(h.onSave).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+    press(SHEET_COPY.ask("Christy"));
+    await waitFor(() => expect(sheet().getAttribute("data-lead-sheet")).toBe("confirm"));
+    const confirm = within(sheet())
+      .getAllByRole("button")
+      .find((button) => button.hasAttribute("data-lead-confirm") || /^(Text|Send|Ask)/.test(button.textContent ?? ""));
+    expect(confirm).toBeTruthy();
+  });
+
+  it("draws nothing without a proposal", () => {
+    render(<LeadSheet inline target={null} roster={roster} wonWords="won" preview={vi.fn()} send={vi.fn()} onSave={vi.fn()} onClose={vi.fn()} />);
+    expect(document.querySelector("[data-lead-sheet]")).toBeNull();
   });
 });

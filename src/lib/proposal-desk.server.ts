@@ -72,6 +72,8 @@ export type ProposalRow = {
   engagement_id: string | null;
   lead_contact_id?: string | null;
   archived_at?: string | null;
+  /** 20 Nov 2026, PR 3a: arrives with the client_due_on migration. */
+  client_due_on?: string | null;
 };
 
 /** The latest ask on a proposal, as stored. */
@@ -228,6 +230,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       sentAt: row.sent_at,
       decidedAt: row.decided_at,
       engagementId: row.engagement_id,
+      dueOn: row.client_due_on ?? null,
       contextCount: items.length,
       canAct: own || all,
       canClose: row.status === "open" && (own || all),
@@ -495,6 +498,8 @@ export type DeskContext = { supabase: Db; userId: string };
 const BASE_COLUMNS = "id, org_id, client_id, title, owner_id, received_at, sent_at, status, decided_at, engagement_id, lead_contact_id";
 /** `archived_at` arrives with the 20 Nov migration. Until it is applied, reads fall back to the columns before it. */
 const PROPOSAL_COLUMNS = `${BASE_COLUMNS}, archived_at`;
+/** `client_due_on` arrives with PR 3a's migration. Until it is applied, reads fall back to the columns before it. */
+const DUE_COLUMNS = `${PROPOSAL_COLUMNS}, client_due_on`;
 
 export async function realStore(context: DeskContext, profileId: string | null): Promise<DeskStore> {
   const { requireFirmMember } = await import("./firm-corpus.server");
@@ -516,7 +521,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
     },
     async proposals(orgId) {
       const read = (columns: string) => ownLoose.from("proposals").select(columns).eq("org_id", orgId).order("received_at", { ascending: false }).limit(500);
-      let { data, error } = await read(PROPOSAL_COLUMNS);
+      let { data, error } = await read(DUE_COLUMNS);
+      if (error) ({ data, error } = await read(PROPOSAL_COLUMNS));
       if (error) ({ data, error } = await read(BASE_COLUMNS));
       return error ? null : ((data ?? []) as unknown as ProposalRow[]);
     },
@@ -576,7 +582,8 @@ export async function realStore(context: DeskContext, profileId: string | null):
       await adminLoose.from("proposals").delete().eq("id", id).eq("org_id", caller.orgId);
     },
     async proposal(id) {
-      let { data, error } = await adminLoose.from("proposals").select(PROPOSAL_COLUMNS).eq("id", id).maybeSingle();
+      let { data, error } = await adminLoose.from("proposals").select(DUE_COLUMNS).eq("id", id).maybeSingle();
+      if (error) ({ data, error } = await adminLoose.from("proposals").select(PROPOSAL_COLUMNS).eq("id", id).maybeSingle());
       if (error) ({ data, error } = await adminLoose.from("proposals").select(BASE_COLUMNS).eq("id", id).maybeSingle());
       return (data as unknown as ProposalRow | null) ?? null;
     },

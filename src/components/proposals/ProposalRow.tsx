@@ -1,3 +1,4 @@
+import { dueLabel } from "@/lib/pill-proposal-shared";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -114,6 +115,7 @@ export function ProposalRow({
               <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
             ) : null}
             {/* "No documents yet" is a prompt to add one, so a decided proposal with none says nothing. */}
+            {proposal.dueOn && dueLabel(proposal.dueOn) ? <span data-proposal-due>{DESK_COPY.due(dueLabel(proposal.dueOn))}</span> : null}
             {proposal.contextCount > 0 ? <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span> : null}
           </p>
         </div>
@@ -179,6 +181,7 @@ export function ProposalRow({
             ) : proposal.ownerName ? (
               <span data-proposal-owner className="min-w-0 max-w-full [overflow-wrap:anywhere]">{DESK_COPY.owner(proposal.ownerName)}</span>
             ) : null}
+            {proposal.dueOn && dueLabel(proposal.dueOn) ? <span data-proposal-due>{DESK_COPY.due(dueLabel(proposal.dueOn))}</span> : null}
             <span data-proposal-context>{DESK_COPY.context(proposal.contextCount)}</span>
           </p>
           {/* D-86, one thing at a time: the titles open on Up next, and when the lead's yes lands (the row opens to

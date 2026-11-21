@@ -156,6 +156,7 @@ export const DESK_COPY = {
   notHere: "Proposals are for the members of a company workspace.",
   notHereCoach: "Proposals are for the firm's own team. As a coach you do not see them.",
   owner: (name: string) => `Started by ${name}`,
+  due: (day: string) => `Due ${day}`,
   yours: "Yours",
   context: (count: number) => (count === 0 ? "No documents yet" : count === 1 ? "1 document" : `${count} documents`),
   noBoardYet: "No board exists for an open proposal. The team board is made when it is won.",
@@ -200,6 +201,9 @@ export const INTAKE_COPY = {
   clientName: "Client name",
   titleLabel: "What they asked for",
   titleHint: "A short name, such as Network redesign.",
+  /** 20 Nov 2026, PR 3b: the client's due date. */
+  dueLabel: "Due",
+  dueHint: "When the client wants it, if they said. Leave it empty if not.",
   documents: "Context documents",
   documentsHint: "Call notes, emails, anything the client sent. They stay yours until the proposal is won.",
   addFiles: "Add documents",
@@ -239,6 +243,8 @@ export type DeskProposal = {
   decidedAt: string | null;
   /** The team board, once the win has made it. */
   engagementId: string | null;
+  /** 20 Nov 2026, PR 3a: the client's due date, YYYY-MM-DD, when the brief or the form gave one. */
+  dueOn?: string | null;
   /** How many context documents wait on the proposal. Titles go only to the owner. */
   contextCount: number;
   contextTitles?: string[];

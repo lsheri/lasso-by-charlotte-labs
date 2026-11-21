@@ -1,5 +1,7 @@
 /** NC-2: pure notification shapes and copy, shared by the panel and its tests. */
 
+import { BRIEF_PASS_COPY } from "./pill-proposal-shared";
+
 export type NotificationKind =
   | "invite_needs_approval"
   | "share_received"
@@ -11,7 +13,9 @@ export type NotificationKind =
   | "mention_received"
   | "sticky_assigned"
   | "sticky_done"
-  | "firm_share_changed";
+  | "firm_share_changed"
+  /** 20 Nov 2026, chat pill PR 3b: a Member passed a pasted brief to the admins. */
+  | "brief_passed";
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "invite_needs_approval",
@@ -25,6 +29,7 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "sticky_assigned",
   "sticky_done",
   "firm_share_changed",
+  "brief_passed",
 ];
 
 /** 21 Nov (D-82): a window event that opens the bell on screen, sent by an admin's Home for an invite to approve. */
@@ -135,6 +140,8 @@ export function notificationSentence(row: { kind: string; payload: Record<string
       return p["on"] === true
         ? NOTIFICATION_COPY.firmShareOn(text(p["by"], "Someone"), board)
         : NOTIFICATION_COPY.firmShareOff(text(p["by"], "Someone"), board);
+    case "brief_passed":
+      return BRIEF_PASS_COPY.sentence(text(p["by"], "A teammate"), text(p["client"]));
     default:
       return "";
   }

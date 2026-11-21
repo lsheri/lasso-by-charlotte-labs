@@ -73,6 +73,7 @@ export function LeadSheet({
   onSave,
   onClose,
   pastWork,
+  inline = false,
 }: {
   /** The proposal, and where the sheet starts: the list, or the confirm when a lead is already saved. */
   target: { proposal: DeskProposal; start: LeadSheetStart; /** Opened straight after New proposal saved it. */ fresh?: boolean } | null;
@@ -91,6 +92,11 @@ export function LeadSheet({
   onClose: () => void;
   /** Work each person has led before, by roster id. Left out, or empty for a person, the row says nothing. */
   pastWork?: Record<string, readonly PastWork[]> | undefined;
+  /**
+   * 20 Nov 2026, chat pill PR 3b: the same sheet inside the chat's proposal card, with no dialog around it. Every
+   * step, word and server call is the sheet's own; only the frame differs. The card's own flow carries on when it closes.
+   */
+  inline?: boolean | undefined;
 }) {
   const proposal = target?.proposal ?? null;
   const fresh = Boolean(target?.fresh);
@@ -212,33 +218,15 @@ export function LeadSheet({
     }
   }
 
-  return (
-    <Dialog
-      open={proposal !== null}
-      onOpenChange={(next) => {
-        if (next || working) return;
-        onClose();
-      }}
-    >
-      <DialogContent
-        ref={box}
-        // Straight after New proposal, the form's box morphs into this one, so this one does not zoom in by itself.
-        // Its own entrance stays off for as long as it is open: turning it back on would replay the zoom. It closes
-        // normally, because the close clears `fresh` in the same render. The morph name is carried only while arriving.
-        style={fresh ? { animation: "none", ...(arriving ? { viewTransitionName: PROPOSAL_MORPH } : {}) } : undefined}
-        data-lead-fresh={fresh ? "" : undefined}
-        data-lead-arriving={arriving ? "" : undefined}
-        className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
-        data-testid={confirm ? "ask-lead" : "pick-lead"}
-        data-lead-sheet={confirm ? "confirm" : "pick"}
-      >
-        <DialogHeader>
-          <DialogTitle className="page-title break-words [overflow-wrap:anywhere]">
+  const title = (
+    <>
             {confirm
               ? SHEET_COPY.confirmTitle(first)
               : SHEET_COPY.title(proposal?.clientName ?? "")}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+  );
+  const description = (
+    <>
             {confirm
               ? ready && !ready.warning
                 ? SHEET_COPY.goes(ready.mode, first)
@@ -248,8 +236,10 @@ export function LeadSheet({
               : fresh
                 ? `${SHEET_COPY.started} ${LEAD_COPY.intro}`
                 : LEAD_COPY.intro}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+  );
+  const body = (
+    <>
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-start">
           <div className="min-w-0">
             {/* Step one: the people. It folds away on the confirm, and the person picked stays as one line. */}
@@ -463,6 +453,54 @@ export function LeadSheet({
             </>
           )}
         </div>
+    </>
+  );
+
+  if (inline) {
+    if (!proposal) return null;
+    return (
+      <section
+        ref={box as never}
+        className="lead-sheet-inline grid min-w-0 gap-3"
+        aria-label={confirm ? SHEET_COPY.confirmTitle(first) : SHEET_COPY.title(proposal.clientName)}
+        data-testid={confirm ? "ask-lead" : "pick-lead"}
+        data-lead-sheet={confirm ? "confirm" : "pick"}
+        data-lead-inline=""
+      >
+        <div className="grid gap-1">
+          <h3 className="text-base font-semibold break-words [overflow-wrap:anywhere]">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        {body}
+      </section>
+    );
+  }
+
+  return (
+    <Dialog
+      open={proposal !== null}
+      onOpenChange={(next) => {
+        if (next || working) return;
+        onClose();
+      }}
+    >
+      <DialogContent
+        ref={box}
+        // Straight after New proposal, the form's box morphs into this one, so this one does not zoom in by itself.
+        // Its own entrance stays off for as long as it is open: turning it back on would replay the zoom. It closes
+        // normally, because the close clears `fresh` in the same render. The morph name is carried only while arriving.
+        style={fresh ? { animation: "none", ...(arriving ? { viewTransitionName: PROPOSAL_MORPH } : {}) } : undefined}
+        data-lead-fresh={fresh ? "" : undefined}
+        data-lead-arriving={arriving ? "" : undefined}
+        className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto sm:max-w-2xl"
+        data-testid={confirm ? "ask-lead" : "pick-lead"}
+        data-lead-sheet={confirm ? "confirm" : "pick"}
+      >
+        <DialogHeader>
+          <DialogTitle className="page-title break-words [overflow-wrap:anywhere]">{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {body}
       </DialogContent>
     </Dialog>
   );

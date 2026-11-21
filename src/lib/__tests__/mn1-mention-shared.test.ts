@@ -74,6 +74,7 @@ describe("MN1 mention storage", () => {
       sticky_assigned: true,
       sticky_done: true,
       firm_share_changed: true,
+      brief_passed: true,
     } satisfies Record<NotificationKind, true>;
     expectTypeOf<keyof typeof kinds>().toEqualTypeOf<NotificationKind>();
     expect(NOTIFICATION_KINDS).toEqual(Object.keys(kinds));

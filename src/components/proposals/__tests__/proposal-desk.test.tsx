@@ -710,3 +710,16 @@ describe("20 Nov: the strip at the top of a board made by a win", () => {
     for (const surface of ["src/components/proposals/BoardWinStrip.tsx"]) expect(readFileSync(surface, "utf8")).not.toMatch(/posthog|featureFlag|useFlag/i);
   });
 });
+
+// 20 Nov 2026, chat pill PR 3b (the Click path): New proposal takes the client's due date, as the chat's card does.
+describe("the due date on New proposal", () => {
+  it("sends the date when given, and nothing when left empty", async () => {
+    const props = openDialog();
+    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
+    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
+    fireEvent.change(screen.getByLabelText(INTAKE_COPY.dueLabel), { target: { value: "2026-11-27" } });
+    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
+    await waitFor(() => expect(props.create).toHaveBeenCalledTimes(1));
+    expect(props.create).toHaveBeenCalledWith(expect.objectContaining({ client_due_on: "2026-11-27" }));
+  });
+});

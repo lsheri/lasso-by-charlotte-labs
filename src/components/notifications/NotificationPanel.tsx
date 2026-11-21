@@ -21,6 +21,7 @@ import { logEvent } from "@/lib/telemetry";
 import { noteWorkboardStickyDone } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { setStickyDoneFn } from "@/lib/stickies.functions";
 import { isAcceptableShare } from "@/lib/notifications-shared";
+import { BRIEF_PASS_COPY } from "@/lib/pill-proposal-shared";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Decided = { pending?: boolean; text?: string; error?: string };
@@ -231,6 +232,27 @@ export function NotificationPanel({
                       </Button>
                       <Button size="sm" variant="ghost" disabled={s.pending} onClick={() => void onStickyDone(row)}>
                         {NOTIFICATION_COPY.markDone}
+                      </Button>
+                    </div>
+                  )}
+                  {row.kind === "brief_passed" && typeof row.payload["excerpt"] === "string" ? (
+                    <p data-brief-excerpt className="mt-1 whitespace-pre-line break-words text-sm text-foreground [overflow-wrap:anywhere]">
+                      {row.payload["excerpt"]}
+                    </p>
+                  ) : null}
+                  {!s.text && row.kind === "brief_passed" && (
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={s.pending}
+                        onClick={() => {
+                          void mark({ data: { ids: [row.id], acted: true } }).then(onChanged).catch(() => {});
+                          void acted({ data: { kind: row.kind, action: "open" } }).catch(() => {});
+                          onNavigate();
+                          void navigate({ to: "/proposals" });
+                        }}
+                      >
+                        {BRIEF_PASS_COPY.open}
                       </Button>
                     </div>
                   )}

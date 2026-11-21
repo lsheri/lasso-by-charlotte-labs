@@ -231,6 +231,8 @@ export const PILL_COPY = {
   welcomeNone: "Open a board and I'll answer from its work.",
   openBoardChat: "Ask about this board",
   placeholder: "Ask the firm anything",
+  /** 20 Nov 2026, PR 3b: where a brief can be pasted too. */
+  placeholderBrief: "Ask, or paste a brief",
   label: "Question for the firm",
   send: "Ask",
   footer: "Question words never go to analytics.",
