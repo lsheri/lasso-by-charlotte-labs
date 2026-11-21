@@ -12,7 +12,7 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
-import { pillAccess, pillPlace, pillStarters } from "@/lib/chat-pill-shared";
+import { PILL_HINTS, pillAccess, pillPlace, pillScope, pillStarters } from "@/lib/chat-pill-shared";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { FIRM_ASK_QUESTION_MAX } from "@/lib/firm-ask-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
@@ -127,7 +127,7 @@ export function ChatPillMount() {
         place={place}
         canAsk={canAsk}
         questionMax={FIRM_ASK_QUESTION_MAX}
-        starters={canAsk ? pillStarters(profile.role, recent?.title) : []}
+        starters={canAsk && pillScope(place) === "firm" ? pillStarters(profile.role, recent?.title) : []}
         boardChat={place === "board" ? boardHandler : null}
         reduceMotion={reduceMotion}
         upNext={
@@ -139,7 +139,8 @@ export function ChatPillMount() {
         onOpened={(where) => emitClientEvent("pill.opened", { page: where })}
         onExpanded={(where) => emitClientEvent("pill.expanded", { page: where })}
         profileId={profileId}
-        onAsk={(question, starter) => ask({ data: { question, starter, profile_id: profileId } })}
+        hint={PILL_HINTS[place]}
+        onAsk={(question, starter) => ask({ data: { question, starter, profile_id: profileId, scope: pillScope(place) } })}
         onOpenSource={setOpenItem}
         brief={
           canAsk

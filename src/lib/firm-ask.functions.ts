@@ -1,15 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { FIRM_ASK_QUESTION_MAX, FIRM_ASK_STARTERS, type FirmAskResult, type FirmAskStarter } from "@/lib/firm-ask-shared";
+import { FIRM_ASK_QUESTION_MAX, FIRM_ASK_STARTERS, firmAskScope, type FirmAskResult, type FirmAskScope, type FirmAskStarter } from "@/lib/firm-ask-shared";
 
-type AskInput = { question: string; starter?: FirmAskStarter | null; profile_id?: string | null | undefined };
+type AskInput = { question: string; starter?: FirmAskStarter | null; profile_id?: string | null | undefined; scope?: FirmAskScope | undefined };
 
 function validate(input: AskInput): AskInput {
   const question = typeof input?.question === "string" ? input.question.trim() : "";
   if (question.length < 3) throw new Error("Ask a question first.");
   const starter = FIRM_ASK_STARTERS.includes(input?.starter as FirmAskStarter) ? (input.starter as FirmAskStarter) : null;
-  return { question: question.slice(0, FIRM_ASK_QUESTION_MAX), starter, profile_id: input?.profile_id ?? null };
+  return { question: question.slice(0, FIRM_ASK_QUESTION_MAX), starter, profile_id: input?.profile_id ?? null, scope: firmAskScope(input?.scope) };
 }
 
 /**
@@ -23,7 +23,10 @@ export const askTheFirm = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<FirmAskResult> => {
     const { requireFirmMember, readFirmCorpus, readFirmItemText } = await import("./firm-corpus.server");
     const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, data.profile_id);
-    const corpus = await readFirmCorpus(supabaseAdmin, profile);
+    const { scopeCorpus, scopedCoverage } = await import("./firm-ask-shared");
+    const scope = firmAskScope(data.scope);
+    // Phase 1c part 2: the Proposals page's chat reads only proposal work, cut in code before any model call.
+    const corpus = scopeCorpus(await readFirmCorpus(supabaseAdmin, profile), scope);
 
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const { runFirmAsk } = await import("./firm-ask.server");
@@ -33,10 +36,13 @@ export const askTheFirm = createServerFn({ method: "POST" })
       profileId: profile.id,
       userId: context.userId,
     });
-    const { result } = await runFirmAsk(
+    const { result: raw } = await runFirmAsk(
       { chat: chatComplete, loadText: (itemId) => readFirmItemText(supabaseAdmin, corpus, itemId) },
       { corpus, question: data.question, canSeeFees: profile.role === "admin" || profile.role === "lead", meta },
     );
+    const { hasUnsharedBoards } = await import("./firm-corpus.server");
+    const coverage = scope === "firm" ? null : scopedCoverage(corpus, scope, await hasUnsharedBoards(supabaseAdmin, profile.org_id));
+    const result = coverage ? { ...raw, coverage } : raw;
 
     // Counts only: the question never travels. Its kind is read in code against the fixed situation and method lists
     // (no model, never its words), so the firm's common questions can be counted without storing any question.

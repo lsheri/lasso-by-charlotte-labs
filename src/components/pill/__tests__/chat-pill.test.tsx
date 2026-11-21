@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatPill } from "@/components/pill/ChatPill";
-import { PILL_COPY } from "@/lib/chat-pill-shared";
+import { PILL_COPY, PILL_HINTS } from "@/lib/chat-pill-shared";
 import { FIRM_CANVAS_COPY } from "@/lib/firm-canvas-shared";
 import { FIRM_ASK_COPY, type FirmAskResult } from "@/lib/firm-ask-shared";
 import { FIRM_BRAIN_LIMIT_COPY } from "@/lib/firm-brain-limit-shared";
@@ -162,6 +162,17 @@ describe("asking", () => {
     fireEvent.change(screen.getByLabelText(PILL_COPY.label), { target: { value: text } });
     fireEvent.click(screen.getByRole("button", { name: PILL_COPY.send }));
   };
+
+  it("Phase 1c part 2: on Proposals the chat says it reads proposals, hints at it, and says so as it looks", async () => {
+    const { shut, onAsk } = pill({ place: "proposals", hint: PILL_HINTS.proposals, starters: [] });
+    fireEvent.click(shut());
+    expect(screen.getByText(PILL_COPY.welcomeProposals, { exact: false })).toBeTruthy();
+    expect((screen.getByLabelText(PILL_COPY.label) as HTMLTextAreaElement).placeholder).toBe(PILL_HINTS.proposals);
+    send("How did we pitch care model work?");
+    await waitFor(() => expect(onAsk).toHaveBeenCalled());
+    expect(screen.getByText(PILL_COPY.lookingProposals)).toBeTruthy();
+    expect(screen.queryByText(PILL_COPY.looking)).toBeNull();
+  });
 
   it("builds the answer in the chat with the canvas's own card, each line with its source", async () => {
     const { shut, onAsk, onOpenSource } = pill();
