@@ -9,6 +9,7 @@
 
 import { dueOnOrNull } from "./brief-read-shared";
 import type { AskView, TextsState } from "./lead-ask-shared";
+import type { ApprovalView } from "./proposal-approval-shared";
 
 /** The turnaround goal a workspace starts with, in hours, until an admin picks its own. */
 export const DEFAULT_GOAL_HOURS = 72;
@@ -276,6 +277,11 @@ export type DeskProposal = {
   leadDocs?: "sent" | "more" | "unsent" | "no_login";
   /** With "more": how many documents were added since the send. */
   leadDocsAdded?: number;
+  /**
+   * 21 Nov 2026, Phase 5: the latest approval request, for admins, leads and the person who started it. Absent when
+   * there is none or the reader may not see it.
+   */
+  approval?: ApprovalView;
   /** The picked lead's roster id. Sent only to admins and leads, who are the only people who see the roster. */
   leadContactId?: string | null;
   /** The picked lead's name. Sent to admins, leads and the person who started the proposal. */

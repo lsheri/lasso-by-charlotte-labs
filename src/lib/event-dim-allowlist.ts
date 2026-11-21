@@ -78,6 +78,10 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   // 21 Nov 2026, chat pill PR 4c: the lead chose the final version (where it came from), or drafted one (bands).
   "proposal.final_chosen": ["source"],
   "proposal.final_drafted": ["gaps", "questions"],
+  // 21 Nov 2026, chat pill Phase 5: the approval loop. Never who decided, never the note.
+  "proposal.approval_requested": [],
+  "proposal.approval_decided": ["decision"],
+  "proposal.client_review": ["within_goal"],
   "demo_text_number.changed": ["change"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],

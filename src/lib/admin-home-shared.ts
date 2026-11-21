@@ -46,7 +46,9 @@ export type FeedKind =
   | "lost"
   | "invite"
   | "seats"
-  | "people";
+  | "people"
+  /** 21 Nov 2026, Phase 5: a Lead sent the final for approval. */
+  | "approval";
 
 export type FeedItem = {
   /** Stable across reads, so a new item can be told from one already shown. */
@@ -112,6 +114,7 @@ export const ADMIN_HOME_COPY = {
     invite: "An invite waits for your approval",
     seats: "More people than seats",
     people: (count: number) => (count === 1 ? "1 person is missing a number or email" : `${count} people are missing a number or email`),
+    approval: (lead: string) => `${lead || "The lead"} sent the final for approval`,
   },
   steps: {
     openProposal: "Open the proposal",
@@ -123,8 +126,10 @@ export const ADMIN_HOME_COPY = {
     approve: "Approve or decline",
     seats: "Open Settings",
     people: "Add them in People",
+    review: "Review the final",
   },
   whys: {
+    approval: "The lead chose the final version. Approve it and it goes to the client, or ask for changes with a short note.",
     notArrived: "Their phone did not get the text, so they cannot answer it. Check the details on file, then ask again.",
     saidNo: "They will not lead this one. Pick someone else from People we work with.",
     optedOut: "They asked for no more texts. Pick someone else, or reach them another way.",
@@ -190,6 +195,18 @@ const toPeople: NextStep = { to: "/proposals", search: { tab: "people" } };
 
 /** The one thing a waiting open proposal needs most, or null when it needs nothing from the admin now. */
 function waitingFor(proposal: DeskProposal, goalHours: number, now: Date): FeedItem | null {
+  // Phase 5: a request for approval comes first; it is what the admin is waited on for.
+  if (proposal.status === "open" && proposal.approval?.state === "waiting") {
+    const C = ADMIN_HOME_COPY;
+    return {
+      id: `approval:${proposal.id}`,
+      kind: "approval",
+      at: proposal.approval.requestedAt,
+      title: C.titles.approval(proposal.approval.requestedBy || proposal.leadName || ""),
+      detail: proposalName(proposal),
+      next: { label: C.steps.review, why: C.whys.approval, step: toProposal(proposal) },
+    };
+  }
   if (proposal.status !== "open" || proposal.sentAt) return null;
   const left = timeLeft({ receivedAt: proposal.receivedAt, sentAt: null, goalHours, now });
   const clock = timeLeftLine(left, goalHours);
@@ -283,6 +300,7 @@ function todayFor(proposal: DeskProposal, now: Date): FeedItem[] {
 
 /** Waiting items first by how much they need the admin, then the oldest first. */
 const URGENCY: Record<FeedKind, number> = {
+  approval: 0,
   not_arrived: 0,
   said_no: 1,
   opted_out: 1,
