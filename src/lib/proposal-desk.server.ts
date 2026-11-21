@@ -612,7 +612,10 @@ export async function realStore(context: DeskContext, profileId: string | null):
       return (data as unknown as ProposalRow | null) ?? null;
     },
     async setSent(id, sentAt) {
-      const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      // Phase 5: who marked it sent is stored beside when; cleared with it. Before that column exists, the date alone.
+      const write = (patch: Record<string, unknown>) => adminLoose.from("proposals").update(patch).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      let { data, error } = await write({ sent_at: sentAt, sent_by: sentAt ? caller.profileId : null });
+      if (error && ["42703", "PGRST204"].includes(String((error as { code?: string }).code))) ({ data, error } = await write({ sent_at: sentAt }));
       return !error && (data ?? []).length === 1;
     },
     async rosterHas(orgId, contactId) {
