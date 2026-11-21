@@ -79,6 +79,7 @@ export function ChatPill({
   reduceMotion = false,
   initialMode = "shut",
   brief = null,
+  hint,
   upNext = null,
 }: {
   brandName: string;
@@ -110,6 +111,8 @@ export function ChatPill({
    * (the proposal card, or a Member's pass to an admin) instead of being asked of the firm.
    */
   brief?: { render: (text: string, context: BriefContext) => ReactNode } | null | undefined;
+  /** The question box's hint for this page. */
+  hint?: string | undefined;
   /** 21 Nov 2026, PR 4b: the Lead's Up next, drawn under the welcome. The container decides who gets one. */
   upNext?: ReactNode;
 }) {
@@ -441,7 +444,7 @@ export function ChatPill({
     setMessages((list) => [
       ...list,
       { id: nextId.current++, kind: "person", text: clean },
-      { id: nextId.current++, kind: "note", text: PILL_COPY.looking },
+      { id: nextId.current++, kind: "note", text: place === "proposals" ? PILL_COPY.lookingProposals : PILL_COPY.looking },
       { id: nextId.current++, kind: "answer", answer },
     ]);
     await read(answer);
@@ -591,7 +594,7 @@ export function ChatPill({
           <div className="chat-pill__msg chat-pill__msg--welcome">
             <p>
               <b>{PILL_COPY.hello(firstName)}</b>{" "}
-              {canAsk ? PILL_COPY.welcomeFirm : PILL_COPY.welcomeNone}
+              {canAsk ? (place === "proposals" ? PILL_COPY.welcomeProposals : PILL_COPY.welcomeFirm) : PILL_COPY.welcomeNone}
             </p>
           </div>
           {upNext}
@@ -668,7 +671,7 @@ export function ChatPill({
                 rows={1}
                 value={question}
                 maxLength={brief ? BRIEF_READ_MAX : questionMax}
-                placeholder={brief ? PILL_COPY.placeholderBrief : PILL_COPY.placeholder}
+                placeholder={hint ?? (brief ? PILL_COPY.placeholderBrief : PILL_COPY.placeholder)}
                 aria-label={PILL_COPY.label}
                 disabled={busy}
                 onChange={(event) => setQuestion(event.target.value)}

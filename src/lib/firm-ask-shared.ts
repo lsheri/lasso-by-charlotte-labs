@@ -280,3 +280,39 @@ export function firmDate(iso: string): string {
   if (!y || !m || !d) return iso;
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(Date.UTC(y, m - 1, d));
 }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * 21 Nov 2026, chat pill Phase 1c part 2 (Liam: "proposals page chat should filter to proposals, firm brain to firm
+ * brain, board to board context"). The chat on the Proposals page asks the same firm, narrowed in code to its
+ * proposal work, before any model sees anything. Boards keep their own board chat; every other page asks the firm.
+ * ------------------------------------------------------------------------------------------------------------- */
+
+export const FIRM_ASK_SCOPES = ["firm", "proposals"] as const;
+export type FirmAskScope = (typeof FIRM_ASK_SCOPES)[number];
+
+export function firmAskScope(value: unknown): FirmAskScope {
+  return value === "proposals" ? "proposals" : "firm";
+}
+
+/** Proposal work: a proposal the firm sent (deliverable kind "proposal"), a proposal draft, or a statement of work. */
+export function isProposalWork(item: Pick<FirmCorpus["items"][number], "kind" | "proposalDraft" | "sowFacts">): boolean {
+  return item.kind === "proposal" || Boolean(item.proposalDraft) || item.sowFacts != null;
+}
+
+/**
+ * The corpus a scope reads. "firm" is the corpus as read (already only boards shared with the firm). "proposals" keeps
+ * only proposal work, and only the engagements that still hold some, so nothing else can be picked, read or cited.
+ */
+export function scopeCorpus(corpus: FirmCorpus, scope: FirmAskScope): FirmCorpus {
+  if (scope === "firm") return corpus;
+  const items = corpus.items.filter(isProposalWork);
+  const boards = new Set(items.map((item) => item.boardId));
+  return { ...corpus, items, boards: corpus.boards.filter((board) => boards.has(board.id)) };
+}
+
+/** The coverage line for a scope: the same floor (no count or names of unshared engagements), said for proposals. */
+export function scopedCoverage(corpus: Pick<FirmCorpus, "boards">, scope: FirmAskScope): string | null {
+  if (scope === "firm") return null;
+  const count = corpus.boards.length;
+  return `Read the proposals in ${count} engagement${count === 1 ? "" : "s"} shared with the firm. Some engagements are not shared.`;
+}

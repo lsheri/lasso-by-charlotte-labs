@@ -13,6 +13,7 @@ import {
   FIRM_ASK_QUESTION_MAX,
   FIRM_ASK_STARTER_COPY,
   startersFor,
+  type FirmAskScope,
   type FirmAskStarter,
 } from "./firm-ask-shared";
 
@@ -202,6 +203,27 @@ const PLACE_NAMES: Record<PillPlace, string> = {
   other: "",
 };
 
+/**
+ * 21 Nov 2026, Phase 1c (Liam liked the leading text that hints what the chat does on each page): the question box's
+ * hint per page.
+ */
+export const PILL_HINTS: Record<PillPlace, string> = {
+  home: "Paste a brief to start a proposal, or ask the firm anything",
+  proposals: "Paste a brief to start a proposal, or ask about your proposals",
+  firm: "Ask the firm about its past work",
+  board: "Ask about this board",
+  work: "Ask the firm, or paste a brief",
+  other: "Ask the firm, or paste a brief",
+};
+
+/**
+ * Phase 1c part 2: what the chat reads on each page. The Proposals page reads the firm's proposal work only; every
+ * other page off a board asks the whole firm (boards keep their own board chat, and their scope row, unchanged).
+ */
+export function pillScope(place: PillPlace): FirmAskScope {
+  return place === "proposals" ? "proposals" : "firm";
+}
+
 /** What the pill can do for this person. "firm": ask the firm. "none": a coach, a guest, or not a company workspace. */
 export function pillAccess(
   profile:
@@ -230,6 +252,9 @@ export const PILL_COPY = {
   hello: (first: string) => (first ? `Hi ${first}.` : "Hi."),
   welcomeFirm:
     "I can see what you're looking at. Ask the firm anything: I'll look across the past work shared with the firm, with a source for every line.",
+  /** Phase 1c part 2: the Proposals page's chat says it reads proposals only. */
+  welcomeProposals:
+    "I can see what you're looking at. Ask about the firm's proposals: I'll look across the proposals and statements of work shared with the firm, with a source for every line.",
   welcomeBoard:
     "I can see what you're looking at. On a board, I answer from that board's own work.",
   welcomeNone: "Open a board and I'll answer from its work.",
@@ -244,6 +269,8 @@ export const PILL_COPY = {
   /** Said above an answer as it builds. */
   looking:
     "Looking across the past work shared with the firm. Each line links to the engagement it came from.",
+  lookingProposals:
+    "Looking across the proposals shared with the firm. Each line links to the engagement it came from.",
   openOnCanvas: "Open on the canvas",
   /** The toast as an answer lands on the canvas (the prototype's words). */
   movedToCorner: "We moved the chat to the corner so you can see the threads.",
