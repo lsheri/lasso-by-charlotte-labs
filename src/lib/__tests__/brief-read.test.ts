@@ -14,6 +14,7 @@ import {
   dueOnOrNull,
   fieldsFound,
   findDuePhrase,
+  shortens,
 } from "@/lib/brief-read-shared";
 import { BRIEF_READ_SYSTEM, readBrief, type BriefReadDeps } from "@/lib/brief-read.server";
 import { checkNewProposal } from "@/lib/proposal-desk-shared";
@@ -358,5 +359,49 @@ describe("QA of PR 295", () => {
 
   it("the due date fallback accepts the code PostgREST sends for a missing column", () => {
     expect(readFileSync("src/lib/proposal-desk.server.ts", "utf8")).toContain('["42703", "PGRST204"]');
+  });
+});
+
+// Live check of 20 Nov: a shortened name from the model is the existing client it shortens, never a new client.
+describe("a shortened client name", () => {
+  const QA = [{ id: "qa", name: "QA redteam client (safe to ignore)" }, ...CLIENTS];
+  const paste = "QA redteam client (safe to ignore) wants a staffing model review, due Friday.";
+  it("maps to the existing client the paste names", () => {
+    expect(checkReading({ client: "QA redteam client" }, paste, QA, NOW).client).toEqual({ name: "QA redteam client (safe to ignore)", id: "qa" });
+    expect(checkReading({ client: "Larkspur" }, "Larkspur Senior Living needs a plan", CLIENTS, NOW).client?.id).toBe("c2");
+  });
+  it("a new client the model names is still new when no existing client contains it, even if another is named", () => {
+    const reading = checkReading({ client: "Harbor Health" }, "Harbor Health would like what we did for Larkspur Senior Living.", CLIENTS, NOW);
+    expect(reading.client).toEqual({ name: "Harbor Health", id: null });
+  });
+});
+
+describe("QA of PR 297: containment one way, whole words", () => {
+  it("never merges a longer name from the model into a shorter existing client", () => {
+    const clients = [{ id: "m", name: "Mercy" }];
+    expect(checkReading({ client: "Mercy Health System" }, "Mercy Health System wants a review; Mercy was our client.", clients, NOW).client).toEqual({ name: "Mercy Health System", id: null });
+  });
+  it("needs whole words: team is not in redteam", () => {
+    const clients = [{ id: "qa", name: "QA redteam client (safe to ignore)" }];
+    expect(checkReading({ client: "team" }, "Hi team, QA redteam client (safe to ignore) wants a review.", clients, NOW).client).toEqual({ name: "team", id: null });
+  });
+});
+
+describe("shortening drops only whole trailing words", () => {
+  it.each([
+    ["QA redteam client (safe to ignore)", "QA redteam client", true],
+    ["Larkspur Senior Living", "Larkspur", true],
+    ["Larkspur Senior Living", "Larkspur Senior", true],
+    ["QA redteam client (safe to ignore)", "redteam client", false],
+    ["QA redteam client (safe to ignore)", "team", false],
+    ["QA redteam client (safe to ignore)", "QA red", false],
+    ["Mercy", "Mercy Health System", false],
+    ["Mercy", "Mercy", false],
+  ])("%s shortened to %s: %s", (name, short, expected) => {
+    expect(shortens(name, short)).toBe(expected);
+  });
+  it("a leading word dropped is not the existing client", () => {
+    const clients = [{ id: "qa", name: "QA redteam client (safe to ignore)" }];
+    expect(checkReading({ client: "redteam client" }, "QA redteam client (safe to ignore) wants a review.", clients, NOW).client?.id).toBeNull();
   });
 });

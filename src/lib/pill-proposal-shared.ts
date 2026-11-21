@@ -146,7 +146,7 @@ export const PROPOSAL_CARD_COPY = {
   noClient: "The brief does not name the client. Type it in.",
   noAsk: "Say what they asked for.",
   noDue: "No due date in the brief. Add one if there is.",
-  newClient: "A new client. Only an admin can add one.",
+  newClient: "Not one of your clients yet. Starting adds it as a new client (admins only). Pick from the list to use an existing one.",
   docs: "Got documents for it? Drop them here and they go on the proposal.",
   drop: "Drop files here",
   choose: "Choose files",

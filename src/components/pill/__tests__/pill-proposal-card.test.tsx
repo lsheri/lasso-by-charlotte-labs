@@ -396,3 +396,14 @@ describe("asking the firm instead (QA M1 of PR 296)", () => {
     expect(screen.queryByRole("button", { name: "instead" })).toBeNull();
   });
 });
+
+// Live check of 20 Nov: a client that is not one of ours says so before Start.
+describe("a new client is said plainly", () => {
+  it("shows the new-client line only when the client is not an existing one", async () => {
+    render(<PillProposalCard text={PASTE} tools={tools()} reduceMotion />);
+    await waitFor(() => expect(card().getAttribute("data-proposal-card")).toBe("check"));
+    expect(card().querySelector("[data-new-client]")).toBeNull();
+    fireEvent.change(screen.getByLabelText(COPY.client), { target: { value: "Harbor" } });
+    expect(card().querySelector("[data-new-client]")?.textContent).toBe(COPY.newClient);
+  });
+});
