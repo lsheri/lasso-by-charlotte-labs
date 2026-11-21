@@ -16,7 +16,12 @@ import {
   type BriefDraft,
   type BriefPassResult,
 } from "@/lib/pill-proposal-shared";
-import type { DeskClient, NewProposalRaw, NewProposalResult } from "@/lib/proposal-desk-shared";
+import {
+  sameClientName,
+  type DeskClient,
+  type NewProposalRaw,
+  type NewProposalResult,
+} from "@/lib/proposal-desk-shared";
 
 export type ProposalCardTools = {
   profileId: string;
@@ -279,7 +284,12 @@ export function PillProposalCard({
                       <option key={c.id} value={c.name} />
                     ))}
                   </datalist>
-                  {!reading?.client ? <small>{COPY.noClient}</small> : null}
+                  {!reading?.client && !draft.client.trim() ? (
+                    <small>{COPY.noClient}</small>
+                  ) : draft.client.trim() &&
+                    !clients.some((c) => sameClientName(c.name, draft.client)) ? (
+                    <small data-new-client>{COPY.newClient}</small>
+                  ) : null}
                 </>
               )}
             </div>
