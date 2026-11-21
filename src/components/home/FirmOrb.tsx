@@ -283,6 +283,12 @@ export const FirmOrb = forwardRef<
       const dt = Math.min(50, now - (last || now));
       last = now;
       const s = state.current;
+      // 21 Nov 2026: behind the full screen chat the page is under a 26px blur; a still orb lets the browser blur it
+      // once instead of every frame. It picks up where it was when the chat steps back.
+      if (el.closest("[data-pill-full]")) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       if (s.spinning && !s.dragging) s.angle += dt * ORB_SPIN_PER_MS;
       draw.current();
       raf = requestAnimationFrame(loop);

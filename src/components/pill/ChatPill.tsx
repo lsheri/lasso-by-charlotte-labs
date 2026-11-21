@@ -327,9 +327,9 @@ export function ChatPill({
     const node = behind();
     if (node) {
       const b = behindAt(s.cur);
-      node.style.filter = `blur(${b.blurPx.toFixed(2)}px)`;
-      node.style.opacity = b.opacity.toFixed(3);
-      node.style.transform = `scale(${b.scale.toFixed(4)})`;
+      node.style.filter = b.filter;
+      node.style.opacity = String(b.opacity);
+      node.style.transform = b.transform;
     }
     s.raf = window.requestAnimationFrame(scrubLoop);
   };
