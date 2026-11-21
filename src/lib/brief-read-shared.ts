@@ -18,14 +18,18 @@ export const BRIEF_CLIENT_MAX = 120;
 
 /** Text as it is compared: one case, one kind of quote and dash, single spaces. */
 export function normalise(text: string): string {
-  return text
-    .normalize("NFKC")
-    .replace(/[‘’‛]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/[‐-―]/g, "-")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLocaleLowerCase();
+  return (
+    text
+      .normalize("NFKC")
+      .replace(/[‘’‛]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/[‐-―]/g, "-")
+      .replace(/\s+/g, " ")
+      // QA L of PR 295: "St Brigid" and "St. Brigid" are the same name; a full stop before a space or the end is dropped.
+      .replace(/\.(?= |$)/g, "")
+      .trim()
+      .toLocaleLowerCase()
+  );
 }
 
 /** Whether a phrase appears in the paste word for word (case, quotes, dashes and spacing aside). */
@@ -33,12 +37,14 @@ export function appearsIn(paste: string, phrase: string): boolean {
   const needle = normalise(phrase);
   if (needle.length < 2) return false;
   const hay = normalise(paste);
-  const at = hay.indexOf(needle);
-  if (at < 0) return false;
-  // Whole words only: "Lark" is not in "Larkspur".
-  const before = at === 0 ? "" : hay[at - 1]!;
-  const after = hay[at + needle.length] ?? "";
-  return !/[\p{L}\p{N}]/u.test(before) && !/[\p{L}\p{N}]/u.test(after);
+  // Whole words only: "Lark" is not in "Larkspur". Every place it appears is tried (QA L of PR 295: "Larkspurs and
+  // Larkspur" has Larkspur in it).
+  for (let at = hay.indexOf(needle); at >= 0; at = hay.indexOf(needle, at + 1)) {
+    const before = at === 0 ? "" : hay[at - 1]!;
+    const after = hay[at + needle.length] ?? "";
+    if (!/[\p{L}\p{N}]/u.test(before) && !/[\p{L}\p{N}]/u.test(after)) return true;
+  }
+  return false;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------
@@ -82,8 +88,23 @@ function upcoming(
   d: number,
   year?: number,
 ): string | null {
-  if (year !== undefined) return validDay(year, m, d) ? iso(year, m, d) : null;
+  const todayAt = Date.UTC(today.y, today.m, today.d);
+  if (year !== undefined) {
+    // QA L of PR 295: a due date already past is not a due date; the person fills it in.
+    if (!validDay(year, m, d) || Date.UTC(year, m, d) < todayAt) return null;
+    return iso(year, m, d);
+  }
   const passed = m < today.m || (m === today.m && d < today.d);
+  // A date passed within the last two months is most likely a late paste, not next year: left for the person.
+  if (passed && validDay(today.y, m, d) && todayAt - Date.UTC(today.y, m, d) <= 62 * 86_400_000)
+    return null;
+  if (
+    m >= 10 &&
+    today.m <= 1 &&
+    m > today.m &&
+    todayAt - Date.UTC(today.y - 1, m, d) <= 62 * 86_400_000
+  )
+    return null;
   const y = passed ? today.y + 1 : today.y;
   return validDay(y, m, d) ? iso(y, m, d) : null;
 }
@@ -105,10 +126,17 @@ export function dueDateFor(phrase: string, now: Date): string | null {
   };
   if (p === "today" || p === "end of day" || p === "eod") return shift(0);
   if (p === "tomorrow") return shift(1);
-  const day = /^(this |next )?(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)[a-z]*$/.exec(p);
+  // QA H1 of PR 295: real weekday names and their short forms only, never any word that starts like one ("monitoring").
+  const day =
+    /^(this |next )?(sunday|sun|monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thur|thu|friday|fri|saturday|sat)$/.exec(
+      p,
+    );
   if (day) {
-    const index = WEEKDAYS.findIndex((w) => w.startsWith(day[2]!));
-    const ahead = (index - now.getUTCDay() + 7) % 7 || 7;
+    const index = WEEKDAYS.findIndex((w) => w.startsWith(day[2]!.slice(0, 3)));
+    const raw = (index - now.getUTCDay() + 7) % 7;
+    // "this Friday" said on a Friday is today; a bare "Friday" on a Friday is next week's.
+    if (day[1] === "this ") return shift(raw);
+    const ahead = raw || 7;
     return shift(day[1] === "next " ? (ahead === 7 ? 7 : ahead + 7) : ahead);
   }
   if (p === "end of week" || p === "end of the week")
@@ -169,11 +197,14 @@ export function dueDateFor(phrase: string, now: Date): string | null {
 
 /** A due phrase found by code alone, for when the model gives none: "due Friday", "by Dec 3", "deadline: 12/3". */
 export function findDuePhrase(paste: string, now: Date): { phrase: string; date: string } | null {
+  // QA H1 of PR 295: numbers end where they end ("June 2027" is not June 20), and a bare "by" never takes a slashed
+  // number (it is "by 1/3", a fraction, far more often than a date); slashed dates need due, deadline or submit by.
   const pattern =
-    /\b(?:due|by|deadline:?|submit by|no later than)\s+((?:this |next )?[A-Za-z]+\.?(?: \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?)?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{4}-\d{2}-\d{2}|\d{1,2}(?:st|nd|rd|th)? (?:of )?[A-Za-z]+\.?(?:,? \d{4})?|end of (?:the )?(?:week|month)|in \w+ (?:days?|weeks?))/gi;
+    /\b(due|by|deadline:?|submit by|no later than)\s+((?:this |next )?[A-Za-z]+\.?(?: \d{1,2}(?:st|nd|rd|th)?(?!\d)(?:,? \d{4}(?!\d))?)?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?(?![\d/])|\d{4}-\d{2}-\d{2}(?!\d)|\d{1,2}(?:st|nd|rd|th)? (?:of )?[A-Za-z]+\.?(?:,? \d{4}(?!\d))?|end of (?:the )?(?:week|month)|in \w+ (?:days?|weeks?))/gi;
   for (const match of paste.matchAll(pattern)) {
+    if (match[1]!.toLowerCase() === "by" && /^\d{1,2}\//.test(match[2]!)) continue;
     // A full stop or comma after the date ends the sentence; it is not part of the date.
-    const phrase = match[1]!.trim().replace(/[.,]+$/, "");
+    const phrase = match[2]!.trim().replace(/[.,]+$/, "");
     const date = dueDateFor(phrase, now);
     if (date) return { phrase, date };
   }
@@ -233,7 +264,17 @@ export function checkReading(
   const proposedDue = str(loose?.["due"], 60);
 
   // The client: an existing client the paste names wins; then the model's name, only if the paste says it.
-  const known = clientNamedIn(notes, clients);
+  // QA M1 of PR 295: when the model's client is an existing client the paste names, it wins ("St. Brigid would like
+  // what we did for Larkspur" is for St. Brigid). The longest named client is used only when the model gives none.
+  const modelKnown =
+    proposedClient && appearsIn(notes, proposedClient)
+      ? clients.find((c) => normalise(c.name) === normalise(proposedClient))
+      : undefined;
+  const known =
+    modelKnown ??
+    (proposedClient && appearsIn(notes, proposedClient)
+      ? undefined
+      : clientNamedIn(notes, clients));
   let client: BriefReading["client"] = known ? { name: known.name, id: known.id } : null;
   if (!client && proposedClient && appearsIn(notes, proposedClient)) {
     const same = clients.find((c) => normalise(c.name) === normalise(proposedClient));
