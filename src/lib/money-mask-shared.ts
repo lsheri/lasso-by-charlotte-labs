@@ -258,7 +258,8 @@ export function memberTitle(title: string): string {
   marked = marked.replace(TITLE_MONEY_ONLY_NUMBER, (match: string, offset: number, whole: string) => {
     const before = whole.slice(Math.max(0, offset - 24), offset);
     // "Fee 99", and with a small word between: "Fee of 99", "rate at 85" (QA Lows of PR 301).
-    return new RegExp(`\\b${TITLE_MONEY_WORDS}\\b(?:\\s+(?:of|at|is|was|for))?[\\s:]*$`, "i").test(before) ? TITLE_MARK : match;
+    // One word may sit between: "Price list 950", "Fee card 85" (QA L4 of PR 303).
+    return new RegExp(`\\b${TITLE_MONEY_WORDS}\\b(?:\\s+(?:of|at|is|was|for|list|card|sheet|schedule|table|band))?[\\s:]*$`, "i").test(before) ? TITLE_MARK : match;
   });
   // A bare number of five or more digits is an amount in a title, money word or not ("12500"); a year has four.
   marked = marked.replace(/(?<![\p{L}\d.\-])\d{5,}(?![\p{L}\d.\-])/gu, TITLE_MARK);

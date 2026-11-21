@@ -3,8 +3,7 @@
 -- the client"), and records who did. No new proposal status: that state is worked out in code from these rows.
 --
 -- Paste in the Supabase SQL editor, after the 4c SQL (it points at proposal_final_versions). Safe to run twice. Adds
--- only: one new table with its indexes, and one nullable column on proposals. Server only for the table: row security
--- on, no policy, no grant to signed-in or signed-out browsers.
+-- only: two new tables. Server only: row security on, no policy, no grant to signed-in or signed-out browsers.
 
 create table if not exists public.proposal_approvals (
   id uuid primary key default gen_random_uuid(),
@@ -28,12 +27,25 @@ create index if not exists proposal_approvals_org_idx on public.proposal_approva
 alter table public.proposal_approvals enable row level security;
 revoke all on table public.proposal_approvals from public, anon, authenticated;
 grant select, insert, update on table public.proposal_approvals to service_role;
+-- The decision history is kept, in the database and not only in code (QA L1 of PR 303): the server can decide an open
+-- request (update) but never delete one. A proposal's deletion still removes its requests through the foreign key.
+revoke delete, truncate on table public.proposal_approvals from service_role;
 
 comment on table public.proposal_approvals is
   'Approval requests for a proposal''s final version and their decisions: approved, changes asked or withdrawn, by whom, when, and an optional note to the Lead. Service role only.';
 
--- Who marked the proposal as gone to the client (approving does it too). Readable wherever the proposal row is.
-alter table public.proposals add column if not exists sent_by uuid references public.profiles(id) on delete set null;
+-- Who marked the proposal as gone to the client (approving does it too). Its own server-only table, not a column on
+-- proposals, so no browser can read it (QA L3 of PR 303). One row per proposal while it is marked sent.
+create table if not exists public.proposal_sent_marks (
+  proposal_id uuid primary key references public.proposals(id) on delete cascade,
+  org_id uuid not null references public.orgs(id) on delete cascade,
+  sent_by uuid references public.profiles(id) on delete set null,
+  sent_at timestamptz not null
+);
 
-comment on column public.proposals.sent_by is
-  'Who marked the proposal as gone to the client, or approved it, which does the same. Null when not sent.';
+alter table public.proposal_sent_marks enable row level security;
+revoke all on table public.proposal_sent_marks from public, anon, authenticated;
+grant select, insert, update, delete on table public.proposal_sent_marks to service_role;
+
+comment on table public.proposal_sent_marks is
+  'Who marked a proposal as gone to the client, or approved it, and when. Cleared by Undo sent. Service role only.';

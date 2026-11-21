@@ -10,6 +10,8 @@
  * took, and no person is scored.
  */
 
+import { memberTitle, numbersWithheld, seesMoney } from "./money-mask-shared";
+
 export type ApprovalDecision = "approved" | "changes_asked" | "withdrawn";
 export type ApprovalState = "waiting" | ApprovalDecision;
 
@@ -31,12 +33,14 @@ export type ApprovalView = {
 };
 
 /** Where a proposal stands in the loop. */
-export type ProposalStage = "final_needed" | "ready_to_send" | "awaiting_approval" | "changes_asked" | "client_review" | "decided";
+export type ProposalStage = "final_needed" | "ready_to_send" | "awaiting_approval" | "changes_asked" | "approved_not_sent" | "client_review" | "decided";
 
 export function proposalStage(input: { status: string; sentAt: string | null; hasFinal: boolean; approval: Pick<ApprovalView, "state" | "stale"> | null }): ProposalStage {
   if (input.status !== "open") return "decided";
   const approval = input.approval;
   if (approval?.state === "approved" && input.sentAt) return "client_review";
+  // Approved, then "Undo sent" (QA L2 of PR 303): still approved, waiting to be marked as gone to the client.
+  if (approval?.state === "approved" && !approval.stale) return "approved_not_sent";
   if (approval?.state === "waiting") return "awaiting_approval";
   if (approval?.state === "changes_asked") return "changes_asked";
   return input.hasFinal ? "ready_to_send" : "final_needed";
@@ -103,6 +107,11 @@ export const APPROVAL_COPY = {
   finalGone: "The chosen final was deleted. The lead chooses it again and sends it for approval.",
   stale: (lead: string) => `${lead || "The lead"} has chosen a newer final since sending this. Ask them to send it again.`,
   ownRequest: "You lead this proposal, so a second admin approves it.",
+  /** QA M1 of PR 303: nobody approves a request they sent themselves. */
+  ownSent: "You sent this for approval, so a second admin approves it.",
+  ownSentOnly: "You sent this for approval and are the only admin, so nobody can approve it here yet. Add a second admin.",
+  /** QA M3 of PR 303: the document changed in place after it was sent. */
+  changed: (lead: string) => `The final changed since it was sent. Ask ${firstOf(lead) || "the lead"} to send it again.`,
   onlyAdmin: "You lead this proposal and are the only admin, so nobody can approve it here yet. Add a second admin, or pick another lead.",
   adminsOnly: "Only an admin can approve a proposal.",
   notLead: "Only the proposal's lead or the person who started it can send it for approval.",
@@ -117,10 +126,22 @@ export const APPROVAL_COPY = {
     ready_to_send: "Next: send it for approval",
     awaiting_approval: "Waiting for approval",
     changes_asked: "Changes asked",
+    approved_not_sent: "Approved. Mark it as sent when it goes to the client",
     client_review: "Waiting on the client",
     decided: "Decided",
   } satisfies Record<ProposalStage, string>,
 } as const;
+
+const firstOf = (name: string) => name.trim().split(/\s+/)[0] ?? "";
+
+/**
+ * QA M2 of PR 303 (Liam: Members never see money): a request as a Member reads it. The admin's note goes through the
+ * blunt numbers mask and the final's title through the Member title rule. Admins and Leads read both as written.
+ */
+export function approvalForReader(view: ApprovalView, role: string | null | undefined): ApprovalView {
+  if (seesMoney(role)) return view;
+  return { ...view, note: view.note ? numbersWithheld(view.note) : null, finalTitle: view.finalTitle ? memberTitle(view.finalTitle) : view.finalTitle };
+}
 
 /** An approval row as stored. */
 export type ApprovalRow = {

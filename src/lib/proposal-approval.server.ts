@@ -27,7 +27,9 @@ import {
 
 export type ApprovalStore = FinalStore & {
   /** This proposal's final versions, newest first. "absent" before 4c's table exists. */
-  finalVersions: (orgId: string, proposalId: string) => Promise<{ id: string; work_item_id: string | null }[] | "absent">;
+  finalVersions: (orgId: string, proposalId: string) => Promise<{ id: string; work_item_id: string | null; document_version_id?: string | null }[] | "absent">;
+  /** The words of one saved version of a work item in this workspace (QA M3 of PR 303). Null when it cannot be read. */
+  versionText: (orgId: string, itemId: string, versionId: string) => Promise<string | null>;
   /** Approval rows for these proposals in this workspace. "absent" before Phase 5's table exists. */
   approvalRows: (orgId: string, proposalIds: string[]) => Promise<ApprovalRow[] | "absent">;
   /** Adds an open request. "taken" when one is already open (the unique index). */
@@ -92,6 +94,11 @@ export async function decideApproval(store: ApprovalStore, input: ApprovalDecide
   const open = await openRequest(store, caller, row.id);
   if (open === "absent") return { ok: false, problem: APPROVAL_COPY.notReady };
   if (!open || open.id !== input.approval_id) return { ok: false, problem: APPROVAL_COPY.gone };
+  // QA M1 of PR 303: nobody decides a request they sent, whether or not they lead it.
+  if (open.requested_by === caller.profileId) {
+    const others = await store.otherAdmins(caller.orgId, caller.profileId).catch(() => 1);
+    return { ok: false, problem: others === 0 ? APPROVAL_COPY.ownSentOnly : APPROVAL_COPY.ownSent };
+  }
   if (input.decision === "approved") {
     const finals = await store.finalVersions(caller.orgId, row.id);
     if (finals === "absent") return { ok: false, problem: APPROVAL_COPY.notReady };
@@ -99,6 +106,13 @@ export async function decideApproval(store: ApprovalStore, input: ApprovalDecide
     if (finals[0]?.id !== open.final_version_id) {
       const names = await store.personNames(open.requested_by ? [open.requested_by] : []);
       return { ok: false, problem: APPROVAL_COPY.stale(names.get(open.requested_by ?? "") ?? "") };
+    }
+    // QA M3 of PR 303: the admin approves exactly the version chosen. An edit in place since makes a newer version.
+    const chosen = finals[0];
+    const now = chosen.work_item_id ? await store.latestVersion(chosen.work_item_id).catch(() => null) : null;
+    if ((chosen.document_version_id ?? null) !== (now ?? null)) {
+      const names = await store.personNames(open.requested_by ? [open.requested_by] : []);
+      return { ok: false, problem: APPROVAL_COPY.changed(names.get(open.requested_by ?? "") ?? "") };
     }
   }
   const now = store.now();
@@ -131,7 +145,10 @@ export async function readFinalForApproval(store: ApprovalStore, input: Approval
   if (!version?.work_item_id) return { ok: false, problem: APPROVAL_COPY.finalGone };
   const item = await store.item(caller.orgId, version.work_item_id);
   if (!item) return { ok: false, problem: APPROVAL_COPY.gone };
-  const text = await store.itemText(caller.orgId, item.id).catch(() => null);
+  // QA M3 of PR 303: the words of the version that was chosen, not the document as it is now.
+  const text = version.document_version_id
+    ? await store.versionText(caller.orgId, item.id, version.document_version_id).catch(() => null)
+    : await store.itemText(caller.orgId, item.id).catch(() => null);
   if (text === null) return { ok: false, problem: APPROVAL_COPY.failed };
   return { ok: true, title: item.title, text: text.slice(0, 50_000) };
 }
@@ -172,9 +189,20 @@ export async function realApprovalStore(context: LeadContext, profileId: string 
   return {
     ...base,
     async finalVersions(orgId, proposalId) {
-      const { data, error } = await admin.from("proposal_final_versions").select("id, work_item_id, chosen_at").eq("org_id", orgId).eq("proposal_id", proposalId).order("chosen_at", { ascending: false }).limit(50);
+      const { data, error } = await admin.from("proposal_final_versions").select("id, work_item_id, document_version_id, chosen_at").eq("org_id", orgId).eq("proposal_id", proposalId).order("chosen_at", { ascending: false }).limit(50);
       if (error) return ABSENT.has(error.code ?? "") ? "absent" : [];
-      return ((data ?? []) as { id: string; work_item_id: string | null }[]).map((row) => ({ id: row.id, work_item_id: row.work_item_id }));
+      return ((data ?? []) as { id: string; work_item_id: string | null; document_version_id: string | null }[]).map((row) => ({ id: row.id, work_item_id: row.work_item_id, document_version_id: row.document_version_id }));
+    },
+    async versionText(orgId, itemId, versionId) {
+      const { getItemText, ITEM_TEXT_COLUMNS } = await import("./item-text.server");
+      const [{ data: item }, { data: version }] = await Promise.all([
+        admin.from("work_items").select(ITEM_TEXT_COLUMNS).eq("id", itemId).eq("org_id", orgId).maybeSingle(),
+        admin.from("document_versions").select("content_ref, content_hash").eq("id", versionId).eq("work_item_id", itemId).maybeSingle(),
+      ]);
+      if (!item || !version) return null;
+      const v = version as { content_ref: string; content_hash: string };
+      const result = await getItemText(supabaseAdmin as never, { ...(item as object), content_ref: v.content_ref, content_hash: v.content_hash } as never);
+      return result.text ?? null;
     },
     async approvalRows(orgId, proposalIds) {
       const { data, error } = await admin.from("proposal_approvals").select("id, proposal_id, final_version_id, requested_by, requested_at, decision, decided_by, decided_at, note").eq("org_id", orgId).in("proposal_id", proposalIds).order("requested_at", { ascending: false }).limit(200);
@@ -192,12 +220,11 @@ export async function realApprovalStore(context: LeadContext, profileId: string 
       return !error && (data ?? []).length === 1;
     },
     async markSent(proposalId, orgId, at, by) {
-      let result = await admin.from("proposals").update({ sent_at: at, sent_by: by }).eq("id", proposalId).eq("org_id", orgId).eq("status", "open").is("sent_at", null).select("id");
-      // Before the sent_by column exists, the clock still stops.
-      if (result.error && ["42703", "PGRST204"].includes(result.error.code ?? "")) {
-        result = await admin.from("proposals").update({ sent_at: at }).eq("id", proposalId).eq("org_id", orgId).eq("status", "open").is("sent_at", null).select("id");
-      }
-      return !result.error && (result.data ?? []).length === 1;
+      const result = await admin.from("proposals").update({ sent_at: at }).eq("id", proposalId).eq("org_id", orgId).eq("status", "open").is("sent_at", null).select("id");
+      const ok = !result.error && (result.data ?? []).length === 1;
+      // Who did it sits in its own server-only table (QA L3 of PR 303). Before that table exists, the clock still stops.
+      if (ok) await admin.from("proposal_sent_marks").upsert({ proposal_id: proposalId, org_id: orgId, sent_by: by, sent_at: at }, { onConflict: "proposal_id" });
+      return ok;
     },
     async otherAdmins(orgId, except) {
       const { data } = await admin.from("profiles").select("id").eq("org_id", orgId).eq("role", "admin").eq("is_guest", false).is("deactivated_at", null).neq("id", except).limit(5);

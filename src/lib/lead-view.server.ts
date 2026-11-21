@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
-import type { ApprovalView } from "./proposal-approval-shared";
+import { approvalForReader, type ApprovalView } from "./proposal-approval-shared";
 
 import {
   docsSentToLead,
@@ -162,7 +162,8 @@ export async function listLed(store: LeadStore): Promise<LedList> {
             .slice(0, LEAD_PAST_WORK_SHOWN)
             .map((board) => ({ boardId: board.id, title: titleFor(board.title, role) }))
         : [],
-      approval: approvals.get(row.id) ?? null,
+      // QA M2 of PR 303: the admin's note and the final's title through the Member rules for a Member lead.
+      approval: approvals.has(row.id) ? approvalForReader(approvals.get(row.id)!, role) : null,
       final: (() => {
         const latest = finals.filter((entry) => entry.proposal_id === row.id).sort((a, b) => b.chosen_at.localeCompare(a.chosen_at))[0];
         if (!latest) return null;

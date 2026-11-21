@@ -53,7 +53,7 @@ import {
 } from "./proposal-desk-shared";
 import { canManageRoster } from "./roster-shared";
 import { sendState, type SentDocs } from "./lead-view-shared";
-import type { ApprovalView } from "./proposal-approval-shared";
+import { approvalForReader, type ApprovalView } from "./proposal-approval-shared";
 
 type Db = SupabaseClient<Database>;
 /** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
@@ -230,6 +230,8 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   const ownLed = mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id && row.status === "open").map((row) => row.id);
   // Phase 5: approvals go to the same people who are told who the lead is: admins, leads and the person who started it.
   const approvals = named.length && store.approvals ? await store.approvals(caller.orgId, named.map((row) => row.id)).catch(() => new Map<string, ApprovalView>()) : new Map<string, ApprovalView>();
+  // QA M2 of PR 303: a Member reads the admin's note and the final's title through the Member rules.
+  for (const [id, view] of approvals) approvals.set(id, approvalForReader(view, caller.role));
   const sentDocs = ownLed.length && store.leadDocsSent ? await store.leadDocsSent(caller.orgId, ownLed).catch(() => new Map<string, SentDocs>()) : new Map<string, SentDocs>();
   const proposals: DeskProposal[] = mine.map((row) => {
     const items = context.filter((c) => c.proposal_id === row.id);
@@ -612,11 +614,15 @@ export async function realStore(context: DeskContext, profileId: string | null):
       return (data as unknown as ProposalRow | null) ?? null;
     },
     async setSent(id, sentAt) {
-      // Phase 5: who marked it sent is stored beside when; cleared with it. Before that column exists, the date alone.
-      const write = (patch: Record<string, unknown>) => adminLoose.from("proposals").update(patch).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
-      let { data, error } = await write({ sent_at: sentAt, sent_by: sentAt ? caller.profileId : null });
-      if (error && ["42703", "PGRST204"].includes(String((error as { code?: string }).code))) ({ data, error } = await write({ sent_at: sentAt }));
-      return !error && (data ?? []).length === 1;
+      const { data, error } = await adminLoose.from("proposals").update({ sent_at: sentAt }).eq("id", id).eq("org_id", caller.orgId).eq("status", "open").select("id");
+      const ok = !error && (data ?? []).length === 1;
+      // Phase 5: who marked it sent, in its own server-only table (QA L3 of PR 303); cleared with Undo sent. Best effort:
+      // before that table exists, or if this write fails, the date alone stands.
+      if (ok) {
+        if (sentAt) await adminLoose.from("proposal_sent_marks").upsert({ proposal_id: id, org_id: caller.orgId, sent_by: caller.profileId, sent_at: sentAt }, { onConflict: "proposal_id" });
+        else await adminLoose.from("proposal_sent_marks").delete().eq("proposal_id", id).eq("org_id", caller.orgId);
+      }
+      return ok;
     },
     async rosterHas(orgId, contactId) {
       const { data, error } = await adminLoose.from("roster_contacts").select("id").eq("id", contactId).eq("org_id", orgId).maybeSingle();

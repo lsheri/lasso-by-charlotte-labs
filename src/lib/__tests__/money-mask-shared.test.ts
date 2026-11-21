@@ -287,3 +287,11 @@ describe("memberTitle: the Lows from PR 301", () => {
     expect(memberTitle(title)).toBe(title);
   });
 });
+
+describe("memberTitle: QA L4 of PR 303", () => {
+  it("'Price list 950' and 'Fee card 85' lose the figure; 'Phase 2 list' keeps its number", () => {
+    expect(memberTitle("Price list 950")).toBe("Price list");
+    expect(memberTitle("Fee card 85")).toBe("Fee card");
+    expect(memberTitle("Phase 2 list")).toBe("Phase 2 list");
+  });
+});

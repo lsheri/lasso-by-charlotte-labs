@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { LeadProposalRow } from "@/lib/lead-view.server";
 import { askApproval, decideApproval, readFinalForApproval, type ApprovalStore } from "@/lib/proposal-approval.server";
-import { APPROVAL_COPY, approvalDecideInput, approvalViews, mayDecide, proposalStage, type ApprovalRow } from "@/lib/proposal-approval-shared";
+import { APPROVAL_COPY, approvalForReader, approvalDecideInput, approvalViews, mayDecide, proposalStage, type ApprovalRow } from "@/lib/proposal-approval-shared";
 
 const ORG = "00000000-0000-4000-8000-0000000000a1";
 const CHRISTY = "00000000-0000-4000-8000-0000000000c1";
@@ -24,7 +24,7 @@ const proposal = (over: Partial<LeadProposalRow> = {}): LeadProposalRow => ({
 });
 const open = (over: Partial<ApprovalRow> = {}): ApprovalRow => ({ id: A1, proposal_id: P1, final_version_id: V1, requested_by: CHRISTY, requested_at: "2026-11-21T10:00:00Z", decision: null, decided_by: null, decided_at: null, note: null, ...over });
 
-function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?: LeadProposalRow; approvals?: ApprovalRow[]; versions?: { id: string; work_item_id: string | null }[]; others?: number } = {}) {
+function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?: LeadProposalRow; approvals?: ApprovalRow[]; versions?: { id: string; work_item_id: string | null; document_version_id?: string | null }[]; others?: number; latest?: string | null } = {}) {
   const approvals = over.approvals ?? [];
   const writes: unknown[] = [];
   const events: unknown[] = [];
@@ -53,6 +53,8 @@ function world(over: Partial<ApprovalStore> & { me?: string; role?: string; row?
       return true;
     },
     otherAdmins: async () => over.others ?? 1,
+    latestVersion: async () => over.latest ?? null,
+    versionText: async (_o: string, _i: string, versionId: string) => `Words of version ${versionId}`,
     ...over,
   } as unknown as ApprovalStore;
   return { store, writes, events };
@@ -66,6 +68,8 @@ describe("the pure rules", () => {
     expect(proposalStage({ status: "open", sentAt: null, hasFinal: true, approval: { state: "changes_asked", stale: false } })).toBe("changes_asked");
     expect(proposalStage({ status: "open", sentAt: "2026-11-21T12:00:00Z", hasFinal: true, approval: { state: "approved", stale: false } })).toBe("client_review");
     expect(proposalStage({ status: "won", sentAt: null, hasFinal: true, approval: null })).toBe("decided");
+    // QA L2 of PR 303: approved, then Undo sent.
+    expect(proposalStage({ status: "open", sentAt: null, hasFinal: true, approval: { state: "approved", stale: false } })).toBe("approved_not_sent");
   });
   it("only an admin who does not lead it decides", () => {
     expect(mayDecide("admin", false)).toBe(true);
@@ -181,5 +185,44 @@ describe("the floors, read from the source", () => {
     expect(sql).toMatch(/revoke all on table public\.proposal_approvals from public, anon, authenticated/);
     expect(sql).not.toMatch(/create policy|grant [^;]* to (anon|authenticated)/i);
     expect(readFileSync("supabase/undo/20261121050000_proposal_approvals_undo.sql", "utf8")).toContain("drop table if exists public.proposal_approvals");
+  });
+});
+
+// QA of PR 303.
+describe("QA M1, M2, M3 of PR 303", () => {
+  const decide = { profile_id: null, proposal_id: P1, approval_id: A1, decision: "approved" as const, note: null };
+  it("M1: an admin who sent the request cannot approve it, even when they do not lead it; with no other admin it says so", async () => {
+    const own = world({ me: MAREN, role: "admin", approvals: [open({ requested_by: MAREN })] });
+    expect(await decideApproval(own.store, decide)).toEqual({ ok: false, problem: APPROVAL_COPY.ownSent });
+    expect(own.writes).toEqual([]);
+    const alone = world({ me: MAREN, role: "admin", approvals: [open({ requested_by: MAREN })], others: 0 });
+    expect(await decideApproval(alone.store, decide)).toEqual({ ok: false, problem: APPROVAL_COPY.ownSentOnly });
+  });
+  it("M3: approving is refused when the chosen document changed in place since it was sent", async () => {
+    const changed = world({ me: MAREN, role: "admin", approvals: [open()], versions: [{ id: V1, work_item_id: "i1", document_version_id: "dv1" }], latest: "dv2" });
+    expect(await decideApproval(changed.store, decide)).toEqual({ ok: false, problem: "The final changed since it was sent. Ask Christy to send it again." });
+    expect(changed.writes).toEqual([]);
+    const same = world({ me: MAREN, role: "admin", approvals: [open()], versions: [{ id: V1, work_item_id: "i1", document_version_id: "dv1" }], latest: "dv1" });
+    expect(await decideApproval(same.store, decide)).toEqual({ ok: true });
+  });
+  it("M3: Open the final reads the version that was chosen", async () => {
+    const { store } = world({ me: MAREN, role: "admin", approvals: [open()], versions: [{ id: V1, work_item_id: "i1", document_version_id: "dv1" }] });
+    expect(await readFinalForApproval(store, { profile_id: null, proposal_id: P1 })).toEqual({ ok: true, title: "Final v3", text: "Words of version dv1" });
+  });
+  it("M2: a Member reads the note and the final's title through the Member rules; an admin or Lead as written", () => {
+    const view = { id: A1, state: "changes_asked" as const, requestedBy: "Christy", requestedAt: "x", decidedBy: "Maren", decidedAt: "y", note: "Cut the day rate to 950 and the total to 48,500", finalTitle: "Final, $80k cap", finalItemId: "i1", stale: false };
+    const member = approvalForReader(view, "em");
+    expect(member.note).not.toMatch(/950|48,500/);
+    expect(member.finalTitle).toBe("Final, cap");
+    expect(approvalForReader(view, "admin")).toEqual(view);
+    expect(approvalForReader(view, "lead")).toEqual(view);
+  });
+  it("the SQL: the request history cannot be deleted by the server, and who marked it sent lives in a server-only table", () => {
+    const sql = readFileSync("supabase/migrations/20261121050000_proposal_approvals.sql", "utf8");
+    expect(sql).toMatch(/revoke delete, truncate on table public\.proposal_approvals from service_role/);
+    expect(sql).toMatch(/create table if not exists public\.proposal_sent_marks/);
+    expect(sql).not.toMatch(/alter table public\.proposals/);
+    expect(readFileSync(".pane/prompts/5-proposal-approvals.sql", "utf8")).toBe(sql);
+    expect(readFileSync("supabase/undo/20261121050000_proposal_approvals_undo.sql", "utf8")).toContain("drop table if exists public.proposal_sent_marks");
   });
 });

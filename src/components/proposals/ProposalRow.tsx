@@ -234,6 +234,8 @@ export function ProposalRow({
             <p data-approval-waiting className="text-(length:--type-small) text-muted-foreground">{APPROVAL_COPY.stage.awaiting_approval}</p>
           ) : proposal.approval?.state === "approved" && proposal.sentAt ? (
             <p data-approval-client className="text-(length:--type-small) text-foreground">{APPROVAL_COPY.stage.client_review}</p>
+          ) : proposal.approval?.state === "approved" ? (
+            <p data-approval-approved className="text-(length:--type-small) text-foreground">{APPROVAL_COPY.stage.approved_not_sent}</p>
           ) : null}
           {proposal.mine && proposal.leadDocs && onSendDocs ? (
             <SendDocsLine state={proposal.leadDocs} leadName={leadName ?? ""} hasDocs={proposal.contextCount > 0} added={proposal.leadDocsAdded} onSend={onSendDocs} />
