@@ -15,20 +15,20 @@ export function LeadUpNext({ profileId }: { profileId: string | null | undefined
   const led = useLed(profileId);
   const [open, setOpen] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
   if (!profileId) return null;
-  if (led.isError) {
-    return (
-      <p role="alert" data-testid="lead-up-next-failed" className="mx-auto w-full max-w-[760px] px-4 pt-4 text-(length:--type-small) text-destructive md:px-6">
-        {LEAD_VIEW_COPY.loadFailed}{" "}
-        <button type="button" className="underline" onClick={() => void led.refetch()}>
-          {LEAD_VIEW_COPY.retry}
-        </button>
-      </p>
-    );
-  }
+  // QA L2 of PR 299: a failed read says nothing to someone not known to lead anything, so nobody else's Home
+  // changes on a bad day. A lead whose list is already here keeps it, with one quiet line.
   if (!led.data || led.data.proposals.length === 0) return null;
   return (
     <>
       <LeadUpNextList data={led.data} onOpen={setOpen} />
+      {led.isError ? (
+        <p data-testid="lead-up-next-stale" className="mx-auto w-full max-w-[760px] px-4 pt-2 text-(length:--type-small) text-muted-foreground md:px-6">
+          {LEAD_VIEW_COPY.stale}{" "}
+          <button type="button" className="underline" onClick={() => void led.refetch()}>
+            {LEAD_VIEW_COPY.retry}
+          </button>
+        </p>
+      ) : null}
       <LeadDocumentDialog
         open={open}
         read={(proposalId, itemId) => leadDocumentFn({ data: { profile_id: profileId, proposal_id: proposalId, work_item_id: itemId } }) as Promise<LeadDocResult>}

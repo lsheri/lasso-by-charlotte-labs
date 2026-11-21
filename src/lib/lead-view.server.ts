@@ -14,6 +14,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import {
   docsSentToLead,
+  type SentDocs,
   LEAD_DOC_MAX_CHARS,
   LEAD_PAST_WORK_SHOWN,
   LEAD_VIEW_COPY,
@@ -27,7 +28,7 @@ import {
   type SendDocsResult,
 } from "./lead-view-shared";
 import { countBand, goalHours, sameClientName } from "./proposal-desk-shared";
-import { seesMoney } from "./money-mask-shared";
+import { moneyFreeDocument, seesMoney, withoutMoney } from "./money-mask-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -46,8 +47,6 @@ export type LeadProposalRow = {
   lead_contact_id?: string | null;
   client_due_on?: string | null;
   notes?: string | null;
-  /** The People row the documents were sent to. Absent before PR 4b's column exists. */
-  lead_docs_to?: string | null;
 };
 
 export type LeadStore = {
@@ -69,18 +68,25 @@ export type LeadStore = {
   sharedBoards: (orgId: string) => Promise<{ id: string; title: string; client: string | null; created_at: string }[]>;
   /** The words of one work item in this workspace. Null when it has none or cannot be read. */
   itemText: (orgId: string, itemId: string) => Promise<string | null>;
-  /** Sets or clears who the documents went to, on an open proposal in this workspace. */
-  setDocs: (id: string, orgId: string, to: string | null, at: string | null) => Promise<boolean | "absent">;
+  /** What was sent to each proposal's lead, in this workspace. "absent" before PR 4b's table exists. */
+  sentDocs: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs> | "absent">;
+  /** Records what was sent (replacing any earlier send), or deletes the record (Stop sharing). */
+  saveSent: (proposalId: string, orgId: string, sent: (SentDocs & { sent_by: string; sent_at: string }) | null) => Promise<boolean | "absent">;
   record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened", dims: Record<string, string>) => Promise<void>;
   now: () => Date;
 };
 
-/** Amounts out of a Member's view: the fees section and every money figure, as the firm answers do. */
-async function forReader(text: string, role: string): Promise<{ text: string; withheld: boolean }> {
+/**
+ * Amounts out of a Member's view (QA H1 of PR 299): the shared money mask's whole-document form, which withholds a
+ * money-headed section with its bare price table and masks every figure left. Titles lose their figures too.
+ */
+function forReader(text: string, role: string): { text: string; withheld: boolean } {
   if (seesMoney(role)) return { text, withheld: false };
-  const [{ maskFees }, { withoutFees }] = await Promise.all([import("./firm-ask-shared"), import("./firm-corpus-shared")]);
-  const masked = maskFees(withoutFees(text));
+  const masked = moneyFreeDocument(text);
   return { text: masked, withheld: masked !== text };
+}
+function titleFor(title: string, role: string): string {
+  return seesMoney(role) ? title : withoutMoney(title) || title.replace(/\d/g, "").trim() || "Untitled";
 }
 
 /** Whether this caller leads this row now: open, unarchived, in their workspace, and its lead linked to them. */
@@ -103,12 +109,14 @@ export async function listLed(store: LeadStore): Promise<LedList> {
   // The same rule again, so a read that returned too much cannot widen what is shown.
   const rows = read.filter((row) => row.org_id === caller.orgId && row.status === "open" && !row.archived_at && row.lead_contact_id && mine.includes(row.lead_contact_id));
   if (rows.length === 0) return { goalHours: goal, proposals: [] };
-  const [clients, owners, context, boards] = await Promise.all([
+  const [clients, owners, context, boards, sentRead] = await Promise.all([
     store.clientNames([...new Set(rows.map((row) => row.client_id))]),
     store.personNames([...new Set(rows.map((row) => row.owner_id))]),
     store.context(rows.map((row) => row.id)),
     store.sharedBoards(caller.orgId),
+    store.sentDocs(caller.orgId, rows.map((row) => row.id)).catch(() => "absent" as const),
   ]);
+  const sent = sentRead === "absent" ? new Map<string, SentDocs>() : sentRead;
   const proposals: LedProposal[] = [];
   for (const row of rows) {
     const listed = context.filter((entry) => entry.proposal_id === row.id).map((entry) => entry.work_item_id);
@@ -116,24 +124,27 @@ export async function listLed(store: LeadStore): Promise<LedList> {
     const owned = listed.length ? await store.ownedItems(caller.orgId, row.owner_id, listed) : [];
     const ordered = listed.map((itemId) => owned.find((item) => item.id === itemId)).filter((item): item is { id: string; title: string } => Boolean(item));
     const clientName = clients.get(row.client_id) ?? "";
-    const brief = row.notes?.trim() ? (await forReader(row.notes.trim(), caller.role)).text : null;
+    const brief = row.notes?.trim() ? forReader(row.notes.trim(), caller.role).text : null;
+    const record = sent.get(row.id);
+    const role = caller.role;
     proposals.push({
       id: row.id,
-      title: row.title,
+      title: titleFor(row.title, role),
       clientName,
       ownerName: owners.get(row.owner_id) ?? "",
       receivedAt: row.received_at,
       sentAt: row.sent_at,
       dueOn: row.client_due_on ?? null,
       brief,
-      documents: docsSentToLead(row) ? ordered.map((item) => ({ id: item.id, title: item.title })) : null,
+      // Only what was sent, still on the proposal and still the owner's.
+      documents: docsSentToLead(row, record) ? ordered.filter((item) => record!.item_ids.includes(item.id)).map((item) => ({ id: item.id, title: titleFor(item.title, role) })) : null,
       documentCount: ordered.length,
       pastWork: clientName
         ? boards
             .filter((board) => board.client && sameClientName(board.client, clientName))
             .sort((a, b) => b.created_at.localeCompare(a.created_at))
             .slice(0, LEAD_PAST_WORK_SHOWN)
-            .map((board) => ({ boardId: board.id, title: board.title }))
+            .map((board) => ({ boardId: board.id, title: titleFor(board.title, role) }))
         : [],
     });
   }
@@ -145,7 +156,11 @@ export async function readLeadDocument(store: LeadStore, input: LeadDocInput): P
   const caller = await store.caller();
   const gone = { ok: false as const, problem: LEAD_VIEW_COPY.docGone };
   const row = await store.proposal(input.proposal_id);
-  if (!row || !(await leads(store, caller, row)) || !docsSentToLead(row)) return gone;
+  if (!row || !(await leads(store, caller, row))) return gone;
+  const sentRead = await store.sentDocs(caller.orgId, [row.id]).catch(() => "absent" as const);
+  const record = sentRead === "absent" ? undefined : sentRead.get(row.id);
+  // Sent to this same lead, among the documents sent (QA M1 of PR 299), and still on the proposal.
+  if (!docsSentToLead(row, record) || !record!.item_ids.includes(input.work_item_id)) return gone;
   const listed = (await store.context([row.id])).some((entry) => entry.proposal_id === row.id && entry.work_item_id === input.work_item_id);
   if (!listed) return gone;
   const [item] = await store.ownedItems(caller.orgId, row.owner_id, [input.work_item_id]);
@@ -154,13 +169,13 @@ export async function readLeadDocument(store: LeadStore, input: LeadDocInput): P
   if (raw === null) return { ok: false, problem: LEAD_VIEW_COPY.docFailed };
   // A very long document opens at its start, said plainly; the dialog never carries a whole book.
   const clipped = raw.length > LEAD_DOC_MAX_CHARS ? `${raw.slice(0, LEAD_DOC_MAX_CHARS)}\n\n${LEAD_VIEW_COPY.clipped}` : raw;
-  const shown = await forReader(clipped, caller.role);
+  const shown = forReader(clipped, caller.role);
   try {
     await store.record(caller, "lead_view.document_opened", { withheld: shown.withheld ? "yes" : "no" });
   } catch {
     /* opened; a recording fault changes nothing */
   }
-  return { ok: true, title: item.title, text: shown.text, withheld: shown.withheld };
+  return { ok: true, title: titleFor(item.title, caller.role), text: shown.text, withheld: shown.withheld };
 }
 
 /**
@@ -174,20 +189,25 @@ export async function sendLeadDocuments(store: LeadStore, input: SendDocsInput):
   if (!row || row.org_id !== caller.orgId || row.archived_at || row.owner_id !== caller.profileId) return { ok: false, problem: SEND_DOCS_COPY.ownerOnly };
   if (row.status !== "open") return { ok: false, problem: SEND_DOCS_COPY.closed };
   const now = store.now().toISOString();
+  const sentRead = await store.sentDocs(caller.orgId, [row.id]).catch(() => "absent" as const);
+  if (sentRead === "absent") return { ok: false, problem: SEND_DOCS_COPY.notReady };
+  const before = sentRead.get(row.id);
   if (!input.send) {
-    if (!row.lead_docs_to) return { ok: true };
-    const cleared = await store.setDocs(row.id, caller.orgId, null, null);
+    if (!before) return { ok: true };
+    const cleared = await store.saveSent(row.id, caller.orgId, null);
     if (cleared === "absent") return { ok: false, problem: SEND_DOCS_COPY.notReady };
     return cleared ? { ok: true } : { ok: false, problem: SEND_DOCS_COPY.failed };
   }
   if (!row.lead_contact_id) return { ok: false, problem: SEND_DOCS_COPY.noLead };
-  if (docsSentToLead(row)) return { ok: true };
   const [contact] = await store.contacts(caller.orgId, [row.lead_contact_id]);
   if (!contact?.profile_id) return { ok: false, problem: SEND_DOCS_COPY.noLogin("") };
   const listed = (await store.context([row.id])).filter((entry) => entry.proposal_id === row.id).map((entry) => entry.work_item_id);
-  const owned = listed.length ? await store.ownedItems(caller.orgId, row.owner_id, listed) : [];
+  const ownedRows = listed.length ? await store.ownedItems(caller.orgId, row.owner_id, listed) : [];
+  const owned = listed.filter((itemId) => ownedRows.some((item) => item.id === itemId));
   if (owned.length === 0) return { ok: false, problem: SEND_DOCS_COPY.noDocs };
-  const set = await store.setDocs(row.id, caller.orgId, row.lead_contact_id, now);
+  // The same documents to the same lead: nothing to write.
+  if (before && docsSentToLead(row, before) && before.item_ids.length === owned.length && owned.every((itemId) => before.item_ids.includes(itemId))) return { ok: true };
+  const set = await store.saveSent(row.id, caller.orgId, { contact_id: row.lead_contact_id, item_ids: owned, sent_by: caller.profileId, sent_at: now });
   if (set === "absent") return { ok: false, problem: SEND_DOCS_COPY.notReady };
   if (!set) return { ok: false, problem: SEND_DOCS_COPY.failed };
   try {
@@ -205,7 +225,6 @@ export async function sendLeadDocuments(store: LeadStore, input: SendDocsInput):
 export type LeadContext = { supabase: Db; userId: string };
 
 const BASE = "id, org_id, client_id, title, owner_id, received_at, sent_at, status, archived_at, lead_contact_id, client_due_on, notes";
-const WITH_DOCS = `${BASE}, lead_docs_to`;
 const NOT_THERE = new Set(["42703", "PGRST204"]);
 
 export async function realLeadStore(context: LeadContext, profileId: string | null): Promise<LeadStore> {
@@ -213,10 +232,7 @@ export async function realLeadStore(context: LeadContext, profileId: string | nu
   const { profile, supabaseAdmin } = await requireFirmMember(context.supabase, context.userId, profileId);
   const caller: LeadCaller = { profileId: profile.id, orgId: profile.org_id, role: String(profile.role ?? ""), userId: context.userId };
   const admin = supabaseAdmin as unknown as SupabaseClient;
-  const withDocs = async <T extends { error: { code?: string } | null }>(run: (columns: string) => PromiseLike<T>): Promise<T> => {
-    const first = await run(WITH_DOCS);
-    return first.error && NOT_THERE.has(first.error.code ?? "") ? run(BASE) : first;
-  };
+  const withDocs = <T,>(run: (columns: string) => PromiseLike<T>): PromiseLike<T> => run(BASE);
   return {
     caller: async () => caller,
     async myContacts(orgId, me) {
@@ -279,10 +295,18 @@ export async function realLeadStore(context: LeadContext, profileId: string | nu
       const result = await getItemText(supabaseAdmin as never, data as never);
       return result.text ?? null;
     },
-    async setDocs(id, orgId, to, at) {
-      const { data, error } = await admin.from("proposals").update({ lead_docs_to: to, lead_docs_at: at }).eq("id", id).eq("org_id", orgId).eq("status", "open").select("id");
-      if (error) return NOT_THERE.has(error.code ?? "") ? "absent" : false;
-      return (data ?? []).length === 1;
+    async sentDocs(orgId, proposalIds) {
+      if (!proposalIds.length) return new Map();
+      const { data, error } = await admin.from("proposal_lead_docs").select("proposal_id, contact_id, item_ids").eq("org_id", orgId).in("proposal_id", proposalIds);
+      if (error) return "absent";
+      return new Map(((data ?? []) as { proposal_id: string; contact_id: string; item_ids: string[] }[]).map((row) => [row.proposal_id, { contact_id: row.contact_id, item_ids: row.item_ids ?? [] }]));
+    },
+    async saveSent(proposalId, orgId, sent) {
+      const result = sent
+        ? await admin.from("proposal_lead_docs").upsert({ proposal_id: proposalId, org_id: orgId, ...sent }, { onConflict: "proposal_id" }).select("proposal_id")
+        : await admin.from("proposal_lead_docs").delete().eq("proposal_id", proposalId).eq("org_id", orgId).select("proposal_id");
+      if (result.error) return ["42P01", "PGRST205"].includes(result.error.code ?? "") ? "absent" : false;
+      return sent ? (result.data ?? []).length === 1 : true;
     },
     async record(who, eventType, dims) {
       const { recordEvent } = await import("./telemetry.server");

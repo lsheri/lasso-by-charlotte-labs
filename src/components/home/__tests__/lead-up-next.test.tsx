@@ -116,6 +116,14 @@ describe("Send the lead the documents", () => {
     finish();
   });
 
+  it("more: says how many were added since, and Send the new documents sends again", async () => {
+    const onSend = vi.fn(async () => ({ ok: true as const }));
+    render(<SendDocsLine state="more" leadName="Christy Johnson" hasDocs added={2} onSend={onSend} />);
+    expect(screen.getByText(SEND_DOCS_COPY.more("Christy", 2))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: SEND_DOCS_COPY.sendNew("Christy") }));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith(true));
+  });
+
   it("a lead with no login is told why; with no documents there is nothing to send", () => {
     render(<SendDocsLine state="no_login" leadName="Ben Stanton" hasDocs onSend={async () => ({ ok: true })} />);
     expect(screen.getByText(SEND_DOCS_COPY.noLogin("Ben"))).toBeTruthy();

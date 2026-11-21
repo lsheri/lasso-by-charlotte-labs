@@ -57,8 +57,26 @@ export function upNextOrder(rows: readonly LedProposal[], goalHours: number, now
 }
 
 /** Whether the documents were sent to this lead: sent to the same People row that is the lead now. */
-export function docsSentToLead(row: { lead_contact_id?: string | null; lead_docs_to?: string | null }): boolean {
-  return Boolean(row.lead_contact_id) && row.lead_docs_to === row.lead_contact_id;
+export function docsSentToLead(row: { lead_contact_id?: string | null }, sent: SentDocs | null | undefined): boolean {
+  return Boolean(row.lead_contact_id) && Boolean(sent) && sent!.contact_id === row.lead_contact_id;
+}
+
+/**
+ * QA M1 of PR 299: what was sent, exactly: the People row and the documents at the press. A document added to the
+ * proposal later is not among them, so it needs a new send.
+ */
+export type SentDocs = { contact_id: string; item_ids: string[] };
+
+/** The owner's row: sent (everything there went), more (something added since), unsent, or no login to send to. */
+export function sendState(
+  row: { lead_contact_id?: string | null },
+  sent: SentDocs | null | undefined,
+  documentIds: readonly string[],
+  linked: boolean,
+): "sent" | "more" | "unsent" | "no_login" {
+  if (!linked) return docsSentToLead(row, sent) ? "sent" : "no_login";
+  if (!docsSentToLead(row, sent)) return "unsent";
+  return documentIds.every((itemId) => sent!.item_ids.includes(itemId)) ? "sent" : "more";
 }
 
 /* Inputs: shape only. The handlers decide. */
@@ -109,6 +127,7 @@ export const LEAD_VIEW_COPY = {
   due: (day: string) => `Client wants it by ${day}`,
   loading: "Loading what you lead",
   loadFailed: "What you lead could not be loaded. Try again in a moment.",
+  stale: "This may be out of date: it could not be refreshed.",
   retry: "Try again",
   docLoading: "Opening the document",
   docGone: "That document is not here for you any more. It may have been taken off the proposal, or you may no longer lead it.",
@@ -123,12 +142,15 @@ export const LEAD_VIEW_COPY = {
 
 export const SEND_DOCS_COPY = {
   send: (first: string) => (first ? `Send ${first} the documents` : "Send the lead the documents"),
-  sent: (first: string) => (first ? `${first} can open the documents` : "The lead can open the documents"),
+  sent: (first: string) => (first ? `${first} can open the documents you sent` : "The lead can open the documents you sent"),
+  more: (first: string, count: number) =>
+    `${first || "The lead"} can open the documents you sent. ${count === 1 ? "1 document was" : `${count} documents were`} added since and ${count === 1 ? "is" : "are"} not shared yet.`,
+  sendNew: (first: string) => (first ? `Send ${first} the new documents` : "Send the lead the new documents"),
   stop: "Stop sharing",
   working: "Saving",
   /** Said before the press. */
   what: (first: string) =>
-    `${first || "The lead"} will be able to open this proposal's documents and see their titles. Nobody else is given them. Nothing is texted or emailed.`,
+    `${first || "The lead"} will be able to open the documents on this proposal now and see their titles. Documents you add later need another send. Nobody else is given them. Nothing is texted or emailed.`,
   noLogin: (first: string) => `${first || "The lead"} has no login here, so there is nowhere to send them. Pick a teammate as lead to share documents.`,
   noLead: "Pick a lead first.",
   noDocs: "There are no documents on this proposal yet.",
