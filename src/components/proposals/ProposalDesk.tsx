@@ -79,7 +79,7 @@ export function ProposalDesk({
   roster?: RosterContact[] | undefined;
   /** 21 Nov 2026, PR 4a: teammates with a login not on People yet, and the press that links one. */
   teammates?: readonly RosterTeammate[] | undefined;
-  linkTeammate?: ((profileId: string) => Promise<TeammateLinkResult>) | undefined;
+  linkTeammate?: ((profileId: string, contactId?: string) => Promise<TeammateLinkResult>) | undefined;
   /** 21 Nov 2026, PR 4b: the person who started a proposal sends its documents to the lead. */
   onSendDocs?: ((proposalId: string, send: boolean) => Promise<SendDocsResult>) | undefined;
   /** The won text as it is sent, shown when picking a lead. */

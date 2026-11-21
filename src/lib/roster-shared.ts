@@ -72,7 +72,11 @@ export type RosterList =
       teammates?: RosterTeammate[];
     };
 
-export type TeammateLinkInput = { profile_id: string | null; teammate_id: string | null };
+/**
+ * `contact_id`: the People row the admin chose to link, after the sheet asked "Christy Johnson is already on People:
+ * link them?". Left out, the row is found by the teammate's login email, or a new one is made.
+ */
+export type TeammateLinkInput = { profile_id: string | null; teammate_id: string | null; contact_id?: string | null };
 export type TeammateLinkResult =
   | { ok: true; contact: RosterContact }
   | { ok: false; reason: "missing" | "full" | "not_ready" | "unavailable" };
@@ -80,6 +84,17 @@ export type TeammateLinkResult =
 /** The roles a lead may have: Admin, Lead or Member. Never a Coach or a guest. */
 export function canLeadAsTeammate(row: { role: string | null | undefined; is_guest?: boolean | null; deactivated_at?: string | null }): boolean {
   return (row.role === "admin" || row.role === "lead" || row.role === "em") && !row.is_guest && !row.deactivated_at;
+}
+
+/**
+ * Two names written the same way, ignoring case, accents and spacing. Used only to ASK the admin whether a People row
+ * is this teammate; a link is never made on a name match alone.
+ */
+export function samePersonName(a: string | null | undefined, b: string | null | undefined): boolean {
+  const tidy = (value: string | null | undefined) =>
+    (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  const left = tidy(a);
+  return left !== "" && left === tidy(b);
 }
 
 /** Two email addresses are the same mailbox: compared trimmed and without case. */
@@ -359,7 +374,8 @@ export function rosterSaveInput(input: unknown): RosterSaveInput {
 
 export function teammateLinkInput(input: unknown): TeammateLinkInput {
   const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
-  return { profile_id: cleanWorkspace(raw["profile_id"]), teammate_id: cleanWorkspace(raw["teammate_id"]) };
+  const contact = cleanWorkspace(raw["contact_id"]);
+  return { profile_id: cleanWorkspace(raw["profile_id"]), teammate_id: cleanWorkspace(raw["teammate_id"]), ...(contact ? { contact_id: contact } : {}) };
 }
 
 export function rosterChangeInput(input: unknown): RosterChangeInput {

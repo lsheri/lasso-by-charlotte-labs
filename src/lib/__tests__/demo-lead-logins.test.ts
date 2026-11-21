@@ -30,6 +30,7 @@ function memoryDb(seed: Record<string, Row[]>, opts: { noLinkColumn?: boolean; u
         rows(table).push(...added);
         return { data: added, error: null };
       }
+      if (op === "select" && opts.noLinkColumn && table === "roster_contacts") return { data: null, error: { code: "42703", message: "column does not exist" } };
       if (op === "update") {
         if (opts.noLinkColumn && table === "roster_contacts" && "profile_id" in patch) return { data: null, error: { code: "42703", message: "column does not exist" } };
         const hit = matching();
@@ -140,6 +141,17 @@ describe("the demo's Lead logins", () => {
     expect(result.made).toHaveLength(2);
     expect(result.linkWaits).toBe(true);
     expect(result.linked).toBe(0);
+  });
+
+  it("two People rows with the same name are left alone, so later runs never fail (QA L3)", async () => {
+    const seed = firm();
+    seed.roster_contacts.push({ id: "r-christy-2", org_id: ORG, full_name: "Christy Johnson", profile_id: null });
+    const db = memoryDb(seed);
+    const result = await seedDemoLeadLogins(db.admin, ORG, null);
+    expect(result.linked).toBe(1);
+    const roster = db.tables.get("roster_contacts")!;
+    expect(roster.filter((row) => row["full_name"] === "Christy Johnson").every((row) => row["profile_id"] === null)).toBe(true);
+    expect(await seedDemoLeadLogins(db.admin, ORG, null)).toMatchObject({ made: [], linked: 0 });
   });
 
   it("the source: the finish step runs it, and only on the demo domain", () => {
