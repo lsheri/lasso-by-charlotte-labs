@@ -1,8 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { LeadApprovalLine } from "@/components/home/LeadApprovalLine";
 import { type FinalTools } from "@/components/home/LeadFinalBlock";
 import { LeadFinalCard } from "@/components/home/LeadFinalCard";
+import { askApprovalFn } from "@/lib/proposal-approval.functions";
+import { proposalStage, type ApprovalResult } from "@/lib/proposal-approval-shared";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { chooseFinalFn, draftFinalFn } from "@/lib/proposal-final.functions";
 
@@ -32,13 +35,19 @@ export function LeadUpNext({ profileId }: { profileId: string | null | undefined
     draft: (proposalId) => draftFinalFn({ data: { profile_id: profileId ?? null, proposal_id: proposalId } }),
     upload: (files) => captureWithResult(files, { channel: "upload" }),
   };
+  // Phase 5: send the final for approval, or take it back.
+  const askApproval = async (proposalId: string, withdraw: boolean): Promise<ApprovalResult> => {
+    const result = await askApprovalFn({ data: { profile_id: profileId ?? null, proposal_id: proposalId, withdraw } });
+    if (result.ok) void queryClient.invalidateQueries({ queryKey: ["lead-view"] });
+    return result;
+  };
   if (!profileId) return null;
   // QA L2 of PR 299: a failed read says nothing to someone not known to lead anything, so nobody else's Home
   // changes on a bad day. A lead whose list is already here keeps it, with one quiet line.
   if (!led.data || led.data.proposals.length === 0) return null;
   return (
     <>
-      <LeadUpNextList data={led.data} onOpen={setOpen} finalTools={finalTools} />
+      <LeadUpNextList data={led.data} onOpen={setOpen} finalTools={finalTools} askApproval={askApproval} />
       {led.isError ? (
         <p data-testid="lead-up-next-stale" className="mx-auto w-full max-w-[760px] px-4 pt-2 text-(length:--type-small) text-muted-foreground md:px-6">
           {LEAD_VIEW_COPY.stale}{" "}
@@ -62,7 +71,10 @@ export function LeadUpNextList({
   now,
   onOpen,
   finalTools,
+  askApproval,
 }: {
+  /** Phase 5: send the final for approval, or take it back. Left out, the line is not drawn. */
+  askApproval?: ((proposalId: string, withdraw: boolean) => Promise<ApprovalResult>) | undefined;
   data: LedList;
   now?: Date | undefined;
   onOpen: (doc: { proposalId: string; itemId: string; title: string }) => void;
@@ -81,7 +93,7 @@ export function LeadUpNextList({
       </div>
       <ul className="divide-y divide-border border-y border-border">
         {rows.map((row, index) => (
-          <LedRow key={row.id} row={row} first={index === 0} goalHours={data.goalHours} now={now} onOpen={onOpen} finalTools={finalTools} />
+          <LedRow key={row.id} row={row} first={index === 0} goalHours={data.goalHours} now={now} onOpen={onOpen} finalTools={finalTools} askApproval={askApproval} />
         ))}
       </ul>
     </section>
@@ -95,7 +107,9 @@ function LedRow({
   now,
   onOpen,
   finalTools,
+  askApproval,
 }: {
+  askApproval?: ((proposalId: string, withdraw: boolean) => Promise<ApprovalResult>) | undefined;
   finalTools?: FinalTools | undefined;
   row: LedProposal;
   first: boolean;
@@ -150,6 +164,13 @@ function LedRow({
           </ul>
         )}
       </div>
+      {askApproval ? (
+        <LeadApprovalLine
+          stage={proposalStage({ status: "open", sentAt: row.sentAt, hasFinal: Boolean(row.final && !row.final.gone), approval: row.approval ?? null })}
+          approval={row.approval}
+          onAsk={(withdraw) => askApproval(row.id, withdraw)}
+        />
+      ) : null}
       {finalTools ? <LeadFinalCard proposalId={row.id} client={row.clientName ?? ""} final={row.final} documents={row.documents ?? []} tools={finalTools} now={now} /> : null}
       <div className="flex flex-col gap-1 text-(length:--type-small)">
         <p className="font-medium text-foreground">{C.pastWork}</p>

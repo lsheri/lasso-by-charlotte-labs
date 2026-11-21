@@ -66,7 +66,10 @@ describe("Up next in the chat pill", () => {
   it("one line for the proposal closest to its goal, and one press to Home", () => {
     const onOpen = vi.fn();
     render(<PillUpNext data={list([row()])} now={NOW} onOpen={onOpen} />);
-    expect(screen.getByText(LEAD_VIEW_COPY.pill("Larkspur Senior Living", "48 hours left of 72"))).toBeTruthy();
+    const line = document.querySelector("[data-pill-up-next]")!.textContent ?? "";
+    expect(line).toContain(LEAD_VIEW_COPY.pill("Larkspur Senior Living", "48 hours left of 72"));
+    // Phase 5: where it stands in the approval loop.
+    expect(line).toContain("Next: choose the final proposal.");
     fireEvent.click(screen.getByRole("button", { name: LEAD_VIEW_COPY.pillOpen }));
     expect(onOpen).toHaveBeenCalled();
   });

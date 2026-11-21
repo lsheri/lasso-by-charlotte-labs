@@ -30,6 +30,7 @@ import { landCard, liftCard } from "./fly-card";
 import { PillBriefPass, PillProposalCard, type PassTools, type ProposalCardTools } from "./PillProposalCard";
 import { PillLeadStep } from "./PillLeadStep";
 import { PillUpNext } from "./PillUpNext";
+import { PillApprovals } from "./PillApprovals";
 import { useLed } from "@/components/home/use-led";
 
 /**
@@ -56,7 +57,8 @@ export function ChatPillMount() {
   const { captureWithResult } = useCaptureFiles();
   const starts = canAsk && mayStartInChat(profile?.role);
   // Only for people who may start a proposal: the goal hours the card's clock line says.
-  const desk = useProposalDesk(starts ? (profile?.id ?? undefined) : undefined);
+  // Phase 5: an admin's pill reads the desk again each minute, so a Lead's request for approval shows up.
+  const desk = useProposalDesk(starts ? (profile?.id ?? undefined) : undefined, { refreshMs: 60_000 });
   const goalHours = desk.data?.goalHours ?? 72;
   // PR 4b: the proposals this person leads, from the same cache entry as Home's Up next.
   const led = useLed(canAsk ? (profile?.id ?? undefined) : undefined);
@@ -128,7 +130,12 @@ export function ChatPillMount() {
         starters={canAsk ? pillStarters(profile.role, recent?.title) : []}
         boardChat={place === "board" ? boardHandler : null}
         reduceMotion={reduceMotion}
-        upNext={<PillUpNext data={led.data} onOpen={() => void navigate({ to: "/" })} />}
+        upNext={
+          <>
+            <PillApprovals desk={desk.data} onOpen={(proposalId) => void navigate({ to: "/proposals", search: { proposal: proposalId } as never })} />
+            <PillUpNext data={led.data} onOpen={() => void navigate({ to: "/" })} />
+          </>
+        }
         onOpened={(where) => emitClientEvent("pill.opened", { page: where })}
         onExpanded={(where) => emitClientEvent("pill.expanded", { page: where })}
         profileId={profileId}

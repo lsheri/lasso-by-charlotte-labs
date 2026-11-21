@@ -18,6 +18,7 @@ import { askLeadFn, askPreviewFn, practiceReplyFn, recordAnswerFn } from "@/lib/
 import { closeProposalFn, setProposalLeadFn, setProposalSentFn, winProposalFn } from "@/lib/proposal-desk.functions";
 import { linkTeammateFn, listRosterFn } from "@/lib/roster.functions";
 import { sendLeadDocsFn } from "@/lib/lead-view.functions";
+import { approvalFinalFn, decideApprovalFn } from "@/lib/proposal-approval.functions";
 import { wonTextBody } from "@/lib/won-text-shared";
 import { profileHasFirmView } from "@/lib/workspace-capabilities";
 
@@ -139,6 +140,18 @@ export function ProposalsPage() {
               }}
               roster={roster.data?.allowed ? roster.data.contacts : undefined}
               teammates={roster.data?.allowed ? roster.data.teammates : undefined}
+              review={
+                desk.data.canSetGoal
+                  ? {
+                      decide: async (proposalId, approvalId, decision, note) => {
+                        const result = await decideApprovalFn({ data: { profile_id: profileId as string, proposal_id: proposalId, approval_id: approvalId, decision, note } });
+                        if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });
+                        return result;
+                      },
+                      readFinal: (proposalId) => approvalFinalFn({ data: { profile_id: profileId as string, proposal_id: proposalId } }),
+                    }
+                  : undefined
+              }
               onSendDocs={async (proposalId, send) => {
                 const result = await sendLeadDocsFn({ data: { profile_id: profileId as string, proposal_id: proposalId, send } });
                 if (result.ok) await queryClient.invalidateQueries({ queryKey: ["proposal-desk"] });

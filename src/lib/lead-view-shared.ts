@@ -13,6 +13,7 @@
  *   * No person is scored or ranked; the order is the clock's, the same for everyone.
  */
 import type { FinalView } from "./proposal-final-shared";
+import type { ApprovalView } from "./proposal-approval-shared";
 import { timeLeft, type TimeLeft } from "./proposal-desk-shared";
 
 /** One document on a proposal, as the Lead may open it. */
@@ -39,6 +40,8 @@ export type LedProposal = {
   pastWork: LeadPastWork[];
   /** 21 Nov 2026, PR 4c: the final version the Lead chose, the latest choice. Null until one is chosen. */
   final?: FinalView | null;
+  /** 21 Nov 2026, Phase 5: the latest approval request. Null when there is none. */
+  approval?: ApprovalView | null;
 };
 
 export type LedList = { goalHours: number; proposals: LedProposal[] };

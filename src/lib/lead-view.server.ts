@@ -12,6 +12,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import { approvalForReader, type ApprovalView } from "./proposal-approval-shared";
+
 import {
   docsSentToLead,
   type SentDocs,
@@ -72,11 +74,13 @@ export type LeadStore = {
   sentDocs: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs> | "absent">;
   /** Records what was sent (replacing any earlier send), or deletes the record (Stop sharing). */
   saveSent: (proposalId: string, orgId: string, sent: (SentDocs & { sent_by: string; sent_at: string }) | null) => Promise<boolean | "absent">;
-  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen", dims: Record<string, string>) => Promise<void>;
+  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen" | "proposal.approval_requested" | "proposal.approval_decided" | "proposal.client_review", dims: Record<string, string>) => Promise<void>;
   /** 21 Nov 2026, PR 4c: the latest final per proposal. "absent" before its table exists. Left out, none. */
   finals?: (orgId: string, proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string | null; chosen_at: string }[] | "absent">;
   /** Titles of these work items in this workspace, whoever owns them. */
   itemTitles?: (orgId: string, ids: string[]) => Promise<Map<string, string>>;
+  /** Phase 5: the latest approval request per proposal. Left out, none. */
+  approvalViews?: (orgId: string, proposalIds: string[]) => Promise<Map<string, ApprovalView>>;
   now: () => Date;
 };
 
@@ -126,6 +130,7 @@ export async function listLed(store: LeadStore): Promise<LedList> {
     store.finals ? store.finals(caller.orgId, rows.map((row) => row.id)).catch(() => "absent" as const) : Promise.resolve("absent" as const),
   ]);
   const sent = sentRead === "absent" ? new Map<string, SentDocs>() : sentRead;
+  const approvals = store.approvalViews ? await store.approvalViews(caller.orgId, rows.map((row) => row.id)).catch(() => new Map<string, ApprovalView>()) : new Map<string, ApprovalView>();
   const finals = finalRows === "absent" ? [] : finalRows;
   const finalTitles = finals.length && store.itemTitles ? await store.itemTitles(caller.orgId, [...new Set(finals.map((row) => row.work_item_id).filter((id): id is string => Boolean(id)))]) : new Map<string, string>();
   const proposals: LedProposal[] = [];
@@ -157,6 +162,8 @@ export async function listLed(store: LeadStore): Promise<LedList> {
             .slice(0, LEAD_PAST_WORK_SHOWN)
             .map((board) => ({ boardId: board.id, title: titleFor(board.title, role) }))
         : [],
+      // QA M2 of PR 303: the admin's note and the final's title through the Member rules for a Member lead.
+      approval: approvals.has(row.id) ? approvalForReader(approvals.get(row.id)!, role) : null,
       final: (() => {
         const latest = finals.filter((entry) => entry.proposal_id === row.id).sort((a, b) => b.chosen_at.localeCompare(a.chosen_at))[0];
         if (!latest) return null;
@@ -318,6 +325,10 @@ export async function realLeadStore(context: LeadContext, profileId: string | nu
       const { data, error } = await admin.from("proposal_final_versions").select("proposal_id, work_item_id, chosen_at").eq("org_id", orgId).in("proposal_id", proposalIds).order("chosen_at", { ascending: false }).limit(500);
       if (error) return "absent";
       return (data ?? []) as { proposal_id: string; work_item_id: string | null; chosen_at: string }[];
+    },
+    async approvalViews(orgId, proposalIds) {
+      const { readApprovalViews } = await import("./proposal-approval.server");
+      return readApprovalViews(admin, orgId, proposalIds);
     },
     async itemTitles(orgId, ids) {
       if (!ids.length) return new Map();

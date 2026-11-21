@@ -7,6 +7,7 @@
  * Nothing here reads a fee, a person's words or anything about a person. Question words never go to analytics.
  */
 
+import { focusBlurAt } from "./focus-blur-shared";
 import {
   canAskTheFirm,
   FIRM_ASK_QUESTION_MAX,
@@ -174,10 +175,13 @@ export function settleMode(progress: number, velocityPerMs: number): PillMode {
   return PILL_MODES[index]!;
 }
 
-/** How the page behind trails the drag into the full screen chat: blur, fade and a little shrink. */
-export function behindAt(amount: number): { blurPx: number; opacity: number; scale: number } {
-  const t = clamp(amount, 0, 1);
-  return { blurPx: 3 * t, opacity: 1 - 0.5 * t, scale: 1 - 0.015 * t };
+/**
+ * How the page behind trails the drag into the full screen chat: the shared focus blur (focus-blur-shared.ts),
+ * scrubbed with the drag. 21 Nov 2026: harder, so nothing behind can be read (26px, a 58 percent wash, 25 percent
+ * less colour), as in the prototype's v9.
+ */
+export function behindAt(amount: number): { filter: string; opacity: number; transform: string } {
+  return focusBlurAt(clamp(amount, 0, 1));
 }
 
 /* ---------------------------------------------------------------------------------------------------------------
