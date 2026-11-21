@@ -657,6 +657,8 @@
 }
 .pill-spots[data-pill-spots="dragging"] {
   pointer-events: none;
+  /* While dragging, the spots sit under the chat being carried (it is one layer up), so the lit spot shows beneath it. */
+  z-index: var(--layer-tabbar);
 }
 .pill-spots__spot {
   position: fixed;
