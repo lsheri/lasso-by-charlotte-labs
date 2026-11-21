@@ -230,3 +230,11 @@ describe("numbersWithheld: prices that look like years or are small (QA of PR 30
     expect(numbersWithheld(text)).toBe(text);
   });
 });
+
+describe("numbersWithheld: a bare year-like cell in a table (QA of PR 300)", () => {
+  it("withholds '| Discovery | 2000 |' and a last cell, keeps a year in a sentence", () => {
+    expect(numbersWithheld("| Discovery | 2000 |")).toBe(`| Discovery | ${NUMBER_WITHHELD} |`);
+    expect(numbersWithheld("| Delivery | 1999")).toBe(`| Delivery | ${NUMBER_WITHHELD}`);
+    expect(numbersWithheld("Kick-off in 2026 | Week 3")).toBe("Kick-off in 2026 | Week 3");
+  });
+});

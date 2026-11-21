@@ -214,7 +214,9 @@ export function numbersWithheldInline(text: string): string {
     if (!isYear(match)) return NUMBER_WITHHELD;
     const before = whole.slice(Math.max(0, offset - 20), offset);
     const after = whole.slice(offset + match.length, offset + match.length + 12);
-    return PRICE_BEFORE.test(before) || PRICE_AFTER.test(after) ? NUMBER_WITHHELD : match;
+    // A bare cell in a table ("| Discovery | 2000 |") is a figure, not a year (QA of PR 300).
+    const cell = /\|\s*$/.test(before) && /^\s*(?:\||$)/m.test(after);
+    return cell || PRICE_BEFORE.test(before) || PRICE_AFTER.test(after) ? NUMBER_WITHHELD : match;
   });
   body = body.replace(SMALL_AFTER_MONEY, (_m, lead: string) => `${lead}${NUMBER_WITHHELD}`);
   return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");

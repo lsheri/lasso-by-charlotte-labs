@@ -234,3 +234,14 @@ describe("QA H1 of PR 300", () => {
     expect(sql).toMatch(/work_item_id uuid references public\.work_items\(id\) on delete set null/);
   });
 });
+
+describe("QA M1 of PR 300: the draft title for a Member", () => {
+  it("drops a currency amount from the proposal title and keeps other numbers; a Lead-role teammate's keeps it", async () => {
+    const member = world({ rows: [proposal({ title: "Care model review, $80k cap, phase 2" })] });
+    await draftFinal(member.store, { profile_id: null, proposal_id: P1 });
+    expect((member.drafts[0] as { title: string }).title).toBe("Proposal draft: Care model review, cap, phase 2");
+    const lead = world({ role: "lead", rows: [proposal({ title: "Care model review, $80k cap, phase 2" })] });
+    await draftFinal(lead.store, { profile_id: null, proposal_id: P1 });
+    expect((lead.drafts[0] as { title: string }).title).toBe("Proposal draft: Care model review, $80k cap, phase 2");
+  });
+});
