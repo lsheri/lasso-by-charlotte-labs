@@ -532,3 +532,170 @@
     display: none;
   }
 }
+
+/* 21 Nov 2026, Phase 1c: the corners, the six-dot handle, the landing chat on Home and the spots. Skin tokens only. */
+[data-lasso="on"] .chat-pill[data-hidden] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.chat-pill__handle,
+.pill-landing__handle {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-inline-start: 2px;
+  border-radius: var(--corner-control);
+  cursor: grab;
+  touch-action: none;
+  color: var(--muted-foreground);
+}
+.chat-pill__handle:hover,
+.pill-landing__handle:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.chat-pill__handle i,
+.pill-landing__handle i {
+  display: block;
+  width: 10px;
+  height: 14px;
+  background-image: radial-gradient(circle, currentColor 1.4px, transparent 1.6px);
+  background-size: 5px 5px;
+}
+/* Docked top right: a strip kept clear at the top of the page, so the pill never covers a page's own buttons. */
+[data-lasso="on"][data-pill-top] [data-pill-behind] {
+  padding-top: 64px;
+  transition: padding-top 600ms var(--chat-pill-ease);
+}
+/* The page behind the landing chat: the same focus blur as the full screen chat (focus-blur-shared.ts). */
+[data-lasso="on"][data-pill-landing] [data-pill-behind] {
+  filter: blur(26px) saturate(0.75);
+  opacity: 0.42;
+  transform: scale(0.985);
+  pointer-events: none;
+}
+.pill-landing {
+  position: fixed;
+  z-index: calc(var(--layer-tabbar) + 1);
+  left: calc(var(--pill-landing-left, 0px) + (100vw - var(--pill-landing-left, 0px)) / 2);
+  top: 50%;
+  translate: -50% -50%;
+  width: min(640px, calc(100vw - var(--pill-landing-left, 0px) - 48px));
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  animation: pill-landing-in 600ms var(--chat-pill-ease) both;
+}
+/* QA L2 of PR 305: the chat follows the pointer while dragged (no easing then), then snaps into its spot. */
+.pill-landing[data-pill-dragging] {
+  translate: calc(-50% + var(--pill-dx, 0px)) calc(-50% + var(--pill-dy, 0px));
+  scale: 0.94;
+  opacity: 0.92;
+  animation: none;
+  transition: none;
+  cursor: grabbing;
+}
+.chat-pill[data-pill-dragging] {
+  translate: var(--pill-dx, 0px) var(--pill-dy, 0px);
+  transition: none;
+  cursor: grabbing;
+}
+.pill-landing__hello {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--type-display);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+.pill-landing__welcome {
+  max-width: 56ch;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: var(--type-lead);
+  line-height: 1.5;
+}
+.pill-landing__form {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px 14px 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--corner-panel);
+  box-shadow: var(--shadow-float);
+}
+.pill-landing__input {
+  flex: 1;
+  min-height: 52px;
+  resize: none;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: var(--type-lead);
+  line-height: 1.45;
+  color: var(--foreground);
+}
+.pill-landing__input::placeholder {
+  color: var(--muted-foreground);
+}
+@keyframes pill-landing-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+.pill-spots {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--layer-tabbar) + 3);
+}
+.pill-spots[data-pill-spots="dragging"] {
+  pointer-events: none;
+}
+.pill-spots__spot {
+  position: fixed;
+  display: grid;
+  place-items: start;
+  padding: 8px;
+  border: 2px dashed color-mix(in oklab, var(--foreground) 35%, transparent);
+  border-radius: var(--corner-card);
+  background: color-mix(in oklab, var(--card) 70%, transparent);
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  transition:
+    border-color 200ms var(--chat-pill-ease),
+    background 200ms var(--chat-pill-ease);
+}
+.pill-spots__spot[data-active],
+button.pill-spots__spot:hover,
+button.pill-spots__spot:focus-visible {
+  border-color: var(--skin-action, var(--primary));
+  background: color-mix(in oklab, var(--skin-action, var(--primary)) 10%, var(--card));
+  color: var(--foreground);
+}
+.pill-spots__label {
+  padding: 2px 8px;
+  border-radius: var(--corner-pill);
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.pill-spots__spot[data-current] {
+  border-style: solid;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill-landing {
+    animation: none;
+  }
+  .pill-spots__spot {
+    transition: none;
+  }
+}

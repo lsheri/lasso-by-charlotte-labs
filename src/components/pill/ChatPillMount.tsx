@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 
 import { FirmSourcePreview } from "@/components/firm-brain/FirmSourcePreview";
@@ -12,7 +12,22 @@ import { useEngagementViews } from "@/hooks/use-engagement-views";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
-import { pillAccess, pillPlace, pillStarters } from "@/lib/chat-pill-shared";
+import {
+  cornerOf,
+  dockFor,
+  dockSpots,
+  nearestDock,
+  PILL_SPOTS_MIN_WIDTH,
+  PILL_COPY,
+  PILL_DRAG_SLOP,
+  PILL_HINTS,
+  pillAccess,
+  pillPlace,
+  pillStarters,
+  readDock,
+  writeDock,
+  type PillDock,
+} from "@/lib/chat-pill-shared";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { FIRM_ASK_QUESTION_MAX } from "@/lib/firm-ask-shared";
 import { askTheFirm } from "@/lib/firm-ask.functions";
@@ -26,6 +41,11 @@ import { createProposalFn, listProposalClientsFn } from "@/lib/proposal-desk.fun
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 
 import { ChatPill } from "./ChatPill";
+import { PillDockSpots, type DockSpot } from "./PillDockSpots";
+import { PillLanding } from "./PillLanding";
+
+/** 21 Nov 2026: the click-path step cards (Pane click-path-cards) say when one is open; the landing chat steps aside. */
+export const STEP_CARD_EVENT = "lasso:step-card";
 import { landCard, liftCard } from "./fly-card";
 import { PillBriefPass, PillProposalCard, type PassTools, type ProposalCardTools } from "./PillProposalCard";
 import { PillLeadStep } from "./PillLeadStep";
@@ -71,6 +91,118 @@ export function ChatPillMount() {
     }),
     [pid],
   );
+  // Phase 1c: where the pill sits, the person's own choice kept in this browser.
+  const [saved, setSaved] = useState<PillDock | null>(null);
+  const [width, setWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
+  const [stepCard, setStepCard] = useState(false);
+  const [startWith, setStartWith] = useState<{ id: number; text: string } | null>(null);
+  const [moving, setMoving] = useState<{ picking: boolean; spots: DockSpot[]; active: PillDock | null } | null>(null);
+  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  useEffect(() => {
+    if (pid) setSaved(readDock(typeof window === "undefined" ? null : window.localStorage, pid));
+  }, [pid]);
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    const onStep = (event: Event) => setStepCard(Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open));
+    window.addEventListener("resize", onResize);
+    window.addEventListener(STEP_CARD_EVENT, onStep);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener(STEP_CARD_EVENT, onStep);
+    };
+  }, []);
+  const onBoard = place === "board";
+  const dock: PillDock = onBoard ? "bottom-right" : dockFor(saved, place, width);
+  // The pill reports its state; the landing chat shows only while the pill is shut (asking from it opens the full chat).
+  const [pillMode, setPillMode] = useState<string>("shut");
+  const landing = canAsk && place === "home" && dock === "center" && !stepCard && pillMode === "shut";
+  // Docked top right, the page keeps a strip clear at its top so the pill never sits on a page's own buttons.
+  const topRight = !onBoard && !landing && dock === "top-right" && width >= PILL_SPOTS_MIN_WIDTH;
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('[data-lasso="on"]');
+    if (!root) return;
+    if (topRight) root.setAttribute("data-pill-top", "");
+    else root.removeAttribute("data-pill-top");
+    return () => root.removeAttribute("data-pill-top");
+  }, [topRight]);
+  // The page goes soft behind the landing chat, with the shared focus blur (focus-blur-shared.ts). It is also inert
+  // (QA M2 of PR 305): Tab cannot reach a button nobody can see, and nothing behind can be pressed.
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('[data-lasso="on"]');
+    if (!root) return;
+    const behind = Array.from(root.querySelectorAll<HTMLElement>("[data-pill-behind]"));
+    if (landing) {
+      root.setAttribute("data-pill-landing", "");
+      for (const node of behind) node.inert = true;
+    } else root.removeAttribute("data-pill-landing");
+    return () => {
+      root.removeAttribute("data-pill-landing");
+      for (const node of behind) node.inert = false;
+    };
+  }, [landing]);
+  // QA L3 of PR 305: the landing chat centres beside the menu's real width, read from the page, not a fixed 256px.
+  const [railWidth, setRailWidth] = useState(0);
+  useEffect(() => {
+    const rail = document.querySelector<HTMLElement>(".lasso-sidebar-shell");
+    setRailWidth(rail?.offsetWidth ?? 0);
+  }, [width, landing]);
+
+  const spotsNow = useCallback((): DockSpot[] => {
+    const rail = document.querySelector<HTMLElement>(".lasso-sidebar-shell");
+    return dockSpots({ width: window.innerWidth, height: window.innerHeight, railWidth: rail?.offsetWidth ?? 0 }, place === "home");
+  }, [place]);
+  const choose = useCallback(
+    (next: PillDock) => {
+      setSaved(next);
+      if (pid) writeDock(window.localStorage, pid, next);
+      setMoving(null);
+    },
+    [pid],
+  );
+  const onHandleDown = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      if (event.button > 0) return;
+      press.current = { x: event.clientX, y: event.clientY, moved: false };
+      // QA L2 of PR 305: the chat itself follows the pointer while it is dragged, then snaps to the lit spot.
+      const carried = (event.currentTarget as HTMLElement).closest<HTMLElement>(".pill-landing, .chat-pill");
+      const letGo = () => {
+        if (!carried) return;
+        carried.removeAttribute("data-pill-dragging");
+        carried.style.removeProperty("--pill-dx");
+        carried.style.removeProperty("--pill-dy");
+      };
+      const move = (e: PointerEvent) => {
+        const start = press.current;
+        if (!start) return;
+        if (!start.moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) < PILL_DRAG_SLOP) return;
+        start.moved = true;
+        if (carried) {
+          carried.setAttribute("data-pill-dragging", "");
+          carried.style.setProperty("--pill-dx", `${e.clientX - start.x}px`);
+          carried.style.setProperty("--pill-dy", `${e.clientY - start.y}px`);
+        }
+        const spots = spotsNow();
+        setMoving({ picking: false, spots, active: nearestDock({ x: e.clientX, y: e.clientY }, spots) });
+      };
+      const up = (e: PointerEvent) => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        const start = press.current;
+        press.current = null;
+        letGo();
+        if (!start) return;
+        const spots = spotsNow();
+        // A drag drops into the nearest spot; a click opens the spots to pick from.
+        if (start.moved) choose(nearestDock({ x: e.clientX, y: e.clientY }, spots));
+        else setMoving({ picking: true, spots, active: null });
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    },
+    [choose, spotsNow],
+  );
+  const spotsOn = width >= PILL_SPOTS_MIN_WIDTH && !onBoard;
+
   if (!profile?.id) return null;
   const viewed = new Map((views ?? []).map((row) => [row.engagement_id, row.last_viewed_at]));
   const recent = orderHomeGrid(
@@ -130,6 +262,12 @@ export function ChatPillMount() {
         starters={canAsk ? pillStarters(profile.role, recent?.title) : []}
         boardChat={place === "board" ? boardHandler : null}
         reduceMotion={reduceMotion}
+        corner={cornerOf(dock)}
+        hint={PILL_HINTS[place]}
+        hidden={landing}
+        startWith={startWith}
+        onModeChange={setPillMode}
+        onHandleDown={spotsOn ? onHandleDown : undefined}
         upNext={
           <>
             <PillApprovals desk={desk.data} onOpen={(proposalId) => void navigate({ to: "/proposals", search: { proposal: proposalId } as never })} />
@@ -160,6 +298,21 @@ export function ChatPillMount() {
           if (place !== "firm") await navigate({ to: "/firm-brain" });
         }}
       />
+      {landing ? (
+        <PillLanding
+          brandName={brand.name}
+          railWidth={railWidth}
+          firstName={firstNameOf(profile.display_name)}
+          welcome={PILL_COPY.welcomeFirm}
+          hint={PILL_HINTS.home}
+          onAsk={(text) => setStartWith({ id: Date.now(), text })}
+          onHandleDown={onHandleDown}
+          onHandleClick={() => undefined}
+        />
+      ) : null}
+      {moving ? (
+        <PillDockSpots spots={moving.spots} active={moving.active} current={dock} picking={moving.picking} onPick={choose} onClose={() => setMoving(null)} />
+      ) : null}
       <FirmSourcePreview
         itemId={openItem}
         profileId={profileId}
