@@ -14,6 +14,7 @@ import {
   dueOnOrNull,
   fieldsFound,
   findDuePhrase,
+  shortens,
 } from "@/lib/brief-read-shared";
 import { BRIEF_READ_SYSTEM, readBrief, type BriefReadDeps } from "@/lib/brief-read.server";
 import { checkNewProposal } from "@/lib/proposal-desk-shared";
@@ -383,5 +384,24 @@ describe("QA of PR 297: containment one way, whole words", () => {
   it("needs whole words: team is not in redteam", () => {
     const clients = [{ id: "qa", name: "QA redteam client (safe to ignore)" }];
     expect(checkReading({ client: "team" }, "Hi team, QA redteam client (safe to ignore) wants a review.", clients, NOW).client).toEqual({ name: "team", id: null });
+  });
+});
+
+describe("shortening drops only whole trailing words", () => {
+  it.each([
+    ["QA redteam client (safe to ignore)", "QA redteam client", true],
+    ["Larkspur Senior Living", "Larkspur", true],
+    ["Larkspur Senior Living", "Larkspur Senior", true],
+    ["QA redteam client (safe to ignore)", "redteam client", false],
+    ["QA redteam client (safe to ignore)", "team", false],
+    ["QA redteam client (safe to ignore)", "QA red", false],
+    ["Mercy", "Mercy Health System", false],
+    ["Mercy", "Mercy", false],
+  ])("%s shortened to %s: %s", (name, short, expected) => {
+    expect(shortens(name, short)).toBe(expected);
+  });
+  it("a leading word dropped is not the existing client", () => {
+    const clients = [{ id: "qa", name: "QA redteam client (safe to ignore)" }];
+    expect(checkReading({ client: "redteam client" }, "QA redteam client (safe to ignore) wants a review.", clients, NOW).client?.id).toBeNull();
   });
 });

@@ -236,6 +236,17 @@ const str = (value: unknown, max: number): string | null => {
   return clean && clean.length <= max ? clean : null;
 };
 
+/**
+ * Whether `short` is `name` with whole trailing words dropped: "QA redteam client" shortens "QA redteam client (safe to
+ * ignore)", but "redteam client" (a leading word gone), "team" (inside a word) and "Mercy Health System" (longer) do not.
+ */
+export function shortens(name: string, short: string): boolean {
+  const full = normalise(name);
+  const head = normalise(short);
+  if (head.length < 2 || head.length >= full.length || !full.startsWith(head)) return false;
+  return !/[\p{L}\p{N}]/u.test(full[head.length]!);
+}
+
 /** An existing client the paste names, longest name first so "Larkspur Senior Living" wins over "Larkspur". */
 export function clientNamedIn(paste: string, clients: readonly BriefClient[]): BriefClient | null {
   return (
@@ -284,7 +295,7 @@ export function checkReading(
       ? // Only one way round, and as whole words (QA of PR 297): an existing name that contains the model's words is
         // that client ("QA redteam client" in "QA redteam client (safe to ignore)"); a longer name from the model is
         // not merged into a shorter existing one ("Mercy Health System" is not "Mercy"), and "team" is not in "redteam".
-        named.find((c) => appearsIn(c.name, proposedClient!))
+        named.find((c) => shortens(c.name, proposedClient!))
       : named[0]);
   let client: BriefReading["client"] = known ? { name: known.name, id: known.id } : null;
   if (!client && proposedClient && appearsIn(notes, proposedClient)) {
