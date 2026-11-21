@@ -109,12 +109,13 @@ export function pillGeometry(mode: PillMode, vp: Viewport): PillGeometry {
  * 21 Nov 2026, Phase 1c (Liam's recording, corrected the same day): where the pill sits. On Home the chat lands big in
  * the centre over the blurred page; off Home it is a compact pill in the top right or bottom right corner. A six-dot
  * handle moves it: drag and it snaps to the nearest spot, or click and pick one. Boards keep their own chat and are
- * not changed. Phones keep the bottom sheet: no spots under 640px.
+ * not changed. Phones keep the bottom sheet: no spots, landing chat or top strip under 768px, the app's phone layout
+ * (QA L1 of PR 305: between 640 and 767px the pill is already the phone sheet, so corners never applied there).
  * ------------------------------------------------------------------------------------------------------------- */
 
 export type PillCorner = "top-right" | "bottom-right";
 export type PillDock = "center" | PillCorner;
-export const PILL_SPOTS_MIN_WIDTH = 640;
+export const PILL_SPOTS_MIN_WIDTH = 768;
 
 export const PILL_DOCK_COPY = {
   handle: "Drag to move. Click to pick a spot.",

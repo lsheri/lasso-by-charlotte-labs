@@ -589,10 +589,19 @@
   font-family: var(--font-sans);
   animation: pill-landing-in 600ms var(--chat-pill-ease) both;
 }
-@media (min-width: 768px) {
-  .pill-landing {
-    --pill-landing-left: 256px;
-  }
+/* QA L2 of PR 305: the chat follows the pointer while dragged (no easing then), then snaps into its spot. */
+.pill-landing[data-pill-dragging] {
+  translate: calc(-50% + var(--pill-dx, 0px)) calc(-50% + var(--pill-dy, 0px));
+  scale: 0.94;
+  opacity: 0.92;
+  animation: none;
+  transition: none;
+  cursor: grabbing;
+}
+.chat-pill[data-pill-dragging] {
+  translate: var(--pill-dx, 0px) var(--pill-dy, 0px);
+  transition: none;
+  cursor: grabbing;
 }
 .pill-landing__hello {
   display: flex;
@@ -652,7 +661,8 @@
 .pill-spots__spot {
   position: fixed;
   display: grid;
-  place-items: center;
+  place-items: start;
+  padding: 8px;
   border: 2px dashed color-mix(in oklab, var(--foreground) 35%, transparent);
   border-radius: var(--corner-card);
   background: color-mix(in oklab, var(--card) 70%, transparent);
@@ -671,6 +681,12 @@ button.pill-spots__spot:focus-visible {
   border-color: var(--skin-action, var(--primary));
   background: color-mix(in oklab, var(--skin-action, var(--primary)) 10%, var(--card));
   color: var(--foreground);
+}
+.pill-spots__label {
+  padding: 2px 8px;
+  border-radius: var(--corner-pill);
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--border);
 }
 .pill-spots__spot[data-current] {
   border-style: solid;

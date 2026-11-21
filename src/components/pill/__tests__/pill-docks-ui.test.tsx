@@ -32,6 +32,17 @@ describe("the landing chat", () => {
   });
 });
 
+describe("QA fixes of PR 305", () => {
+  it("the landing chat centres beside the menu's measured width (L3)", () => {
+    render(<PillLanding firstName="Maren" brandName="Charlotte" railWidth={232} welcome="" hint="" onAsk={() => undefined} onHandleDown={() => undefined} onHandleClick={() => undefined} />);
+    expect((document.querySelector("[data-pill-landing-chat]") as HTMLElement).style.getPropertyValue("--pill-landing-left")).toBe("232px");
+  });
+  it("a spot's name sits in its own small tag, not across the middle of the spot (L2)", () => {
+    render(<PillDockSpots spots={[{ dock: "center", left: 400, top: 360, width: 640, height: 180 }]} active="center" current="center" picking={false} onPick={() => undefined} onClose={() => undefined} />);
+    expect(document.querySelector('[data-spot="center"] .pill-spots__label')?.textContent).toBe(PILL_DOCK_COPY.spots.center);
+  });
+});
+
 describe("the spots", () => {
   const spots = [
     { dock: "center" as const, left: 400, top: 360, width: 640, height: 180 },

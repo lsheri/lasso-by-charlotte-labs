@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useState, type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 
 import { BrandMark } from "@/components/layout/BrandLockup";
 import { ArrowUp } from "@/design/brand/icons";
@@ -13,6 +13,7 @@ import { PILL_COPY, PILL_DOCK_COPY } from "@/lib/chat-pill-shared";
 export function PillLanding({
   firstName,
   brandName,
+  railWidth = 0,
   welcome,
   hint,
   onAsk,
@@ -22,6 +23,8 @@ export function PillLanding({
   firstName: string;
   /** The product name the shell shows (Charlotte or Lasso). */
   brandName: string;
+  /** The left menu's measured width; the chat centres in the page beside it. */
+  railWidth?: number;
   welcome: string;
   hint: string;
   onAsk: (text: string) => void;
@@ -46,7 +49,7 @@ export function PillLanding({
     }
   };
   return (
-    <section className="pill-landing" data-pill-landing-chat="" aria-label={PILL_COPY.panel(brandName)}>
+    <section className="pill-landing" data-pill-landing-chat="" style={{ "--pill-landing-left": `${railWidth}px` } as CSSProperties} aria-label={PILL_COPY.panel(brandName)}>
       <button
         type="button"
         className="pill-landing__handle"

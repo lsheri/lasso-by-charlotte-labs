@@ -22,12 +22,15 @@ describe("the docks", () => {
     expect(nearestDock({ x: 850, y: 470 }, spots)).toBe("center");
     expect(nearestDock({ x: 0, y: 0 }, [])).toBe("bottom-right");
   });
-  it("where it sits: the saved choice, centre only on Home, nothing under 640px", () => {
+  it("where it sits: the saved choice, centre only on Home, nothing below the app's phone layout (768px)", () => {
     expect(dockFor(null, "home", 1440)).toBe("center");
     expect(dockFor(null, "proposals", 1440)).toBe("bottom-right");
     expect(dockFor("top-right", "home", 1440)).toBe("top-right");
     expect(dockFor("center", "proposals", 1440)).toBe("bottom-right");
     expect(dockFor("top-right", "home", 390)).toBe("bottom-right");
+    expect(dockFor("top-right", "proposals", 700)).toBe("bottom-right");
+    expect(dockFor(null, "home", 767)).toBe("bottom-right");
+    expect(dockFor(null, "home", 768)).toBe("center");
     expect(cornerOf("center")).toBe("bottom-right");
     expect(cornerOf("top-right")).toBe("top-right");
   });

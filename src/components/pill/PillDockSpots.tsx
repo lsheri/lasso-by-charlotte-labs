@@ -50,11 +50,11 @@ export function PillDockSpots({
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => onPick(spot.dock)}
           >
-            {label}
+            <span className="pill-spots__label">{label}</span>
           </button>
         ) : (
           <div key={spot.dock} className="pill-spots__spot" style={style} data-spot={spot.dock} data-active={spot.dock === active || undefined} aria-hidden>
-            {label}
+            <span className="pill-spots__label">{label}</span>
           </div>
         );
       })}

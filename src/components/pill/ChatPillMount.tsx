@@ -17,6 +17,7 @@ import {
   dockFor,
   dockSpots,
   nearestDock,
+  PILL_SPOTS_MIN_WIDTH,
   PILL_COPY,
   PILL_DRAG_SLOP,
   PILL_HINTS,
@@ -116,7 +117,7 @@ export function ChatPillMount() {
   const [pillMode, setPillMode] = useState<string>("shut");
   const landing = canAsk && place === "home" && dock === "center" && !stepCard && pillMode === "shut";
   // Docked top right, the page keeps a strip clear at its top so the pill never sits on a page's own buttons.
-  const topRight = !onBoard && !landing && dock === "top-right" && width >= 768;
+  const topRight = !onBoard && !landing && dock === "top-right" && width >= PILL_SPOTS_MIN_WIDTH;
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('[data-lasso="on"]');
     if (!root) return;
@@ -124,14 +125,27 @@ export function ChatPillMount() {
     else root.removeAttribute("data-pill-top");
     return () => root.removeAttribute("data-pill-top");
   }, [topRight]);
-  // The page goes soft behind the landing chat, with the shared focus blur (focus-blur-shared.ts).
+  // The page goes soft behind the landing chat, with the shared focus blur (focus-blur-shared.ts). It is also inert
+  // (QA M2 of PR 305): Tab cannot reach a button nobody can see, and nothing behind can be pressed.
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('[data-lasso="on"]');
     if (!root) return;
-    if (landing) root.setAttribute("data-pill-landing", "");
-    else root.removeAttribute("data-pill-landing");
-    return () => root.removeAttribute("data-pill-landing");
+    const behind = Array.from(root.querySelectorAll<HTMLElement>("[data-pill-behind]"));
+    if (landing) {
+      root.setAttribute("data-pill-landing", "");
+      for (const node of behind) node.inert = true;
+    } else root.removeAttribute("data-pill-landing");
+    return () => {
+      root.removeAttribute("data-pill-landing");
+      for (const node of behind) node.inert = false;
+    };
   }, [landing]);
+  // QA L3 of PR 305: the landing chat centres beside the menu's real width, read from the page, not a fixed 256px.
+  const [railWidth, setRailWidth] = useState(0);
+  useEffect(() => {
+    const rail = document.querySelector<HTMLElement>(".lasso-sidebar-shell");
+    setRailWidth(rail?.offsetWidth ?? 0);
+  }, [width, landing]);
 
   const spotsNow = useCallback((): DockSpot[] => {
     const rail = document.querySelector<HTMLElement>(".lasso-sidebar-shell");
@@ -149,11 +163,24 @@ export function ChatPillMount() {
     (event: ReactPointerEvent<HTMLElement>) => {
       if (event.button > 0) return;
       press.current = { x: event.clientX, y: event.clientY, moved: false };
+      // QA L2 of PR 305: the chat itself follows the pointer while it is dragged, then snaps to the lit spot.
+      const carried = (event.currentTarget as HTMLElement).closest<HTMLElement>(".pill-landing, .chat-pill");
+      const letGo = () => {
+        if (!carried) return;
+        carried.removeAttribute("data-pill-dragging");
+        carried.style.removeProperty("--pill-dx");
+        carried.style.removeProperty("--pill-dy");
+      };
       const move = (e: PointerEvent) => {
         const start = press.current;
         if (!start) return;
         if (!start.moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) < PILL_DRAG_SLOP) return;
         start.moved = true;
+        if (carried) {
+          carried.setAttribute("data-pill-dragging", "");
+          carried.style.setProperty("--pill-dx", `${e.clientX - start.x}px`);
+          carried.style.setProperty("--pill-dy", `${e.clientY - start.y}px`);
+        }
         const spots = spotsNow();
         setMoving({ picking: false, spots, active: nearestDock({ x: e.clientX, y: e.clientY }, spots) });
       };
@@ -162,6 +189,7 @@ export function ChatPillMount() {
         window.removeEventListener("pointerup", up);
         const start = press.current;
         press.current = null;
+        letGo();
         if (!start) return;
         const spots = spotsNow();
         // A drag drops into the nearest spot; a click opens the spots to pick from.
@@ -173,7 +201,7 @@ export function ChatPillMount() {
     },
     [choose, spotsNow],
   );
-  const spotsOn = width >= 640 && !onBoard;
+  const spotsOn = width >= PILL_SPOTS_MIN_WIDTH && !onBoard;
 
   if (!profile?.id) return null;
   const viewed = new Map((views ?? []).map((row) => [row.engagement_id, row.last_viewed_at]));
@@ -273,6 +301,7 @@ export function ChatPillMount() {
       {landing ? (
         <PillLanding
           brandName={brand.name}
+          railWidth={railWidth}
           firstName={firstNameOf(profile.display_name)}
           welcome={PILL_COPY.welcomeFirm}
           hint={PILL_HINTS.home}
