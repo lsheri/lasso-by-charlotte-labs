@@ -253,3 +253,22 @@ describe("memberTitle: the one title rule for a Member (QA of PR 299 and 300)", 
     expect(memberTitle(title)).toBe(title);
   });
 });
+
+describe("memberTitle, stricter (follow-up to PR 300): no money in a Member's titles", () => {
+  it.each([
+    ["Investment of 120,000", "Investment"],
+    ["Quote 48500", "Quote"],
+    ["Budget: 45,000 for phase 2", "Budget for phase 2"],
+    ["Fee 2000 refresh", "Fee refresh"],
+    ["Budget 45,000 - pilot", "Budget pilot"],
+    ["Budget - 45,000 - pilot", "Budget pilot"],
+    ["Total value 48.5k (draft)", "Total value (draft)"],
+    ["Contract value 2,500,000", "Contract value"],
+    ["Rate 85 per hour", "Rate"],
+  ])("withholds the amount in %s", (title, expected) => {
+    expect(memberTitle(title)).toBe(expected);
+  });
+  it.each(["QA-299-RFP.txt", "QA 299 lead view check", "Workshop phase 2", "Q4 2026 plan", "Budget for FY 2026", "Pricing review March 2026", "Strategy 2026 refresh", "Top 1000 customers", "3 workshops"])("keeps %s", (title) => {
+    expect(memberTitle(title)).toBe(title);
+  });
+});
