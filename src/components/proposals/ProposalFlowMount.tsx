@@ -82,6 +82,7 @@ export function ProposalFlowMount({
     <ProposalFlow
       open={open}
       woken={woken}
+      cardKey={onProposals ? "proposal-flow:proposals" : "proposal-flow:home"}
       onOpenChange={onOpenChange}
       mayStart={mayStart}
       tools={tools}

@@ -10,6 +10,7 @@ import {
   registerCardReturn,
   reopenCard,
   resetCardReturns,
+  takeAwaited,
 } from "@/lib/step-card-return";
 
 afterEach(() => {
@@ -52,6 +53,14 @@ describe("the way back to a card", () => {
     registerCardReturn("proposal-flow", vi.fn());
     off();
     expect(cardIsHere("proposal-flow")).toBe(true);
+  });
+  it("a list owner takes the key it waits for once, only for its own prefix and only in time", () => {
+    const now = 2_000_000;
+    awaitCard("lead-doc:p1:i1", now);
+    expect(takeAwaited("approval:", now)).toBeNull();
+    expect(takeAwaited("lead-doc:", now + CARD_RETURN_WAIT_MS + 1)).toBeNull();
+    expect(takeAwaited("lead-doc:", now)).toBe("lead-doc:p1:i1");
+    expect(takeAwaited("lead-doc:", now)).toBeNull();
   });
   it("compares pages, not queries", () => {
     expect(pageOf("/proposals?lead=x")).toBe("/proposals");

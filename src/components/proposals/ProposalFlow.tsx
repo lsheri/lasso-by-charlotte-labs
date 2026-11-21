@@ -44,6 +44,8 @@ export type ProposalFlowProps = {
   reduceMotion: boolean;
   /** The card has been opened at least once: until then nothing is read. */
   woken?: boolean | undefined;
+  /** Names this card for the chat's way back; Home's and Proposals' cards are different cards. */
+  cardKey?: string | undefined;
   /** The lead step. Left out, the app's own (the lead sheet with the app's server calls); a story hands in stand-ins. */
   leadStep?: LeadStepRender | undefined;
 };
@@ -81,6 +83,7 @@ function ProposalFlowRound({
   onOpenProposal,
   reduceMotion,
   woken = true,
+  cardKey = "proposal-flow",
   leadStep,
   onFinished,
 }: ProposalFlowProps & { onFinished: () => void }) {
@@ -202,7 +205,7 @@ function ProposalFlowRound({
     // "Ask Lasso about this" closes the card (this round keeps what was typed and the step) and the chat's way back
     // opens it again here.
     onReopen: () => onOpenChange(true),
-    cardKey: "proposal-flow",
+    cardKey,
     testId: "proposal-flow",
   };
 

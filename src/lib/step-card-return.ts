@@ -56,6 +56,17 @@ export function pageOf(href: string): string {
   return (href.split(/[?#]/)[0] ?? "").replace(/\/+$/, "") || "/";
 }
 
+/**
+ * A card whose owner opens it from a list (a sent document on Home) has no card mounted to register until it opens.
+ * The owner asks here, once its list is in, whether the chat is waiting for one of its keys, and opens that one.
+ */
+export function takeAwaited(prefix: string, now = Date.now()): string | null {
+  if (!pending || !pending.key.startsWith(prefix) || pending.until < now) return null;
+  const key = pending.key;
+  pending = null;
+  return key;
+}
+
 /** For tests. */
 export function resetCardReturns(): void {
   live.clear();

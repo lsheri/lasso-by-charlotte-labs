@@ -1,10 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LeadApprovalLine } from "@/components/home/LeadApprovalLine";
 import { type FinalTools } from "@/components/home/LeadFinalBlock";
 import { LeadFinalCard } from "@/components/home/LeadFinalCard";
 import { askApprovalFn } from "@/lib/proposal-approval.functions";
+import { awaitCard, takeAwaited } from "@/lib/step-card-return";
 import { proposalStage, type ApprovalResult } from "@/lib/proposal-approval-shared";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { chooseFinalFn, draftFinalFn } from "@/lib/proposal-final.functions";
@@ -25,6 +26,19 @@ export function LeadUpNext({ profileId }: { profileId: string | null | undefined
   const [open, setOpen] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
   // The document last opened, for the chat's way back to it.
   const [lastDoc, setLastDoc] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
+  // The chat's way back to a sent document after a change of page: once the list is in, open the one it waits for,
+  // if it is still on a proposal this person leads; otherwise the chat says it is gone.
+  useEffect(() => {
+    const rows = led.data?.proposals;
+    if (!rows) return;
+    const key = takeAwaited("lead-doc:");
+    if (!key) return;
+    const [, proposalId, itemId] = key.split(":");
+    const row = rows.find((item) => item.id === proposalId);
+    const doc = row?.documents?.find((item) => item.id === itemId);
+    if (row && doc) setOpen({ proposalId: row.id, itemId: doc.id, title: doc.title });
+    else awaitCard(key, 0);
+  }, [led.data]);
   if (open && open !== lastDoc) setLastDoc(open);
   const queryClient = useQueryClient();
   const { captureWithResult } = useCaptureFiles();
