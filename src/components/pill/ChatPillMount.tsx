@@ -111,6 +111,15 @@ export function ChatPillMount() {
   const onBoard = place === "board";
   const dock: PillDock = onBoard ? "bottom-right" : dockFor(saved, place, width);
   const landing = canAsk && place === "home" && dock === "center" && !stepCard;
+  // Docked top right, the page keeps a strip clear at its top so the pill never sits on a page's own buttons.
+  const topRight = !onBoard && !landing && dock === "top-right" && width >= 768;
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('[data-lasso="on"]');
+    if (!root) return;
+    if (topRight) root.setAttribute("data-pill-top", "");
+    else root.removeAttribute("data-pill-top");
+    return () => root.removeAttribute("data-pill-top");
+  }, [topRight]);
   // The page goes soft behind the landing chat, with the shared focus blur (focus-blur-shared.ts).
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('[data-lasso="on"]');

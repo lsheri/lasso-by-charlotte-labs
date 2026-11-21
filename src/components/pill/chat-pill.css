@@ -560,6 +560,11 @@
   background-image: radial-gradient(circle, currentColor 1.4px, transparent 1.6px);
   background-size: 5px 5px;
 }
+/* Docked top right: a strip kept clear at the top of the page, so the pill never covers a page's own buttons. */
+[data-lasso="on"][data-pill-top] [data-pill-behind] {
+  padding-top: 64px;
+  transition: padding-top 600ms var(--chat-pill-ease);
+}
 /* The page behind the landing chat: the same focus blur as the full screen chat (focus-blur-shared.ts). */
 [data-lasso="on"][data-pill-landing] [data-pill-behind] {
   filter: blur(26px) saturate(0.75);
