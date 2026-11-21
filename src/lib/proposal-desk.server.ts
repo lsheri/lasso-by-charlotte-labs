@@ -53,6 +53,7 @@ import {
 } from "./proposal-desk-shared";
 import { canManageRoster } from "./roster-shared";
 import { sendState, type SentDocs } from "./lead-view-shared";
+import type { ApprovalView } from "./proposal-approval-shared";
 
 type Db = SupabaseClient<Database>;
 /** The two new tables are not in the generated types until the migration is applied and the types are regenerated. */
@@ -130,6 +131,8 @@ export type DeskStore = {
   leadLinks?: (orgId: string, contactIds: string[]) => Promise<Set<string>>;
   /** 21 Nov 2026, PR 4b: what each of these proposals' owners sent to the lead. Left out, nothing was sent. */
   leadDocsSent?: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs>>;
+  /** 21 Nov 2026, Phase 5: the latest approval request per proposal. Left out, none. */
+  approvals?: (orgId: string, proposalIds: string[]) => Promise<Map<string, ApprovalView>>;
   /** The asks sent about these proposals in this workspace, newest first. Empty when there are none or they cannot be read. */
   asks: (orgId: string, proposalIds: string[]) => Promise<DeskAsk[]>;
   /** Where this workspace's texts go, and whether texting is switched on. */
@@ -225,6 +228,8 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
   const ownLeads = [...new Set(mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id).map((row) => row.lead_contact_id as string))];
   const linked = ownLeads.length && store.leadLinks ? await store.leadLinks(caller.orgId, ownLeads).catch(() => new Set<string>()) : new Set<string>();
   const ownLed = mine.filter((row) => ownIds.has(row.id) && row.lead_contact_id && row.status === "open").map((row) => row.id);
+  // Phase 5: approvals go to the same people who are told who the lead is: admins, leads and the person who started it.
+  const approvals = named.length && store.approvals ? await store.approvals(caller.orgId, named.map((row) => row.id)).catch(() => new Map<string, ApprovalView>()) : new Map<string, ApprovalView>();
   const sentDocs = ownLed.length && store.leadDocsSent ? await store.leadDocsSent(caller.orgId, ownLed).catch(() => new Map<string, SentDocs>()) : new Map<string, SentDocs>();
   const proposals: DeskProposal[] = mine.map((row) => {
     const items = context.filter((c) => c.proposal_id === row.id);
@@ -248,6 +253,7 @@ export async function listDesk(store: DeskStore): Promise<DeskList> {
       ...(pickers ? { leadContactId: row.lead_contact_id ?? null } : {}),
       ...(pickers || own ? { leadName: (row.lead_contact_id ? leadNames.get(row.lead_contact_id) : null) ?? null, ask: askByProposal.get(row.id) ?? null } : {}),
       ...(own ? { contextTitles: items.map((c) => titles.get(c.work_item_id) ?? "").filter(Boolean) } : {}),
+      ...(approvals.has(row.id) ? { approval: approvals.get(row.id)! } : {}),
       ...(own && row.status === "open" && row.lead_contact_id
         ? (() => {
             const ids = items.map((c) => c.work_item_id);
@@ -658,6 +664,10 @@ export async function realStore(context: DeskContext, profileId: string | null):
       const { data, error } = await adminLoose.from("roster_contacts").select("id, profile_id").eq("org_id", orgId).in("id", contactIds);
       if (error) return new Set();
       return new Set(((data ?? []) as { id: string; profile_id: string | null }[]).filter((row) => row.profile_id).map((row) => row.id));
+    },
+    async approvals(orgId, proposalIds) {
+      const { readApprovalViews } = await import("./proposal-approval.server");
+      return readApprovalViews(adminLoose, orgId, proposalIds);
     },
     async leadDocsSent(orgId, proposalIds) {
       if (proposalIds.length === 0) return new Map();
