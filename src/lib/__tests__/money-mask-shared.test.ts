@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD } from "@/lib/money-mask-shared";
+import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD, numbersWithheld, numbersWithheldInline, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
 
 describe("withoutMoney: the canvas formats", () => {
   it.each([
@@ -176,5 +176,41 @@ describe("formats a Member lead must not see (QA H1 of PR 299)", () => {
   it("a sentence that mentions fees in passing is not a heading", () => {
     const doc = "Fees are discussed on page four of the attached letter, which runs to several pages.\nThe team is five people.";
     expect(moneyFreeDocument(doc)).toBe(doc);
+  });
+});
+
+describe("numbersWithheld: the blunt Member form (QA H1b of PR 299)", () => {
+  it.each([
+    ["Day rate: 950", "950"],
+    ["The value is 230,000", "230,000"],
+    ["48,500 ex VAT", "48,500"],
+    ["between 120 to 150 thousand", "150 thousand"],
+    ["one hundred and twenty thousand", "hundred"],
+    ["fifteen hundred", "fifteen"],
+    ["2.5m", "2.5m"],
+  ])("withholds %s", (text, figure) => {
+    expect(numbersWithheld(text)).not.toContain(figure);
+    expect(numbersWithheld(text)).toContain(NUMBER_WITHHELD);
+  });
+
+  it.each(["Q4 2026 delivery", "Week 3", "3 workshops", "Call on 2026-11-24 at 10:30", "Due 21/11/2026", "Founded in 1998", "Phase 2 of 3"])("keeps %s", (text) => {
+    expect(numbersWithheld(text)).toBe(text);
+  });
+
+  it("withholds whole sections under fee, cost, price, budget, rate or expense headings, in any style", () => {
+    for (const heading of ["Section 5. Fees", "Costs", "## Price", "Budget:", "Day rates", "Expenses", "Cost table"]) {
+      const out = numbersWithheld(`${heading}\nLine one 40\nLine two\n\nNext steps\nCall Tuesday.`);
+      expect(out).not.toContain("Line one");
+      expect(out).toContain(MONEY_SECTION_WITHHELD);
+      expect(out).toContain("Call Tuesday.");
+    }
+  });
+
+  it("a line with a figure is masked, never taken for a heading that hides what follows", () => {
+    expect(numbersWithheld("Budget 50-60k\nThe team meets weekly.")).toBe(`Budget ${NUMBER_WITHHELD}\nThe team meets weekly.`);
+  });
+
+  it("the inline form never hides a section", () => {
+    expect(numbersWithheldInline("Fee schedule 45,000")).toBe(`Fee schedule ${NUMBER_WITHHELD}`);
   });
 });

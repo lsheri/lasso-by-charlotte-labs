@@ -28,7 +28,7 @@ import {
   type SendDocsResult,
 } from "./lead-view-shared";
 import { countBand, goalHours, sameClientName } from "./proposal-desk-shared";
-import { moneyFreeDocument, seesMoney, withoutMoney } from "./money-mask-shared";
+import { numbersWithheld, numbersWithheldInline, seesMoney, withoutMoney } from "./money-mask-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -81,16 +81,20 @@ export type LeadStore = {
 };
 
 /**
- * Amounts out of a Member's view (QA H1 of PR 299): the shared money mask's whole-document form, which withholds a
- * money-headed section with its bare price table and masks every figure left. Titles lose their figures too.
+ * Amounts out of a Member's view (QA H1 and H1b of PR 299, Liam: Members never see money): the blunt form. Every
+ * money-headed section goes whole, and every number of three or more digits, every number with a scale and every
+ * spelled-out amount is withheld, with or without a currency. Years, dates, times and short counts stay. Titles lose
+ * their figures too. Admins and Leads read the words as written.
  */
 function forReader(text: string, role: string): { text: string; withheld: boolean } {
   if (seesMoney(role)) return { text, withheld: false };
-  const masked = moneyFreeDocument(text);
+  const masked = numbersWithheld(text);
   return { text: masked, withheld: masked !== text };
 }
 function titleFor(title: string, role: string): string {
-  return seesMoney(role) ? title : withoutMoney(title) || title.replace(/\d/g, "").trim() || "Untitled";
+  if (seesMoney(role)) return title;
+  const bare = numbersWithheldInline(withoutMoney(title)).replace(/\s*\[number withheld\]\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+  return bare || "Untitled";
 }
 
 /** Whether this caller leads this row now: open, unarchived, in their workspace, and its lead linked to them. */
