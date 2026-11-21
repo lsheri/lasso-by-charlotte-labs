@@ -145,8 +145,9 @@ describe("a drag scrubs one shape through every point", () => {
   });
 
   it("softens the page behind as the chat goes full screen", () => {
-    expect(behindAt(0)).toEqual({ blurPx: 0, opacity: 1, scale: 1 });
-    expect(behindAt(1)).toEqual({ blurPx: 3, opacity: 0.5, scale: 0.985 });
+    // 21 Nov 2026: the shared focus blur, as the prototype's v9.
+    expect(behindAt(0)).toEqual({ filter: "blur(0.00px) saturate(1.000)", opacity: 1, transform: "scale(1.0000)" });
+    expect(behindAt(1)).toEqual({ filter: "blur(26.00px) saturate(0.750)", opacity: 0.42, transform: "scale(0.9850)" });
     expect(behindAt(7)).toEqual(behindAt(1));
   });
 
