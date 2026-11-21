@@ -30,6 +30,7 @@ import {
   ROSTER_MAX_CONTACTS,
   rosterLinkPath,
   sameEmail,
+  samePersonName,
   textsStatus,
   type ConsentMark,
   type RosterAffiliation,
@@ -503,6 +504,14 @@ export async function linkTeammate(deps: RosterDeps, input: TeammateLinkInput, n
     if (input.contact_id) {
       const chosen = mine.find((row) => row.id === input.contact_id && !row.profile_id);
       if (!chosen) return { ok: false, reason: "missing" };
+      // QA N2 of PR 298: the same check the sheet asks on, again here. Only a row written with the teammate's name, or
+      // one whose email on file is their login email, can be linked by choice; a hand-made call cannot pin a stranger.
+      if (!samePersonName(chosen.full_name, member.display_name)) {
+        const email = member.user_id ? await deps.emailOf(member.user_id).catch(() => null) : null;
+        const details = email ? await deps.details(caller.orgId, [chosen.id]) : null;
+        const matches = Array.isArray(details) && details.some((detail) => detail.roster_contact_id === chosen.id && sameEmail(detail.email, email));
+        if (!matches) return { ok: false, reason: "missing" };
+      }
       const linked = await deps.linkProfile(caller.orgId, chosen.id, member.id);
       if (linked === "absent") return { ok: false, reason: "not_ready" };
       if (linked === null) return { ok: false, reason: "unavailable" };
