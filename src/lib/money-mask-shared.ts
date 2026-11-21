@@ -141,6 +141,73 @@ export function moneyFreeDocument(text: string): string {
   return maskMoney(withoutFees(out.join("\n")));
 }
 
+/** The mark left where a number was, in a brief or document a Member lead reads. */
+export const NUMBER_WITHHELD = "[number withheld]";
+
+// A heading over money, in any style: "## Fees", "Section 5. Fees", "4) Costs and expenses", "Day rates:", "BUDGET".
+const NUMBERS_HEADING =
+  /^\s*(?:#{1,6}\s*)?(?:(?:section|part|schedule|appendix)\s+[\w.]+[.:)]?\s*)?(?:[\d.)\s]+)?(?:fees?|costs?|cost\s+table|prices?|pricing|budgets?|rates?|day\s+rates?|expenses?|commercials?|investment|payments?|compensation|financials?)\b[^\n.!?]{0,60}:?\s*$/i;
+const NUMBERS_ANY_HEADING = (line: string) =>
+  /^\s*#{1,6}\s+\S/.test(line) || /^\s*(?:section|part|schedule|appendix)\s+[\w.]+[.:)]?\s+\S/i.test(line) || /^\s*[A-Z][A-Za-z0-9&/ ,'-]{1,60}:?\s*$/.test(line);
+// Spelled amounts: "one hundred and twenty thousand", "fifteen hundred", "a million".
+const SPELLED_AMOUNT = new RegExp(`\\b${NUM_WORD}(?:[\\s-]+${NUM_WORD})*\\s+(?:hundred|thousand|million|billion)\\b(?:[\\s-]+(?:and\\s+)?${NUM_WORD}(?:[\\s-]+${NUM_WORD})*)?`, "gi");
+// Dates and times stay: 2026-11-21, 21/11/2026, 21.11.26, 10:30, Q4 2026, FY26.
+const DATE_LIKE = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b|\b\d{1,2}:\d{2}\b/g;
+// Any number with three or more digits (separators allowed), with an optional decimal and scale; or a short number
+// with a scale ("120 to 150 thousand", "2.5m").
+const BIG_NUMBER = new RegExp(
+  `(?<![\\w.,'’])(?:\\d{1,3}(?:${SEP}\\d{3})+|\\d{3,})(?:[.,]\\d+)?(?:\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}]))?(?![\\d])` +
+    `|(?<![\\w.,'’])\\d{1,2}(?:[.,]\\d+)?\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}])`,
+  "giu",
+);
+/** A plain year stays a year: 1900 to 2099, standing alone or after Q1-Q4, FY or a month. */
+const isYear = (value: string) => /^(?:19|20)\d{2}$/.test(value);
+
+/**
+ * 21 Nov 2026 (QA H1b of PR 299, Liam's rule "Members never see money"): the blunt form for a whole brief or document a
+ * Member lead reads. Every money-headed section goes whole; then every number of three or more digits, every number
+ * with a scale and every spelled-out amount is withheld, whatever the currency or none. Years, dates, times and short
+ * counts ("3 workshops", "Week 3") stay. Admins and Leads never get this text.
+ */
+export function numbersWithheld(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  let hiding = false;
+  let blank = false;
+  for (const line of lines) {
+    // A heading carries no figure of its own ("Day rate: 950" is a line to mask, not a section to hide).
+    const plain = line.replace(/(?:section|part|schedule|appendix)\s+[\w.]+/i, "");
+    if (NUMBERS_HEADING.test(line) && !/\d/.test(plain) && line.trim().split(/\s+/).length <= 9) {
+      if (!hiding) out.push(line.trim().replace(/:$/, ""), MONEY_SECTION_WITHHELD);
+      hiding = true;
+      blank = false;
+      continue;
+    }
+    if (hiding) {
+      const isHeading = /^\s*#{1,6}\s+\S/.test(line) || (blank && NUMBERS_ANY_HEADING(line) && line.trim().split(/\s+/).length <= 9);
+      if (!isHeading) {
+        blank = line.trim() === "";
+        continue;
+      }
+      hiding = false;
+      out.push("");
+    }
+    out.push(line);
+  }
+  return numbersWithheldInline(out.join("\n"));
+}
+
+/** The number part of numbersWithheld alone, for a title or a single line: no section is hidden. */
+export function numbersWithheldInline(text: string): string {
+  let body = maskMoney(text, NUMBER_WITHHELD);
+  // Dates and times are set aside so their digits are never read as amounts.
+  const kept: string[] = [];
+  body = body.replace(DATE_LIKE, (match) => `\u0000${kept.push(match) - 1}\u0000`);
+  body = body.replace(SPELLED_AMOUNT, NUMBER_WITHHELD);
+  body = body.replace(BIG_NUMBER, (match) => (isYear(match) ? match : NUMBER_WITHHELD));
+  return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
+}
+
 /** A document or summary as a Member may read it: a proposal's Fees section withheld, and every figure masked. */
 export function moneyFreeText(text: string): string {
   return maskMoney(withoutFees(text));

@@ -132,7 +132,7 @@ export const LEAD_VIEW_COPY = {
   docLoading: "Opening the document",
   docGone: "That document is not here for you any more. It may have been taken off the proposal, or you may no longer lead it.",
   docFailed: "The document could not be opened. Try again in a moment.",
-  withheld: "Amounts are withheld for you.",
+  withheld: "Numbers are withheld for you.",
   clipped: "This is the start of a long document. The rest opens on the team board once the proposal is won.",
   close: "Close",
   /** In the chat pill, one line above the welcome. */

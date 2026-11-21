@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import { docsSentToLead, sendState, LEAD_VIEW_COPY, leadDocInput, ledInput, SEND_DOCS_COPY, sendDocsInput, upNextOrder, type LedProposal } from "@/lib/lead-view-shared";
-import { MONEY_SECTION_WITHHELD, MONEY_WITHHELD } from "@/lib/money-mask-shared";
+import { MONEY_SECTION_WITHHELD, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
 import { listLed, readLeadDocument, sendLeadDocuments, type LeadProposalRow, type LeadStore } from "@/lib/lead-view.server";
 
 const ORG = "00000000-0000-4000-8000-0000000000a1";
@@ -133,7 +133,7 @@ describe("listLed", () => {
   it("a Member who leads never sees money in the brief; a Lead-role teammate does", async () => {
     const member = (await listLed(world({ role: "em" }).store)).proposals[0]!.brief!;
     expect(member).not.toMatch(/45,000|\$/);
-    expect(member).toContain(MONEY_WITHHELD);
+    expect(member).toContain(NUMBER_WITHHELD);
     const lead = (await listLed(world({ role: "lead" }).store)).proposals[0]!.brief!;
     expect(lead).toContain("$45,000");
   });
@@ -344,5 +344,27 @@ describe("QA of PR 299", () => {
     expect(await sendLeadDocuments(owner.store, { profile_id: null, proposal_id: P1, send: true })).toEqual({ ok: true });
     expect(owner.writes).toEqual([{ id: P1, to: ROW_CHRISTY, items: [DOC, PRIVATE], at: NOW.toISOString() }]);
     expect((await readLeadDocument(w.store, { profile_id: null, proposal_id: P1, work_item_id: PRIVATE })).ok).toBe(true);
+  });
+});
+
+// QA H1b of PR 299 (Liam: Members never see money): amounts with no currency at all.
+describe("QA H1b of PR 299", () => {
+  const BARE = ["Day rate: 950", "The value is 230,000", "48,500 ex VAT", "Somewhere between 120 to 150 thousand", "Section 5. Fees", "Expenses 5,000", "Travel 2,000", "", "Section 6. Timeline", "Kick-off 2026-12-01 at 10:30, Q4 2026, Week 3, 3 workshops"].join("\n");
+  it("a Member lead's brief keeps no number of three or more digits, no scaled or spelled amount, and keeps dates and short counts", async () => {
+    const member = (await listLed(world({ role: "em", rows: [proposal({ notes: BARE })] }).store)).proposals[0]!.brief!;
+    expect(member).not.toMatch(/950|230,000|48,500|120|150 thousand|5,000|2,000/);
+    expect(member).toContain("2026-12-01 at 10:30, Q4 2026, Week 3, 3 workshops");
+    expect(member).toContain("Section 6. Timeline");
+    const lead = (await listLed(world({ role: "lead", rows: [proposal({ notes: BARE })] }).store)).proposals[0]!.brief!;
+    expect(lead).toBe(BARE);
+  });
+
+  it("a document says Numbers are withheld when anything was", async () => {
+    const { store } = world({ rows: [proposal({ sent: ROW_CHRISTY })], itemText: async () => "Cost table\nItem | Cost\nDiscovery | 18,000\n\nNext steps\nCall Tuesday." });
+    const result = await readLeadDocument(store, { profile_id: null, proposal_id: P1, work_item_id: DOC });
+    expect(result.ok && result.withheld).toBe(true);
+    expect(result.ok && result.text).not.toContain("18,000");
+    expect(result.ok && result.text).toContain("Call Tuesday.");
+    expect(LEAD_VIEW_COPY.withheld).toBe("Numbers are withheld for you.");
   });
 });
