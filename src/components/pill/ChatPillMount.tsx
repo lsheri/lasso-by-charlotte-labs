@@ -112,7 +112,9 @@ export function ChatPillMount() {
   }, []);
   const onBoard = place === "board";
   const dock: PillDock = onBoard ? "bottom-right" : dockFor(saved, place, width);
-  const landing = canAsk && place === "home" && dock === "center" && !stepCard;
+  // The pill reports its state; the landing chat shows only while the pill is shut (asking from it opens the full chat).
+  const [pillMode, setPillMode] = useState<string>("shut");
+  const landing = canAsk && place === "home" && dock === "center" && !stepCard && pillMode === "shut";
   // Docked top right, the page keeps a strip clear at its top so the pill never sits on a page's own buttons.
   const topRight = !onBoard && !landing && dock === "top-right" && width >= 768;
   useEffect(() => {
@@ -236,6 +238,7 @@ export function ChatPillMount() {
         hint={PILL_HINTS[place]}
         hidden={landing}
         startWith={startWith}
+        onModeChange={setPillMode}
         onHandleDown={spotsOn ? onHandleDown : undefined}
         upNext={
           <>

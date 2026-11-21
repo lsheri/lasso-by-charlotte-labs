@@ -86,6 +86,7 @@ export function ChatPill({
   hidden = false,
   startWith = null,
   onHandleDown,
+  onModeChange,
   upNext = null,
 }: {
   brandName: string;
@@ -127,10 +128,15 @@ export function ChatPill({
   startWith?: { id: number; text: string } | null;
   /** The six-dot handle was pressed: the container moves the pill between spots. Left out, no handle. */
   onHandleDown?: ((event: ReactPointerEvent<HTMLElement>) => void) | undefined;
+  /** Phase 1c: the mount hides the Home landing chat while the pill is open or full. */
+  onModeChange?: ((mode: PillMode) => void) | undefined;
   /** 21 Nov 2026, PR 4b: the Lead's Up next, drawn under the welcome. The container decides who gets one. */
   upNext?: ReactNode;
 }) {
   const [mode, setModeState] = useState<PillMode>(initialMode);
+  useEffect(() => {
+    onModeChange?.(mode);
+  }, [mode, onModeChange]);
   const [messages, setMessages] = useState<ChatPillMessage[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
