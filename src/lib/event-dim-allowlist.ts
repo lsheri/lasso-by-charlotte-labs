@@ -75,6 +75,9 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   // one (whether amounts were withheld). Never a title, a client, a name or words.
   "proposal.docs_to_lead": ["documents"],
   "lead_view.document_opened": ["withheld"],
+  // 21 Nov 2026, chat pill PR 4c: the lead chose the final version (where it came from), or drafted one (bands).
+  "proposal.final_chosen": ["source"],
+  "proposal.final_drafted": ["gaps", "questions"],
   "demo_text_number.changed": ["change"],
   "proposal_draft.created": ["gaps", "questions", "sections"],
   "proposal_draft.precedent_swapped": [],

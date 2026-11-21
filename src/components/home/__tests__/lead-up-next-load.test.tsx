@@ -8,6 +8,9 @@ const state: { value: Record<string, unknown> } = { value: {} };
 vi.mock("@/components/home/use-led", () => ({ useLed: () => state.value }));
 vi.mock("@/lib/lead-view.functions", () => ({ leadDocumentFn: vi.fn() }));
 vi.mock("@/components/home/LeadDocumentDialog", () => ({ LeadDocumentDialog: () => null }));
+vi.mock("@/components/work/use-capture-files", () => ({ useCaptureFiles: () => ({ captureWithResult: vi.fn() }) }));
+vi.mock("@/lib/proposal-final.functions", () => ({ chooseFinalFn: vi.fn(), draftFinalFn: vi.fn() }));
+vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 
 import { LeadUpNext } from "@/components/home/LeadUpNext";
 import { LEAD_VIEW_COPY } from "@/lib/lead-view-shared";

@@ -28,7 +28,7 @@ import {
   type SendDocsResult,
 } from "./lead-view-shared";
 import { countBand, goalHours, sameClientName } from "./proposal-desk-shared";
-import { numbersWithheld, numbersWithheldInline, seesMoney, withoutMoney } from "./money-mask-shared";
+import { memberTitle, numbersWithheld, seesMoney } from "./money-mask-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -72,7 +72,11 @@ export type LeadStore = {
   sentDocs: (orgId: string, proposalIds: string[]) => Promise<Map<string, SentDocs> | "absent">;
   /** Records what was sent (replacing any earlier send), or deletes the record (Stop sharing). */
   saveSent: (proposalId: string, orgId: string, sent: (SentDocs & { sent_by: string; sent_at: string }) | null) => Promise<boolean | "absent">;
-  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened", dims: Record<string, string>) => Promise<void>;
+  record: (caller: LeadCaller, eventType: "proposal.docs_to_lead" | "lead_view.document_opened" | "proposal.final_chosen", dims: Record<string, string>) => Promise<void>;
+  /** 21 Nov 2026, PR 4c: the latest final per proposal. "absent" before its table exists. Left out, none. */
+  finals?: (orgId: string, proposalIds: string[]) => Promise<{ proposal_id: string; work_item_id: string | null; chosen_at: string }[] | "absent">;
+  /** Titles of these work items in this workspace, whoever owns them. */
+  itemTitles?: (orgId: string, ids: string[]) => Promise<Map<string, string>>;
   now: () => Date;
 };
 
@@ -88,13 +92,13 @@ function forReader(text: string, role: string): { text: string; withheld: boolea
   return { text: masked, withheld: masked !== text };
 }
 function titleFor(title: string, role: string): string {
-  if (seesMoney(role)) return title;
-  const bare = numbersWithheldInline(withoutMoney(title)).replace(/\s*\[number withheld\]\s*/g, " ").replace(/\s{2,}/g, " ").trim();
-  return bare || "Untitled";
+  // Titles and file names are not money (live check of PR 299: "QA 299 lead view check", "QA-299-RFP.txt"): only an
+  // amount with a currency sign or a money word goes ("Fee schedule $45,000", "Care model review, $80k cap").
+  return seesMoney(role) ? title : memberTitle(title);
 }
 
 /** Whether this caller leads this row now: open, unarchived, in their workspace, and its lead linked to them. */
-async function leads(store: LeadStore, caller: LeadCaller, row: LeadProposalRow | null): Promise<boolean> {
+export async function leads(store: LeadStore, caller: LeadCaller, row: LeadProposalRow | null): Promise<boolean> {
   if (!row || row.org_id !== caller.orgId || row.status !== "open" || row.archived_at || !row.lead_contact_id) return false;
   const mine = await store.myContacts(caller.orgId, caller.profileId);
   return Array.isArray(mine) && mine.includes(row.lead_contact_id);
@@ -113,14 +117,17 @@ export async function listLed(store: LeadStore): Promise<LedList> {
   // The same rule again, so a read that returned too much cannot widen what is shown.
   const rows = read.filter((row) => row.org_id === caller.orgId && row.status === "open" && !row.archived_at && row.lead_contact_id && mine.includes(row.lead_contact_id));
   if (rows.length === 0) return { goalHours: goal, proposals: [] };
-  const [clients, owners, context, boards, sentRead] = await Promise.all([
+  const [clients, owners, context, boards, sentRead, finalRows] = await Promise.all([
     store.clientNames([...new Set(rows.map((row) => row.client_id))]),
     store.personNames([...new Set(rows.map((row) => row.owner_id))]),
     store.context(rows.map((row) => row.id)),
     store.sharedBoards(caller.orgId),
     store.sentDocs(caller.orgId, rows.map((row) => row.id)).catch(() => "absent" as const),
+    store.finals ? store.finals(caller.orgId, rows.map((row) => row.id)).catch(() => "absent" as const) : Promise.resolve("absent" as const),
   ]);
   const sent = sentRead === "absent" ? new Map<string, SentDocs>() : sentRead;
+  const finals = finalRows === "absent" ? [] : finalRows;
+  const finalTitles = finals.length && store.itemTitles ? await store.itemTitles(caller.orgId, [...new Set(finals.map((row) => row.work_item_id).filter((id): id is string => Boolean(id)))]) : new Map<string, string>();
   const proposals: LedProposal[] = [];
   for (const row of rows) {
     const listed = context.filter((entry) => entry.proposal_id === row.id).map((entry) => entry.work_item_id);
@@ -150,6 +157,13 @@ export async function listLed(store: LeadStore): Promise<LedList> {
             .slice(0, LEAD_PAST_WORK_SHOWN)
             .map((board) => ({ boardId: board.id, title: titleFor(board.title, role) }))
         : [],
+      final: (() => {
+        const latest = finals.filter((entry) => entry.proposal_id === row.id).sort((a, b) => b.chosen_at.localeCompare(a.chosen_at))[0];
+        if (!latest) return null;
+        // The latest choice counts, even when its document is gone: never a quiet fall back to an earlier one.
+        if (!latest.work_item_id) return { itemId: "", title: "", chosenAt: latest.chosen_at, gone: true as const };
+        return { itemId: latest.work_item_id, title: titleFor(finalTitles.get(latest.work_item_id) ?? "", role), chosenAt: latest.chosen_at };
+      })(),
     });
   }
   return { goalHours: goal, proposals };
@@ -298,6 +312,17 @@ export async function realLeadStore(context: LeadContext, profileId: string | nu
       if (error || !data) return null;
       const result = await getItemText(supabaseAdmin as never, data as never);
       return result.text ?? null;
+    },
+    async finals(orgId, proposalIds) {
+      if (!proposalIds.length) return [];
+      const { data, error } = await admin.from("proposal_final_versions").select("proposal_id, work_item_id, chosen_at").eq("org_id", orgId).in("proposal_id", proposalIds).order("chosen_at", { ascending: false }).limit(500);
+      if (error) return "absent";
+      return (data ?? []) as { proposal_id: string; work_item_id: string | null; chosen_at: string }[];
+    },
+    async itemTitles(orgId, ids) {
+      if (!ids.length) return new Map();
+      const { data } = await admin.from("work_items").select("id, title, display_title").eq("org_id", orgId).in("id", ids);
+      return new Map(((data ?? []) as { id: string; title: string; display_title: string | null }[]).map((row) => [row.id, row.display_title || row.title]));
     },
     async sentDocs(orgId, proposalIds) {
       if (!proposalIds.length) return new Map();

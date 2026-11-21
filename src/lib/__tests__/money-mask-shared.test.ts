@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD, numbersWithheld, numbersWithheldInline, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
+import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD, memberTitle, numbersWithheld, numbersWithheldInline, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
 
 describe("withoutMoney: the canvas formats", () => {
   it.each([
@@ -212,5 +212,44 @@ describe("numbersWithheld: the blunt Member form (QA H1b of PR 299)", () => {
 
   it("the inline form never hides a section", () => {
     expect(numbersWithheldInline("Fee schedule 45,000")).toBe(`Fee schedule ${NUMBER_WITHHELD}`);
+  });
+});
+
+describe("numbersWithheld: prices that look like years or are small (QA of PR 300)", () => {
+  it.each([
+    ["fees of 99 each", "99"],
+    ["Rate 85 per hour", "85"],
+    ["costs 1950", "1950"],
+    ["1999 per day", "1999"],
+    ["2000 each", "2000"],
+    ["each workshop is 2000", "2000"],
+  ])("withholds %s", (text, figure) => {
+    expect(numbersWithheld(text)).not.toContain(figure);
+  });
+  it.each(["In 2026 they grew", "Founded 1998", "Q4 2026 delivery", "a 15% discount", "Phase 2 of 3"])("keeps %s", (text) => {
+    expect(numbersWithheld(text)).toBe(text);
+  });
+});
+
+describe("numbersWithheld: a bare year-like cell in a table (QA of PR 300)", () => {
+  it("withholds '| Discovery | 2000 |' and a last cell, keeps a year in a sentence", () => {
+    expect(numbersWithheld("| Discovery | 2000 |")).toBe(`| Discovery | ${NUMBER_WITHHELD} |`);
+    expect(numbersWithheld("| Delivery | 1999")).toBe(`| Delivery | ${NUMBER_WITHHELD}`);
+    expect(numbersWithheld("Kick-off in 2026 | Week 3")).toBe("Kick-off in 2026 | Week 3");
+  });
+});
+
+describe("memberTitle: the one title rule for a Member (QA of PR 299 and 300)", () => {
+  it.each([
+    ["Budget: 45,000 for phase 2", "Budget for phase 2"],
+    ["Fee 2000 refresh", "Fee refresh"],
+    ["Fee schedule $45,000", "Fee schedule"],
+    ["Care model review, $80k cap, phase 2", "Care model review, cap, phase 2"],
+    ["$45,000", "Untitled"],
+  ])("drops the amount in %s", (title, expected) => {
+    expect(memberTitle(title)).toBe(expected);
+  });
+  it.each(["QA-299-RFP.txt", "QA 299 lead view check", "Workshop phase 2", "Q4 2026 plan"])("keeps %s", (title) => {
+    expect(memberTitle(title)).toBe(title);
   });
 });

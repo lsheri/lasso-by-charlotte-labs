@@ -573,6 +573,10 @@ export type TelemetryEvent =
   | "proposal.docs_to_lead"
   /** 21 Nov, chat pill PR 4b: a proposal's lead opened one of its documents. Dim: withheld (yes | no: amounts withheld for a Member). Never a title or words. Portal registration required. */
   | "lead_view.document_opened"
+  /** 21 Nov, chat pill PR 4c: a proposal's lead chose its final version. Dim: source (upload | draft | document). Never a title or words. Portal registration required. */
+  | "proposal.final_chosen"
+  /** 21 Nov, chat pill PR 4c: a proposal's lead drafted it from the brief and sent documents, with no board. Dims: gaps, questions (bands). Never words. Portal registration required. */
+  | "proposal.final_drafted"
   /** 20 Nov, D-50: an admin of a demo workspace set or cleared the one number its won-proposal text goes to. Dim: change (set | cleared). Never the number or any part of it. Portal registration required. */
   | "demo_text_number.changed"
   /** 19 Nov, Proposal Desk: an admin pressed Send on "Text the lead" for a won proposal. Dims: channel (sms). Never a phone number, a name or the words. Portal registration required. */

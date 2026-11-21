@@ -162,6 +162,12 @@ const BIG_NUMBER = new RegExp(
 );
 /** A plain year stays a year: 1900 to 2099, standing alone or after Q1-Q4, FY or a month. */
 const isYear = (value: string) => /^(?:19|20)\d{2}$/.test(value);
+// QA of PR 300: a "year" with money words around it is a price ("costs 1950", "1999 per day", "2000 each"), and a
+// small figure right after a money word is one too ("fees of 99 each", "rate 85").
+const MONEY_WORDS = "(?:fees?|costs?|cost|price[sd]?|pricing|rates?|budgets?|charged?|charges|pays?|paid|payment|total|expenses?|investment|value|worth|spend|£|\\$|€)";
+const PRICE_BEFORE = new RegExp(`\\b${MONEY_WORDS}\\b[^.\\n\\d]{0,15}$|[£$€]\\s?$|\\b(?:is|are|at)\\s$`, "i");
+const PRICE_AFTER = /^\s?(?:\/|per\b|each\b|a\s+(?:day|month|week|year|hour)\b|ex\b|plus\b|\+\s?VAT|VAT\b|net\b|gross\b|in fees)/i;
+const SMALL_AFTER_MONEY = new RegExp(`(\\b${MONEY_WORDS}\\b[^.\\n\\d]{0,15})(\\d{1,2}(?:[.,]\\d+)?)(?![\\d%])`, "gi");
 
 /**
  * 21 Nov 2026 (QA H1b of PR 299, Liam's rule "Members never see money"): the blunt form for a whole brief or document a
@@ -204,8 +210,33 @@ export function numbersWithheldInline(text: string): string {
   const kept: string[] = [];
   body = body.replace(DATE_LIKE, (match) => `\u0000${kept.push(match) - 1}\u0000`);
   body = body.replace(SPELLED_AMOUNT, NUMBER_WITHHELD);
-  body = body.replace(BIG_NUMBER, (match) => (isYear(match) ? match : NUMBER_WITHHELD));
+  body = body.replace(BIG_NUMBER, (match: string, offset: number, whole: string) => {
+    if (!isYear(match)) return NUMBER_WITHHELD;
+    const before = whole.slice(Math.max(0, offset - 20), offset);
+    const after = whole.slice(offset + match.length, offset + match.length + 12);
+    // A bare cell in a table ("| Discovery | 2000 |") is a figure, not a year (QA of PR 300).
+    const cell = /\|\s*$/.test(before) && /^\s*(?:\||$)/m.test(after);
+    return cell || PRICE_BEFORE.test(before) || PRICE_AFTER.test(after) ? NUMBER_WITHHELD : match;
+  });
+  body = body.replace(SMALL_AFTER_MONEY, (_m, lead: string) => `${lead}${NUMBER_WITHHELD}`);
   return body.replace(/\u0000(\d+)\u0000/g, (_m, index: string) => kept[Number(index)] ?? "");
+}
+
+// An amount right after a money word, with no currency sign: "Budget: 45,000", "Fee 2000", "rate 85".
+const AMOUNT_AFTER_MONEY_WORD = new RegExp(`(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d[\\d,.'’ ]*\\d(?:\\s?(?:k|m|mm|bn|thousand|million|billion)(?![\\p{L}]))?|(\\b${MONEY_WORDS}\\b[:\\s-]{0,3})\\d(?![\\d])`, "giu");
+
+/**
+ * The one title rule for a Member (QA of PR 299 and PR 300): titles and file names are not money, so their numbers
+ * stay ("QA 299 lead view check", "QA-299-RFP.txt", "phase 2"); an amount with a currency sign, or right after a money
+ * word, goes ("Fee schedule $45,000", "Budget: 45,000 for phase 2", "Fee 2000 refresh"). A title that was only an
+ * amount reads Untitled.
+ */
+export function memberTitle(title: string): string {
+  const cleaned = withoutMoney(title.replace(AMOUNT_AFTER_MONEY_WORD, (_m, a?: string, b?: string) => (a ?? b ?? "").replace(/[:\s-]+$/, " ")))
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned || "Untitled";
 }
 
 /** A document or summary as a Member may read it: a proposal's Fees section withheld, and every figure masked. */

@@ -1,4 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { LeadFinalBlock, type FinalTools } from "@/components/home/LeadFinalBlock";
+import { useCaptureFiles } from "@/components/work/use-capture-files";
+import { chooseFinalFn, draftFinalFn } from "@/lib/proposal-final.functions";
 
 import { LeadDocumentDialog } from "@/components/home/LeadDocumentDialog";
 import { useLed } from "@/components/home/use-led";
@@ -14,13 +19,25 @@ import { leadDocumentFn } from "@/lib/lead-view.functions";
 export function LeadUpNext({ profileId }: { profileId: string | null | undefined }) {
   const led = useLed(profileId);
   const [open, setOpen] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
+  const queryClient = useQueryClient();
+  const { captureWithResult } = useCaptureFiles();
+  // PR 4c: deciding the final proposal, through the server's own checks.
+  const finalTools: FinalTools = {
+    choose: async (proposalId, itemId, source) => {
+      const result = await chooseFinalFn({ data: { profile_id: profileId ?? null, proposal_id: proposalId, work_item_id: itemId, source } });
+      if (result.ok) void queryClient.invalidateQueries({ queryKey: ["lead-view"] });
+      return result;
+    },
+    draft: (proposalId) => draftFinalFn({ data: { profile_id: profileId ?? null, proposal_id: proposalId } }),
+    upload: (files) => captureWithResult(files, { channel: "upload" }),
+  };
   if (!profileId) return null;
   // QA L2 of PR 299: a failed read says nothing to someone not known to lead anything, so nobody else's Home
   // changes on a bad day. A lead whose list is already here keeps it, with one quiet line.
   if (!led.data || led.data.proposals.length === 0) return null;
   return (
     <>
-      <LeadUpNextList data={led.data} onOpen={setOpen} />
+      <LeadUpNextList data={led.data} onOpen={setOpen} finalTools={finalTools} />
       {led.isError ? (
         <p data-testid="lead-up-next-stale" className="mx-auto w-full max-w-[760px] px-4 pt-2 text-(length:--type-small) text-muted-foreground md:px-6">
           {LEAD_VIEW_COPY.stale}{" "}
@@ -43,10 +60,13 @@ export function LeadUpNextList({
   data,
   now,
   onOpen,
+  finalTools,
 }: {
   data: LedList;
   now?: Date | undefined;
   onOpen: (doc: { proposalId: string; itemId: string; title: string }) => void;
+  /** PR 4c: deciding the final proposal. Left out, the block is not drawn. */
+  finalTools?: FinalTools | undefined;
 }) {
   const C = LEAD_VIEW_COPY;
   const rows = upNextOrder(data.proposals, data.goalHours, now);
@@ -60,7 +80,7 @@ export function LeadUpNextList({
       </div>
       <ul className="divide-y divide-border border-y border-border">
         {rows.map((row, index) => (
-          <LedRow key={row.id} row={row} first={index === 0} goalHours={data.goalHours} now={now} onOpen={onOpen} />
+          <LedRow key={row.id} row={row} first={index === 0} goalHours={data.goalHours} now={now} onOpen={onOpen} finalTools={finalTools} />
         ))}
       </ul>
     </section>
@@ -73,7 +93,9 @@ function LedRow({
   goalHours,
   now,
   onOpen,
+  finalTools,
 }: {
+  finalTools?: FinalTools | undefined;
   row: LedProposal;
   first: boolean;
   goalHours: number;
@@ -127,6 +149,7 @@ function LedRow({
           </ul>
         )}
       </div>
+      {finalTools ? <LeadFinalBlock proposalId={row.id} final={row.final} documents={row.documents ?? []} tools={finalTools} now={now} /> : null}
       <div className="flex flex-col gap-1 text-(length:--type-small)">
         <p className="font-medium text-foreground">{C.pastWork}</p>
         <p data-led-past className="break-words text-muted-foreground [overflow-wrap:anywhere]">
