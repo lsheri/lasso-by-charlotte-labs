@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD, numbersWithheld, numbersWithheldInline, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
+import { hasMoney, maskMoney, MONEY_WITHHELD, moneyFreeText, seesMoney, textFor, withoutMoney, moneyFreeDocument, MONEY_SECTION_WITHHELD, memberTitle, numbersWithheld, numbersWithheldInline, NUMBER_WITHHELD } from "@/lib/money-mask-shared";
 
 describe("withoutMoney: the canvas formats", () => {
   it.each([
@@ -236,5 +236,20 @@ describe("numbersWithheld: a bare year-like cell in a table (QA of PR 300)", () 
     expect(numbersWithheld("| Discovery | 2000 |")).toBe(`| Discovery | ${NUMBER_WITHHELD} |`);
     expect(numbersWithheld("| Delivery | 1999")).toBe(`| Delivery | ${NUMBER_WITHHELD}`);
     expect(numbersWithheld("Kick-off in 2026 | Week 3")).toBe("Kick-off in 2026 | Week 3");
+  });
+});
+
+describe("memberTitle: the one title rule for a Member (QA of PR 299 and 300)", () => {
+  it.each([
+    ["Budget: 45,000 for phase 2", "Budget for phase 2"],
+    ["Fee 2000 refresh", "Fee refresh"],
+    ["Fee schedule $45,000", "Fee schedule"],
+    ["Care model review, $80k cap, phase 2", "Care model review, cap, phase 2"],
+    ["$45,000", "Untitled"],
+  ])("drops the amount in %s", (title, expected) => {
+    expect(memberTitle(title)).toBe(expected);
+  });
+  it.each(["QA-299-RFP.txt", "QA 299 lead view check", "Workshop phase 2", "Q4 2026 plan"])("keeps %s", (title) => {
+    expect(memberTitle(title)).toBe(title);
   });
 });

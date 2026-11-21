@@ -28,7 +28,7 @@ import {
   type SendDocsResult,
 } from "./lead-view-shared";
 import { countBand, goalHours, sameClientName } from "./proposal-desk-shared";
-import { numbersWithheld, seesMoney, withoutMoney } from "./money-mask-shared";
+import { memberTitle, numbersWithheld, seesMoney } from "./money-mask-shared";
 
 type Db = SupabaseClient<Database>;
 
@@ -94,8 +94,7 @@ function forReader(text: string, role: string): { text: string; withheld: boolea
 function titleFor(title: string, role: string): string {
   // Titles and file names are not money (live check of PR 299: "QA 299 lead view check", "QA-299-RFP.txt"): only an
   // amount with a currency sign or a money word goes ("Fee schedule $45,000", "Care model review, $80k cap").
-  if (seesMoney(role)) return title;
-  return withoutMoney(title) || "Untitled";
+  return seesMoney(role) ? title : memberTitle(title);
 }
 
 /** Whether this caller leads this row now: open, unarchived, in their workspace, and its lead linked to them. */

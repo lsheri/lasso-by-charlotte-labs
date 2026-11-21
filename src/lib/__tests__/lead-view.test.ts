@@ -392,3 +392,15 @@ describe("titles and file names for a Member", () => {
     expect(row!.final).toEqual({ itemId: "", title: "", chosenAt: "2026-11-21T10:00:00Z", gone: true });
   });
 });
+
+describe("Home's titles for a Member use the one title rule", () => {
+  it("'Budget: 45,000 for phase 2' and 'Fee 2000 refresh' lose the amount; 'QA-299-RFP.txt' keeps its number", async () => {
+    const rows = [proposal({ title: "Budget: 45,000 for phase 2", sent: ROW_CHRISTY })];
+    const items = [{ id: DOC, owner: MAREN, title: "Fee 2000 refresh" }];
+    const [row] = (await listLed(world({ rows, items }).store)).proposals;
+    expect(row!.title).toBe("Budget for phase 2");
+    expect(row!.documents).toEqual([{ id: DOC, title: "Fee refresh" }]);
+    const kept = (await listLed(world({ rows: [proposal({ sent: ROW_CHRISTY })], items: [{ id: DOC, owner: MAREN, title: "QA-299-RFP.txt" }] }).store)).proposals[0]!;
+    expect(kept.documents).toEqual([{ id: DOC, title: "QA-299-RFP.txt" }]);
+  });
+});
