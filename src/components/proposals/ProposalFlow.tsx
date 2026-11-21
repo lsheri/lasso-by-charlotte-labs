@@ -12,7 +12,7 @@ import { FileText, X } from "@/design/brand/icons";
 import { BRIEF_READ_MAX, BRIEF_READ_MIN } from "@/lib/brief-read-shared";
 import { SEND_DOCS_COPY, type SendDocsResult } from "@/lib/lead-view-shared";
 import { BRIEF_PASS_COPY, dueLabel, isBriefPaste, PROPOSAL_CARD_COPY } from "@/lib/pill-proposal-shared";
-import { sameClientName } from "@/lib/proposal-desk-shared";
+import { INTAKE_COPY, sameClientName } from "@/lib/proposal-desk-shared";
 import { firstWord, flowBack, flowMarker, flowSteps, FLOW_COPY, needsSend, type FlowStep } from "@/lib/proposal-flow-shared";
 import { STEP_CARD_COPY, stepDirection } from "@/lib/step-card-shared";
 
@@ -41,8 +41,6 @@ export type ProposalFlowProps = {
   onStarted?: ((proposalId: string) => void | Promise<void>) | undefined;
   /** The last step's way to the new row. Left out (already on Proposals) the card just closes onto it. */
   onOpenProposal?: ((proposalId: string) => void) | undefined;
-  /** "Ask Lasso about this": opens the chat, only if the person wants it. The card stays where it is. */
-  onAsk?: (() => void) | undefined;
   reduceMotion: boolean;
   /** The card has been opened at least once: until then nothing is read. */
   woken?: boolean | undefined;
@@ -81,7 +79,6 @@ function ProposalFlowRound({
   sendDocs,
   onStarted,
   onOpenProposal,
-  onAsk,
   reduceMotion,
   woken = true,
   leadStep,
@@ -194,12 +191,6 @@ function ProposalFlowRound({
   const marker = flowMarker(step, steps, step === "lead" && sheet.confirm);
   const back = flowBack(step, steps, flow.proposalId !== null);
   const busy = flow.stage === "starting" || sending || pass.state === "sending" || (step === "lead" && sheet.working);
-  const askLink = onAsk ? (
-    <button type="button" onClick={onAsk}>
-      {STEP_CARD_COPY.askAbout(brandName)}
-    </button>
-  ) : null;
-
   const common = {
     open,
     onOpenChange: close,
@@ -208,7 +199,9 @@ function ProposalFlowRound({
     marker: marker ? STEP_CARD_COPY.stepOf(marker.n, marker.total) : null,
     onBack: back && !busy ? () => go(back) : null,
     busy,
-    aside: askLink,
+    // "Ask Lasso about this" closes the card (this round keeps what was typed and the step) and the chat's way back
+    // opens it again here.
+    onReopen: () => onOpenChange(true),
     testId: "proposal-flow",
   };
 
@@ -422,8 +415,16 @@ function ProposalFlowRound({
                 ))}
               </datalist>
               {flow.draft.client.trim() && !known ? (
+                // Said before Start, so nobody uploads for a start the server will refuse: who may add a client, and
+                // for an admin with clients switched off, where to switch them on.
                 <small className="flow-note" data-new-client="">
-                  {PROPOSAL_CARD_COPY.newClient}
+                  {desk.data?.clientsOff
+                    ? INTAKE_COPY.clientsOffForAdmin
+                    : desk.data && !desk.data.canAddClient
+                      ? flow.clients.length
+                        ? INTAKE_COPY.adminAddsClients
+                        : INTAKE_COPY.noClientsForMember
+                      : PROPOSAL_CARD_COPY.newClient}
                 </small>
               ) : null}
             </div>

@@ -6,7 +6,6 @@ import { useBrand } from "@/components/skin/use-skin";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { briefAdminsFn, passBriefFn, readBriefFn } from "@/lib/brief-read.functions";
-import { openChatPill } from "@/lib/chat-pill-shared";
 import { sendLeadDocsFn } from "@/lib/lead-view.functions";
 import { createProposalFn, listProposalClientsFn } from "@/lib/proposal-desk.functions";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
@@ -101,7 +100,6 @@ export function ProposalFlowMount({
           ? undefined
           : (id) => void navigate({ to: "/proposals", search: { proposal: id } as never })
       }
-      onAsk={openChatPill}
     />
   );
 }

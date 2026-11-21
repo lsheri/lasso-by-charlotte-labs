@@ -39,7 +39,10 @@
   background: var(--card);
   color: var(--foreground);
   border-radius: var(--corner-sheet);
-  box-shadow: var(--shadow-sheet);
+  /* A soft deep shadow tinted with the skin's ink (navy under Charlotte), read here where the skin has set it. */
+  box-shadow:
+    0 2px 6px color-mix(in oklab, var(--primary) 8%, transparent),
+    0 30px 80px color-mix(in oklab, var(--primary) 22%, transparent);
   font-family: var(--font-sans);
   transform: translate(-50%, -50%);
   animation: step-card-in 600ms var(--step-card-ease) both;
@@ -247,6 +250,7 @@
   padding: 12px 20px 16px;
 }
 .step-card[data-phone] .step-card__actions {
+  margin-left: 0;
   flex-direction: column;
 }
 .step-card[data-phone] .step-card__actions > * {

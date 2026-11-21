@@ -284,8 +284,9 @@ export const FirmOrb = forwardRef<
       last = now;
       const s = state.current;
       // 21 Nov 2026: behind the full screen chat the page is under a 26px blur; a still orb lets the browser blur it
-      // once instead of every frame. It picks up where it was when the chat steps back.
-      if (el.closest("[data-pill-full]")) {
+      // once instead of every frame. It picks up where it was when the chat steps back. A step card's blur is the same
+      // (click path cards): the card flags the root while it is open.
+      if (el.closest("[data-pill-full],[data-step-card-open]")) {
         raf = requestAnimationFrame(loop);
         return;
       }

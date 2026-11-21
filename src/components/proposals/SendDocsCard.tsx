@@ -81,6 +81,7 @@ export function SendDocsCard({
       title={FLOW_COPY.send.title(first)}
       intro={SEND_DOCS_COPY.what(first)}
       busy={working}
+      onReopen={() => onOpenChange(true)}
       testId="send-docs-card"
       footer={
         <>

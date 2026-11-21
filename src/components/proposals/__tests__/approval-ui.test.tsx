@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // 21 Nov 2026, chat pill Phase 5 (D-97): the approval loop on screen: the Lead's line, the admin's review, the
 // admin's pill line and admin Home's "what changed".
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/home/LeadDocumentDialog", () => ({ LeadDocumentDialog: () => null }));
@@ -12,6 +12,7 @@ import { ApprovalReview } from "@/components/proposals/ApprovalReview";
 import { buildAdminFeed } from "@/lib/admin-home-shared";
 import { APPROVAL_COPY, type ApprovalView } from "@/lib/proposal-approval-shared";
 import type { DeskList, DeskProposal } from "@/lib/proposal-desk-shared";
+import { APPROVAL_CARD_COPY } from "@/lib/proposal-flow-shared";
 
 afterEach(cleanup);
 
@@ -52,31 +53,52 @@ describe("the Lead's line", () => {
 
 describe("the admin's review", () => {
   const tools = () => ({ decide: vi.fn(async () => ({ ok: true as const })), readFinal: vi.fn(async () => ({ ok: true as const, title: "Final v3", text: "words" })) });
-  it("approve: says it waits on the client and that the text comes once texts are approved", async () => {
+  // 21 Nov 2026, click path cards: the review is a step card: the final as a page, then Approve, or Ask for changes.
+  const card = () => within(screen.getByTestId("approval-card"));
+  const openCard = async () => {
+    fireEvent.click(screen.getByRole("button", { name: APPROVAL_CARD_COPY.review }));
+    await screen.findByTestId("approval-card");
+  };
+  it("approve: reads the final first, then says it waits on the client and that the text comes once texts are approved", async () => {
     const t = tools();
     render(<ApprovalReview approval={approval()} leadName="Christy Johnson" proposalId="p1" decide={t.decide} readFinal={t.readFinal} />);
     expect(screen.getByText(APPROVAL_COPY.request("Christy Johnson", "Final v3"))).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: APPROVAL_COPY.approve }));
+    await openCard();
+    expect(await card().findByText("words")).toBeTruthy();
+    expect(t.decide).not.toHaveBeenCalled();
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_CARD_COPY.next }));
+    expect(card().getByText(APPROVAL_COPY.textLater("Christy Johnson"))).toBeTruthy();
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_COPY.approve }));
     await waitFor(() => expect(t.decide).toHaveBeenCalledWith("approved", null));
+    await waitFor(() => expect(screen.queryByTestId("approval-card")).toBeNull());
     expect(await screen.findByText(APPROVAL_COPY.textLater("Christy Johnson"))).toBeTruthy();
   });
   it("ask for changes sends the note", async () => {
     const t = tools();
     render(<ApprovalReview approval={approval()} leadName="Christy Johnson" proposalId="p1" decide={t.decide} readFinal={t.readFinal} />);
-    fireEvent.click(screen.getByRole("button", { name: APPROVAL_COPY.askChanges }));
-    fireEvent.change(screen.getByLabelText(APPROVAL_COPY.note), { target: { value: "Tighten the scope" } });
-    fireEvent.click(screen.getByRole("button", { name: APPROVAL_COPY.sendNote }));
+    await openCard();
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_CARD_COPY.askChanges("Christy") }));
+    fireEvent.change(card().getByLabelText(APPROVAL_COPY.note), { target: { value: "Tighten the scope" } });
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_COPY.sendNote }));
     await waitFor(() => expect(t.decide).toHaveBeenCalledWith("changes_asked", "Tighten the scope"));
   });
-  it("a stale request cannot be approved here and says why; a refusal from the server shows", async () => {
+  it("a stale request cannot be approved here and says why; a refusal from the server keeps the card open and shows", async () => {
     const t = tools();
     render(<ApprovalReview approval={approval({ stale: true })} leadName="Christy Johnson" proposalId="p1" decide={t.decide} readFinal={t.readFinal} />);
-    expect(screen.getByText(APPROVAL_COPY.stale("Christy Johnson"))).toBeTruthy();
-    expect((screen.getByRole("button", { name: APPROVAL_COPY.approve }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText(APPROVAL_COPY.stale("Christy Johnson")).length).toBeGreaterThan(0);
+    await openCard();
+    expect((card().getByRole("button", { name: APPROVAL_CARD_COPY.next }) as HTMLButtonElement).disabled).toBe(true);
     cleanup();
     render(<ApprovalReview approval={approval()} leadName="Christy" proposalId="p1" decide={async () => ({ ok: false, problem: APPROVAL_COPY.ownRequest })} readFinal={t.readFinal} />);
-    fireEvent.click(screen.getByRole("button", { name: APPROVAL_COPY.approve }));
-    expect(await screen.findByText(APPROVAL_COPY.ownRequest)).toBeTruthy();
+    await openCard();
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_CARD_COPY.next }));
+    fireEvent.click(card().getByRole("button", { name: APPROVAL_COPY.approve }));
+    expect(await card().findByText(APPROVAL_COPY.ownRequest)).toBeTruthy();
+  });
+  it("a final that cannot be read says so on the card", async () => {
+    render(<ApprovalReview approval={approval()} leadName="Christy" proposalId="p1" decide={vi.fn()} readFinal={async () => ({ ok: false, problem: "Gone." })} />);
+    await openCard();
+    expect(await card().findByText("Gone.")).toBeTruthy();
   });
 });
 

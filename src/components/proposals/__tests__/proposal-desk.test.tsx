@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { AskDialog } from "@/components/proposals/AskLead";
 import { BoardWinLines } from "@/components/proposals/BoardWinStrip";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
@@ -133,21 +132,6 @@ const CLIENTS = [{ id: "44444444-4444-4444-8444-444444444444", name: "Marrowfiel
 const PROFILE = "22222222-2222-4222-8222-222222222222";
 const ITEM = "55555555-5555-4555-8555-555555555555";
 
-function openDialog(over: Partial<Parameters<typeof NewProposalDialog>[0]> = {}) {
-  const props = {
-    open: true,
-    onOpenChange: vi.fn(),
-    clients: CLIENTS,
-    clientsLoading: false,
-    profileId: PROFILE,
-    capture: vi.fn(async (files: File[]) => ({ ids: files.map(() => ITEM), failures: [] })),
-    create: vi.fn(async () => ({ ok: true as const, id: "new" })),
-    onCreated: vi.fn(),
-    ...over,
-  };
-  render(<NewProposalDialog {...props} />);
-  return props;
-}
 const file = (name: string) => new File(["x"], name, { type: "text/plain" });
 
 describe("Mark as sent", () => {
@@ -274,97 +258,6 @@ describe("the turnaround goal in Settings", () => {
   });
 });
 
-describe("New proposal", () => {
-  it("starts a proposal for an existing client with a document and notes", async () => {
-    const props = openDialog();
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.addFiles), { target: { files: [file("call-notes.txt")] } });
-    await screen.findByText("call-notes.txt");
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.notes), { target: { value: "They want it by March" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onCreated).toHaveBeenCalledWith("new"));
-    expect(props.create).toHaveBeenCalledWith({ profile_id: PROFILE, title: "Network redesign", client_id: CLIENTS[0]!.id, notes: "They want it by March", work_item_ids: [ITEM] });
-    expect(props.onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it("takes a new client's name instead", async () => {
-    const props = openDialog();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.newClient }));
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.clientName), { target: { value: "Quillbrook" } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Audit" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.create).toHaveBeenCalled());
-    expect(props.create).toHaveBeenCalledWith({ profile_id: PROFILE, title: "Audit", new_client_name: "Quillbrook", notes: "", work_item_ids: [] });
-  });
-
-  it("goes straight to a new client when the workspace has none", () => {
-    openDialog({ clients: [] });
-    expect(screen.getByText(INTAKE_COPY.noClients)).toBeTruthy();
-    expect(screen.getByLabelText(INTAKE_COPY.clientName)).toBeTruthy();
-    expect(screen.queryByLabelText(INTAKE_COPY.pickClient)).toBeNull();
-  });
-
-  it("keeps the client list locked until it has loaded", () => {
-    openDialog({ clients: undefined, clientsLoading: true });
-    expect((screen.getByLabelText(INTAKE_COPY.pickClient) as HTMLSelectElement).disabled).toBe(true);
-  });
-
-  it("names what is missing and calls nothing", () => {
-    const props = openDialog();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    expect(screen.getByRole("alert").textContent).toBe(INTAKE_COPY.problems.title);
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Audit" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    expect(screen.getByRole("alert").textContent).toBe(INTAKE_COPY.problems.client);
-    expect(props.create).not.toHaveBeenCalled();
-  });
-
-  it("stays open with a plain line when the server refuses or the call fails", async () => {
-    const refused = openDialog({ create: vi.fn(async () => ({ ok: false as const, problem: INTAKE_COPY.problems.clientGone })) });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Audit" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    expect((await screen.findByRole("alert")).textContent).toBe(INTAKE_COPY.problems.clientGone);
-    expect(refused.onCreated).not.toHaveBeenCalled();
-    expect(refused.onOpenChange).not.toHaveBeenCalledWith(false);
-    cleanup();
-
-    const broken = openDialog({ create: vi.fn(async () => { throw new Error("network"); }) });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Audit" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    expect((await screen.findByRole("alert")).textContent).toBe(INTAKE_COPY.problems.failed);
-    expect(broken.onCreated).not.toHaveBeenCalled();
-    // The button is usable again, so the person can retry.
-    expect((screen.getByRole("button", { name: INTAKE_COPY.create }) as HTMLButtonElement).disabled).toBe(false);
-  });
-
-  it("says which document did not come in and keeps the ones that did", async () => {
-    let call = 0;
-    const capture = vi.fn(async () => (++call === 1 ? { ids: [ITEM], failures: [] } : { ids: [], failures: [{ name: "big.pdf", reason: "too large" }] }));
-    openDialog({ capture });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.addFiles), { target: { files: [file("ok.txt"), file("big.pdf")] } });
-    expect((await screen.findByRole("alert")).textContent).toBe(INTAKE_COPY.problems.upload("big.pdf", "too large"));
-    expect(screen.getByText("ok.txt")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.remove("ok.txt") }));
-    expect(screen.queryByText("ok.txt")).toBeNull();
-  });
-
-  it("does not send twice on a double press", async () => {
-    let finish: (value: { ok: true; id: string }) => void = () => {};
-    const create = vi.fn(() => new Promise<{ ok: true; id: string }>((resolve) => { finish = resolve; }));
-    const props = openDialog({ create });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Audit" } });
-    const button = screen.getByRole("button", { name: INTAKE_COPY.create });
-    fireEvent.click(button);
-    fireEvent.submit(button.closest("form") as HTMLFormElement);
-    expect(create).toHaveBeenCalledTimes(1);
-    finish({ ok: true, id: "new" });
-    await waitFor(() => expect(props.onCreated).toHaveBeenCalledTimes(1));
-  });
-});
 
 describe("long words", () => {
   it("lets a title made of one very long word wrap in the row and in the win dialog", () => {
@@ -614,64 +507,6 @@ describe("20 Nov: closing as lost and archiving, on the page", () => {
   });
 });
 
-describe("20 Nov: who adds a client, said before any upload", () => {
-  it("a member is told an admin adds new clients, picks an existing one, and has no new-client field", () => {
-    openDialog({ canAddClient: false });
-    const form = screen.getByTestId("new-proposal");
-    expect(within(form).getByText(INTAKE_COPY.adminAddsClients)).toBeTruthy();
-    expect(within(form).queryByLabelText(/new client/i)).toBeNull();
-  });
-
-  it("with no clients at all a member cannot upload or start, and is told why", () => {
-    openDialog({ canAddClient: false, clients: [] });
-    const form = screen.getByTestId("new-proposal");
-    expect(within(form).getByText(INTAKE_COPY.noClientsForMember)).toBeTruthy();
-    expect((within(form).getByRole("button", { name: INTAKE_COPY.create }) as HTMLButtonElement).disabled).toBe(true);
-  });
-
-  it("an admin whose workspace has clients switched off is told where to switch them on, not to ask an admin", () => {
-    openDialog({ canAddClient: false, clientsOff: true, clients: [] });
-    const form = screen.getByTestId("new-proposal");
-    expect(within(form).getByText(INTAKE_COPY.clientsOffForAdmin)).toBeTruthy();
-    expect(within(form).queryByText(INTAKE_COPY.noClientsForMember)).toBeNull();
-  });
-
-  it("a new pilot's admin with no clients yet types the first one in the sheet", () => {
-    openDialog({ canAddClient: true, clients: [] });
-    const form = screen.getByTestId("new-proposal");
-    expect(within(form).getByText(INTAKE_COPY.noClients)).toBeTruthy();
-    expect(within(form).getByLabelText(INTAKE_COPY.clientName)).toBeTruthy();
-  });
-
-  it("giving up removes what was uploaded here, and so does taking a document off the list", async () => {
-    const discard = vi.fn(async () => undefined);
-    const props = openDialog({ discard });
-    const input = screen.getByTestId("new-proposal").querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [file("brief.txt")] } });
-    await screen.findByText("brief.txt");
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.remove("brief.txt") }));
-    expect(discard).toHaveBeenCalledWith([ITEM]);
-    fireEvent.change(input, { target: { files: [file("rfp.txt")] } });
-    await screen.findByText("rfp.txt");
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.cancel }));
-    expect(discard).toHaveBeenCalledTimes(2);
-    expect(props.onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it("a proposal that is made keeps its documents", async () => {
-    const discard = vi.fn(async () => undefined);
-    const props = openDialog({ discard });
-    const form = screen.getByTestId("new-proposal");
-    fireEvent.change(form.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [file("brief.txt")] } });
-    await screen.findByText("brief.txt");
-    fireEvent.change(within(form).getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
-    fireEvent.change(form.querySelector("select") as HTMLSelectElement, { target: { value: props.clients?.[0]?.id } });
-    fireEvent.click(within(form).getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.create).toHaveBeenCalled());
-    await waitFor(() => expect(props.onCreated).toHaveBeenCalled());
-    expect(discard).not.toHaveBeenCalled();
-  });
-});
 
 describe("20 Nov: the strip at the top of a board made by a win", () => {
   it("says it was won and when, names the lead, and gives the lead's answer once there is one", () => {
@@ -712,14 +547,3 @@ describe("20 Nov: the strip at the top of a board made by a win", () => {
 });
 
 // 20 Nov 2026, chat pill PR 3b (the Click path): New proposal takes the client's due date, as the chat's card does.
-describe("the due date on New proposal", () => {
-  it("sends the date when given, and nothing when left empty", async () => {
-    const props = openDialog();
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.dueLabel), { target: { value: "2026-11-27" } });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.create).toHaveBeenCalledTimes(1));
-    expect(props.create).toHaveBeenCalledWith(expect.objectContaining({ client_due_on: "2026-11-27" }));
-  });
-});

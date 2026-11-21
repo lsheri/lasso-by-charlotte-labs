@@ -57,6 +57,10 @@ export const FINAL_CARD_COPY = {
   decide: "Decide the final",
   change: "Change the final",
   close: "Done",
+  /** Step 2 (Phase 5, PR 303). */
+  next: "Next: send for approval",
+  approvalTitle: "Send for approval",
+  approvalIntro: "An admin approves it or asks for changes. Nothing goes to the client until then.",
 } as const;
 
 export const FINAL_COPY = {

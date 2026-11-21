@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 
 import { LeadDocumentDialog } from "@/components/home/LeadDocumentDialog";
 import { LeadFinalCard } from "@/components/home/LeadFinalCard";
+import { ApprovalReview } from "@/components/proposals/ApprovalReview";
 import { LeadSheet } from "@/components/proposals/LeadSheet";
 import { LeadSheetCard } from "@/components/proposals/LeadSheetCard";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
@@ -69,10 +70,18 @@ const preview = async (_id: string, contactId: string): Promise<AskPreview> => {
   };
 };
 
+/**
+ * The rows behind link to boards, so the page needs a router. It is made once, around the page only (which never
+ * changes); the card, which holds the story's state, sits outside it. QA L3 of PR 304: a router rebuilt on every
+ * render blanked the story after any change of state.
+ */
 function InRouter({ children }: { children: ReactNode }) {
-  const router = createRouter({
-    routeTree: createRootRoute({ component: () => <>{children}</> }),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+  const [router] = useState(() => {
+    const page = children;
+    return createRouter({
+      routeTree: createRootRoute({ component: () => <>{page}</> }),
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+    });
   });
   return <RouterProvider router={router as never} />;
 }
@@ -95,8 +104,8 @@ function Shell({ page, children, title }: { page: ReactNode; children: ReactNode
             <div className="mx-auto max-w-5xl p-4 sm:p-8">{page}</div>
           </div>
         </div>
-        {children}
       </InRouter>
+      {children}
     </AsShipped>
   );
 }
@@ -148,7 +157,6 @@ function AdminNewProposal({ role = "admin" }: { role?: "admin" | "lead" }) {
           firmName={FIRM}
           brandName="Charlotte"
           sendDocs={async () => ({ ok: true })}
-          onAsk={() => undefined}
           reduceMotion={false}
           leadStep={(_id, done, onState) => (
             <LeadSheet
@@ -203,7 +211,6 @@ function MemberPassBrief() {
           firmName={FIRM}
           brandName="Charlotte"
           sendDocs={async () => ({ ok: true })}
-          onAsk={() => undefined}
           reduceMotion={false}
         />
       </Shell>
@@ -324,6 +331,50 @@ function LeadDocument({ member = false }: { member?: boolean }) {
   );
 }
 
+/* ----- Phase 5 (PR 303): the Lead sends the final for approval; an admin reviews it ----- */
+function LeadSendForApproval() {
+  return (
+    <Shell title="Home" page={<HomeBehind name="Corin" />}>
+      <div className="fixed left-1/2 top-24 w-[min(560px,90vw)] -translate-x-1/2 rounded-[var(--corner-panel)] border border-border bg-card p-4">
+        <LeadFinalCard
+          proposalId="p-new"
+          client="Harbor Health"
+          final={{ itemId: "d9", title: "Harbor Health proposal, final", source: "draft", chosenAt: "2026-11-21T10:00:00Z", gone: false } as never}
+          documents={[]}
+          tools={{ choose: async () => ({ ok: true }) as never, draft: async () => ({ ok: true }) as never, upload: async () => ({ ids: [], failures: [] }) }}
+          approval={{
+            stage: "ready_to_send",
+            view: null,
+            ask: async () => {
+              await wait(400);
+              return { ok: true } as never;
+            },
+          }}
+        />
+      </div>
+    </Shell>
+  );
+}
+
+function AdminApproval() {
+  return (
+    <Shell title="Proposals" page={<ProposalsPageBehind />}>
+      <div className="fixed left-1/2 top-24 w-[min(560px,90vw)] -translate-x-1/2 rounded-[var(--corner-panel)] border border-border bg-card p-4">
+        <ApprovalReview
+          approval={{ id: "a1", state: "waiting", requestedBy: "Corin Ashby", requestedAt: "2026-11-21T10:00:00Z", decidedBy: null, decidedAt: null, note: null, finalItemId: "d9", finalTitle: "Harbor Health proposal, final", stale: false }}
+          leadName="Corin Ashby"
+          proposalId="p-new"
+          decide={async () => {
+            await wait(400);
+            return { ok: true } as never;
+          }}
+          readFinal={async () => ({ ok: true, title: "Harbor Health proposal, final", text: DOC })}
+        />
+      </div>
+    </Shell>
+  );
+}
+
 const meta: Meta = { title: "Proposals/Step cards", globals: { skin: "charlotte" }, parameters: { layout: "fullscreen" } };
 export default meta;
 type Story = StoryObj;
@@ -336,4 +387,6 @@ export const AdminSendDocuments: Story = { name: "Admin send documents", render:
 export const LeadDecideFinal: Story = { name: "Lead decide final", render: () => <LeadFinal /> };
 export const LeadReadDocument: Story = { name: "Lead read document", render: () => <LeadDocument /> };
 export const MemberLeadReadDocument: Story = { name: "Member lead read document", render: () => <LeadDocument member /> };
+export const LeadSendForApprovalStory: Story = { name: "Lead send for approval", render: () => <LeadSendForApproval /> };
+export const AdminApprovalStory: Story = { name: "Admin approval", render: () => <AdminApproval /> };
 export const MemberPassBriefStory: Story = { name: "Member pass brief", render: () => <MemberPassBrief /> };

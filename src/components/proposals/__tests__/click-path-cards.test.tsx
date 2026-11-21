@@ -11,11 +11,12 @@ import { LeadFinalCard } from "@/components/home/LeadFinalCard";
 import { ProposalFlow, type ProposalFlowProps } from "@/components/proposals/ProposalFlow";
 import { StepCard } from "@/components/ui/step-card";
 import type { BriefReading } from "@/lib/brief-read-shared";
-import { PILL_OPEN_EVENT } from "@/lib/chat-pill-shared";
+import { PILL_OPEN_EVENT, type PillCardContext } from "@/lib/chat-pill-shared";
 import { FOCUS_BLUR_CSS } from "@/lib/focus-blur-shared";
 import { SEND_DOCS_COPY } from "@/lib/lead-view-shared";
 import { BRIEF_PASS_COPY, PROPOSAL_CARD_COPY } from "@/lib/pill-proposal-shared";
 import type { DeskList, DeskProposal } from "@/lib/proposal-desk-shared";
+import { APPROVAL_COPY } from "@/lib/proposal-approval-shared";
 import { FINAL_CARD_COPY, FINAL_COPY } from "@/lib/proposal-final-shared";
 import { FLOW_COPY } from "@/lib/proposal-flow-shared";
 import { STEP_CARD_COPY } from "@/lib/step-card-shared";
@@ -95,7 +96,6 @@ function props(over: Partial<ProposalFlowProps> = {}): ProposalFlowProps {
     brandName: "Lasso",
     sendDocs: vi.fn(async () => ({ ok: true as const })),
     reduceMotion: true,
-    onAsk: vi.fn(),
     ...over,
   };
 }
@@ -174,6 +174,73 @@ describe("the step card", () => {
     expect(within(second).getByText("body 2")).toBeTruthy();
     fireEvent.click(within(second).getByRole("button", { name: STEP_CARD_COPY.back }));
     expect(within(screen.getByTestId("card")).getByText("body 1")).toBeTruthy();
+  });
+
+  it("H1: a card opened again measures its step afresh and never comes back 0px tall", async () => {
+    const observers: Array<() => void> = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private fn: () => void) {
+          observers.push(fn);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const height = vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+      return this.isConnected && this.classList.contains("step-card__pane") ? 320 : 0;
+    });
+    try {
+      render(<Harness />);
+      const viewport = () => screen.getByTestId("card").querySelector(".step-card__viewport") as HTMLElement;
+      await waitFor(() => expect(viewport().style.getPropertyValue("--step-card-h")).toBe("320px"));
+      fireEvent.click(screen.getByRole("button", { name: STEP_CARD_COPY.close }));
+      await waitFor(() => expect(screen.queryByTestId("card")).toBeNull());
+      act(() => observers.forEach((fn) => fn()));
+      fireEvent.click(screen.getByRole("button", { name: "reopen" }));
+      await waitFor(() => expect(viewport().style.getPropertyValue("--step-card-h")).toBe("320px"));
+      expect(viewport().style.getPropertyValue("--step-card-h")).not.toBe("0px");
+    } finally {
+      height.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("M2: focus goes back to the button that opened the card", async () => {
+    function Opener() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            open it
+          </button>
+          <StepCard open={open} onOpenChange={setOpen} stepKey="one" title="One" testId="card" />
+        </>
+      );
+    }
+    render(<Opener />);
+    const button = screen.getByRole("button", { name: "open it" });
+    button.focus();
+    fireEvent.click(button);
+    await screen.findByTestId("card");
+    fireEvent.keyDown(screen.getByTestId("card"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("card")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(button));
+  });
+
+  it("M3: flags the root while open, so the Home orb rests under the blur", async () => {
+    render(<Harness />);
+    expect(document.documentElement.hasAttribute("data-step-card-open")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: STEP_CARD_COPY.close }));
+    await waitFor(() => expect(screen.queryByTestId("card")).toBeNull());
+    expect(document.documentElement.hasAttribute("data-step-card-open")).toBe(false);
+  });
+
+  it("L2: the step marker is read once", () => {
+    render(<StepCard open onOpenChange={() => undefined} stepKey="s" title="T" hideTitle marker="Step 2 of 3" testId="card" />);
+    const markers = [...screen.getByTestId("card").querySelectorAll("[data-step-marker]")];
+    expect(markers.filter((m) => m.getAttribute("aria-hidden") !== "true" && !m.closest("[aria-hidden='true']"))).toHaveLength(1);
   });
 
   it("closes on Escape, but holds still while it saves", async () => {
@@ -302,13 +369,29 @@ describe("the proposal step card", () => {
     expect(screen.queryByTestId("proposal-flow")).toBeNull();
   });
 
-  it("Ask Lasso about this is the only way into the chat, and only on a press", async () => {
-    const p = props();
-    render(<ProposalFlow {...p} />);
-    await ready();
-    expect(p.onAsk).not.toHaveBeenCalled();
-    fireEvent.click(within(card()).getByRole("button", { name: STEP_CARD_COPY.askAbout("Lasso") }));
-    expect(p.onAsk).toHaveBeenCalledTimes(1);
+  it("Ask Lasso about this closes the card keeping what was typed, opens the chat once with the step, and the way back restores it", async () => {
+    function Owner() {
+      const [open, setOpen] = useState(true);
+      return <ProposalFlow {...props({ open, onOpenChange: setOpen })} />;
+    }
+    const heard: (PillCardContext | null)[] = [];
+    const listen = (event: Event) => heard.push((event as CustomEvent<PillCardContext | null>).detail);
+    window.addEventListener(PILL_OPEN_EVENT, listen);
+    try {
+      render(<Owner />);
+      await ready();
+      fireEvent.change(field(FLOW_COPY.start.askLabel), { target: { value: "Kept words" } });
+      expect(heard).toHaveLength(0);
+      fireEvent.click(within(card()).getByRole("button", { name: STEP_CARD_COPY.askAbout("Lasso") }));
+      await waitFor(() => expect(screen.queryByTestId("proposal-flow")).toBeNull());
+      expect(heard).toHaveLength(1);
+      expect(heard[0]!.label).toBe(FLOW_COPY.start.title);
+      act(() => heard[0]!.reopen());
+      expect(await screen.findByTestId("proposal-flow")).toBeTruthy();
+      expect(field(FLOW_COPY.start.askLabel).value).toBe("Kept words");
+    } finally {
+      window.removeEventListener(PILL_OPEN_EVENT, listen);
+    }
   });
 
   it("copy names Lasso, never 'it', and the step card has no em dashes", async () => {
@@ -344,5 +427,43 @@ describe("the Lead decides the final on a card", () => {
       fireEvent.click(within(final).getByRole("button", { name: FINAL_CARD_COPY.close }));
     });
     await waitFor(() => expect(screen.queryByTestId("lead-final-card")).toBeNull());
+  });
+
+  it("with a final chosen, the row's Send for approval opens the card on step 2, and Send there is PR 303's own call", async () => {
+    const ask = vi.fn(async () => ({ ok: true as const }));
+    const final = { itemId: "d1", title: "Harbor final v2", source: "document", chosenAt: "2026-11-21T10:00:00Z", gone: false } as never;
+    render(
+      <LeadFinalCard
+        proposalId="p1"
+        client="Harbor Health"
+        final={final}
+        documents={[]}
+        tools={{ choose: vi.fn(), draft: vi.fn(), upload: vi.fn() } as never}
+        approval={{ stage: "ready_to_send", view: null, ask }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: APPROVAL_COPY.send }));
+    expect(ask).not.toHaveBeenCalled();
+    const card = await screen.findByTestId("lead-final-card");
+    expect(card.querySelector(".step-card__pane:not([data-leaving]) [data-step-marker]")?.textContent).toBe(STEP_CARD_COPY.stepOf(2, 2));
+    expect(within(card).getByText("Harbor final v2")).toBeTruthy();
+    fireEvent.click(within(card).getByRole("button", { name: APPROVAL_COPY.send }));
+    await waitFor(() => expect(ask).toHaveBeenCalledWith(false));
+  });
+
+  it("with no final yet, step 1 cannot go on to send it", async () => {
+    render(
+      <LeadFinalCard
+        proposalId="p1"
+        client="Harbor Health"
+        final={null}
+        documents={[]}
+        tools={{ choose: vi.fn(), draft: vi.fn(), upload: vi.fn() } as never}
+        approval={{ stage: "final_needed", view: null, ask: vi.fn() }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: FINAL_CARD_COPY.decide }));
+    const card = await screen.findByTestId("lead-final-card");
+    expect((within(card).getByRole("button", { name: FINAL_CARD_COPY.next }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

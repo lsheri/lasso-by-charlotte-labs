@@ -15,11 +15,14 @@ export function LeadDocumentDialog({
   open,
   read,
   onClose,
+  onReopen,
 }: {
   /** The proposal and document to show, with the title the list already has. Null when closed. */
   open: { proposalId: string; itemId: string; title: string } | null;
   read: (proposalId: string, itemId: string) => Promise<LeadDocResult>;
   onClose: () => void;
+  /** Opens the same document again, for the chat's way back after "Ask Lasso about this". */
+  onReopen?: (() => void) | undefined;
 }) {
   const doc = useQuery({
     queryKey: ["lead-document", open?.proposalId ?? null, open?.itemId ?? null],
@@ -41,6 +44,7 @@ export function LeadDocumentDialog({
       stepKey={shown ? `${shown.proposalId}:${shown.itemId}` : "doc"}
       title={result?.ok ? result.title : (shown?.title ?? "")}
       intro={doc.isLoading ? LEAD_VIEW_COPY.docLoading : result?.ok && result.withheld ? LEAD_VIEW_COPY.withheld : null}
+      onReopen={onReopen}
       testId="lead-document"
       footer={
         <Button type="button" onClick={onClose}>

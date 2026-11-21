@@ -1,5 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -10,7 +11,9 @@ import {
 } from "react";
 
 import { ArrowLeft, X } from "@/design/brand/icons";
+import { useBrand } from "@/components/skin/use-skin";
 import { useReducedMotion } from "@/hooks/use-motion";
+import { openChatPill } from "@/lib/chat-pill-shared";
 import { FOCUS_BLUR, focusBlurAt } from "@/lib/focus-blur-shared";
 import { cn } from "@/lib/utils";
 import { sheetFollow, sheetSettle, STEP_CARD_COPY, STEP_CARD_MORPH_MS, STEP_CARD_PHONE_MAX, washAt } from "@/lib/step-card-shared";
@@ -52,6 +55,14 @@ function softenBehind(amount: number, instant: boolean): boolean {
   return true;
 }
 
+/** While any card is open the root says so, so a moving picture behind (the Home orb) can rest under the blur. */
+function flagOpen(open: boolean) {
+  const root = globalThis.document?.documentElement;
+  if (!root) return;
+  if (open) root.setAttribute("data-step-card-open", "");
+  else root.removeAttribute("data-step-card-open");
+}
+
 /** Where the card centres on a laptop: over the page, not the menu. */
 function pageCentre(): number | null {
   const behind = globalThis.document?.querySelector<HTMLElement>("[data-pill-behind]");
@@ -87,6 +98,8 @@ export function StepCard({
   onBack,
   busy = false,
   aside,
+  onReopen,
+  askLabel,
   footer,
   children,
   testId,
@@ -109,8 +122,15 @@ export function StepCard({
   onBack?: (() => void) | null;
   /** While something is being saved the card cannot be closed, so a write never lands on a card nobody sees. */
   busy?: boolean;
-  /** The small link on the footer's left, such as "Ask Lasso about this". */
+  /** The small link on the footer's left. Left out, and `onReopen` given, it is "Ask Lasso about this". */
   aside?: ReactNode;
+  /**
+   * Opens this card again at the same step. Given, the card offers "Ask Lasso about this": it closes the card (its
+   * owner keeps what was typed), then opens the chat with the step's name and a way back here.
+   */
+  onReopen?: (() => void) | null | undefined;
+  /** The step's name as the chat says it. Defaults to the title when that is plain text. */
+  askLabel?: string | undefined;
   /** The step's buttons, secondary first, primary last (it sits on the right; full width on a phone). */
   footer?: ReactNode;
   children?: ReactNode;
@@ -118,6 +138,7 @@ export function StepCard({
   className?: string;
 }) {
   const phone = usePhone();
+  const brand = useBrand();
   const reduce = useReducedMotion();
   const ghosts = useRef<HTMLDivElement>(null);
   const pane = useRef<HTMLDivElement>(null);
@@ -137,11 +158,15 @@ export function StepCard({
   useEffect(() => {
     if (!open) return;
     openCards += 1;
+    flagOpen(true);
     setOwnBlur(!softenBehind(1, reduce));
     if (!phone) setCentre(pageCentre());
     return () => {
       openCards -= 1;
-      if (openCards === 0) softenBehind(0, reduce);
+      if (openCards === 0) {
+        softenBehind(0, reduce);
+        flagOpen(false);
+      }
     };
   }, [open, phone, reduce]);
 
@@ -170,17 +195,38 @@ export function StepCard({
     lastPane.current = now;
   });
 
-  // The card's height follows its step, so it grows or shrinks to fit instead of jumping.
-  useLayoutEffect(() => {
-    const node = pane.current;
+  // The card's height follows its step, so it grows or shrinks to fit instead of jumping. Measured from the pane
+  // itself as it mounts (the portal mounts it a render after `open` turns on), and never from a pane on its way out,
+  // which reads 0 as it goes. A closed card forgets its height, so the next open measures afresh.
+  const observer = useRef<ResizeObserver | null>(null);
+  const paneRef = useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
+    pane.current = node;
     if (!node) return;
-    const measure = () => setHeight(node.offsetHeight);
+    const measure = () => {
+      if (!node.isConnected || node.hasAttribute("data-leaving")) return;
+      const h = node.offsetHeight;
+      if (h > 0) setHeight(h);
+    };
     measure();
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [stepKey, open]);
+    observer.current = new ResizeObserver(measure);
+    observer.current.observe(node);
+  }, []);
+  useEffect(() => {
+    if (!open) setHeight(null);
+  }, [open]);
+
+  // Focus goes back where it came from when the card closes: the button that opened it, unless something else (the
+  // chat, opened from "Ask Lasso about this") has taken it since.
+  const opener = useRef<HTMLElement | null>(null);
+  const wasOpen = useRef(false);
+  if (open && !wasOpen.current && typeof document !== "undefined") {
+    const active = document.activeElement;
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  }
+  wasOpen.current = open;
 
   function close() {
     if (busy) return;
@@ -218,6 +264,23 @@ export function StepCard({
     else softenBehind(1, false);
   }
 
+  const label = askLabel ?? (typeof title === "string" ? title : "");
+  const askLink =
+    aside === undefined && onReopen ? (
+      <button
+        type="button"
+        data-step-ask=""
+        disabled={busy}
+        onClick={() => {
+          // The card closes first, so the chat is free to use and the page's blur hands over cleanly.
+          onOpenChange(false);
+          openChatPill({ label, reopen: onReopen });
+        }}
+      >
+        {STEP_CARD_COPY.askAbout(brand.name)}
+      </button>
+    ) : (aside ?? null);
+
   const style: Record<string, string> = {};
   if (pull !== null) style["--step-card-pull"] = `${pull}px`;
   if (centre !== null && !phone) style["--step-card-x"] = `${centre}px`;
@@ -236,6 +299,13 @@ export function StepCard({
           data-reduce-motion={reduce ? "" : undefined}
           className={cn("step-card", className)}
           style={style as CSSProperties}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            const back = opener.current;
+            const now = document.activeElement;
+            const free = !now || now === document.body || !now.isConnected || Boolean(sheet.current?.contains(now));
+            if (back && back.isConnected && free) back.focus({ preventScroll: true });
+          }}
           onEscapeKeyDown={(event) => {
             if (busy) event.preventDefault();
           }}
@@ -250,7 +320,7 @@ export function StepCard({
           >
             <div ref={ghosts} className="step-card__ghosts" aria-hidden="true" />
             <div
-              ref={pane}
+              ref={paneRef}
               key={stepKey}
               className="step-card__pane"
               data-entering={entering.current === stepKey ? direction : undefined}
@@ -266,7 +336,7 @@ export function StepCard({
                 {intro ? <p className="step-card__intro">{intro}</p> : null}
               </div>
               {hideTitle && marker ? (
-                <span className="step-card__marker step-card__marker--alone" data-step-marker="">
+                <span className="step-card__marker step-card__marker--alone" data-step-marker="" aria-hidden="true">
                   {marker}
                 </span>
               ) : null}
@@ -303,9 +373,9 @@ export function StepCard({
               </button>
             </DialogPrimitive.Close>
           </div>
-          {footer || aside ? (
+          {footer || askLink ? (
             <div className="step-card__foot" data-step-foot="">
-              <div className="step-card__aside">{aside}</div>
+              <div className="step-card__aside">{askLink}</div>
               <div className="step-card__actions">{footer}</div>
             </div>
           ) : null}

@@ -3,11 +3,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 
-import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { Button } from "@/components/ui/button";
 import type { DeskProposal } from "@/lib/proposal-desk-shared";
-import { morph } from "@/lib/view-morph";
 
 import { AsShipped } from "./as-shipped";
 import { ASK_COPY, leadAskBody } from "@/lib/lead-ask-shared";
@@ -64,61 +62,7 @@ export const AdminNoAgreement: Story = { render: () => <Desk role="admin" textin
 /** D-86: press Record the win, then Make the team board, to see the board build in. The stand-in never finishes. */
 export const AdminWinning: Story = { render: () => <Desk role="admin" winning /> };
 
-/**
- * New proposal, then straight into picking its lead (21 Nov 2026). Stand-ins only: "Start proposal" adds a row to
- * this story's own list, and nothing is saved, uploaded or sent.
- */
-function StartThenPick({ role }: { role: "admin" | "analyst" }) {
-  // State lives inside the router, so a change of state does not rebuild the router and blank the story.
-  return (
-    <AsShipped>
-      <InRouter>
-        <StartThenPickInner role={role} />
-      </InRouter>
-    </AsShipped>
-  );
-}
-function StartThenPickInner({ role }: { role: "admin" | "analyst" }) {
-  const base = desk(role);
-  const [rows, setRows] = useState(base.proposals);
-  const [open, setOpen] = useState(true);
-  const [startLead, setStartLead] = useState<string | null>(null);
-  const picks = role !== "analyst";
-  return (
-        <div className="mx-auto max-w-5xl p-4 sm:p-8">
-          <Button type="button" onClick={() => setOpen(true)}>New proposal</Button>
-          <ProposalDesk
-            data={{ ...base, proposals: rows }}
-            now={NOW}
-            roster={picks ? PEOPLE : undefined}
-            leadWords={WON_WORDS}
-            onLead={picks ? ok : undefined}
-            ask={picks ? { preview: async () => askPreview("practice"), send: async () => ({ ok: true, practice: true }), practiceReply: ok } : undefined}
-            startLead={startLead}
-            onStartLeadDone={() => setStartLead(null)}
-          />
-          <NewProposalDialog
-            open={open}
-            onOpenChange={setOpen}
-            clients={[{ id: "11111111-1111-4111-8111-111111111111", name: "Marrowfield" }]}
-            clientsLoading={false}
-            profileId="22222222-2222-4222-8222-222222222222"
-            capture={async () => ({ ids: [], failures: [] })}
-            create={async (input) => {
-              const made = { ...(base.proposals[0] as DeskProposal), id: "made-here", title: input.title, clientName: "Marrowfield", status: "open", leadContactId: null, leadName: null, ask: null, sentAt: null, receivedAt: NOW.toISOString(), contextCount: 0 } as DeskProposal;
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              setRows((current) => [made, ...current]);
-              return { ok: true, id: made.id };
-            }}
-            onCreated={async (id) => {
-              if (picks) await morph(() => { setOpen(false); setStartLead(id); });
-            }}
-          />
-        </div>
-  );
-}
-export const StartThenPickAdmin: Story = { render: () => <StartThenPick role="admin" /> };
-export const StartThenPickAnalyst: Story = { render: () => <StartThenPick role="analyst" /> };
+// 21 Nov 2026, click path cards: New proposal is now the proposal step card; see Proposals/Step cards.
 
 /**
  * D-86, the live Kestrel Bay shapes: Pellham with no lead, Larkspur with Christy Johnson and her refused test ask,

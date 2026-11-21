@@ -23,6 +23,9 @@ import { leadDocumentFn } from "@/lib/lead-view.functions";
 export function LeadUpNext({ profileId }: { profileId: string | null | undefined }) {
   const led = useLed(profileId);
   const [open, setOpen] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
+  // The document last opened, for the chat's way back to it.
+  const [lastDoc, setLastDoc] = useState<{ proposalId: string; itemId: string; title: string } | null>(null);
+  if (open && open !== lastDoc) setLastDoc(open);
   const queryClient = useQueryClient();
   const { captureWithResult } = useCaptureFiles();
   // PR 4c: deciding the final proposal, through the server's own checks.
@@ -60,6 +63,7 @@ export function LeadUpNext({ profileId }: { profileId: string | null | undefined
         open={open}
         read={(proposalId, itemId) => leadDocumentFn({ data: { profile_id: profileId, proposal_id: proposalId, work_item_id: itemId } }) as Promise<LeadDocResult>}
         onClose={() => setOpen(null)}
+        onReopen={() => setOpen(lastDoc)}
       />
     </>
   );
@@ -164,14 +168,33 @@ function LedRow({
           </ul>
         )}
       </div>
-      {askApproval ? (
+      {askApproval && !finalTools ? (
         <LeadApprovalLine
           stage={proposalStage({ status: "open", sentAt: row.sentAt, hasFinal: Boolean(row.final && !row.final.gone), approval: row.approval ?? null })}
           approval={row.approval}
           onAsk={(withdraw) => askApproval(row.id, withdraw)}
         />
       ) : null}
-      {finalTools ? <LeadFinalCard proposalId={row.id} client={row.clientName ?? ""} final={row.final} documents={row.documents ?? []} tools={finalTools} now={now} /> : null}
+      {finalTools ? (
+        // 21 Nov 2026, click path cards: the final and the approval on one step card; the row keeps PR 303's line.
+        <LeadFinalCard
+          proposalId={row.id}
+          client={row.clientName ?? ""}
+          final={row.final}
+          documents={row.documents ?? []}
+          tools={finalTools}
+          approval={
+            askApproval
+              ? {
+                  stage: proposalStage({ status: "open", sentAt: row.sentAt, hasFinal: Boolean(row.final && !row.final.gone), approval: row.approval ?? null }),
+                  view: row.approval,
+                  ask: (withdraw) => askApproval(row.id, withdraw),
+                }
+              : undefined
+          }
+          now={now}
+        />
+      ) : null}
       <div className="flex flex-col gap-1 text-(length:--type-small)">
         <p className="font-medium text-foreground">{C.pastWork}</p>
         <p data-led-past className="break-words text-muted-foreground [overflow-wrap:anywhere]">

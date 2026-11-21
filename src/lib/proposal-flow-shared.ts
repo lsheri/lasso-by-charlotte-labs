@@ -108,6 +108,21 @@ export const FLOW_COPY = {
   },
 } as const;
 
+/** An admin's review of a Lead's request (Phase 5, PR 303), on a step card. */
+export const APPROVAL_CARD_COPY = {
+  review: "Review it",
+  finalTitle: (first: string) => (first ? `${first}'s final proposal` : "The final proposal"),
+  finalLoading: "Opening the final",
+  finalFailed: "The final could not be opened just now. Try again in a moment.",
+  askChanges: (first: string) => (first ? `Ask ${first} for changes` : "Ask for changes"),
+  next: "Next: approve",
+  approveTitle: (first: string) => (first ? `Approve and tell ${first}` : "Approve it"),
+  approveIntro: "This is what happens when you approve.",
+  moves: "It moves to",
+  tells: (first: string) => (first ? `${first} hears` : "The lead hears"),
+  changesIntro: (first: string) => `One short note for ${first || "the lead"}. They change the final and send it again.`,
+} as const;
+
 /** Home's quiet way in, by who may start a proposal. */
 export const HOME_START_COPY = {
   start: { line: "Got a new brief? Start the proposal here.", button: "Start a proposal" },

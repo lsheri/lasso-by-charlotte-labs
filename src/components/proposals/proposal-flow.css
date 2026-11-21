@@ -310,3 +310,8 @@
 .step-card [data-led-final] > p:first-child {
   display: none;
 }
+.flow-tile--wide {
+  flex-direction: row;
+  align-items: center;
+  min-height: 0;
+}

@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { NewProposalDialog } from "@/components/proposals/NewProposalDialog";
 import { ProposalDesk } from "@/components/proposals/ProposalDesk";
 import { SHEET_COPY } from "@/lib/lead-ask-shared";
 import { INTAKE_COPY, LEAD_COPY, type DeskList, type DeskProposal } from "@/lib/proposal-desk-shared";
@@ -134,50 +133,6 @@ describe("a new proposal opens the lead sheet at once", () => {
   });
 });
 
-describe("the form waits for the hand-over, then leaves", () => {
-  const CLIENTS = [{ id: "44444444-4444-4444-8444-444444444444", name: "Marrowfield" }];
-  function form(onCreated: (id: string) => void | Promise<void>) {
-    const props = {
-      open: true, onOpenChange: vi.fn(), clients: CLIENTS, clientsLoading: false, profileId: "22222222-2222-4222-8222-222222222222",
-      capture: vi.fn(async () => ({ ids: ["55555555-5555-4555-8555-555555555555"], failures: [] })),
-      discard: vi.fn(async () => undefined),
-      create: vi.fn(async () => ({ ok: true as const, id: "new" })), onCreated: vi.fn(onCreated),
-    };
-    render(<NewProposalDialog {...props} />);
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.pickClient), { target: { value: CLIENTS[0]!.id } });
-    fireEvent.change(screen.getByLabelText(INTAKE_COPY.titleLabel), { target: { value: "Network redesign" } });
-    return props;
-  }
-
-  it("stays on Starting until the page has handed over, carries the morph name, then closes", async () => {
-    let done: () => void = () => {};
-    const props = form(() => new Promise<void>((resolve) => { done = resolve; }));
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onCreated).toHaveBeenCalledWith("new"));
-    expect(screen.getByRole("button", { name: INTAKE_COPY.creating })).toBeTruthy();
-    const box = screen.getByTestId("new-proposal");
-    expect((box.style as unknown as Record<string, string>)["viewTransitionName"]).toBe(PROPOSAL_MORPH);
-    expect(box.hasAttribute("data-proposal-handing")).toBe(true);
-    expect(props.onOpenChange).not.toHaveBeenCalled();
-    await act(async () => done());
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-    expect(props.discard).not.toHaveBeenCalled();
-  });
-
-  it("a hand-over that fails still closes quietly: the proposal was made, so nothing says it failed", async () => {
-    const props = form(async () => { throw new Error("read failed"); });
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(props.create).toHaveBeenCalledTimes(1);
-  });
-
-  it("a page that hands nothing over closes the form as before", async () => {
-    const props = form(() => undefined);
-    fireEvent.click(screen.getByRole("button", { name: INTAKE_COPY.create }));
-    await waitFor(() => expect(props.onOpenChange).toHaveBeenCalledWith(false));
-  });
-});
 
 describe("the morph", () => {
   it("uses the browser's view transition when there is one, and resolves only once the change is made", async () => {
